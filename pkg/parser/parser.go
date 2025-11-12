@@ -105,6 +105,10 @@ func (p *Parser) ParseProgram() *ast.Program {
 }
 
 func (p *Parser) parseStatement() ast.Statement {
+	if p.curTokenIs(token.SEMICOLON) {
+		p.nextToken()
+		return nil
+	}
 	switch p.curToken.Type {
 	case token.LET:
 		return p.parseLetStatement()
@@ -149,10 +153,6 @@ func (p *Parser) parseReturnStatement() *ast.ReturnStatement {
 }
 
 func (p *Parser) parseExpressionStatement() *ast.ExpressionStatement {
-	if p.curTokenIs(token.SEMICOLON) {
-		p.nextToken()
-		return nil
-	}
 	stmt := &ast.ExpressionStatement{Token: p.curToken}
 	stmt.Expression = p.parseExpression(LOWEST)
 	if p.peekTokenIs(token.SEMICOLON) {
