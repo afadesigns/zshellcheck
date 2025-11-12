@@ -98,7 +98,6 @@ func (p *Parser) ParseProgram() *ast.Program {
 		if stmt != nil {
 			program.Statements = append(program.Statements, stmt)
 		}
-		p.nextToken()
 	}
 
 	return program
@@ -127,13 +126,12 @@ func (p *Parser) parseLetStatement() *ast.LetStatement {
 		return nil
 	}
 	p.nextToken()
-	stmt.Value = p.parseExpression(LOWEST)
-	if p.peekTokenIs(token.SEMICOLON) {
-		p.nextToken()
+	    if p.peekTokenIs(token.SEMICOLON) {
+	        p.nextToken()
+	    }
+	    p.nextToken()
+	    return stmt
 	}
-	return stmt
-}
-
 func (p *Parser) parseReturnStatement() *ast.ReturnStatement {
 	stmt := &ast.ReturnStatement{Token: p.curToken}
 	p.nextToken()
@@ -142,6 +140,7 @@ func (p *Parser) parseReturnStatement() *ast.ReturnStatement {
 	if p.peekTokenIs(token.SEMICOLON) {
 		p.nextToken()
 	}
+	p.nextToken()
 	return stmt
 }
 
@@ -151,6 +150,7 @@ func (p *Parser) parseExpressionStatement() *ast.ExpressionStatement {
 	if p.peekTokenIs(token.SEMICOLON) {
 		p.nextToken()
 	}
+	p.nextToken()
 	return stmt
 }
 
@@ -173,6 +173,7 @@ func (p *Parser) parseIfStatement() *ast.IfStatement {
 		p.peekError(token.FI)
 		return nil
 	}
+	p.nextToken()
 	return stmt
 }
 
@@ -193,7 +194,6 @@ func (p *Parser) parseBlockStatement(terminators ...token.TokenType) *ast.BlockS
 		if s != nil {
 			block.Statements = append(block.Statements, s)
 		}
-		p.nextToken()
 	}
 	return block
 }
