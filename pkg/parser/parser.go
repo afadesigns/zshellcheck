@@ -109,10 +109,6 @@ func (p *Parser) ParseProgram() *ast.Program {
 }
 
 func (p *Parser) parseStatement() ast.Statement {
-	if p.curTokenIs(token.SEMICOLON) {
-		p.nextToken()
-		return nil
-	}
 	switch p.curToken.Type {
 	case token.LET:
 		return p.parseLetStatement()
