@@ -115,7 +115,7 @@ func (p *Parser) parseStatement() ast.Statement {
 	default:
 		return p.parseExpressionStatement()
 	}
-	p.nextToken()
+	return nil
 }
 
 func (p *Parser) parseLetStatement() *ast.LetStatement {
