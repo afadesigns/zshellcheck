@@ -16,21 +16,6 @@ func init() {
 
 func checkZC1001(node ast.Node) []Violation {
 	violations := []Violation{}
-
-	ifExpression, ok := node.(*ast.IfExpression); ok {
-		// We are looking for an IfExpression where the condition is a PrefixExpression
-		// with '[' as the operator. This indicates the use of the old '[' command.
-		if prefixExpression, ok := ifExpression.Condition.(*ast.PrefixExpression); ok {
-			if prefixExpression.Token.Type == token.LBRACKET {
-				violations = append(violations, Violation{
-					KataID:  "ZC1001",
-					Message: "Prefer [[ over [ for Zsh-specific tests. [[ is a Zsh keyword, offering safer and more powerful conditional expressions.",
-					Line:    prefixExpression.Token.Line,
-					Column:  prefixExpression.Token.Column,
-				})
-			}
-		}
-	}
-
+	// Temporarily simplified to isolate syntax error
 	return violations
 }
