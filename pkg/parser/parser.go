@@ -194,10 +194,15 @@ func (p *Parser) parseBlockStatement(terminators ...token.TokenType) *ast.BlockS
 		return false
 	}
 	for !isTerminator(p.curToken) && !p.curTokenIs(token.EOF) {
+		if p.curTokenIs(token.SEMICOLON) {
+			p.nextToken()
+			continue
+		}
 		s := p.parseStatement()
 		if s != nil {
 			block.Statements = append(block.Statements, s)
 		}
+		p.nextToken()
 	}
 	return block
 }
