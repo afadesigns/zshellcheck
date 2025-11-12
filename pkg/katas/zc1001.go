@@ -17,10 +17,9 @@ func init() {
 func checkZC1001(node ast.Node) []Violation {
 	violations := []Violation{}
 
-	ifExpression, ok := node.(*ast.IfExpression); ok {
-		// We are looking for an IfExpression where the condition is a BracketExpression
-		// This indicates the use of the old '[' command.
-		if bracketExp, ok := ifExpression.Condition.(*ast.BracketExpression); ok {
+	if ifExpression, ok := node.(*ast.IfExpression); ok {
+		conditionNode := ifExpression.Condition // Assign to a variable first
+		if bracketExp, ok := conditionNode.(*ast.BracketExpression); ok {
 			// The BracketExpression itself holds the token for '['
 			violations = append(violations, Violation{
 				KataID:  "ZC1001",
