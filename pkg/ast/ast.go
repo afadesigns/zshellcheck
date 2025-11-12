@@ -37,7 +37,7 @@ func (p *Program) TokenLiteral() string {
 func (p *Program) String() string {
 	var out []byte
 	for _, s := range p.Statements {
-		out = append(out, s.String()...)
+		out = append(out, []byte(s.String())...)
 	}
 	return string(out)
 }
@@ -53,14 +53,16 @@ func (ls *LetStatement) TokenLiteral() string { return ls.Token.Literal }
 func (ls *LetStatement) String() string {
 	var out []byte
 
-	out = append(out, ls.TokenLiteral()...)
-	out = append(out, " ", ls.Name.String(), " = ")
+	out = append(out, []byte(ls.TokenLiteral())...)
+	out = append(out, []byte(" ")...)
+	out = append(out, []byte(ls.Name.String())...)
+	out = append(out, []byte(" = ")...)
 
 	if ls.Value != nil {
-		out = append(out, ls.Value.String()...)
+		out = append(out, []byte(ls.Value.String())...)
 	}
 
-	out = append(out, ";")
+	out = append(out, []byte(";")...)
 
 	return string(out)
 }
@@ -75,14 +77,14 @@ func (rs *ReturnStatement) TokenLiteral() string { return rs.Token.Literal }
 func (rs *ReturnStatement) String() string {
 	var out []byte
 
-	out = append(out, rs.TokenLiteral()...)
-	out = append(out, " ")
+	out = append(out, []byte(rs.TokenLiteral())...)
+	out = append(out, []byte(" ")...)
 
 	if rs.ReturnValue != nil {
-		out = append(out, rs.ReturnValue.String()...)
+		out = append(out, []byte(rs.ReturnValue.String())...)
 	}
 
-	out = append(out, ";")
+	out = append(out, []byte(";")...)
 
 	return string(out)
 }
@@ -139,10 +141,10 @@ func (pe *PrefixExpression) TokenLiteral() string { return pe.Token.Literal }
 func (pe *PrefixExpression) String() string {
 	var out []byte
 
-	out = append(out, "(")
-	out = append(out, pe.Operator...)
-	out = append(out, pe.Right.String()...)
-	out = append(out, ")")
+	out = append(out, []byte("(")...)
+	out = append(out, []byte(pe.Operator)...)
+	out = append(out, []byte(pe.Right.String())...)
+	out = append(out, []byte(")")...)
 
 	return string(out)
 }
@@ -159,11 +161,13 @@ func (ie *InfixExpression) TokenLiteral() string { return ie.Token.Literal }
 func (ie *InfixExpression) String() string {
 	var out []byte
 
-	out = append(out, "(")
-	out = append(out, ie.Left.String()...)
-	out = append(out, " ", ie.Operator, " ")
-	out = append(out, ie.Right.String()...)
-	out = append(out, ")")
+	out = append(out, []byte("(")...)
+	out = append(out, []byte(ie.Left.String())...)
+	out = append(out, []byte(" ")...)
+	out = append(out, []byte(ie.Operator)...)
+	out = append(out, []byte(" ")...)
+	out = append(out, []byte(ie.Right.String())...)
+	out = append(out, []byte(")")...)
 
 	return string(out)
 }
@@ -180,14 +184,14 @@ func (ie *IfExpression) TokenLiteral() string { return ie.Token.Literal }
 func (ie *IfExpression) String() string {
 	var out []byte
 
-	out = append(out, "if")
-	out = append(out, ie.Condition.String()...)
-	out = append(out, " ")
-	out = append(out, ie.Consequence.String()...)
+	out = append(out, []byte("if")...)
+	out = append(out, []byte(ie.Condition.String())...)
+	out = append(out, []byte(" ")...)
+	out = append(out, []byte(ie.Consequence.String())...)
 
 	if ie.Alternative != nil {
-		out = append(out, "else ")
-		out = append(out, ie.Alternative.String()...)
+		out = append(out, []byte("else ")...)
+		out = append(out, []byte(ie.Alternative.String())...)
 	}
 
 	return string(out)
@@ -204,7 +208,7 @@ func (bs *BlockStatement) String() string {
 	var out []byte
 
 	for _, s := range bs.Statements {
-		out = append(out, s.String()...)
+		out = append(out, []byte(s.String())...)
 	}
 
 	return string(out)
@@ -226,12 +230,12 @@ func (fl *FunctionLiteral) String() string {
 		params = append(params, p.String())
 	}
 
-	out = append(out, fl.TokenLiteral()...)
-	out = append(out, "(")
-	out = append(out, strings.Join(params, ", ")...)
-	out = append(out, "){")
-	out = append(out, fl.Body.String()...)
-	out = append(out, "}")
+	out = append(out, []byte(fl.TokenLiteral())...)
+	out = append(out, []byte("(")...)
+	out = append(out, []byte(strings.Join(params, ", "))...)
+	out = append(out, []byte("){")...)
+	out = append(out, []byte(fl.Body.String())...)
+	out = append(out, []byte("}")...)
 
 	return string(out)
 }
@@ -252,10 +256,10 @@ func (ce *CallExpression) String() string {
 		args = append(args, a.String())
 	}
 
-	out = append(out, ce.Function.String()...)
-	out = append(out, "(")
-	out = append(out, strings.Join(args, ", ")...)
-	out = append(out, ")")
+	out = append(out, []byte(ce.Function.String())...)
+	out = append(out, []byte("(")...)
+	out = append(out, []byte(strings.Join(args, ", "))...)
+	out = append(out, []byte(")")...)
 
 	return string(out)
 }
