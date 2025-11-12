@@ -2,35 +2,45 @@ package main
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os"
 
 	"github.com/afadesigns/zshellcheck/pkg/ast"
+	"github.com/afadesigns/zshellcheck/pkg/katas"
 	"github.com/afadesigns/zshellcheck/pkg/lexer"
 	"github.com/afadesigns/zshellcheck/pkg/parser"
-	"github.com/afadesigns/zshellcheck/pkg/katas"
 )
 
 func main() {
-	// Input with an if statement using '[' for testing ZC1001
-	input := `if ( [ -f "myfile" ] ) { echo "file exists"; }`
+	if len(os.Args) < 2 {
+		fmt.Println("Usage: zshellcheck <file1.zsh> [file2.zsh]...")
+		os.Exit(1)
+	}
 
-	l := lexer.New(input)
+	for _, filename := range os.Args[1:] {
+		processFile(filename)
+	}
+}
+
+func processFile(filename string) {
+	data, err := ioutil.ReadFile(filename)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error reading file %s: %s\n", filename, err)
+		return
+	}
+
+	l := lexer.New(string(data))
 	p := parser.New(l)
 
 	program := p.ParseProgram()
 
 	if len(p.Errors()) != 0 {
 		for _, msg := range p.Errors() {
-			fmt.Fprintf(os.Stderr, "Parser Error: %s\n", msg)
+			fmt.Fprintf(os.Stderr, "Parser Error in %s: %s\n", filename, msg)
 		}
-		os.Exit(1)
+		return
 	}
 
-	fmt.Println("AST:")
-	fmt.Println(program.String())
-	fmt.Println("\nRunning Katas...")
-
-	// Walk the AST and collect violations
 	violations := []katas.Violation{}
 	ast.Walk(program, func(node ast.Node) bool {
 		for _, kata := range katas.AllKatas {
@@ -40,13 +50,10 @@ func main() {
 		return true // Continue walking
 	})
 
-	if len(violations) == 0 {
-		fmt.Println("No ZShellCheck Katas violated. Your Zsh is enlightened!")
-	} else {
-		fmt.Println("ZShellCheck Katas violated:")
+	if len(violations) > 0 {
+		fmt.Printf("Violations in %s:\n", filename)
 		for _, v := range violations {
-			fmt.Printf("  %s:%d:%d: [%s] %s\n", "<stdin>", v.Line, v.Column, v.KataID, v.Message)
+			fmt.Printf("  %s:%d:%d: [%s] %s\n", filename, v.Line, v.Column, v.KataID, v.Message)
 		}
-		os.Exit(1)
 	}
 }
