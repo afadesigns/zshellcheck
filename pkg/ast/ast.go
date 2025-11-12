@@ -143,7 +143,9 @@ func (pe *PrefixExpression) String() string {
 
 	out = append(out, []byte("(")...)
 	out = append(out, []byte(pe.Operator)...)
-	out = append(out, []byte(pe.Right.String())...)
+	if pe.Right != nil {
+		out = append(out, []byte(pe.Right.String())...)
+	}
 	out = append(out, []byte(")")...)
 
 	return string(out)
@@ -162,11 +164,15 @@ func (ie *InfixExpression) String() string {
 	var out []byte
 
 	out = append(out, []byte("(")...)
-	out = append(out, []byte(ie.Left.String())...)
+	if ie.Left != nil {
+		out = append(out, []byte(ie.Left.String())...)
+	}
 	out = append(out, []byte(" ")...)
 	out = append(out, []byte(ie.Operator)...)
 	out = append(out, []byte(" ")...)
-	out = append(out, []byte(ie.Right.String())...)
+	if ie.Right != nil {
+		out = append(out, []byte(ie.Right.String())...)
+	}
 	out = append(out, []byte(")")...)
 
 	return string(out)
@@ -185,9 +191,13 @@ func (ie *IfExpression) String() string {
 	var out []byte
 
 	out = append(out, []byte("if")...)
-	out = append(out, []byte(ie.Condition.String())...)
+	if ie.Condition != nil {
+		out = append(out, []byte(ie.Condition.String())...)
+	}
 	out = append(out, []byte(" ")...)
-	out = append(out, []byte(ie.Consequence.String())...)
+	if ie.Consequence != nil {
+		out = append(out, []byte(ie.Consequence.String())...)
+	}
 
 	if ie.Alternative != nil {
 		out = append(out, []byte("else ")...)
@@ -339,25 +349,41 @@ func Walk(node Node, f WalkFn) {
 		// Leaf node
 
 	case *PrefixExpression:
-		Walk(n.Right, f)
+		if n.Right != nil {
+			Walk(n.Right, f)
+		}
 
 	case *InfixExpression:
-		Walk(n.Left, f)
-		Walk(n.Right, f)
+		if n.Left != nil {
+			Walk(n.Left, f)
+		}
+		if n.Right != nil {
+			Walk(n.Right, f)
+		}
 
 	case *IfExpression:
-		Walk(n.Condition, f)
-		Walk(n.Consequence, f)
-		Walk(n.Alternative, f)
+		if n.Condition != nil {
+			Walk(n.Condition, f)
+		}
+		if n.Consequence != nil {
+			Walk(n.Consequence, f)
+		}
+		if n.Alternative != nil {
+			Walk(n.Alternative, f)
+		}
 
 	case *FunctionLiteral:
 		for _, param := range n.Parameters {
 			Walk(param, f)
 		}
-		Walk(n.Body, f)
+		if n.Body != nil {
+			Walk(n.Body, f)
+		}
 
 	case *CallExpression:
-		Walk(n.Function, f)
+		if n.Function != nil {
+			Walk(n.Function, f)
+		}
 		for _, arg := range n.Arguments {
 			Walk(arg, f)
 		}
