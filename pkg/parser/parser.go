@@ -193,6 +193,7 @@ func (p *Parser) parseBlockStatement(terminators ...token.TokenType) *ast.BlockS
 		if s != nil {
 			block.Statements = append(block.Statements, s)
 		}
+		p.nextToken()
 	}
 	return block
 }
