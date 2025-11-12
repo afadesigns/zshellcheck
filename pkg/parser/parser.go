@@ -105,6 +105,10 @@ func (p *Parser) ParseProgram() *ast.Program {
 }
 
 func (p *Parser) parseStatement() ast.Statement {
+	if p.curTokenIs(token.SEMICOLON) {
+		p.nextToken()
+		return nil
+	}
 	switch p.curToken.Type {
 	case token.LET:
 		return p.parseLetStatement()
@@ -192,10 +196,6 @@ func (p *Parser) parseBlockStatement(terminators ...token.TokenType) *ast.BlockS
 		return false
 	}
 	for !isTerminator(p.curToken) && !p.curTokenIs(token.EOF) {
-		if p.curTokenIs(token.SEMICOLON) {
-			p.nextToken()
-			continue
-		}
 		s := p.parseStatement()
 		if s != nil {
 			block.Statements = append(block.Statements, s)
