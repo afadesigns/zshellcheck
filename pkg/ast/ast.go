@@ -272,3 +272,78 @@ type StringLiteral struct {
 func (sl *StringLiteral) expressionNode()      {}
 func (sl *StringLiteral) TokenLiteral() string { return sl.Token.Literal }
 func (sl *StringLiteral) String() string       { return sl.Token.Literal }
+
+// WalkFn is the type of the function called for each node visited by Walk.
+// The return value of WalkFn controls how Walk proceeds.
+// If true, the children of the node are visited.
+// If false, the children of the node are skipped.
+type WalkFn func(node Node) bool
+
+// Walk traverses an AST in depth-first order: it starts by calling f(node);
+// if f returns true, it then calls Walk on each of the children of node.
+func Walk(node Node, f WalkFn) {
+	if node == nil {
+		return
+	}
+	if !f(node) {
+		return
+	}
+
+	switch n := node.(type) {
+	case *Program:
+		for _, stmt := range n.Statements {
+			Walk(stmt, f)
+		}
+
+	case *LetStatement:
+		Walk(n.Name, f)
+		Walk(n.Value, f)
+
+	case *ReturnStatement:
+		Walk(n.ReturnValue, f)
+
+	case *ExpressionStatement:
+		Walk(n.Expression, f)
+
+	case *BlockStatement:
+		for _, stmt := range n.Statements {
+			Walk(stmt, f)
+		}
+
+	case *Identifier:
+		// Leaf node, nothing to walk further
+
+	case *IntegerLiteral:
+		// Leaf node
+
+	case *Boolean:
+		// Leaf node
+
+	case *PrefixExpression:
+		Walk(n.Right, f)
+
+	case *InfixExpression:
+		Walk(n.Left, f)
+		Walk(n.Right, f)
+
+	case *IfExpression:
+		Walk(n.Condition, f)
+		Walk(n.Consequence, f)
+		Walk(n.Alternative, f)
+
+	case *FunctionLiteral:
+		for _, param := range n.Parameters {
+			Walk(param, f)
+		}
+		Walk(n.Body, f)
+
+	case *CallExpression:
+		Walk(n.Function, f)
+		for _, arg := range n.Arguments {
+			Walk(arg, f)
+		}
+
+	case *StringLiteral:
+		// Leaf node
+	}
+}
