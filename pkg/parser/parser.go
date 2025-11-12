@@ -174,14 +174,16 @@ func (p *Parser) parseIfStatement() *ast.IfStatement {
 	if p.peekTokenIs(token.SEMICOLON) {
 		p.nextToken()
 	}
-	if !p.expectPeek(token.THEN) {
-		return nil
-	}
-	stmt.Consequence = p.parseBlockStatement(token.ELSE, token.FI)
-	if p.curTokenIs(token.ELSE) {
-		p.nextToken()
-		stmt.Alternative = p.parseBlockStatement(token.FI)
-	}
+		if !p.expectPeek(token.THEN) {
+			return nil
+		}
+		p.nextToken() // consume "then"
+		stmt.Consequence = p.parseBlockStatement(token.ELSE, token.FI)
+	
+		if p.curTokenIs(token.ELSE) {
+			p.nextToken() // consume "else"
+			stmt.Alternative = p.parseBlockStatement(token.FI)
+		}
 	if !p.curTokenIs(token.FI) {
 		p.peekError(token.FI)
 		return nil
@@ -192,7 +194,7 @@ func (p *Parser) parseIfStatement() *ast.IfStatement {
 func (p *Parser) parseBlockStatement(terminators ...token.TokenType) *ast.BlockStatement {
 	block := &ast.BlockStatement{Token: p.curToken}
 	block.Statements = []ast.Statement{}
-	p.nextToken()
+
 	isTerminator := func(tok token.Token) bool {
 		for _, t := range terminators {
 			if tok.Type == t {
@@ -201,6 +203,7 @@ func (p *Parser) parseBlockStatement(terminators ...token.TokenType) *ast.BlockS
 		}
 		return false
 	}
+
 	for !isTerminator(p.curToken) && !p.curTokenIs(token.EOF) {
 		s := p.parseStatement()
 		if s != nil {
