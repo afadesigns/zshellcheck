@@ -2,7 +2,7 @@ package katas
 
 import (
 	"github.com/afadesigns/zshellcheck/pkg/ast"
-	"github.com/afadesigns/zshellcheck/pkg/token"
+	// "github.com/afadesigns/zshellcheck/pkg/token" // Removed unused import
 )
 
 func init() {
@@ -17,9 +17,8 @@ func init() {
 func checkZC1001(node ast.Node) []Violation {
 	violations := []Violation{}
 
-	// Minimal code to test compilation
 	if _, ok := node.(*ast.IfExpression); ok {
-		// Do nothing for now
+		// Logic will be added here incrementally
 	}
 
 	return violations
