@@ -63,6 +63,7 @@ func New(l *lexer.Lexer) *Parser {
 	p.registerPrefix(token.IF, p.parseIfExpression)
 	p.registerPrefix(token.FUNCTION, p.parseFunctionLiteral)
 	p.registerPrefix(token.STRING, p.parseStringLiteral)
+	p.registerPrefix(token.LBRACKET, p.parseBracketExpression) // Register LBRACKET as a prefix operator
 
 	p.infixParseFns = make(map[token.TokenType]infixParseFn)
 	p.registerInfix(token.PLUS, p.parseInfixExpression)
@@ -228,6 +229,28 @@ func (p *Parser) parsePrefixExpression() ast.Expression {
 	expression.Right = p.parseExpression(PREFIX)
 
 	return expression
+}
+
+// parseBracketExpression parses expressions enclosed in square brackets, e.g., [ -f "file" ]
+func (p *Parser) parseBracketExpression() ast.Expression {
+	// The current token is LBRACKET. We need to parse the expression inside.
+	bracketToken := p.curToken
+
+	p.nextToken() // Consume the LBRACKET
+
+	expression := p.parseExpression(LOWEST) // Parse the expression inside the brackets
+
+	if !p.expectPeek(token.RBRACKET) {
+		return nil // Error: missing closing RBRACKET
+	}
+
+	// Create a PrefixExpression where the operator is '[' and the right operand is the expression inside.
+	// This allows the Kata to easily identify the use of '[' as a conditional operator.
+	return &ast.PrefixExpression{
+		Token:    bracketToken,
+		Operator: bracketToken.Literal,
+		Right:    expression,
+	}
 }
 
 func (p *Parser) parseInfixExpression(left ast.Expression) ast.Expression {

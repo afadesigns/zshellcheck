@@ -4,15 +4,15 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/afadesigns/zshellcheck/pkg/ast"
 	"github.com/afadesigns/zshellcheck/pkg/lexer"
 	"github.com/afadesigns/zshellcheck/pkg/parser"
 	"github.com/afadesigns/zshellcheck/pkg/katas"
 )
 
 func main() {
-	// For now, we'll hardcode a simple input for testing.
-	// In a real CLI, this would come from a file or stdin.
-	input := `if [ -f "myfile" ]; then echo "file exists"; fi`
+	// Input with an if statement using '[' for testing ZC1001
+	input := `if ( [ -f "myfile" ] ) { echo "file exists"; }`
 
 	l := lexer.New(input)
 	p := parser.New(l)
