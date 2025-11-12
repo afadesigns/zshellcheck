@@ -98,7 +98,6 @@ func (p *Parser) ParseProgram() *ast.Program {
 		if stmt != nil {
 			program.Statements = append(program.Statements, stmt)
 		}
-		p.nextToken()
 	}
 
 	return program
