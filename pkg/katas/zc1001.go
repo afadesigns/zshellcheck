@@ -2,7 +2,6 @@ package katas
 
 import (
 	"github.com/afadesigns/zshellcheck/pkg/ast"
-	"github.com/afadesigns/zshellcheck/pkg/token"
 )
 
 func init() {
