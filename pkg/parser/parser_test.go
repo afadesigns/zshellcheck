@@ -226,7 +226,8 @@ func TestOperatorPrecedenceParsing(t *testing.T) {
 		{"a / b / c", "((a / b) / c)"},
 		{"a + b / c", "(a + (b / c))"},
 		{"a + b * c + d / e - f", "(((a + (b * c)) + (d / e)) - f)"},
-		        {"3 + 4; -5 * 5;", "(3 + 4)((-5) * 5)"}, // Corrected expected output		{"5 > 4 == 3 < 4", "((5 > 4) == (3 < 4))"},
+		{"3 + 4; -5 * 5;", "(3 + 4)((-5) * 5)"},
+		{"5 > 4 == 3 < 4", "((5 > 4) == (3 < 4))"},
 		{"5 < 4 != 3 > 4", "((5 < 4) != (3 > 4))"},
 		{"3 + 4 * 5 == 3 * 1 + 4 * 5", "((3 + (4 * 5)) == ((3 * 1) + (4 * 5)))"},
 		{"true", "true"},
@@ -256,6 +257,60 @@ func TestOperatorPrecedenceParsing(t *testing.T) {
 			t.Errorf("expected=%q, got=%q", tt.expected, actual)
 		}
 	}
+}
+
+func TestBracketExpressionParsing(t *testing.T) {
+	input := `[ -f "myfile" ]`
+
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	if len(program.Statements) != 1 {
+		t.Fatalf("program.Statements does not contain %d statements. got=%d\n",
+			1, len(program.Statements))
+	}
+
+	stmt, ok := program.Statements[0].(*ast.ExpressionStatement)
+	if !ok {
+		t.Fatalf("program.Statements[0] is not ast.ExpressionStatement. got=%T",
+			program.Statements[0])
+	}
+
+	bracketExp, ok := stmt.Expression.(*ast.BracketExpression)
+	if !ok {
+		t.Fatalf("stmt.Expression is not ast.BracketExpression. got=%T", stmt.Expression)
+	}
+
+	if len(bracketExp.Expressions) != 3 {
+		t.Fatalf("bracketExp.Expressions does not contain 3 expressions. got=%d",
+			len(bracketExp.Expressions))
+	}
+
+	testIdentifier(t, bracketExp.Expressions[0], "-") // This will be parsed as an identifier for now
+	testIdentifier(t, bracketExp.Expressions[1], "f")
+	testStringLiteral(t, bracketExp.Expressions[2], "myfile")
+}
+
+func testStringLiteral(t *testing.T, exp ast.Expression, value string) bool {
+	sl, ok := exp.(*ast.StringLiteral)
+	if !ok {
+		t.Errorf("exp not *ast.StringLiteral. got=%T", exp)
+		return false
+	}
+
+	if sl.Value != value {
+		t.Errorf("sl.Value not %q. got=%q", value, sl.Value)
+		return false
+	}
+
+	if sl.TokenLiteral() != value {
+		t.Errorf("sl.TokenLiteral not %q. got=%q", value, sl.TokenLiteral())
+		return false
+	}
+
+	return true
 }
 
 func TestIfExpression(t *testing.T) {

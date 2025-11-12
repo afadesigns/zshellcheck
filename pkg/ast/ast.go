@@ -273,6 +273,25 @@ func (sl *StringLiteral) expressionNode()      {}
 func (sl *StringLiteral) TokenLiteral() string { return sl.Token.Literal }
 func (sl *StringLiteral) String() string       { return sl.Token.Literal }
 
+type BracketExpression struct {
+	Token token.Token // The '[' token
+	Expressions []Expression
+}
+
+func (be *BracketExpression) expressionNode()      {}
+func (be *BracketExpression) TokenLiteral() string { return be.Token.Literal }
+func (be *BracketExpression) String() string {
+	var out []byte
+	out = append(out, []byte("[")...)
+	args := []string{}
+	for _, e := range be.Expressions {
+		args = append(args, e.String())
+	}
+	out = append(out, []byte(strings.Join(args, " "))...)
+	out = append(out, []byte("]")...)
+	return string(out)
+}
+
 // WalkFn is the type of the function called for each node visited by Walk.
 // The return value of WalkFn controls how Walk proceeds.
 // If true, the children of the node are visited.
@@ -345,5 +364,10 @@ func Walk(node Node, f WalkFn) {
 
 	case *StringLiteral:
 		// Leaf node
+
+	case *BracketExpression:
+		for _, exp := range n.Expressions {
+			Walk(exp, f)
+		}
 	}
 }

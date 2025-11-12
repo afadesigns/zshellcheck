@@ -233,24 +233,28 @@ func (p *Parser) parsePrefixExpression() ast.Expression {
 
 // parseBracketExpression parses expressions enclosed in square brackets, e.g., [ -f "file" ]
 func (p *Parser) parseBracketExpression() ast.Expression {
-	// The current token is LBRACKET. We need to parse the expression inside.
 	bracketToken := p.curToken
-
 	p.nextToken() // Consume the LBRACKET
 
-	expression := p.parseExpression(LOWEST) // Parse the expression inside the brackets
-
-	if !p.expectPeek(token.RBRACKET) {
-		return nil // Error: missing closing RBRACKET
+	expressions := []ast.Expression{}
+	// Parse expressions until RBRACKET or EOF
+	for !p.curTokenIs(token.RBRACKET) && !p.curTokenIs(token.EOF) {
+		exp := p.parseExpression(LOWEST)
+		if exp != nil {
+			expressions = append(expressions, exp)
+		}
+		// Advance to the next token if not at RBRACKET or EOF
+		if !p.curTokenIs(token.RBRACKET) && !p.curTokenIs(token.EOF) {
+			p.nextToken()
+		}
 	}
 
-	// Create a PrefixExpression where the operator is '[' and the right operand is the expression inside.
-	// This allows the Kata to easily identify the use of '[' as a conditional operator.
-	return &ast.PrefixExpression{
-		Token:    bracketToken,
-		Operator: bracketToken.Literal,
-		Right:    expression,
+	if !p.curTokenIs(token.RBRACKET) {
+		p.peekError(token.RBRACKET) // Report error if RBRACKET is missing
+		return nil
 	}
+
+	return &ast.BracketExpression{Token: bracketToken, Expressions: expressions}
 }
 
 func (p *Parser) parseInfixExpression(left ast.Expression) ast.Expression {
