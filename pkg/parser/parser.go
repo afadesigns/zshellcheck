@@ -113,7 +113,9 @@ func (p *Parser) parseStatement() ast.Statement {
 	case token.IF:
 		return p.parseIfStatement()
 	default:
-		return p.parseExpressionStatement()
+		stmt := p.parseExpressionStatement()
+		p.nextToken()
+		return stmt
 	}
 	return nil
 }
