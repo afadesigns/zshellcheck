@@ -62,7 +62,6 @@ func New(l *lexer.Lexer) *Parser {
 	p.registerPrefix(token.FUNCTION, p.parseFunctionLiteral)
 	p.registerPrefix(token.STRING, p.parseStringLiteral)
 	p.registerPrefix(token.LBRACKET, p.parseBracketExpression)
-	p.registerPrefix(token.SEMICOLON, func() ast.Expression { return nil })
 
 	p.infixParseFns = make(map[token.TokenType]infixParseFn)
 	p.registerInfix(token.PLUS, p.parseInfixExpression)
@@ -193,10 +192,15 @@ func (p *Parser) parseBlockStatement(terminators ...token.TokenType) *ast.BlockS
 		return false
 	}
 	for !isTerminator(p.curToken) && !p.curTokenIs(token.EOF) {
+		if p.curTokenIs(token.SEMICOLON) {
+			p.nextToken()
+			continue
+		}
 		s := p.parseStatement()
 		if s != nil {
 			block.Statements = append(block.Statements, s)
 		}
+		p.nextToken()
 	}
 	return block
 }
