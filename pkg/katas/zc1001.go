@@ -16,10 +16,9 @@ func init() {
 func checkZC1001(node ast.Node) []Violation {
 	violations := []Violation{}
 
-	if ifExpression, ok := node.(*ast.IfExpression); ok {
-		conditionNode := ifExpression.Condition // Assign to a variable first
+	if ifStatement, ok := node.(*ast.IfStatement); ok {
+		conditionNode := ifStatement.Condition
 		if bracketExp, ok := conditionNode.(*ast.BracketExpression); ok {
-			// The BracketExpression itself holds the token for '['
 			violations = append(violations, Violation{
 				KataID:  "ZC1001",
 				Message: "Prefer [[ over [ for Zsh-specific tests. [[ is a Zsh keyword, offering safer and more powerful conditional expressions.",
