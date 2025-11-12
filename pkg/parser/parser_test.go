@@ -25,9 +25,6 @@ func TestLetStatements(t *testing.T) {
 		program := p.ParseProgram()
 		checkParserErrors(t, p)
 
-		if program == nil {
-			t.Fatalf("ParseProgram() returned nil")
-		}
 		if len(program.Statements) != 1 {
 			t.Fatalf("program.Statements does not contain 1 statement. got=%d",
 				len(program.Statements))
@@ -162,7 +159,7 @@ func TestParsingPrefixExpressions(t *testing.T) {
 		}
 		if exp.Operator != tt.operator {
 			t.Fatalf("exp.Operator is not '%s'. got=%s",
-				tt.operator, exp.Operator)
+				t.operator, exp.Operator)
 		}
 		if !testLiteralExpression(t, exp.Right, tt.expectedValue) {
 			return

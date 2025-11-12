@@ -14,8 +14,8 @@ const (
 	EOF     = "EOF"
 
 	// Identifiers + literals
-	IDENT = "IDENT" // add, foobar, x, y, ...
-	INT   = "INT"   // 1343456
+	IDENT  = "IDENT"  // add, foobar, x, y, ...
+	INT    = "INT"    // 1343456
 	STRING = "STRING" // "hello world"
 
 	// Operators
@@ -37,10 +37,10 @@ const (
 	SEMICOLON = ";"
 	COLON     = ":"
 
-	LPAREN = "("
-	RPAREN = ")"
-	LBRACE = "{"
-	RBRACE = "}"
+	LPAREN   = "("
+	RPAREN   = ")"
+	LBRACE   = "{"
+	RBRACE   = "}"
 	LBRACKET = "["
 	RBRACKET = "]"
 
@@ -52,10 +52,12 @@ const (
 	IF       = "IF"
 	ELSE     = "ELSE"
 	RETURN   = "RETURN"
+	THEN     = "THEN"
+	FI       = "FI"
 
 	// Zsh-specific tokens (initial)
-	DOLLAR = "$"
-	HASH   = "#"
+	DOLLAR    = "$"
+	HASH      = "#"
 	AMPERSAND = "&"
 	PIPE      = "|"
 	BACKTICK  = "`"
@@ -81,6 +83,8 @@ var keywords = map[string]TokenType{
 	"if":       IF,
 	"else":     ELSE,
 	"return":   RETURN,
+	"then":     THEN,
+	"fi":       FI,
 }
 
 func LookupIdent(ident string) TokenType {

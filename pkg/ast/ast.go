@@ -13,13 +13,11 @@ type Node interface {
 
 type Statement interface {
 	Node
-
 	statementNode()
 }
 
 type Expression interface {
 	Node
-
 	expressionNode()
 }
 
@@ -52,23 +50,19 @@ func (ls *LetStatement) statementNode()       {}
 func (ls *LetStatement) TokenLiteral() string { return ls.Token.Literal }
 func (ls *LetStatement) String() string {
 	var out []byte
-
 	out = append(out, []byte(ls.TokenLiteral())...)
 	out = append(out, []byte(" ")...)
 	out = append(out, []byte(ls.Name.String())...)
 	out = append(out, []byte(" = ")...)
-
 	if ls.Value != nil {
 		out = append(out, []byte(ls.Value.String())...)
 	}
-
 	out = append(out, []byte(";")...)
-
 	return string(out)
 }
 
 type ReturnStatement struct {
-	Token token.Token // the token.RETURN token
+	Token       token.Token // the token.RETURN token
 	ReturnValue Expression
 }
 
@@ -76,21 +70,17 @@ func (rs *ReturnStatement) statementNode()       {}
 func (rs *ReturnStatement) TokenLiteral() string { return rs.Token.Literal }
 func (rs *ReturnStatement) String() string {
 	var out []byte
-
 	out = append(out, []byte(rs.TokenLiteral())...)
 	out = append(out, []byte(" ")...)
-
 	if rs.ReturnValue != nil {
 		out = append(out, []byte(rs.ReturnValue.String())...)
 	}
-
 	out = append(out, []byte(";")...)
-
 	return string(out)
 }
 
 type ExpressionStatement struct {
-	Token token.Token // the first token of the expression
+	Token      token.Token // the first token of the expression
 	Expression Expression
 }
 
@@ -140,14 +130,12 @@ func (pe *PrefixExpression) expressionNode()      {}
 func (pe *PrefixExpression) TokenLiteral() string { return pe.Token.Literal }
 func (pe *PrefixExpression) String() string {
 	var out []byte
-
 	out = append(out, []byte("(")...)
 	out = append(out, []byte(pe.Operator)...)
 	if pe.Right != nil {
 		out = append(out, []byte(pe.Right.String())...)
 	}
 	out = append(out, []byte(")")...)
-
 	return string(out)
 }
 
@@ -162,7 +150,6 @@ func (ie *InfixExpression) expressionNode()      {}
 func (ie *InfixExpression) TokenLiteral() string { return ie.Token.Literal }
 func (ie *InfixExpression) String() string {
 	var out []byte
-
 	out = append(out, []byte("(")...)
 	if ie.Left != nil {
 		out = append(out, []byte(ie.Left.String())...)
@@ -174,41 +161,11 @@ func (ie *InfixExpression) String() string {
 		out = append(out, []byte(ie.Right.String())...)
 	}
 	out = append(out, []byte(")")...)
-
-	return string(out)
-}
-
-type IfExpression struct {
-	Token       token.Token // The 'if' token
-	Condition   Expression
-	Consequence *BlockStatement
-	Alternative *BlockStatement
-}
-
-func (ie *IfExpression) expressionNode()      {}
-func (ie *IfExpression) TokenLiteral() string { return ie.Token.Literal }
-func (ie *IfExpression) String() string {
-	var out []byte
-
-	out = append(out, []byte("if")...)
-	if ie.Condition != nil {
-		out = append(out, []byte(ie.Condition.String())...)
-	}
-	out = append(out, []byte(" ")...)
-	if ie.Consequence != nil {
-		out = append(out, []byte(ie.Consequence.String())...)
-	}
-
-	if ie.Alternative != nil {
-		out = append(out, []byte("else ")...)
-		out = append(out, []byte(ie.Alternative.String())...)
-	}
-
 	return string(out)
 }
 
 type BlockStatement struct {
-	Token      token.Token // the { token
+	Token      token.Token // the { token or then token
 	Statements []Statement
 }
 
@@ -216,11 +173,36 @@ func (bs *BlockStatement) statementNode()       {}
 func (bs *BlockStatement) TokenLiteral() string { return bs.Token.Literal }
 func (bs *BlockStatement) String() string {
 	var out []byte
-
 	for _, s := range bs.Statements {
 		out = append(out, []byte(s.String())...)
 	}
+	return string(out)
+}
 
+type IfStatement struct {
+	Token       token.Token // The 'if' token
+	Condition   Expression
+	Consequence *BlockStatement
+	Alternative *BlockStatement
+}
+
+func (is *IfStatement) statementNode()       {}
+func (is *IfStatement) TokenLiteral() string { return is.Token.Literal }
+func (is *IfStatement) String() string {
+	var out []byte
+	out = append(out, []byte("if ")...)
+	if is.Condition != nil {
+		out = append(out, []byte(is.Condition.String())...)
+	}
+	out = append(out, []byte(" then ")...)
+	if is.Consequence != nil {
+		out = append(out, []byte(is.Consequence.String())...)
+	}
+	if is.Alternative != nil {
+		out = append(out, []byte(" else ")...)
+		out = append(out, []byte(is.Alternative.String())...)
+	}
+	out = append(out, []byte(" fi")...)
 	return string(out)
 }
 
@@ -234,19 +216,16 @@ func (fl *FunctionLiteral) expressionNode()      {}
 func (fl *FunctionLiteral) TokenLiteral() string { return fl.Token.Literal }
 func (fl *FunctionLiteral) String() string {
 	var out []byte
-
 	params := []string{}
 	for _, p := range fl.Parameters {
 		params = append(params, p.String())
 	}
-
 	out = append(out, []byte(fl.TokenLiteral())...)
 	out = append(out, []byte("(")...)
 	out = append(out, []byte(strings.Join(params, ", "))...)
 	out = append(out, []byte("){")...)
 	out = append(out, []byte(fl.Body.String())...)
 	out = append(out, []byte("}")...)
-
 	return string(out)
 }
 
@@ -260,17 +239,14 @@ func (ce *CallExpression) expressionNode()      {}
 func (ce *CallExpression) TokenLiteral() string { return ce.Token.Literal }
 func (ce *CallExpression) String() string {
 	var out []byte
-
 	args := []string{}
 	for _, a := range ce.Arguments {
 		args = append(args, a.String())
 	}
-
 	out = append(out, []byte(ce.Function.String())...)
 	out = append(out, []byte("(")...)
 	out = append(out, []byte(strings.Join(args, ", "))...)
 	out = append(out, []byte(")")...)
-
 	return string(out)
 }
 
@@ -284,7 +260,7 @@ func (sl *StringLiteral) TokenLiteral() string { return sl.Token.Literal }
 func (sl *StringLiteral) String() string       { return sl.Token.Literal }
 
 type BracketExpression struct {
-	Token token.Token // The '[' token
+	Token       token.Token // The '[' token
 	Expressions []Expression
 }
 
@@ -302,14 +278,8 @@ func (be *BracketExpression) String() string {
 	return string(out)
 }
 
-// WalkFn is the type of the function called for each node visited by Walk.
-// The return value of WalkFn controls how Walk proceeds.
-// If true, the children of the node are visited.
-// If false, the children of the node are skipped.
 type WalkFn func(node Node) bool
 
-// Walk traverses an AST in depth-first order: it starts by calling f(node);
-// if f returns true, it then calls Walk on each of the children of node.
 func Walk(node Node, f WalkFn) {
 	if node == nil {
 		return
@@ -323,36 +293,24 @@ func Walk(node Node, f WalkFn) {
 		for _, stmt := range n.Statements {
 			Walk(stmt, f)
 		}
-
 	case *LetStatement:
 		Walk(n.Name, f)
 		Walk(n.Value, f)
-
 	case *ReturnStatement:
 		Walk(n.ReturnValue, f)
-
 	case *ExpressionStatement:
 		Walk(n.Expression, f)
-
 	case *BlockStatement:
 		for _, stmt := range n.Statements {
 			Walk(stmt, f)
 		}
-
 	case *Identifier:
-		// Leaf node, nothing to walk further
-
 	case *IntegerLiteral:
-		// Leaf node
-
 	case *Boolean:
-		// Leaf node
-
 	case *PrefixExpression:
 		if n.Right != nil {
 			Walk(n.Right, f)
 		}
-
 	case *InfixExpression:
 		if n.Left != nil {
 			Walk(n.Left, f)
@@ -360,8 +318,7 @@ func Walk(node Node, f WalkFn) {
 		if n.Right != nil {
 			Walk(n.Right, f)
 		}
-
-	case *IfExpression:
+	case *IfStatement:
 		if n.Condition != nil {
 			Walk(n.Condition, f)
 		}
@@ -371,7 +328,6 @@ func Walk(node Node, f WalkFn) {
 		if n.Alternative != nil {
 			Walk(n.Alternative, f)
 		}
-
 	case *FunctionLiteral:
 		for _, param := range n.Parameters {
 			Walk(param, f)
@@ -379,7 +335,6 @@ func Walk(node Node, f WalkFn) {
 		if n.Body != nil {
 			Walk(n.Body, f)
 		}
-
 	case *CallExpression:
 		if n.Function != nil {
 			Walk(n.Function, f)
@@ -387,10 +342,7 @@ func Walk(node Node, f WalkFn) {
 		for _, arg := range n.Arguments {
 			Walk(arg, f)
 		}
-
 	case *StringLiteral:
-		// Leaf node
-
 	case *BracketExpression:
 		for _, exp := range n.Expressions {
 			Walk(exp, f)
