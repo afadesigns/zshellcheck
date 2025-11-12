@@ -315,6 +315,7 @@ func (p *Parser) parseFunctionLiteral() ast.Expression {
 
 	fn.Parameters = p.parseFunctionParameters()
 
+	// The closing RPAREN is consumed here, not in parseFunctionParameters
 	if !p.expectPeek(token.RPAREN) {
 		return nil
 	}
@@ -331,19 +332,20 @@ func (p *Parser) parseFunctionLiteral() ast.Expression {
 func (p *Parser) parseFunctionParameters() []*ast.Identifier {
 	identifiers := []*ast.Identifier{}
 
+	// If the next token is RPAREN, it means no parameters.
+	// We don't consume it here, parseFunctionLiteral will.
 	if p.peekTokenIs(token.RPAREN) {
-		p.nextToken()
 		return identifiers
 	}
 
-	p.nextToken()
+	p.nextToken() // Advance to the first parameter
 
 	ident := &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
 	identifiers = append(identifiers, ident)
 
 	for p.peekTokenIs(token.COMMA) {
-		p.nextToken()
-		p.nextToken()
+		p.nextToken() // Consume the COMMA
+		p.nextToken() // Advance to the next parameter
 		ident := &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
 		identifiers = append(identifiers, ident)
 	}
