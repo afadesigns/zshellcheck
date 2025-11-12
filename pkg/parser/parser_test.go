@@ -162,7 +162,7 @@ func TestParsingPrefixExpressions(t *testing.T) {
 		}
 		if exp.Operator != tt.operator {
 			t.Fatalf("exp.Operator is not '%s'. got=%s",
-				t.operator, exp.Operator)
+				tt.operator, exp.Operator)
 		}
 		if !testLiteralExpression(t, exp.Right, tt.expectedValue) {
 			return
