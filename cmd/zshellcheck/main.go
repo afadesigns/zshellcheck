@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"reflect"
 
 	"github.com/afadesigns/zshellcheck/pkg/ast"
 	"github.com/afadesigns/zshellcheck/pkg/katas"
@@ -42,15 +41,11 @@ func processFile(filename string) {
 		return
 	}
 
+	fmt.Println(program.String()) // Temporarily print AST
+
 	violations := []katas.Violation{}
 	ast.Walk(program, func(node ast.Node) bool {
-		nodeType := reflect.TypeOf(node)
-		if katasForNode, ok := katas.KatasByNodeType[nodeType]; ok {
-			for _, kata := range katasForNode {
-				v := kata.Check(node)
-				violations = append(violations, v...)
-			}
-		}
+		violations = append(violations, katas.Check(node)...)
 		return true // Continue walking
 	})
 
