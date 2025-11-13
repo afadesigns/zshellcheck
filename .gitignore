@@ -29,3 +29,4 @@ go.work
 
 # Build cache
 /build/
+\n# Codex\n.codex\ncodex
