@@ -7,26 +7,14 @@ import (
 func init() {
 	RegisterKata(Kata{
 		ID:          "ZC1001",
-		Title:       "Prefer [[ over [ for Zsh-specific tests",
-		Description: "The [[...]] construct is a Zsh keyword, offering safer and more powerful conditional expressions than the traditional [ command. It prevents word splitting and pathname expansion, and supports advanced features like regex matching.",
+		Title:       "Use ${} for array element access",
+		Description: "In Zsh, accessing array elements with `$my_array[1]` doesn't work as expected. It tries to access an element from an array named `my_array[1]`. The correct way to access an array element is to use `${my_array[1]}`.",
 		Check:       checkZC1001,
 	})
 }
 
 func checkZC1001(node ast.Node) []Violation {
-	violations := []Violation{}
-
-	if ifStatement, ok := node.(*ast.IfStatement); ok {
-		conditionNode := ifStatement.Condition
-		if bracketExp, ok := conditionNode.(*ast.BracketExpression); ok {
-			violations = append(violations, Violation{
-				KataID:  "ZC1001",
-				Message: "Prefer [[ over [ for Zsh-specific tests. [[ is a Zsh keyword, offering safer and more powerful conditional expressions.",
-				Line:    bracketExp.Token.Line,
-				Column:  bracketExp.Token.Column,
-			})
-		}
-	}
-
-	return violations
+	// This is a placeholder implementation.
+	// The actual implementation will require modifications to the parser and AST.
+	return nil
 }
