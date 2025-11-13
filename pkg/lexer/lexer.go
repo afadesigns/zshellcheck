@@ -95,9 +95,23 @@ func (l *Lexer) NextToken() token.Token {
 	case '}':
 		tok = newToken(token.RBRACE, l.ch, l.line, l.column)
 	case '[':
-		tok = newToken(token.LBRACKET, l.ch, l.line, l.column)
+		if l.peekChar() == '[' {
+			ch := l.ch
+			l.readChar()
+			literal := string(ch) + string(l.ch)
+			tok = token.Token{Type: token.LDBRACKET, Literal: literal}
+		} else {
+			tok = newToken(token.LBRACKET, l.ch, l.line, l.column)
+		}
 	case ']':
-		tok = newToken(token.RBRACKET, l.ch, l.line, l.column)
+		if l.peekChar() == ']' {
+			ch := l.ch
+			l.readChar()
+			literal := string(ch) + string(l.ch)
+			tok = token.Token{Type: token.RDBRACKET, Literal: literal}
+		} else {
+			tok = newToken(token.RBRACKET, l.ch, l.line, l.column)
+		}
 	case '$':
 		if l.peekChar() == '{' {
 			ch := l.ch

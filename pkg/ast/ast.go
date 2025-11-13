@@ -278,6 +278,26 @@ func (be *BracketExpression) String() string {
 	return string(out)
 }
 
+type DoubleBracketExpression struct {
+	Token       token.Token // The '[[' token
+	Expressions []Expression
+}
+
+func (dbe *DoubleBracketExpression) expressionNode()      {}
+func (dbe *DoubleBracketExpression) TokenLiteral() string { return dbe.Token.Literal }
+func (dbe *DoubleBracketExpression) String() string {
+	var out []byte
+	out = append(out, []byte("[[")...)
+	args := []string{}
+	for _, e := range dbe.Expressions {
+		args = append(args, e.String())
+	}
+	out = append(out, []byte(strings.Join(args, " "))...)
+	out = append(out, []byte("]]")...)
+	return string(out)
+}
+
+
 type ArrayAccess struct {
 	Token token.Token // The '${' token
 	Left  Expression
@@ -397,6 +417,10 @@ func Walk(node Node, f WalkFn) {
 		}
 	case *StringLiteral:
 	case *BracketExpression:
+		for _, exp := range n.Expressions {
+			Walk(exp, f)
+		}
+	case *DoubleBracketExpression:
 		for _, exp := range n.Expressions {
 			Walk(exp, f)
 		}

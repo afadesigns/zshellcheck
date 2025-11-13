@@ -62,6 +62,7 @@ func New(l *lexer.Lexer) *Parser {
 	p.registerPrefix(token.FUNCTION, p.parseFunctionLiteral)
 	p.registerPrefix(token.STRING, p.parseStringLiteral)
 	p.registerPrefix(token.LBRACKET, p.parseBracketExpression)
+	p.registerPrefix(token.LDBRACKET, p.parseDoubleBracketExpression)
 	p.registerPrefix(token.DOLLAR_LBRACE, p.parseArrayAccess)
 	p.registerPrefix(token.BACKTICK, p.parseCommandSubstitution)
 
@@ -292,6 +293,26 @@ func (p *Parser) parseBracketExpression() ast.Expression {
 		return nil
 	}
 	return &ast.BracketExpression{Token: bracketToken, Expressions: expressions}
+}
+
+func (p *Parser) parseDoubleBracketExpression() ast.Expression {
+	bracketToken := p.curToken
+	p.nextToken()
+	expressions := []ast.Expression{}
+	for !p.curTokenIs(token.RDBRACKET) && !p.curTokenIs(token.EOF) {
+		exp := p.parseExpression(LOWEST)
+		if exp != nil {
+			expressions = append(expressions, exp)
+		}
+		if !p.curTokenIs(token.RDBRACKET) && !p.curTokenIs(token.EOF) {
+			p.nextToken()
+		}
+	}
+	if !p.curTokenIs(token.RDBRACKET) {
+		p.peekError(token.RDBRACKET)
+		return nil
+	}
+	return &ast.DoubleBracketExpression{Token: bracketToken, Expressions: expressions}
 }
 
 func (p *Parser) parseInfixExpression(left ast.Expression) ast.Expression {
