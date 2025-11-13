@@ -21,9 +21,11 @@ type Violation struct {
 }
 
 var KatasByNodeType = make(map[reflect.Type][]Kata)
+var KatasByID = make(map[string]Kata)
 
 func RegisterKata(nodeType reflect.Type, kata Kata) {
 	KatasByNodeType[nodeType] = append(KatasByNodeType[nodeType], kata)
+	KatasByID[kata.ID] = kata
 }
 
 func Check(node ast.Node) []Violation {
@@ -35,4 +37,9 @@ func Check(node ast.Node) []Violation {
 		}
 	}
 	return violations
+}
+
+func GetKata(id string) (Kata, bool) {
+	kata, ok := KatasByID[id]
+	return kata, ok
 }
