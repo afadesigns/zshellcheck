@@ -24,6 +24,10 @@ func TestCheckZC1012(t *testing.T) {
 				},
 			},
 		},
+		{
+			input:    `$(ls)`,
+			expected: []Violation{},
+		},
 	}
 
 	for _, tt := range tests {

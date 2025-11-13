@@ -60,6 +60,7 @@ const (
 	// Zsh-specific tokens (initial)
 	DOLLAR    = "$"
 	DOLLAR_LBRACE = "${"
+	DOLLAR_LPAREN = "$("
 	HASH      = "#"
 	AMPERSAND = "&"
 	PIPE      = "|"

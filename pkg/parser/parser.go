@@ -64,6 +64,7 @@ func New(l *lexer.Lexer) *Parser {
 	p.registerPrefix(token.LBRACKET, p.parseBracketExpression)
 	p.registerPrefix(token.LDBRACKET, p.parseDoubleBracketExpression)
 	p.registerPrefix(token.DOLLAR_LBRACE, p.parseArrayAccess)
+	p.registerPrefix(token.DOLLAR_LPAREN, p.parseDollarParenExpression)
 	p.registerPrefix(token.BACKTICK, p.parseCommandSubstitution)
 
 	p.infixParseFns = make(map[token.TokenType]infixParseFn)
@@ -384,6 +385,16 @@ func (p *Parser) parseCommandSubstitution() ast.Expression {
 	p.nextToken()
 	exp.Command = p.parseExpression(LOWEST)
 	if !p.expectPeek(token.BACKTICK) {
+		return nil
+	}
+	return exp
+}
+
+func (p *Parser) parseDollarParenExpression() ast.Expression {
+	exp := &ast.DollarParenExpression{Token: p.curToken}
+	p.nextToken()
+	exp.Command = p.parseExpression(LOWEST)
+	if !p.expectPeek(token.RPAREN) {
 		return nil
 	}
 	return exp

@@ -331,6 +331,21 @@ func (cs *CommandSubstitution) String() string {
 	return string(out)
 }
 
+type DollarParenExpression struct {
+	Token   token.Token // The '$(' token
+	Command Expression
+}
+
+func (dpe *DollarParenExpression) expressionNode()      {}
+func (dpe *DollarParenExpression) TokenLiteral() string { return dpe.Token.Literal }
+func (dpe *DollarParenExpression) String() string {
+	var out []byte
+	out = append(out, []byte("$(")...)
+	out = append(out, []byte(dpe.Command.String())...)
+	out = append(out, []byte(")")...)
+	return string(out)
+}
+
 type SimpleCommand struct {
 	Token     token.Token // The first token of the command
 	Name      Expression
@@ -428,6 +443,8 @@ func Walk(node Node, f WalkFn) {
 		Walk(n.Left, f)
 		Walk(n.Index, f)
 	case *CommandSubstitution:
+	case *DollarParenExpression:
+		Walk(n.Command, f)
 	case *SimpleCommand:
 		Walk(n.Name, f)
 		for _, arg := range n.Arguments {

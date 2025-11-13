@@ -118,6 +118,11 @@ func (l *Lexer) NextToken() token.Token {
 			l.readChar()
 			literal := string(ch) + string(l.ch)
 			tok = token.Token{Type: token.DOLLAR_LBRACE, Literal: literal}
+		} else if l.peekChar() == '(' {
+			ch := l.ch
+			l.readChar()
+			literal := string(ch) + string(l.ch)
+			tok = token.Token{Type: token.DOLLAR_LPAREN, Literal: literal}
 		} else {
 			tok = newToken(token.DOLLAR, l.ch, l.line, l.column)
 		}
