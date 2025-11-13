@@ -16,9 +16,8 @@ func init() {
 func checkZC1003(node ast.Node) []Violation {
 	violations := []Violation{}
 
-	if ifStatement, ok := node.(*ast.IfStatement); ok {
-		conditionNode := ifStatement.Condition
-		if bracketExp, ok := conditionNode.(*ast.BracketExpression); ok {
+	walkFn := func(node ast.Node) bool {
+		if bracketExp, ok := node.(*ast.BracketExpression); ok {
 			violations = append(violations, Violation{
 				KataID:  "ZC1003",
 				Message: "Prefer [[ over [ for tests. [[ is a Zsh keyword that offers safer and more powerful conditional expressions.",
@@ -26,7 +25,10 @@ func checkZC1003(node ast.Node) []Violation {
 				Column:  bracketExp.Token.Column,
 			})
 		}
+		return true
 	}
+
+	ast.Walk(node, walkFn)
 
 	return violations
 }
