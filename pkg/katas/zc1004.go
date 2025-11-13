@@ -1,11 +1,13 @@
 package katas
 
 import (
-	"github.com.com/afadesigns/zshellcheck/pkg/ast"
+	"reflect"
+
+	"github.com/afadesigns/zshellcheck/pkg/ast"
 )
 
 func init() {
-	RegisterKata(Kata{
+	RegisterKata(reflect.TypeOf(&ast.CallExpression{}), Kata{
 		ID:          "ZC1004",
 		Title:       "Use print instead of echo -e for escaped strings",
 		Description: "The `echo -e` command is not portable and can have unexpected behavior in Zsh. The `print` command is a built-in Zsh command that provides a more reliable and consistent way to print escaped strings.",

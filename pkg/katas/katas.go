@@ -1,6 +1,8 @@
 package katas
 
 import (
+	"reflect"
+
 	"github.com/afadesigns/zshellcheck/pkg/ast"
 )
 
@@ -18,8 +20,8 @@ type Violation struct {
 	Column  int
 }
 
-var AllKatas = []Kata{}
+var KatasByNodeType = make(map[reflect.Type][]Kata)
 
-func RegisterKata(kata Kata) {
-	AllKatas = append(AllKatas, kata)
+func RegisterKata(nodeType reflect.Type, kata Kata) {
+	KatasByNodeType[nodeType] = append(KatasByNodeType[nodeType], kata)
 }

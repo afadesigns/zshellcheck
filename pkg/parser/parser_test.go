@@ -462,6 +462,45 @@ func TestCallExpressionParsing(t *testing.T) {
 	testInfixExpression(t, exp.Arguments[2], 4, "+", 5)
 }
 
+func TestZshSpecificExpressions(t *testing.T) {
+	input := "`${my_array[1]}`"
+
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	if len(program.Statements) != 1 {
+		t.Fatalf("program.Statements does not contain 1 statement. got=%d",
+			len(program.Statements))
+	}
+
+	stmt, ok := program.Statements[0].(*ast.ExpressionStatement)
+	if !ok {
+		t.Fatalf("program.Statements[0] is not ast.ExpressionStatement. got=%T",
+			program.Statements[0])
+	}
+
+	cs, ok := stmt.Expression.(*ast.CommandSubstitution)
+	if !ok {
+		t.Fatalf("stmt.Expression is not ast.CommandSubstitution. got=%T",
+			stmt.Expression)
+	}
+
+	aa, ok := cs.Command.(*ast.ArrayAccess)
+	if !ok {
+		t.Fatalf("cs.Command is not ast.ArrayAccess. got=%T", cs.Command)
+	}
+
+	if !testIdentifier(t, aa.Left, "my_array") {
+		return
+	}
+
+	if !testIntegerLiteral(t, aa.Index, 1) {
+		return
+	}
+}
+
 func checkParserErrors(t *testing.T, p *Parser) {
 	errors := p.Errors()
 	if len(errors) == 0 {

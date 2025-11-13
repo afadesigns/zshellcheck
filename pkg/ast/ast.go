@@ -298,7 +298,7 @@ func (aa *ArrayAccess) String() string {
 
 type CommandSubstitution struct {
 	Token   token.Token // The '`' token
-	Command string
+	Command Expression
 }
 
 func (cs *CommandSubstitution) expressionNode()      {}
@@ -306,7 +306,7 @@ func (cs *CommandSubstitution) TokenLiteral() string { return cs.Token.Literal }
 func (cs *CommandSubstitution) String() string {
 	var out []byte
 	out = append(out, []byte("`")...)
-	out = append(out, []byte(cs.Command)...)
+	out = append(out, []byte(cs.Command.String())...)
 	out = append(out, []byte("`")...)
 	return string(out)
 }

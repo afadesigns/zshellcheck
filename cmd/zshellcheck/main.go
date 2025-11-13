@@ -43,9 +43,12 @@ func processFile(filename string) {
 
 	violations := []katas.Violation{}
 	ast.Walk(program, func(node ast.Node) bool {
-		for _, kata := range katas.AllKatas {
-			v := kata.Check(node)
-			violations = append(violations, v...)
+		nodeType := reflect.TypeOf(node)
+		if katasForNode, ok := katas.KatasByNodeType[nodeType]; ok {
+			for _, kata := range katasForNode {
+				v := kata.Check(node)
+				violations = append(violations, v...)
+			}
 		}
 		return true // Continue walking
 	})
