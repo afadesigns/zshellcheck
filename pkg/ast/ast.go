@@ -311,6 +311,26 @@ func (cs *CommandSubstitution) String() string {
 	return string(out)
 }
 
+type SimpleCommand struct {
+	Token     token.Token // The first token of the command
+	Name      Expression
+	Arguments []Expression
+}
+
+func (sc *SimpleCommand) expressionNode()      {}
+func (sc *SimpleCommand) TokenLiteral() string { return sc.Token.Literal }
+func (sc *SimpleCommand) String() string {
+	var out []byte
+	args := []string{}
+	for _, a := range sc.Arguments {
+		args = append(args, a.String())
+	}
+	out = append(out, []byte(sc.Name.String())...)
+	out = append(out, []byte(" ")...)
+	out = append(out, []byte(strings.Join(args, " "))...)
+	return string(out)
+}
+
 type WalkFn func(node Node) bool
 
 func Walk(node Node, f WalkFn) {
@@ -384,5 +404,10 @@ func Walk(node Node, f WalkFn) {
 		Walk(n.Left, f)
 		Walk(n.Index, f)
 	case *CommandSubstitution:
+	case *SimpleCommand:
+		Walk(n.Name, f)
+		for _, arg := range n.Arguments {
+			Walk(arg, f)
+		}
 	}
 }

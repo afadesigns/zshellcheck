@@ -157,12 +157,18 @@ func (p *Parser) parseReturnStatement() *ast.ReturnStatement {
 }
 
 func (p *Parser) parseExpressionStatement() *ast.ExpressionStatement {
-	if p.curTokenIs(token.SEMICOLON) {
-		p.nextToken()
-		return nil
-	}
 	stmt := &ast.ExpressionStatement{Token: p.curToken}
 	stmt.Expression = p.parseExpression(LOWEST)
+
+	if ident, ok := stmt.Expression.(*ast.Identifier); ok {
+		if !p.peekTokenIs(token.LPAREN) && !p.peekTokenIs(token.SEMICOLON) && !p.peekTokenIs(token.EOF) {
+			cmd := &ast.SimpleCommand{Token: ident.Token, Name: stmt.Expression}
+			p.nextToken()
+			cmd.Arguments = p.parseCommandArguments()
+			stmt.Expression = cmd
+		}
+	}
+
 	if p.peekTokenIs(token.SEMICOLON) {
 		p.nextToken()
 	}
@@ -394,6 +400,16 @@ func (p *Parser) parseCallArguments() []ast.Expression {
 	}
 	if !p.expectPeek(token.RPAREN) {
 		return nil
+	}
+	return args
+}
+
+func (p *Parser) parseCommandArguments() []ast.Expression {
+	args := []ast.Expression{}
+	args = append(args, p.parseExpression(LOWEST))
+	for !p.peekTokenIs(token.SEMICOLON) && !p.peekTokenIs(token.EOF) {
+		p.nextToken()
+		args = append(args, p.parseExpression(LOWEST))
 	}
 	return args
 }

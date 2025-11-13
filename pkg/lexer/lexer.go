@@ -145,12 +145,18 @@ func (l *Lexer) NextToken() token.Token {
 		tok.Type = token.EOF
 	default:
 		if isLetter(l.ch) {
+			line, col := l.line, l.column
 			tok.Literal = l.readIdentifier()
 			tok.Type = token.LookupIdent(tok.Literal)
+			tok.Line = line
+			tok.Column = col
 			return tok
 		} else if isDigit(l.ch) {
+			line, col := l.line, l.column
 			tok.Type = token.INT
 			tok.Literal = l.readNumber()
+			tok.Line = line
+			tok.Column = col
 			return tok
 		} else {
 			tok = newToken(token.ILLEGAL, l.ch, l.line, l.column)

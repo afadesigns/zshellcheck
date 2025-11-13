@@ -37,7 +37,9 @@ func TestCheckZC1005(t *testing.T) {
 
 		violations := []Violation{}
 		ast.Walk(program, func(node ast.Node) bool {
-			violations = append(violations, checkZC1005(node)...)
+			if cmd, ok := node.(*ast.SimpleCommand); ok {
+				violations = append(violations, checkZC1005(cmd)...)
+			}
 			return true
 		})
 
