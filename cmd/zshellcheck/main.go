@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
 
@@ -19,14 +20,14 @@ func main() {
 	}
 
 	for _, filename := range os.Args[1:] {
-		processFile(filename)
+		processFile(filename, os.Stdout, os.Stderr)
 	}
 }
 
-func processFile(filename string) {
+func processFile(filename string, out, errOut io.Writer) {
 	data, err := ioutil.ReadFile(filename)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error reading file %s: %s\n", filename, err)
+		fmt.Fprintf(errOut, "Error reading file %s: %s\n", filename, err)
 		return
 	}
 
@@ -37,7 +38,7 @@ func processFile(filename string) {
 
 	if len(p.Errors()) != 0 {
 		for _, msg := range p.Errors() {
-			fmt.Fprintf(os.Stderr, "Parser Error in %s: %s\n", filename, msg)
+			fmt.Fprintf(errOut, "Parser Error in %s: %s\n", filename, msg)
 		}
 		return
 	}
@@ -49,8 +50,8 @@ func processFile(filename string) {
 	})
 
 	if len(violations) > 0 {
-		fmt.Printf("Violations in %s:\n", filename)
-		reporter := reporter.NewTextReporter(os.Stdout)
+		fmt.Fprintf(out, "Violations in %s:\n", filename)
+		reporter := reporter.NewTextReporter(out)
 		reporter.Report(violations)
 	}
 }
