@@ -337,14 +337,24 @@ func (p *Parser) parseArrayAccess() ast.Expression {
 
 func (p *Parser) parseFunctionLiteral() ast.Expression {
 	lit := &ast.FunctionLiteral{Token: p.curToken}
+
+	// Zsh functions can be anonymous `function() {}` or named `function my_func() {}`
+	if p.peekTokenIs(token.IDENT) {
+		p.nextToken() // consume function name
+	}
+
 	if !p.expectPeek(token.LPAREN) {
 		return nil
 	}
+
 	lit.Parameters = p.parseFunctionParameters()
+
 	if !p.expectPeek(token.LBRACE) {
 		return nil
 	}
+
 	lit.Body = p.parseBlockStatement(token.RBRACE)
+
 	return lit
 }
 
