@@ -62,6 +62,8 @@ func New(l *lexer.Lexer) *Parser {
 	p.registerPrefix(token.FUNCTION, p.parseFunctionLiteral)
 	p.registerPrefix(token.STRING, p.parseStringLiteral)
 	p.registerPrefix(token.LBRACKET, p.parseBracketExpression)
+	p.registerPrefix(token.DOLLAR_LBRACE, p.parseArrayAccess)
+	p.registerPrefix(token.BACKTICK, p.parseCommandSubstitution)
 
 	p.infixParseFns = make(map[token.TokenType]infixParseFn)
 	p.registerInfix(token.PLUS, p.parseInfixExpression)
@@ -302,6 +304,36 @@ func (p *Parser) parseGroupedExpression() ast.Expression {
 	p.nextToken()
 	exp := p.parseExpression(LOWEST)
 	if !p.expectPeek(token.RPAREN) {
+		return nil
+	}
+	return exp
+}
+
+func (p *Parser) parseArrayAccess() ast.Expression {
+	exp := &ast.ArrayAccess{Token: p.curToken}
+	if !p.expectPeek(token.IDENT) {
+		return nil
+	}
+	exp.Left = p.parseIdentifier()
+	if !p.expectPeek(token.LBRACKET) {
+		return nil
+	}
+	p.nextToken()
+	exp.Index = p.parseExpression(LOWEST)
+	if !p.expectPeek(token.RBRACKET) {
+		return nil
+	}
+	if !p.expectPeek(token.RBRACE) {
+		return nil
+	}
+	return exp
+}
+
+func (p *Parser) parseCommandSubstitution() ast.Expression {
+	exp := &ast.CommandSubstitution{Token: p.curToken}
+	p.nextToken()
+	exp.Command = p.curToken.Literal
+	if !p.expectPeek(token.BACKTICK) {
 		return nil
 	}
 	return exp

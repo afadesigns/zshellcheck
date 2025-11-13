@@ -278,6 +278,39 @@ func (be *BracketExpression) String() string {
 	return string(out)
 }
 
+type ArrayAccess struct {
+	Token token.Token // The '${' token
+	Left  Expression
+	Index Expression
+}
+
+func (aa *ArrayAccess) expressionNode()      {}
+func (aa *ArrayAccess) TokenLiteral() string { return aa.Token.Literal }
+func (aa *ArrayAccess) String() string {
+	var out []byte
+	out = append(out, []byte("${")...)
+	out = append(out, []byte(aa.Left.String())...)
+	out = append(out, []byte("[")...)
+	out = append(out, []byte(aa.Index.String())...)
+	out = append(out, []byte("]}")...)
+	return string(out)
+}
+
+type CommandSubstitution struct {
+	Token   token.Token // The '`' token
+	Command string
+}
+
+func (cs *CommandSubstitution) expressionNode()      {}
+func (cs *CommandSubstitution) TokenLiteral() string { return cs.Token.Literal }
+func (cs *CommandSubstitution) String() string {
+	var out []byte
+	out = append(out, []byte("`")...)
+	out = append(out, []byte(cs.Command)...)
+	out = append(out, []byte("`")...)
+	return string(out)
+}
+
 type WalkFn func(node Node) bool
 
 func Walk(node Node, f WalkFn) {
@@ -347,5 +380,9 @@ func Walk(node Node, f WalkFn) {
 		for _, exp := range n.Expressions {
 			Walk(exp, f)
 		}
+	case *ArrayAccess:
+		Walk(n.Left, f)
+		Walk(n.Index, f)
+	case *CommandSubstitution:
 	}
 }

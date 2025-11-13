@@ -14,7 +14,16 @@ func init() {
 }
 
 func checkZC1002(node ast.Node) []Violation {
-	// This is a placeholder implementation.
-	// The actual implementation will require modifications to the parser and AST.
-	return nil
+	violations := []Violation{}
+
+	if commandSubstitution, ok := node.(*ast.CommandSubstitution); ok {
+		violations = append(violations, Violation{
+			KataID:  "ZC1002",
+			Message: "Use $(...) instead of backticks for command substitution. The `$(...)` syntax is more readable and can be nested easily.",
+			Line:    commandSubstitution.Token.Line,
+			Column:  commandSubstitution.Token.Column,
+		})
+	}
+
+	return violations
 }

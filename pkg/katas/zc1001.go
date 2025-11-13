@@ -14,7 +14,16 @@ func init() {
 }
 
 func checkZC1001(node ast.Node) []Violation {
-	// This is a placeholder implementation.
-	// The actual implementation will require modifications to the parser and AST.
-	return nil
+	violations := []Violation{}
+
+	if arrayAccess, ok := node.(*ast.ArrayAccess); ok {
+		violations = append(violations, Violation{
+			KataID:  "ZC1001",
+			Message: "Use ${} for array element access. Accessing array elements with `$my_array[1]` is not the correct syntax in Zsh.",
+			Line:    arrayAccess.Token.Line,
+			Column:  arrayAccess.Token.Column,
+		})
+	}
+
+	return violations
 }
