@@ -65,6 +65,7 @@ func New(l *lexer.Lexer) *Parser {
 	p.registerPrefix(token.LBRACKET, p.parseBracketExpression)
 	p.registerPrefix(token.LDBRACKET, p.parseDoubleBracketExpression)
 	p.registerPrefix(token.DOLLAR_LBRACE, p.parseArrayAccess)
+	p.registerPrefix(token.DOLLAR, p.parseInvalidArrayAccessPrefix)
 	p.registerPrefix(token.DOLLAR_LPAREN, p.parseDollarParenExpression)
 	p.registerPrefix(token.BACKTICK, p.parseCommandSubstitution)
 
@@ -163,22 +164,30 @@ func (p *Parser) parseReturnStatement() *ast.ReturnStatement {
 }
 
 func (p *Parser) parseExpressionStatement() *ast.ExpressionStatement {
-	stmt := &ast.ExpressionStatement{Token: p.curToken}
-	stmt.Expression = p.parseExpression(LOWEST)
+    stmt := &ast.ExpressionStatement{Token: p.curToken}
+    
+    // Check if the current token is an identifier and could be a command
+    if p.curTokenIs(token.IDENT) {
+        // Look ahead to see if it's a command or just an expression
+        if !p.peekTokenIs(token.LPAREN) && !p.peekTokenIs(token.ASSIGN) {
+            cmd := &ast.SimpleCommand{Token: p.curToken, Name: p.parseIdentifier()}
+            
+            // Check if there are arguments
+            if !p.peekTokenIs(token.SEMICOLON) && !p.peekTokenIs(token.EOF) {
+                p.nextToken()
+                cmd.Arguments = p.parseCommandArguments()
+            }
+            
+            stmt.Expression = cmd
+            return stmt
+        }
+    }
 
-	if ident, ok := stmt.Expression.(*ast.Identifier); ok {
-		if !p.peekTokenIs(token.LPAREN) && !p.peekTokenIs(token.SEMICOLON) && !p.peekTokenIs(token.EOF) && !p.peekTokenIs(token.PIPE) {
-			cmd := &ast.SimpleCommand{Token: ident.Token, Name: stmt.Expression}
-			p.nextToken()
-			cmd.Arguments = p.parseCommandArguments()
-			stmt.Expression = cmd
-		}
-	}
-
-	if p.peekTokenIs(token.SEMICOLON) {
-		p.nextToken()
-	}
-	return stmt
+    stmt.Expression = p.parseExpression(LOWEST)
+    if p.peekTokenIs(token.SEMICOLON) {
+        p.nextToken()
+    }
+    return stmt
 }
 
 func (p *Parser) parseIfStatement() *ast.IfStatement {
@@ -361,6 +370,32 @@ func (p *Parser) parseArrayAccess() ast.Expression {
 	return exp
 }
 
+func (p *Parser) parseInvalidArrayAccessPrefix() ast.Expression {
+    dollarToken := p.curToken
+    if !p.expectPeek(token.IDENT) {
+        return nil
+    }
+    
+    ident := &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
+
+    if !p.peekTokenIs(token.LBRACKET) {
+        return &ast.PrefixExpression{Token: dollarToken, Operator: "$", Right: ident}
+    }
+
+    p.nextToken()
+
+    exp := &ast.InvalidArrayAccess{Token: dollarToken, Left: ident}
+
+    p.nextToken()
+    exp.Index = p.parseExpression(LOWEST)
+
+    if !p.expectPeek(token.RBRACKET) {
+        return nil
+    }
+
+    return exp
+}
+
 func (p *Parser) parseFunctionLiteral() ast.Expression {
 	lit := &ast.FunctionLiteral{Token: p.curToken}
 
@@ -452,10 +487,9 @@ func (p *Parser) parseCallArguments() []ast.Expression {
 
 func (p *Parser) parseCommandArguments() []ast.Expression {
 	args := []ast.Expression{}
-	args = append(args, p.parseExpression(LOWEST))
-	for !p.peekTokenIs(token.SEMICOLON) && !p.peekTokenIs(token.EOF) {
-		p.nextToken()
+	for !p.curTokenIs(token.SEMICOLON) && !p.curTokenIs(token.EOF) {
 		args = append(args, p.parseExpression(LOWEST))
+		p.nextToken()
 	}
 	return args
 }

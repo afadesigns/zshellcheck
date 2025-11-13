@@ -22,9 +22,11 @@ func checkZC1017(node ast.Node) []Violation {
 		if name, ok := cmd.Name.(*ast.Identifier); ok && name.Value == "print" {
 			hasRFlag := false
 			for _, arg := range cmd.Arguments {
-				if ident, ok := arg.(*ast.Identifier); ok && ident.Value == "-r" {
-					hasRFlag = true
-					break
+				if prefix, ok := arg.(*ast.PrefixExpression); ok && prefix.Operator == "-" {
+					if ident, ok := prefix.Right.(*ast.Identifier); ok && ident.Value == "r" {
+						hasRFlag = true
+						break
+					}
 				}
 			}
 			if !hasRFlag {

@@ -316,6 +316,24 @@ func (aa *ArrayAccess) String() string {
 	return string(out)
 }
 
+type InvalidArrayAccess struct {
+	Token token.Token // The '$' token
+	Left  Expression
+	Index Expression
+}
+
+func (iaa *InvalidArrayAccess) expressionNode()      {}
+func (iaa *InvalidArrayAccess) TokenLiteral() string { return iaa.Token.Literal }
+func (iaa *InvalidArrayAccess) String() string {
+	var out []byte
+	out = append(out, []byte("$")...)
+	out = append(out, []byte(iaa.Left.String())...)
+	out = append(out, []byte("[")...)
+	out = append(out, []byte(iaa.Index.String())...)
+	out = append(out, []byte("]")...)
+	return string(out)
+}
+
 type CommandSubstitution struct {
 	Token   token.Token // The ` or $() token
 	Command Expression
@@ -447,6 +465,9 @@ func Walk(node Node, f WalkFn) {
 			Walk(exp, f)
 		}
 	case *ArrayAccess:
+		Walk(n.Left, f)
+		Walk(n.Index, f)
+	case *InvalidArrayAccess:
 		Walk(n.Left, f)
 		Walk(n.Index, f)
 	case *CommandSubstitution:
