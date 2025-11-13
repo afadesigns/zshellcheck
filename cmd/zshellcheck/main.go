@@ -9,6 +9,7 @@ import (
 	"github.com/afadesigns/zshellcheck/pkg/katas"
 	"github.com/afadesigns/zshellcheck/pkg/lexer"
 	"github.com/afadesigns/zshellcheck/pkg/parser"
+	"github.com/afadesigns/zshellcheck/pkg/reporter"
 )
 
 func main() {
@@ -41,8 +42,6 @@ func processFile(filename string) {
 		return
 	}
 
-	fmt.Println(program.String()) // Temporarily print AST
-
 	violations := []katas.Violation{}
 	ast.Walk(program, func(node ast.Node) bool {
 		violations = append(violations, katas.Check(node)...)
@@ -51,8 +50,7 @@ func processFile(filename string) {
 
 	if len(violations) > 0 {
 		fmt.Printf("Violations in %s:\n", filename)
-		for _, v := range violations {
-			fmt.Printf("  %s:%d:%d: [%s] %s\n", filename, v.Line, v.Column, v.KataID, v.Message)
-		}
+		reporter := reporter.NewTextReporter(os.Stdout)
+		reporter.Report(violations)
 	}
 }
