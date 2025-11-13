@@ -30,6 +30,7 @@ var precedences = map[token.TokenType]int{
 	token.SLASH:    PRODUCT,
 	token.ASTERISK: PRODUCT,
 	token.LPAREN:   CALL,
+	token.PIPE:     CALL,
 }
 
 type (
@@ -77,6 +78,7 @@ func New(l *lexer.Lexer) *Parser {
 	p.registerInfix(token.LT, p.parseInfixExpression)
 	p.registerInfix(token.GT, p.parseInfixExpression)
 	p.registerInfix(token.LPAREN, p.parseCallExpression)
+	p.registerInfix(token.PIPE, p.parseInfixExpression)
 
 	p.nextToken()
 	p.nextToken()
@@ -124,6 +126,8 @@ func (p *Parser) parseStatement() ast.Statement {
 		return p.parseReturnStatement()
 	case token.IF:
 		return p.parseIfStatement()
+	case token.SHEBANG:
+		return p.parseShebangStatement()
 	default:
 		return p.parseExpressionStatement()
 	}
@@ -163,7 +167,7 @@ func (p *Parser) parseExpressionStatement() *ast.ExpressionStatement {
 	stmt.Expression = p.parseExpression(LOWEST)
 
 	if ident, ok := stmt.Expression.(*ast.Identifier); ok {
-		if !p.peekTokenIs(token.LPAREN) && !p.peekTokenIs(token.SEMICOLON) && !p.peekTokenIs(token.EOF) {
+		if !p.peekTokenIs(token.LPAREN) && !p.peekTokenIs(token.SEMICOLON) && !p.peekTokenIs(token.EOF) && !p.peekTokenIs(token.PIPE) {
 			cmd := &ast.SimpleCommand{Token: ident.Token, Name: stmt.Expression}
 			p.nextToken()
 			cmd.Arguments = p.parseCommandArguments()
@@ -184,16 +188,16 @@ func (p *Parser) parseIfStatement() *ast.IfStatement {
 	if p.peekTokenIs(token.SEMICOLON) {
 		p.nextToken()
 	}
-		if !p.expectPeek(token.THEN) {
-			return nil
-		}
-		p.nextToken() // consume "then"
-		stmt.Consequence = p.parseBlockStatement(token.ELSE, token.FI)
-	
-		if p.curTokenIs(token.ELSE) {
-			p.nextToken() // consume "else"
-			stmt.Alternative = p.parseBlockStatement(token.FI)
-		}
+	if !p.expectPeek(token.THEN) {
+		return nil
+	}
+	p.nextToken() // consume "then"
+	stmt.Consequence = p.parseBlockStatement(token.ELSE, token.FI)
+
+	if p.curTokenIs(token.ELSE) {
+		p.nextToken() // consume "else"
+		stmt.Alternative = p.parseBlockStatement(token.FI)
+	}
 	if !p.curTokenIs(token.FI) {
 		p.peekError(token.FI)
 		return nil
@@ -454,6 +458,10 @@ func (p *Parser) parseCommandArguments() []ast.Expression {
 		args = append(args, p.parseExpression(LOWEST))
 	}
 	return args
+}
+
+func (p *Parser) parseShebangStatement() *ast.Shebang {
+	return &ast.Shebang{Token: p.curToken, Path: p.curToken.Literal}
 }
 
 func (p *Parser) curTokenIs(t token.TokenType) bool {

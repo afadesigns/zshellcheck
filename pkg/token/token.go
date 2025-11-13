@@ -69,6 +69,7 @@ const (
 	CARET     = "^"
 	PERCENT   = "%"
 	DOT       = "."
+	SHEBANG   = "#!"
 
 	// Zsh-specific operators (initial)
 	AND = "&&"

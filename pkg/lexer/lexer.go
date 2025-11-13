@@ -127,6 +127,11 @@ func (l *Lexer) NextToken() token.Token {
 			tok = newToken(token.DOLLAR, l.ch, l.line, l.column)
 		}
 	case '#':
+		if l.peekChar() == '!' {
+			tok.Type = token.SHEBANG
+			tok.Literal = l.readShebang()
+			return tok
+		}
 		tok = newToken(token.HASH, l.ch, l.line, l.column)
 	case '&':
 		if l.peekChar() == '&' {
@@ -209,6 +214,14 @@ func (l *Lexer) readString() string {
 		if l.ch == '"' || l.ch == 0 {
 			break
 		}
+	}
+	return l.input[position:l.position]
+}
+
+func (l *Lexer) readShebang() string {
+	position := l.position
+	for l.ch != '\n' && l.ch != 0 {
+		l.readChar()
 	}
 	return l.input[position:l.position]
 }

@@ -317,18 +317,25 @@ func (aa *ArrayAccess) String() string {
 }
 
 type CommandSubstitution struct {
-	Token   token.Token // The '`' token
+	Token   token.Token // The ` or $() token
 	Command Expression
 }
 
 func (cs *CommandSubstitution) expressionNode()      {}
 func (cs *CommandSubstitution) TokenLiteral() string { return cs.Token.Literal }
 func (cs *CommandSubstitution) String() string {
-	var out []byte
-	out = append(out, []byte("`")...)
-	out = append(out, []byte(cs.Command.String())...)
-	out = append(out, []byte("`")...)
-	return string(out)
+	return "`" + cs.Command.String() + "`"
+}
+
+type Shebang struct {
+	Token token.Token // The #! token
+	Path  string
+}
+
+func (s *Shebang) statementNode()       {}
+func (s *Shebang) TokenLiteral() string { return s.Token.Literal }
+func (s *Shebang) String() string {
+	return s.Token.Literal
 }
 
 type DollarParenExpression struct {
