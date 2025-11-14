@@ -142,7 +142,7 @@ func (p *Parser) parseStatement() ast.Statement {
 	default:
 		return p.parseExpressionStatement()
 	}
-	return nil
+
 }
 
 func (p *Parser) parseLetStatement() *ast.LetStatement {
@@ -174,19 +174,28 @@ func (p *Parser) parseReturnStatement() *ast.ReturnStatement {
 }
 
 func (p *Parser) parseExpressionStatement() *ast.ExpressionStatement {
+	fmt.Printf("parseExpressionStatement: curToken=%+v\n", p.curToken)
 	stmt := &ast.ExpressionStatement{Token: p.curToken}
 
 	if p.curTokenIs(token.IDENT) {
 		// This is a potential command
-		cmd := &ast.SimpleCommand{Token: p.curToken, Name: p.parseIdentifier()}
-		if !p.peekTokenIs(token.SEMICOLON) && !p.peekTokenIs(token.EOF) {
-			p.nextToken()
-			cmd.Arguments = p.parseCommandArguments()
+		if !p.peekTokenIs(token.LPAREN) && !p.peekTokenIs(token.ASSIGN) {
+			cmd := &ast.SimpleCommand{Token: p.curToken, Name: p.parseIdentifier()}
+			if !p.peekTokenIs(token.SEMICOLON) && !p.peekTokenIs(token.EOF) {
+				p.nextToken()
+				cmd.Arguments = p.parseCommandArguments()
+			}
+			stmt.Expression = cmd
+			if p.peekTokenIs(token.SEMICOLON) {
+				p.nextToken()
+			}
+			fmt.Printf("Created SimpleCommand: %+v\n", cmd)
+			return stmt
 		}
-		stmt.Expression = cmd
-	} else {
-		stmt.Expression = p.parseExpression(LOWEST)
 	}
+
+	stmt.Expression = p.parseExpression(LOWEST)
+	fmt.Printf("Created Expression: %+v\n", stmt.Expression)
 
 	if p.peekTokenIs(token.SEMICOLON) {
 		p.nextToken()

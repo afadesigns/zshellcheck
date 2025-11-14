@@ -4,7 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"io"
-	"io/ioutil"
+	"os"
 	"os"
 
 	"github.com/afadesigns/zshellcheck/pkg/ast"
@@ -62,6 +62,8 @@ func processFile(filename string, out, errOut io.Writer, format string) {
 			fmt.Fprintf(out, "Violations in %s:\n", filename)
 			r = reporter.NewTextReporter(out)
 		}
-		r.Report(violations)
+		if err := r.Report(violations); err != nil {
+			log.Fatalf("Error reporting violations: %v", err)
+		}
 	}
 }

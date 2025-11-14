@@ -60,6 +60,8 @@ const (
 	FI       = "FI"
 	FOR      = "FOR"
 	DONE     = "DONE"
+	CASE     = "CASE"
+	ESAC     = "ESAC"
 
 	// Zsh-specific tokens (initial)
 	DOLLAR        = "$"
@@ -96,6 +98,8 @@ var keywords = map[string]TokenType{
 	"fi":       FI,
 	"for":      FOR,
 	"done":     DONE,
+	"case":     CASE,
+	"esac":     ESAC,
 }
 
 func LookupIdent(ident string) TokenType {

@@ -257,6 +257,48 @@ func (fls *ForLoopStatement) String() string {
 	return string(out)
 }
 
+type CaseStatement struct {
+	Token      token.Token // The 'case' token
+	Expression Expression
+	Clauses    []*CaseClause
+}
+
+func (cs *CaseStatement) statementNode()       {}
+func (cs *CaseStatement) TokenLiteral() string { return cs.Token.Literal }
+func (cs *CaseStatement) String() string {
+	var out []byte
+	out = append(out, []byte("case ")...)
+	out = append(out, []byte(cs.Expression.String())...)
+	out = append(out, []byte(" in")...)
+	for _, c := range cs.Clauses {
+		out = append(out, []byte(c.String())...)
+	}
+	out = append(out, []byte("esac")...)
+	return string(out)
+}
+
+type CaseClause struct {
+	Token   token.Token // The pattern token
+	Pattern []Expression
+	Body    *BlockStatement
+}
+
+func (cc *CaseClause) statementNode()       {}
+func (cc *CaseClause) TokenLiteral() string { return cc.Token.Literal }
+func (cc *CaseClause) String() string {
+	var out []byte
+	for i, p := range cc.Pattern {
+		if i > 0 {
+			out = append(out, []byte(" | ")...)
+		}
+		out = append(out, []byte(p.String())...)
+	}
+	out = append(out, []byte(") ")...)
+	out = append(out, []byte(cc.Body.String())...)
+	out = append(out, []byte(";;")...)
+	return string(out)
+}
+
 type FunctionLiteral struct {
 	Token      token.Token // The 'fn' token
 	Parameters []*Identifier
@@ -500,6 +542,16 @@ func Walk(node Node, f WalkFn) {
 		Walk(n.Init, f)
 		Walk(n.Condition, f)
 		Walk(n.Post, f)
+		Walk(n.Body, f)
+	case *CaseStatement:
+		Walk(n.Expression, f)
+		for _, c := range n.Clauses {
+			Walk(c, f)
+		}
+	case *CaseClause:
+		for _, p := range n.Pattern {
+			Walk(p, f)
+		}
 		Walk(n.Body, f)
 	case *FunctionLiteral:
 		for _, param := range n.Parameters {
