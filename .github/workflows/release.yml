@@ -19,6 +19,13 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Generate Changelog
+        id: changelog
+        uses: TriPSs/conventional-changelog-action@v5
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          output-file: "CHANGELOG.md"
+
       - name: Set up Go
         uses: actions/setup-go@v5.0.2
         with:
@@ -29,26 +36,35 @@ jobs:
         with:
           version: latest
           args: release --clean
-                env:
-                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-                  GOROOT: /usr/local/go
-                  GOPATH: /home/runner/go
-        
-              - name: Install cosign
-                uses: sigstore/cosign-installer@v3.5.0
-        
-              - name: Sign artifacts
-                env:
-                  COSIGN_EXPERIMENTAL: "1"
-                run: |
-                  cd dist
-                  for file in *; do
-                    cosign sign-blob --yes "$file" --output-signature "$file.sig"
-                  done
-                  cd ..
-                
-              - name: Generate SLSA provenance
-                uses: slsa-framework/slsa-github-generator@v1.10.0
-                with:
-                  attestation_subject_path: "dist/*"
-        
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GOROOT: /usr/local/go
+          GOPATH: /home/runner/go
+
+      - name: Install cosign
+        uses: sigstore/cosign-installer@v3.5.0
+
+      - name: Sign artifacts
+        env:
+          COSIGN_EXPERIMENTAL: "1"
+        run: |
+          cd dist
+          for file in *; do
+            cosign sign-blob --yes "$file" --output-signature "$file.sig"
+          done
+          cd ..
+
+      - name: Generate SLSA provenance
+        uses: slsa-framework/slsa-github-generator@v1.10.0
+        with:
+          attestation_subject_path: "dist/*"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2.0.6
+        with:
+          body: ${{ steps.changelog.outputs.changelog }}
+          files: |
+            dist/*
+            dist/*.sig
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
