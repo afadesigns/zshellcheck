@@ -39,6 +39,9 @@ jobs:
       - name: Go Tidy
         run: go mod tidy
 
+      - name: Scan for vulnerabilities
+        run: govulncheck ./...
+
       - name: Go Vet
         run: go vet ./...
 
