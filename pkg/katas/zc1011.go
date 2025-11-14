@@ -10,6 +10,10 @@ var plumbingCommands = map[string]string{
 	"rev-parse":    "git-rev-parse",
 	"update-ref":   "git-update-ref",
 	"symbolic-ref": "git-symbolic-ref",
+	"cat-file":     "git-cat-file",
+	"hash-object":  "git-hash-object",
+	"write-tree":   "git-write-tree",
+	"commit-tree":  "git-commit-tree",
 }
 
 func init() {

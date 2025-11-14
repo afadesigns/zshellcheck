@@ -175,7 +175,18 @@ func (p *Parser) parseReturnStatement() *ast.ReturnStatement {
 
 func (p *Parser) parseExpressionStatement() *ast.ExpressionStatement {
 	stmt := &ast.ExpressionStatement{Token: p.curToken}
-	stmt.Expression = p.parseExpression(LOWEST)
+
+	if p.curTokenIs(token.IDENT) {
+		// This is a potential command
+		cmd := &ast.SimpleCommand{Token: p.curToken, Name: p.parseIdentifier()}
+		if !p.peekTokenIs(token.SEMICOLON) && !p.peekTokenIs(token.EOF) {
+			p.nextToken()
+			cmd.Arguments = p.parseCommandArguments()
+		}
+		stmt.Expression = cmd
+	} else {
+		stmt.Expression = p.parseExpression(LOWEST)
+	}
 
 	if p.peekTokenIs(token.SEMICOLON) {
 		p.nextToken()

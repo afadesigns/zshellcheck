@@ -25,6 +25,17 @@ func TestCheckZC1011(t *testing.T) {
 			},
 		},
 		{
+			input: `git update-ref HEAD`,
+			expected: []Violation{
+				{
+					KataID:  "ZC1011",
+					Message: "Avoid using `git` plumbing commands in scripts. They are not guaranteed to be stable.",
+					Line:    1,
+					Column:  1,
+				},
+			},
+		},
+		{
 			input:    `git branch`,
 			expected: []Violation{},
 		},
