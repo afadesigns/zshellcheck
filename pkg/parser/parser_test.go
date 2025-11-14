@@ -635,3 +635,27 @@ func testBooleanLiteral(t *testing.T, exp ast.Expression, value bool) bool {
 	}
 	return true
 }
+
+func TestForLoopStatement(t *testing.T) {
+	input := `for ((i=0; i<10; i++)); do echo $i; done`
+
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	if len(program.Statements) != 1 {
+		t.Fatalf("program.Statements does not contain 1 statement. got=%d",
+			len(program.Statements))
+	}
+
+	stmt, ok := program.Statements[0].(*ast.ForLoopStatement)
+	if !ok {
+		t.Fatalf("program.Statements[0] is not ast.ForLoopStatement. got=%T",
+			program.Statements[0])
+	}
+
+	if stmt.TokenLiteral() != "for" {
+		t.Errorf("stmt.TokenLiteral not 'for', got %q", stmt.TokenLiteral())
+	}
+}

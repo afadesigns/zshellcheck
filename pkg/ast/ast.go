@@ -139,6 +139,25 @@ func (pe *PrefixExpression) String() string {
 	return string(out)
 }
 
+type PostfixExpression struct {
+	Token    token.Token // The operator token, e.g. ++
+	Left     Expression
+	Operator string
+}
+
+func (pe *PostfixExpression) expressionNode()      {}
+func (pe *PostfixExpression) TokenLiteral() string { return pe.Token.Literal }
+func (pe *PostfixExpression) String() string {
+	var out []byte
+	out = append(out, []byte("(")...)
+	if pe.Left != nil {
+		out = append(out, []byte(pe.Left.String())...)
+	}
+	out = append(out, []byte(pe.Operator)...)
+	out = append(out, []byte(")")...)
+	return string(out)
+}
+
 type InfixExpression struct {
 	Token    token.Token // The operator token, e.g. +
 	Left     Expression
@@ -203,6 +222,38 @@ func (is *IfStatement) String() string {
 		out = append(out, []byte(is.Alternative.String())...)
 	}
 	out = append(out, []byte(" fi")...)
+	return string(out)
+}
+
+type ForLoopStatement struct {
+	Token     token.Token // The 'for' token
+	Init      Expression
+	Condition Expression
+	Post      Expression
+	Body      *BlockStatement
+}
+
+func (fls *ForLoopStatement) statementNode()       {}
+func (fls *ForLoopStatement) TokenLiteral() string { return fls.Token.Literal }
+func (fls *ForLoopStatement) String() string {
+	var out []byte
+	out = append(out, []byte("for ((")...)
+	if fls.Init != nil {
+		out = append(out, []byte(fls.Init.String())...)
+	}
+	out = append(out, []byte("; ")...)
+	if fls.Condition != nil {
+		out = append(out, []byte(fls.Condition.String())...)
+	}
+	out = append(out, []byte("; ")...)
+	if fls.Post != nil {
+		out = append(out, []byte(fls.Post.String())...)
+	}
+	out = append(out, []byte(")); do ")...)
+	if fls.Body != nil {
+		out = append(out, []byte(fls.Body.String())...)
+	}
+	out = append(out, []byte("done")...)
 	return string(out)
 }
 
@@ -424,6 +475,10 @@ func Walk(node Node, f WalkFn) {
 		if n.Right != nil {
 			Walk(n.Right, f)
 		}
+	case *PostfixExpression:
+		if n.Left != nil {
+			Walk(n.Left, f)
+		}
 	case *InfixExpression:
 		if n.Left != nil {
 			Walk(n.Left, f)
@@ -441,6 +496,11 @@ func Walk(node Node, f WalkFn) {
 		if n.Alternative != nil {
 			Walk(n.Alternative, f)
 		}
+	case *ForLoopStatement:
+		Walk(n.Init, f)
+		Walk(n.Condition, f)
+		Walk(n.Post, f)
+		Walk(n.Body, f)
 	case *FunctionLiteral:
 		for _, param := range n.Parameters {
 			Walk(param, f)

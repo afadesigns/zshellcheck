@@ -25,6 +25,8 @@ const (
 	BANG     = "!"
 	ASTERISK = "*"
 	SLASH    = "/"
+	INC      = "++"
+	DEC      = "--"
 
 	LT = "<"
 	GT = ">"
@@ -33,18 +35,18 @@ const (
 	NOT_EQ = "!="
 
 	// Delimiters
-	COMMA     = ","
-	SEMICOLON = ";"
-	COLON     = ":"
-
-	LPAREN   = "("
-	RPAREN   = ")"
-	LBRACE   = "{"
-	RBRACE   = "}"
-	LBRACKET = "["
-	RBRACKET = "]"
-	LDBRACKET = "[["
-	RDBRACKET = "]]"
+	COMMA         = ","
+	SEMICOLON     = ";"
+	COLON         = ":"
+	LPAREN        = "("
+	RPAREN        = ")"
+	LBRACE        = "{"
+	RBRACE        = "}"
+	LBRACKET      = "["
+	RBRACKET      = "]"
+	LDBRACKET     = "[["
+	RDBRACKET     = "]]"
+	DOUBLE_LPAREN = "(("
 
 	// Keywords
 	FUNCTION = "FUNCTION"
@@ -56,20 +58,22 @@ const (
 	RETURN   = "RETURN"
 	THEN     = "THEN"
 	FI       = "FI"
+	FOR      = "FOR"
+	DONE     = "DONE"
 
 	// Zsh-specific tokens (initial)
-	DOLLAR    = "$"
+	DOLLAR        = "$"
 	DOLLAR_LBRACE = "${"
 	DOLLAR_LPAREN = "$("
-	HASH      = "#"
-	AMPERSAND = "&"
-	PIPE      = "|"
-	BACKTICK  = "`"
-	TILDE     = "~"
-	CARET     = "^"
-	PERCENT   = "%"
-	DOT       = "."
-	SHEBANG   = "#!"
+	HASH          = "#"
+	AMPERSAND     = "&"
+	PIPE          = "|"
+	BACKTICK      = "`"
+	TILDE         = "~"
+	CARET         = "^"
+	PERCENT       = "%"
+	DOT           = "."
+	SHEBANG       = "#!"
 
 	// Zsh-specific operators (initial)
 	AND = "&&"
@@ -90,6 +94,8 @@ var keywords = map[string]TokenType{
 	"return":   RETURN,
 	"then":     THEN,
 	"fi":       FI,
+	"for":      FOR,
+	"done":     DONE,
 }
 
 func LookupIdent(ident string) TokenType {

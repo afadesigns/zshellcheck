@@ -64,15 +64,36 @@ func (l *Lexer) NextToken() token.Token {
 	case ':':
 		tok = newToken(token.COLON, l.ch, l.line, l.column)
 	case '(': 
-		tok = newToken(token.LPAREN, l.ch, l.line, l.column)
+		if l.peekChar() == '(' {
+			ch := l.ch
+			l.readChar()
+			literal := string(ch) + string(l.ch)
+			tok = token.Token{Type: token.DOUBLE_LPAREN, Literal: literal}
+		} else {
+			tok = newToken(token.LPAREN, l.ch, l.line, l.column)
+		}
 	case ')':
 		tok = newToken(token.RPAREN, l.ch, l.line, l.column)
 	case ',':
 		tok = newToken(token.COMMA, l.ch, l.line, l.column)
 	case '+':
-		tok = newToken(token.PLUS, l.ch, l.line, l.column)
+		if l.peekChar() == '+' {
+			ch := l.ch
+			l.readChar()
+			literal := string(ch) + string(l.ch)
+			tok = token.Token{Type: token.INC, Literal: literal}
+		} else {
+			tok = newToken(token.PLUS, l.ch, l.line, l.column)
+		}
 	case '-':
-		tok = newToken(token.MINUS, l.ch, l.line, l.column)
+		if l.peekChar() == '-' {
+			ch := l.ch
+			l.readChar()
+			literal := string(ch) + string(l.ch)
+			tok = token.Token{Type: token.DEC, Literal: literal}
+		} else {
+			tok = newToken(token.MINUS, l.ch, l.line, l.column)
+		}
 	case '!':
 		if l.peekChar() == '=' {
 			ch := l.ch

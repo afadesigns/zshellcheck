@@ -18,6 +18,7 @@ const (
 	PRODUCT     // *
 	PREFIX      // -X or !X
 	CALL        // myFunction(X)
+	POSTFIX     // i++
 )
 
 var precedences = map[token.TokenType]int{
@@ -31,6 +32,9 @@ var precedences = map[token.TokenType]int{
 	token.ASTERISK: PRODUCT,
 	token.LPAREN:   CALL,
 	token.PIPE:     CALL,
+	token.ASSIGN:   EQUALS,
+	token.INC:      POSTFIX,
+	token.DEC:      POSTFIX,
 }
 
 type (
@@ -67,6 +71,7 @@ func New(l *lexer.Lexer) *Parser {
 	p.registerPrefix(token.DOLLAR_LBRACE, p.parseArrayAccess)
 	p.registerPrefix(token.DOLLAR, p.parseInvalidArrayAccessPrefix)
 	p.registerPrefix(token.DOLLAR_LPAREN, p.parseDollarParenExpression)
+	p.registerPrefix(token.DOUBLE_LPAREN, p.parseDoubleParenExpression)
 	p.registerPrefix(token.BACKTICK, p.parseCommandSubstitution)
 
 	p.infixParseFns = make(map[token.TokenType]infixParseFn)
@@ -80,6 +85,9 @@ func New(l *lexer.Lexer) *Parser {
 	p.registerInfix(token.GT, p.parseInfixExpression)
 	p.registerInfix(token.LPAREN, p.parseCallExpression)
 	p.registerInfix(token.PIPE, p.parseInfixExpression)
+	p.registerInfix(token.ASSIGN, p.parseInfixExpression)
+	p.registerInfix(token.INC, p.parsePostfixExpression)
+	p.registerInfix(token.DEC, p.parsePostfixExpression)
 
 	p.nextToken()
 	p.nextToken()
@@ -129,6 +137,8 @@ func (p *Parser) parseStatement() ast.Statement {
 		return p.parseIfStatement()
 	case token.SHEBANG:
 		return p.parseShebangStatement()
+	case token.FOR:
+		return p.parseForLoopStatement()
 	default:
 		return p.parseExpressionStatement()
 	}
@@ -164,30 +174,13 @@ func (p *Parser) parseReturnStatement() *ast.ReturnStatement {
 }
 
 func (p *Parser) parseExpressionStatement() *ast.ExpressionStatement {
-    stmt := &ast.ExpressionStatement{Token: p.curToken}
-    
-    // Check if the current token is an identifier and could be a command
-    if p.curTokenIs(token.IDENT) {
-        // Look ahead to see if it's a command or just an expression
-        if !p.peekTokenIs(token.LPAREN) && !p.peekTokenIs(token.ASSIGN) {
-            cmd := &ast.SimpleCommand{Token: p.curToken, Name: p.parseIdentifier()}
-            
-            // Check if there are arguments
-            if !p.peekTokenIs(token.SEMICOLON) && !p.peekTokenIs(token.EOF) {
-                p.nextToken()
-                cmd.Arguments = p.parseCommandArguments()
-            }
-            
-            stmt.Expression = cmd
-            return stmt
-        }
-    }
+	stmt := &ast.ExpressionStatement{Token: p.curToken}
+	stmt.Expression = p.parseExpression(LOWEST)
 
-    stmt.Expression = p.parseExpression(LOWEST)
-    if p.peekTokenIs(token.SEMICOLON) {
-        p.nextToken()
-    }
-    return stmt
+	if p.peekTokenIs(token.SEMICOLON) {
+		p.nextToken()
+	}
+	return stmt
 }
 
 func (p *Parser) parseIfStatement() *ast.IfStatement {
@@ -287,6 +280,10 @@ func (p *Parser) parsePrefixExpression() ast.Expression {
 	p.nextToken()
 	expression.Right = p.parseExpression(PREFIX)
 	return expression
+}
+
+func (p *Parser) parsePostfixExpression(left ast.Expression) ast.Expression {
+	return &ast.PostfixExpression{Token: p.curToken, Left: left, Operator: p.curToken.Literal}
 }
 
 func (p *Parser) parseBracketExpression() ast.Expression {
@@ -496,6 +493,64 @@ func (p *Parser) parseCommandArguments() []ast.Expression {
 
 func (p *Parser) parseShebangStatement() *ast.Shebang {
 	return &ast.Shebang{Token: p.curToken, Path: p.curToken.Literal}
+}
+
+func (p *Parser) parseForLoopStatement() *ast.ForLoopStatement {
+	stmt := &ast.ForLoopStatement{Token: p.curToken}
+
+	if !p.expectPeek(token.DOUBLE_LPAREN) {
+		return nil
+	}
+
+	p.nextToken()
+	stmt.Init = p.parseExpression(LOWEST)
+	p.nextToken()
+
+	if !p.curTokenIs(token.SEMICOLON) {
+		return nil
+	}
+	p.nextToken()
+
+	stmt.Condition = p.parseExpression(LOWEST)
+	p.nextToken()
+
+	if !p.curTokenIs(token.SEMICOLON) {
+		return nil
+	}
+	p.nextToken()
+
+	stmt.Post = p.parseExpression(LOWEST)
+
+	if !p.expectPeek(token.RPAREN) {
+		return nil
+	}
+	if !p.expectPeek(token.RPAREN) {
+		return nil
+	}
+	if !p.expectPeek(token.SEMICOLON) {
+		return nil
+	}
+
+	if !p.expectPeek(token.IDENT) || p.curToken.Literal != "do" {
+		return nil
+	}
+
+	p.nextToken()
+	stmt.Body = p.parseBlockStatement(token.DONE)
+
+	return stmt
+}
+
+func (p *Parser) parseDoubleParenExpression() ast.Expression {
+	p.nextToken()
+	exp := p.parseExpression(LOWEST)
+	if !p.expectPeek(token.RPAREN) {
+		return nil
+	}
+	if !p.expectPeek(token.RPAREN) {
+		return nil
+	}
+	return exp
 }
 
 func (p *Parser) curTokenIs(t token.TokenType) bool {
