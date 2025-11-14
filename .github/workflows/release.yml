@@ -29,12 +29,26 @@ jobs:
         with:
           version: latest
           args: release --clean
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GOROOT: /usr/local/go
-          GOPATH: /home/runner/go
+                env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+                  GOROOT: /usr/local/go
+                  GOPATH: /home/runner/go
         
-      - name: Generate SLSA provenance
-        uses: slsa-framework/slsa-github-generator@v1.10.0
-        with:
-          attestation_subject_path: "dist/*"
+              - name: Install cosign
+                uses: sigstore/cosign-installer@v3.5.0
+        
+              - name: Sign artifacts
+                env:
+                  COSIGN_EXPERIMENTAL: "1"
+                run: |
+                  cd dist
+                  for file in *; do
+                    cosign sign-blob --yes "$file" --output-signature "$file.sig"
+                  done
+                  cd ..
+                
+              - name: Generate SLSA provenance
+                uses: slsa-framework/slsa-github-generator@v1.10.0
+                with:
+                  attestation_subject_path: "dist/*"
+        
