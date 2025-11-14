@@ -139,11 +139,63 @@ func (p *Parser) parseStatement() ast.Statement {
 		return p.parseShebangStatement()
 	case token.FOR:
 		return p.parseForLoopStatement()
+	case token.IDENT:
+		if p.peekTokenIs(token.IDENT) || p.peekTokenIs(token.STRING) || p.peekTokenIs(token.INT) || p.peekTokenIs(token.MINUS) || p.peekTokenIs(token.DOT) {
+			return p.parseSimpleCommandStatement()
+		}
+		return p.parseExpressionStatement()
 	default:
 		return p.parseExpressionStatement()
 	}
-	return nil
 }
+
+func (p *Parser) parseSimpleCommandStatement() ast.Statement {
+	stmt := &ast.ExpressionStatement{Token: p.curToken}
+
+	stmt.Expression = p.parseCommandPipeline()
+
+	if p.peekTokenIs(token.SEMICOLON) {
+		p.nextToken()
+	}
+
+	return stmt
+}
+
+func (p *Parser) parseCommandPipeline() ast.Expression {
+	left := p.parseSingleCommand()
+
+	if p.peekTokenIs(token.PIPE) {
+		p.nextToken() // consume '|'
+		op := p.curToken
+		p.nextToken() // move to the start of the next command
+		right := p.parseCommandPipeline()
+		left = &ast.InfixExpression{
+			Token:    op,
+			Operator: op.Literal,
+			Left:     left,
+			Right:    right,
+		}
+	}
+
+	return left
+}
+
+func (p *Parser) parseSingleCommand() ast.Expression {
+	cmd := &ast.SimpleCommand{
+		Token: p.curToken,
+		Name:  &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal},
+	}
+	cmd.Arguments = []ast.Expression{}
+
+	for !p.peekTokenIs(token.EOF) && !p.peekTokenIs(token.SEMICOLON) && !p.peekTokenIs(token.PIPE) && !p.peekTokenIs(token.RPAREN) && p.peekToken.Line == p.curToken.Line {
+		p.nextToken()
+		arg := p.parseExpression(PREFIX)
+		cmd.Arguments = append(cmd.Arguments, arg)
+	}
+
+	return cmd
+}
+
 
 func (p *Parser) parseLetStatement() *ast.LetStatement {
 	stmt := &ast.LetStatement{Token: p.curToken}
