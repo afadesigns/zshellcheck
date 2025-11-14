@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -14,17 +15,20 @@ import (
 )
 
 func main() {
-	if len(os.Args) < 2 {
-		fmt.Println("Usage: zshellcheck <file1.zsh> [file2.zsh]...")
+	format := flag.String("format", "text", "The output format (text or json)")
+	flag.Parse()
+
+	if len(flag.Args()) < 1 {
+		fmt.Println("Usage: zshellcheck [flags] <file1.zsh> [file2.zsh]...")
 		os.Exit(1)
 	}
 
-	for _, filename := range os.Args[1:] {
-		processFile(filename, os.Stdout, os.Stderr)
+	for _, filename := range flag.Args() {
+		processFile(filename, os.Stdout, os.Stderr, *format)
 	}
 }
 
-func processFile(filename string, out, errOut io.Writer) {
+func processFile(filename string, out, errOut io.Writer, format string) {
 	data, err := ioutil.ReadFile(filename)
 	if err != nil {
 		fmt.Fprintf(errOut, "Error reading file %s: %s\n", filename, err)
@@ -50,8 +54,14 @@ func processFile(filename string, out, errOut io.Writer) {
 	})
 
 	if len(violations) > 0 {
-		fmt.Fprintf(out, "Violations in %s:\n", filename)
-		reporter := reporter.NewTextReporter(out)
-		reporter.Report(violations)
+		var r reporter.Reporter
+		switch format {
+		case "json":
+			r = reporter.NewJSONReporter(out)
+		default:
+			fmt.Fprintf(out, "Violations in %s:\n", filename)
+			r = reporter.NewTextReporter(out)
+		}
+		r.Report(violations)
 	}
 }
