@@ -21,15 +21,15 @@ jobs:
         go-version: ["1.21", "1.22"]
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4.1.7
+        uses: actions/checkout@v5
 
       - name: Set up Go
-        uses: actions/setup-go@v5.0.2
+        uses: actions/setup-go@v6
         with:
           go-version: ${{ matrix.go-version }}
 
       - name: Cache Go modules
-        uses: actions/cache@v4.0.2
+        uses: actions/cache@v4.3.0
         with:
           path: ~/go/pkg/mod
           key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
@@ -47,7 +47,7 @@ jobs:
 
       - name: Upload coverage to Codecov
         if: runner.os == 'Linux'
-        uses: codecov/codecov-action@v4.5.0
+        uses: codecov/codecov-action@v5.5.1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: ./coverage.out
@@ -60,15 +60,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4.1.7
+        uses: actions/checkout@v5
 
       - name: Set up Go
-        uses: actions/setup-go@v5.0.2
+        uses: actions/setup-go@v6
         with:
           go-version: "1.22"
 
       - name: golangci-lint
-        uses: golangci/golangci-lint-action@v6.0.1
+        uses: golangci/golangci-lint-action@v9.0.0
         with:
           version: latest
 
@@ -77,10 +77,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4.1.7
+        uses: actions/checkout@v5
 
       - name: Set up Go
-        uses: actions/setup-go@v5.0.2
+        uses: actions/setup-go@v6
         with:
           go-version: '1.22'
 
@@ -96,18 +96,18 @@ jobs:
       security-events: write
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4.1.7
+        uses: actions/checkout@v5
 
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@v3.25.11
+        uses: github/codeql-action/init@v4.31.3
         with:
           languages: go
 
       - name: Autobuild
-        uses: github/codeql-action/autobuild@v3.25.11
+        uses: github/codeql-action/autobuild@v4.31.3
 
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v3.25.11
+        uses: github/codeql-action/analyze@v4.31.3
 
       - name: Semgrep
         uses: semgrep/semgrep-action@v2.5.0
