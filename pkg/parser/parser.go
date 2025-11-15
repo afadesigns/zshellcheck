@@ -140,6 +140,9 @@ func (p *Parser) parseStatement() ast.Statement {
 	case token.FOR:
 		return p.parseForLoopStatement()
 	case token.IDENT:
+		if p.curToken.Literal == "test" {
+			return p.parseSimpleCommandStatement()
+		}
 		if p.peekTokenIs(token.IDENT) || p.peekTokenIs(token.STRING) || p.peekTokenIs(token.INT) || p.peekTokenIs(token.MINUS) || p.peekTokenIs(token.DOT) {
 			return p.parseSimpleCommandStatement()
 		}
