@@ -31,3 +31,4 @@ func checkZC1030(node ast.Node) []Violation {
 
 	return violations
 }
+

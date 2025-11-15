@@ -33,8 +33,10 @@ func TestCheckZC1036(t *testing.T) {
 
 		var violations []Violation
 		ast.Walk(program, func(node ast.Node) bool {
-			if _, ok := node.(*ast.SimpleCommand); ok {
-				violations = append(violations, checkZC1036(node)...)
+			for _, v := range Check(node) {
+				if v.KataID == "ZC1036" {
+					violations = append(violations, v)
+				}
 			}
 			return true
 		})

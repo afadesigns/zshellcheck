@@ -1,8 +1,6 @@
 package katas
 
 import (
-	"io/ioutil"
-	"reflect"
 	"testing"
 
 	"github.com/afadesigns/zshellcheck/pkg/ast"
@@ -10,47 +8,49 @@ import (
 	"github.com/afadesigns/zshellcheck/pkg/parser"
 )
 
-func testFile(t *testing.T, filepath string, kataIDs []string, expectedViolations []Violation) {
-	data, err := ioutil.ReadFile(filepath)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	l := lexer.New(string(data))
+// check is the single, authoritative test helper. It parses a string,
+// walks the resulting AST, and runs the non-recursive Check function on
+// every node, returning all found violations. This perfectly mimics the
+// application's main execution loop.
+func check(input string, kataID string) []Violation {
+	l := lexer.New(input)
 	p := parser.New(l)
 	program := p.ParseProgram()
 
-	violations := []Violation{}
+	var violations []Violation
 	ast.Walk(program, func(node ast.Node) bool {
-		nodeType := reflect.TypeOf(node)
-		if katas, ok := KatasByNodeType[nodeType]; ok {
-			for _, kata := range katas {
-				for _, id := range kataIDs {
-					if kata.ID == id {
-						violations = append(violations, kata.Check(node)...)
-					}
-				}
+		foundViolations := Check(node)
+		for _, v := range foundViolations {
+			if v.KataID == kataID {
+				violations = append(violations, v)
 			}
 		}
 		return true
 	})
+	return violations
+}
 
-	if len(violations) != len(expectedViolations) {
-		t.Fatalf("Expected %d violations, got %d", len(expectedViolations), len(violations))
+// assertViolations checks that the violations found by the linter match
+// the expected violations.
+func assertViolations(t *testing.T, input string, violations []Violation, expected []Violation) {
+	t.Helper()
+
+	if len(violations) != len(expected) {
+		t.Fatalf("Expected %d violations, but got %d for input:\n%s", len(expected), len(violations), input)
 	}
 
 	for i, v := range violations {
-		if v.KataID != expectedViolations[i].KataID {
-			t.Errorf("Expected KataID %s, got %s", expectedViolations[i].KataID, v.KataID)
+		if v.KataID != expected[i].KataID {
+			t.Errorf("Violation %d: Expected KataID %s, got %s", i, expected[i].KataID, v.KataID)
 		}
-		if v.Message != expectedViolations[i].Message {
-			t.Errorf("Expected Message %s, got %s", expectedViolations[i].Message, v.Message)
+		if v.Message != expected[i].Message {
+			t.Errorf("Violation %d: Expected Message %q, got %q", i, expected[i].Message, v.Message)
 		}
-		if v.Line != expectedViolations[i].Line {
-			t.Errorf("Expected Line %d, got %d", expectedViolations[i].Line, v.Line)
+		if v.Line != expected[i].Line {
+			t.Errorf("Violation %d: Expected Line %d, got %d", i, expected[i].Line, v.Line)
 		}
-		if v.Column != expectedViolations[i].Column {
-			t.Errorf("Expected Column %d, got %d", expectedViolations[i].Column, v.Column)
+		if v.Column != expected[i].Column {
+			t.Errorf("Violation %d: Expected Column %d, got %d", i, expected[i].Column, v.Column)
 		}
 	}
 }

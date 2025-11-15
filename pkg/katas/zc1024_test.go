@@ -35,7 +35,7 @@ func TestCheckZC1024(t *testing.T) {
 		p := parser.New(l)
 		program := p.ParseProgram()
 
-		violations := []Violation{}
+		var violations []Violation
 		ast.Walk(program, func(node ast.Node) bool {
 			for _, v := range Check(node) {
 				if v.KataID == "ZC1024" {
