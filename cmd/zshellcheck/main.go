@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 
 	"github.com/afadesigns/zshellcheck/pkg/ast"
@@ -41,7 +40,7 @@ func loadConfig(path string) (Config, error) {
 		return config, nil
 	}
 
-	data, err := ioutil.ReadFile(path)
+	data, err := os.ReadFile(path)
 	if err != nil {
 		return config, err
 	}
@@ -55,7 +54,7 @@ func loadConfig(path string) (Config, error) {
 }
 
 func processFile(filename string, out, errOut io.Writer, config Config) {
-	data, err := ioutil.ReadFile(filename)
+	data, err := os.ReadFile(filename)
 	if err != nil {
 		fmt.Fprintf(errOut, "Error reading file %s: %s\n", filename, err)
 		return
@@ -82,6 +81,8 @@ func processFile(filename string, out, errOut io.Writer, config Config) {
 	if len(violations) > 0 {
 		fmt.Fprintf(out, "Violations in %s:\n", filename)
 		reporter := reporter.NewTextReporter(out)
-		reporter.Report(violations)
+		if err := reporter.Report(violations); err != nil {
+			fmt.Fprintf(errOut, "Error reporting violations: %s\n", err)
+		}
 	}
 }

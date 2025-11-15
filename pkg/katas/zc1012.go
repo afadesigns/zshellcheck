@@ -8,10 +8,11 @@ import (
 
 func init() {
 	RegisterKata(reflect.TypeOf(&ast.CommandSubstitution{}), Kata{
-		ID:          "ZC1012",
-		Title:       "Use `$(command)` instead of backticks for command substitution",
-		Description: "The `$(command)` syntax is generally preferred over backticks `` `command` `` for command substitution. It's easier to read, can be nested, and avoids issues with backslashes.",
-		Check:       checkZC1012,
+		ID:    "ZC1012",
+		Title: "Use `$(command)` instead of backticks for command substitution",
+		Description: "The `$(command)` syntax is generally preferred over backticks `` `command` `` for " +
+			"command substitution. It's easier to read, can be nested, and avoids issues with backslashes.",
+		Check: checkZC1012,
 	})
 }
 

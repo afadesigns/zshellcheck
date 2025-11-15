@@ -37,7 +37,7 @@ func TestCheckZC1026(t *testing.T) {
 
 		var violations []Violation
 		ast.Walk(program, func(node ast.Node) bool {
-			for _, v := range Check(node) {
+			for _, v := range Check(node, []string{}) {
 				if v.KataID == "ZC1026" {
 					violations = append(violations, v)
 				}

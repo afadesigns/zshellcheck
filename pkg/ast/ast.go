@@ -348,7 +348,6 @@ func (dbe *DoubleBracketExpression) String() string {
 	return string(out)
 }
 
-
 type ArrayAccess struct {
 	Token token.Token // The '${' token
 	Left  Expression

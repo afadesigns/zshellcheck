@@ -10,7 +10,8 @@ func init() {
 	RegisterKata(reflect.TypeOf(&ast.CommandSubstitution{}), Kata{
 		ID:          "ZC1015",
 		Title:       "Use `$(...)` for command substitution instead of backticks",
-		Description: "The `$(...)` syntax is the modern, recommended way to perform command substitution. It is more readable and can be nested easily, unlike backticks.",
+		Description: "The `$(...)` syntax is the modern, recommended way to perform command substitution. " +
+			"It is more readable and can be nested easily, unlike backticks.",
 		Check:       checkZC1015,
 	})
 }

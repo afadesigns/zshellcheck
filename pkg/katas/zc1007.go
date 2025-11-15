@@ -8,10 +8,11 @@ import (
 
 func init() {
 	RegisterKata(reflect.TypeOf(&ast.SimpleCommand{}), Kata{
-		ID:          "ZC1007",
-		Title:       "Avoid using `chmod 777`",
-		Description: "Using `chmod 777` is a security risk as it gives read, write, and execute permissions to everyone. It's better to use more restrictive permissions.",
-		Check:       checkZC1007,
+		ID:    "ZC1007",
+		Title: "Avoid using `chmod 777`",
+		Description: "Using `chmod 777` is a security risk as it gives read, write, and execute " +
+			"permissions to everyone. It's better to use more restrictive permissions.",
+		Check: checkZC1007,
 	})
 }
 

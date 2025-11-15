@@ -10,7 +10,8 @@ func init() {
 	RegisterKata(reflect.TypeOf(&ast.LetStatement{}), Kata{
 		ID:          "ZC1025",
 		Title:       "Use `$((...))` for arithmetic expansion",
-		Description: "The `$((...))` syntax is the modern, recommended way to perform arithmetic expansion. It is more readable and can be nested easily, unlike `let`.",
+		Description: "The `$((...))` syntax is the modern, recommended way to perform arithmetic expansion. " +
+			"It is more readable and can be nested easily, unlike `let`.",
 		Check:       checkZC1025,
 	})
 }

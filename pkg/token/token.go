@@ -1,9 +1,9 @@
 package token
 
-type TokenType string
+type Type string
 
 type Token struct {
-	Type    TokenType
+	Type    Type
 	Literal string
 	Line    int
 	Column  int
@@ -31,39 +31,39 @@ const (
 	LT = "<"
 	GT = ">"
 
-	EQ     = "=="
-	NOT_EQ = "!="
+	EQ    = "=="
+	NotEq = "!="
 
 	// Delimiters
-	COMMA         = ","
-	SEMICOLON     = ";"
-	COLON         = ":"
-	LPAREN        = "("
-	RPAREN        = ")"
-	LBRACE        = "{"
-	RBRACE        = "}"
-	LBRACKET      = "["
-	RBRACKET      = "]"
-	LDBRACKET     = "[["
-	RDBRACKET     = "]]"
-	DOUBLE_LPAREN = "(("
+	COMMA        = ","
+	SEMICOLON    = ";"
+	COLON        = ":"
+	LPAREN       = "("
+	RPAREN       = ")"
+	LBRACE       = "{"
+	RBRACE       = "}"
+	LBRACKET     = "["
+	RBRACKET     = "]"
+	LDBRACKET    = "[["
+	RDBRACKET    = "]]"
+	DoubleLparen = "(("
 
 	// Keywords
 	FUNCTION = "FUNCTION"
 	LET      = "LET"
 	TRUE     = "TRUE"
 	FALSE    = "FALSE"
-	IF       = "IF"
+	If       = "IF"
 	ELSE     = "ELSE"
 	RETURN   = "RETURN"
 	THEN     = "THEN"
-	FI       = "FI"
+	Fi       = "FI"
 	FOR      = "FOR"
 	DONE     = "DONE"
 
 	// Zsh-specific tokens (initial)
 	DOLLAR        = "$"
-	DOLLAR_LBRACE = "${"
+	DollarLbrace  = "${"
 	DOLLAR_LPAREN = "$("
 	VARIABLE      = "VARIABLE"
 	HASH          = "#"
@@ -85,21 +85,21 @@ const (
 	RARRAY = ")"
 )
 
-var keywords = map[string]TokenType{
+var keywords = map[string]Type{
 	"function": FUNCTION,
 	"let":      LET,
 	"true":     TRUE,
 	"false":    FALSE,
-	"if":       IF,
+	"if":       If,
 	"else":     ELSE,
 	"return":   RETURN,
 	"then":     THEN,
-	"fi":       FI,
+	"fi":       Fi,
 	"for":      FOR,
 	"done":     DONE,
 }
 
-func LookupIdent(ident string) TokenType {
+func LookupIdent(ident string) Type {
 	if tok, ok := keywords[ident]; ok {
 		return tok
 	}

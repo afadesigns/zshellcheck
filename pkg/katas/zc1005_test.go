@@ -18,7 +18,8 @@ func TestCheckZC1005(t *testing.T) {
 			expected: []Violation{
 				{
 					KataID:  "ZC1005",
-					Message: "Use whence instead of which. The `whence` command is a built-in Zsh command that provides a more reliable and consistent way to find the location of a command.",
+					Message: "Use whence instead of which. The `whence` command is a built-in Zsh command " +
+						"that provides a more reliable and consistent way to find the location of a command.",
 					Line:    1,
 					Column:  1,
 				},

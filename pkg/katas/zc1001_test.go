@@ -25,7 +25,8 @@ func TestZC1001(t *testing.T) {
 			expected: []Violation{
 				{
 					KataID:  "ZC1001",
-					Message: "Use ${} for array element access. Accessing array elements with `$my_array[1]` is not the correct syntax in Zsh.",
+					Message: "Use ${} for array element access. " +
+						"Accessing array elements with `$my_array[1]` is not the correct syntax in Zsh.",
 					Line:    1,
 					Column:  6,
 				},

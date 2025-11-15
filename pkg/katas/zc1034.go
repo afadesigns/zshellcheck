@@ -10,7 +10,9 @@ func init() {
 	RegisterKata(reflect.TypeOf(&ast.ExpressionStatement{}), Kata{
 		ID:          "ZC1034",
 		Title:       "Use `command -v` instead of `which`",
-		Description: "`which` is an external command and may not be available or consistent across all systems. `command -v` is a POSIX standard and a shell builtin, making it more portable and reliable for checking if a command exists.",
+		Description: "`which` is an external command and may not be available or consistent across all " +
+			"systems. `command -v` is a POSIX standard and a shell builtin, making it more portable " +
+			"and reliable for checking if a command exists.",
 		Check:       checkZC1034,
 	})
 }

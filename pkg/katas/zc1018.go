@@ -10,7 +10,9 @@ func init() {
 	RegisterKata(reflect.TypeOf(&ast.SimpleCommand{}), Kata{
 		ID:          "ZC1018",
 		Title:       "Use `((...))` for C-style arithmetic instead of `expr`",
-		Description: "The `((...))` construct in Zsh allows for C-style arithmetic. It is generally more efficient and readable than using `expr` or other external commands for arithmetic.",
+		Description: "The `((...))` construct in Zsh allows for C-style arithmetic. " +
+			"It is generally more efficient and readable than using `expr` or other " +
+			"external commands for arithmetic.",
 		Check:       checkZC1018,
 	})
 }

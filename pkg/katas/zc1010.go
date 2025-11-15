@@ -8,10 +8,12 @@ import (
 
 func init() {
 	RegisterKata(reflect.TypeOf(&ast.BracketExpression{}), Kata{
-		ID:          "ZC1010",
-		Title:       "Use `[[ ... ]]` instead of `[ ... ]`",
-		Description: "The `[[ ... ]]` construct is a Zsh keyword and is generally safer and more powerful than the `[ ... ]` command (which is an alias for `test`). `[[ ... ]]` prevents word splitting and pathname expansion, and supports advanced features like regex matching.",
-		Check:       checkZC1010,
+		ID:    "ZC1010",
+		Title: "Use `[[ ... ]]` instead of `[ ... ]`",
+		Description: "The `[[ ... ]]` construct is a Zsh keyword and is generally safer and more powerful " +
+			"than the `[ ... ]` command (which is an alias for `test`). `[[ ... ]]` prevents word " +
+			"splitting and pathname expansion, and supports advanced features like regex matching.",
+		Check: checkZC1010,
 	})
 }
 

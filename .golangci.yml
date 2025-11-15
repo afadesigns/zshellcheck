@@ -1,0 +1,20 @@
+run:
+  tests: true
+
+linters:
+  disable-all: true
+  enable:
+    - errcheck
+    - gosimple
+    - govet
+    - ineffassign
+    - staticcheck
+    - unused
+    - gofumpt
+    - gocritic
+    - lll
+    - misspell
+
+linters-settings:
+  lll:
+    line-length: 120

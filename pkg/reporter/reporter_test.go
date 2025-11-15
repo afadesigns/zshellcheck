@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"testing"
 
-	"github.com/afadesigns/zshellcheck/pkg/katas"
 	"github.com/afadesigns/zshellcheck/pkg/ast"
+	"github.com/afadesigns/zshellcheck/pkg/katas"
 	"reflect"
 )
 

@@ -10,7 +10,9 @@ func init() {
 	RegisterKata(reflect.TypeOf(&ast.SimpleCommand{}), Kata{
 		ID:          "ZC1019",
 		Title:       "Use `whence` instead of `which`",
-		Description: "The `which` command is an external command and may not be available on all systems. The `whence` command is a built-in Zsh command that provides a more reliable and consistent way to find the location of a command.",
+		Description: "The `which` command is an external command and may not be available on all systems. " +
+			"The `whence` command is a built-in Zsh command that provides a more reliable and consistent " +
+			"way to find the location of a command.",
 		Check:       checkZC1019,
 	})
 }

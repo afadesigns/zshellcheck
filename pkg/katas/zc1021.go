@@ -10,7 +10,8 @@ func init() {
 	RegisterKata(reflect.TypeOf(&ast.SimpleCommand{}), Kata{
 		ID:          "ZC1021",
 		Title:       "Use symbolic permissions with `chmod` instead of octal",
-		Description: "Symbolic permissions (e.g., `u+x`) are more readable and less error-prone than octal permissions (e.g., `755`).",
+		Description: "Symbolic permissions (e.g., `u+x`) are more readable and less error-prone than " +
+			"octal permissions (e.g., `755`).",
 		Check:       checkZC1021,
 	})
 }

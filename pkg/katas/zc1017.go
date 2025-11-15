@@ -10,7 +10,8 @@ func init() {
 	RegisterKata(reflect.TypeOf(&ast.SimpleCommand{}), Kata{
 		ID:          "ZC1017",
 		Title:       "Use `print -r` to print strings literally",
-		Description: "The `print` command interprets backslash escape sequences by default. To print a string literally, use the `-r` option.",
+		Description: "The `print` command interprets backslash escape sequences by default. " +
+			"To print a string literally, use the `-r` option.",
 		Check:       checkZC1017,
 	})
 }

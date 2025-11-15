@@ -10,7 +10,8 @@ func init() {
 	RegisterKata(reflect.TypeOf(&ast.LetStatement{}), Kata{
 		ID:          "ZC1032",
 		Title:       "Use `((...))` for C-style incrementing",
-		Description: "Instead of `let i=i+1`, you can use the more concise and idiomatic C-style increment `(( i++ ))` in Zsh.",
+		Description: "Instead of `let i=i+1`, you can use the more concise and idiomatic C-style " +
+			"increment `(( i++ ))` in Zsh.",
 		Check:       checkZC1032,
 	})
 }

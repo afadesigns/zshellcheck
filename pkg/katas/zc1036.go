@@ -10,7 +10,9 @@ func init() {
 	RegisterKata(reflect.TypeOf(&ast.SimpleCommand{}), Kata{
 		ID:          "ZC1036",
 		Title:       "Prefer `[[ ... ]]` over `test` command",
-		Description: "The `[[ ... ]]` construct is a more powerful and safer alternative to the `test` command (or `[ ... ]`) for conditional expressions in modern shells. It handles word splitting and globbing more intuitively and supports advanced features like regex matching.",
+		Description: "The `[[ ... ]]` construct is a more powerful and safer alternative to the `test` " +
+			"command (or `[ ... ]`) for conditional expressions in modern shells. It handles word " +
+			"splitting and globbing more intuitively and supports advanced features like regex matching.",
 		Check:       checkZC1036,
 	})
 }

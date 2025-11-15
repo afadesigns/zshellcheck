@@ -26,7 +26,7 @@ func TestLetStatements(t *testing.T) {
 
 		if len(program.Statements) != 1 {
 			t.Fatalf("program.Statements does not contain 1 statement. got=%d",
-				len(program.Statements)) 
+				len(program.Statements))
 		}
 
 		stmt := program.Statements[0]
@@ -337,7 +337,7 @@ func TestIfElseStatement(t *testing.T) {
 		t.Fatalf("alternative is not 1 statement. got=%d", len(stmt.Alternative.Statements))
 	}
 
-alternative, ok := stmt.Alternative.Statements[0].(*ast.ReturnStatement)
+	alternative, ok := stmt.Alternative.Statements[0].(*ast.ReturnStatement)
 	if !ok {
 		t.Fatalf("Alternative.Statements[0] is not ast.ReturnStatement. got=%T", stmt.Alternative.Statements[0])
 	}

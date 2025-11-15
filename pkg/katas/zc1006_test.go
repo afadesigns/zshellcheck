@@ -18,7 +18,8 @@ func TestCheckZC1006(t *testing.T) {
 			expected: []Violation{
 				{
 					KataID:  "ZC1006",
-					Message: "Prefer [[ over test for tests. [[ is a Zsh keyword that offers safer and more powerful conditional expressions.",
+					Message: "Prefer [[ over test for tests. " +
+						"[[ is a Zsh keyword that offers safer and more powerful conditional expressions.",
 					Line:    1,
 					Column:  1,
 				},
