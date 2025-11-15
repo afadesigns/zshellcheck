@@ -135,15 +135,17 @@ func (l *Lexer) NextToken() token.Token {
 		}
 	case '$':
 		if l.peekChar() == '{' {
-			ch := l.ch
+			tok.Type = token.DOLLAR_LBRACE
+			tok.Literal = "${"
 			l.readChar()
-			literal := string(ch) + string(l.ch)
-			tok = token.Token{Type: token.DOLLAR_LBRACE, Literal: literal}
 		} else if l.peekChar() == '(' {
-			ch := l.ch
+			tok.Type = token.DOLLAR_LPAREN
+			tok.Literal = "$("
 			l.readChar()
-			literal := string(ch) + string(l.ch)
-			tok = token.Token{Type: token.DOLLAR_LPAREN, Literal: literal}
+		} else if isLetter(l.peekChar()) {
+			tok.Type = token.VARIABLE
+			tok.Literal = "$" + l.readIdentifier()
+			return tok
 		} else {
 			tok = newToken(token.DOLLAR, l.ch, l.line, l.column)
 		}

@@ -70,6 +70,7 @@ func New(l *lexer.Lexer) *Parser {
 	p.registerPrefix(token.LDBRACKET, p.parseDoubleBracketExpression)
 	p.registerPrefix(token.DOLLAR_LBRACE, p.parseArrayAccess)
 	p.registerPrefix(token.DOLLAR, p.parseInvalidArrayAccessPrefix)
+	p.registerPrefix(token.VARIABLE, p.parseIdentifier)
 	p.registerPrefix(token.DOLLAR_LPAREN, p.parseDollarParenExpression)
 	p.registerPrefix(token.DOUBLE_LPAREN, p.parseDoubleParenExpression)
 	p.registerPrefix(token.BACKTICK, p.parseCommandSubstitution)

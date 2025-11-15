@@ -16,19 +16,31 @@ func init() {
 }
 
 func checkZC1030(node ast.Node) []Violation {
-	violations := []Violation{}
+	cmd, ok := node.(*ast.SimpleCommand)
+	if !ok {
+		return nil
+	}
 
-	if cmd, ok := node.(*ast.SimpleCommand); ok {
-		if name, ok := cmd.Name.(*ast.Identifier); ok && name.Value == "echo" {
-			violations = append(violations, Violation{
-				KataID:  "ZC1030",
-				Message: "Use `printf` for more reliable and portable string formatting instead of `echo`.",
-				Line:    name.Token.Line,
-				Column:  name.Token.Column,
-			})
+	if cmd.Name.TokenLiteral() != "echo" {
+		return nil
+	}
+
+	// Defer to ZC1037 if any argument is a variable.
+	for _, arg := range cmd.Arguments {
+		if ident, ok := arg.(*ast.Identifier); ok {
+			if ident.Token.Type == "VARIABLE" {
+				return nil
+			}
 		}
 	}
 
-	return violations
+	return []Violation{
+		{
+			KataID:  "ZC1030",
+			Message: "Use `printf` for more reliable and portable string formatting instead of `echo`.",
+			Line:    cmd.Token.Line,
+			Column:  cmd.Token.Column,
+		},
+	}
 }
 

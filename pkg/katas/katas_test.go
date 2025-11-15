@@ -36,7 +36,10 @@ func assertViolations(t *testing.T, input string, violations []Violation, expect
 	t.Helper()
 
 	if len(violations) != len(expected) {
-		t.Fatalf("Expected %d violations, but got %d for input:\n%s", len(expected), len(violations), input)
+		l := lexer.New(input)
+		p := parser.New(l)
+		program := p.ParseProgram()
+		t.Fatalf("Expected %d violations, but got %d for input:\n%s\nAST:\n%s", len(expected), len(violations), input, program.String())
 	}
 
 	for i, v := range violations {

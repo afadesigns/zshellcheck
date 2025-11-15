@@ -11,7 +11,12 @@ import (
 	"github.com/afadesigns/zshellcheck/pkg/lexer"
 	"github.com/afadesigns/zshellcheck/pkg/parser"
 	"github.com/afadesigns/zshellcheck/pkg/reporter"
+	"gopkg.in/yaml.v3"
 )
+
+type Config struct {
+	DisabledKatas []string `yaml:"disabled_katas"`
+}
 
 func main() {
 	if len(os.Args) < 2 {
@@ -19,12 +24,37 @@ func main() {
 		os.Exit(1)
 	}
 
+	config, err := loadConfig(".zshellcheckrc")
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error loading config: %s\n", err)
+		os.Exit(1)
+	}
+
 	for _, filename := range os.Args[1:] {
-		processFile(filename, os.Stdout, os.Stderr)
+		processFile(filename, os.Stdout, os.Stderr, config)
 	}
 }
 
-func processFile(filename string, out, errOut io.Writer) {
+func loadConfig(path string) (Config, error) {
+	var config Config
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		return config, nil
+	}
+
+	data, err := ioutil.ReadFile(path)
+	if err != nil {
+		return config, err
+	}
+
+	err = yaml.Unmarshal(data, &config)
+	if err != nil {
+		return config, err
+	}
+
+	return config, nil
+}
+
+func processFile(filename string, out, errOut io.Writer, config Config) {
 	data, err := ioutil.ReadFile(filename)
 	if err != nil {
 		fmt.Fprintf(errOut, "Error reading file %s: %s\n", filename, err)
@@ -45,7 +75,7 @@ func processFile(filename string, out, errOut io.Writer) {
 
 	violations := []katas.Violation{}
 	ast.Walk(program, func(node ast.Node) bool {
-		violations = append(violations, katas.Check(node)...)
+		violations = append(violations, katas.Check(node, config.DisabledKatas)...)
 		return true // Continue walking
 	})
 

@@ -65,6 +65,7 @@ const (
 	DOLLAR        = "$"
 	DOLLAR_LBRACE = "${"
 	DOLLAR_LPAREN = "$("
+	VARIABLE      = "VARIABLE"
 	HASH          = "#"
 	AMPERSAND     = "&"
 	PIPE          = "|"

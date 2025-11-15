@@ -28,15 +28,26 @@ func RegisterKata(nodeType reflect.Type, kata Kata) {
 	KatasByID[kata.ID] = kata
 }
 
-func Check(node ast.Node) []Violation {
+func Check(node ast.Node, disabledKatas []string) []Violation {
 	var violations []Violation
 	nodeType := reflect.TypeOf(node)
 	if katas, ok := KatasByNodeType[nodeType]; ok {
 		for _, kata := range katas {
-			violations = append(violations, kata.Check(node)...)
+			if !isKataDisabled(kata.ID, disabledKatas) {
+				violations = append(violations, kata.Check(node)...)
+			}
 		}
 	}
 	return violations
+}
+
+func isKataDisabled(kataID string, disabledKatas []string) bool {
+	for _, disabledKata := range disabledKatas {
+		if kataID == disabledKata {
+			return true
+		}
+	}
+	return false
 }
 
 func GetKata(id string) (Kata, bool) {
