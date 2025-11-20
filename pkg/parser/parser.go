@@ -563,42 +563,49 @@ func (p *Parser) parseShebangStatement() *ast.Shebang {
 func (p *Parser) parseForLoopStatement() *ast.ForLoopStatement {
 	stmt := &ast.ForLoopStatement{Token: p.curToken}
 
-	if !p.expectPeek(token.DoubleLparen) {
+	if !p.expectPeek(token.DoubleLparen) { // curToken is 'for', peekToken should be '(('. After expectPeek, curToken is '(('
 		return nil
 	}
 
-	p.nextToken() // Move past the DoubleLparen to the start of the init expression
-	stmt.Init = p.parseExpression(LOWEST)
+	// Parse Init
+	p.nextToken() // curToken is now 'i' (start of init expression)
+	stmt.Init = p.parseExpression(LOWEST) // Parses 'i=0'. curToken is '0'. peekToken is ';'
 
-	if !p.expectPeek(token.SEMICOLON) {
+	if !p.expectPeek(token.SEMICOLON) { // expects ';'
 		return nil
 	}
+	// After expectPeek, curToken is ';'. peekToken is 'i' (start of condition expression)
 
-	p.nextToken() // Move past ';' to the start of the condition expression
-	stmt.Condition = p.parseExpression(LOWEST)
+	// Parse Condition
+	p.nextToken() // curToken becomes 'i' (start of condition expression)
+	stmt.Condition = p.parseExpression(LOWEST) // Parses 'i<10'. curToken is '10'. peekToken is ';'
 
-	if !p.expectPeek(token.SEMICOLON) {
+	if !p.expectPeek(token.SEMICOLON) { // expects ';'
 		return nil
 	}
+	// After expectPeek, curToken is ';'. peekToken is 'i' (start of post expression)
 
-	p.nextToken() // Move past ';' to the start of the post expression
-	stmt.Post = p.parseExpression(LOWEST)
+	// Parse Post
+	p.nextToken() // curToken becomes 'i' (start of post expression)
+	stmt.Post = p.parseExpression(LOWEST) // Parses 'i++'. curToken is '++'. peekToken is '))'
 
-	if !p.expectPeek(token.DoubleRparen) {
+	if !p.expectPeek(token.DoubleRparen) { // expects '))'
 		return nil
 	}
+	// After expectPeek, curToken is '))'. peekToken is ';' (before 'do')
 
 	// Now we are at the token after '))', which should be the SEMICOLON before 'do'
-	if !p.curTokenIs(token.SEMICOLON) {
+	if !p.curTokenIs(token.SEMICOLON) { // current token should be the SEMICOLON
 		return nil
 	}
-	p.nextToken() // Consume the SEMICOLON
+	p.nextToken() // Consume the SEMICOLON. curToken is ';'. peekToken is 'do'
 
-	if !p.expectPeek(token.IDENT) || p.curToken.Literal != "do" {
+	if !p.expectPeek(token.IDENT) || p.curToken.Literal != "do" { // expects 'do'
 		return nil
 	}
+	// After expectPeek, curToken is 'do'. peekToken is 'echo'
 
-	p.nextToken() // Consume "do"
+	p.nextToken() // Consume "do". curToken is 'echo'.
 	stmt.Body = p.parseBlockStatement(token.DONE)
 
 	return stmt

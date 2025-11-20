@@ -47,6 +47,7 @@ const (
 	LDBRACKET    = "[["
 	RDBRACKET    = "]]"
 	DoubleLparen = "(("
+	DoubleRparen = "))"
 
 	// Keywords
 	FUNCTION = "FUNCTION"
