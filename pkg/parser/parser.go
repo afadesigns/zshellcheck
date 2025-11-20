@@ -18,6 +18,7 @@ const (
 	PRODUCT     // *
 	PREFIX      // -X or !X
 	CALL        // myFunction(X)
+	INDEX       // array[index]
 	POSTFIX     // i++
 )
 
@@ -31,6 +32,7 @@ var precedences = map[token.Type]int{
 	token.SLASH:    PRODUCT,
 	token.ASTERISK: PRODUCT,
 	token.LPAREN:   CALL,
+	token.LBRACKET: INDEX,
 	token.PIPE:     CALL,
 	token.ASSIGN:   EQUALS,
 	token.INC:      POSTFIX,
@@ -85,6 +87,7 @@ func New(l *lexer.Lexer) *Parser {
 	p.registerInfix(token.LT, p.parseInfixExpression)
 	p.registerInfix(token.GT, p.parseInfixExpression)
 	p.registerInfix(token.LPAREN, p.parseCallExpression)
+	p.registerInfix(token.LBRACKET, p.parseIndexExpression)
 	p.registerInfix(token.PIPE, p.parseInfixExpression)
 	p.registerInfix(token.ASSIGN, p.parseInfixExpression)
 	p.registerInfix(token.INC, p.parsePostfixExpression)
@@ -94,6 +97,19 @@ func New(l *lexer.Lexer) *Parser {
 	p.nextToken()
 
 	return p
+}
+
+func (p *Parser) parseIndexExpression(left ast.Expression) ast.Expression {
+	exp := &ast.IndexExpression{Token: p.curToken, Left: left}
+
+	p.nextToken()
+	exp.Index = p.parseExpression(LOWEST)
+
+	if !p.expectPeek(token.RBRACKET) {
+		return nil
+	}
+
+	return exp
 }
 
 func (p *Parser) Errors() []string {
@@ -195,7 +211,7 @@ func (p *Parser) parseSingleCommand() ast.Expression {
 	for !p.peekTokenIs(token.EOF) && !p.peekTokenIs(token.SEMICOLON) && !p.peekTokenIs(token.PIPE) &&
 		!p.peekTokenIs(token.RPAREN) && p.peekToken.Line == p.curToken.Line {
 		p.nextToken()
-		arg := p.parseExpression(PREFIX)
+		arg := p.parseExpression(CALL)
 		cmd.Arguments = append(cmd.Arguments, arg)
 	}
 
@@ -421,6 +437,7 @@ func (p *Parser) parseArrayAccess() ast.Expression {
 	if !p.expectPeek(token.RBRACE) {
 		return nil
 	}
+
 	return exp
 }
 
@@ -550,40 +567,38 @@ func (p *Parser) parseForLoopStatement() *ast.ForLoopStatement {
 		return nil
 	}
 
-	p.nextToken()
+	p.nextToken() // Move past the DoubleLparen to the start of the init expression
 	stmt.Init = p.parseExpression(LOWEST)
-	p.nextToken()
 
-	if !p.curTokenIs(token.SEMICOLON) {
-		return nil
-	}
-	p.nextToken()
-
-	stmt.Condition = p.parseExpression(LOWEST)
-	p.nextToken()
-
-	if !p.curTokenIs(token.SEMICOLON) {
-		return nil
-	}
-	p.nextToken()
-
-	stmt.Post = p.parseExpression(LOWEST)
-
-	if !p.expectPeek(token.RPAREN) {
-		return nil
-	}
-	if !p.expectPeek(token.RPAREN) {
-		return nil
-	}
 	if !p.expectPeek(token.SEMICOLON) {
 		return nil
 	}
+
+	p.nextToken() // Move past ';' to the start of the condition expression
+	stmt.Condition = p.parseExpression(LOWEST)
+
+	if !p.expectPeek(token.SEMICOLON) {
+		return nil
+	}
+
+	p.nextToken() // Move past ';' to the start of the post expression
+	stmt.Post = p.parseExpression(LOWEST)
+
+	if !p.expectPeek(token.DoubleRparen) {
+		return nil
+	}
+
+	// Now we are at the token after '))', which should be the SEMICOLON before 'do'
+	if !p.curTokenIs(token.SEMICOLON) {
+		return nil
+	}
+	p.nextToken() // Consume the SEMICOLON
 
 	if !p.expectPeek(token.IDENT) || p.curToken.Literal != "do" {
 		return nil
 	}
 
-	p.nextToken()
+	p.nextToken() // Consume "do"
 	stmt.Body = p.parseBlockStatement(token.DONE)
 
 	return stmt
