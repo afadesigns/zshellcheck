@@ -70,7 +70,7 @@ func New(l *lexer.Lexer) *Parser {
 	p.registerPrefix(token.LPAREN, p.parseGroupedExpression)
 	p.registerPrefix(token.FUNCTION, p.parseFunctionLiteral)
 	p.registerPrefix(token.STRING, p.parseStringLiteral)
-	p.registerPrefix(token.LBRACKET, p.parseSingleCommand)
+	p.registerPrefix(token.LBRACKET, p.parseSingleCommand) // Use parseSingleCommand for [ ... ] to match ZC1010 logic
 	p.registerPrefix(token.LDBRACKET, p.parseDoubleBracketExpression)
 	p.registerPrefix(token.DollarLbrace, p.parseArrayAccess)
 	p.registerPrefix(token.DOLLAR, p.parseInvalidArrayAccessPrefix)
@@ -679,6 +679,21 @@ func (p *Parser) parseCommandSubstitution() ast.Expression {
 
 func (p *Parser) parseDollarParenExpression() ast.Expression {
 	exp := &ast.DollarParenExpression{Token: p.curToken}
+	
+	if p.peekTokenIs(token.LPAREN) {
+		p.nextToken()
+		p.nextToken() // consume `(`
+		cmd := p.parseExpression(LOWEST)
+		if !p.expectPeek(token.RPAREN) {
+			return nil
+		}
+		if !p.expectPeek(token.RPAREN) {
+			return nil
+		}
+		exp.Command = cmd
+		return exp
+	}
+
 	p.nextToken()
 	exp.Command = p.parseExpression(LOWEST)
 	if !p.expectPeek(token.RPAREN) {

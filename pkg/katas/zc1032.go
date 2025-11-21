@@ -1,7 +1,6 @@
 package katas
 
 import (
-
 	"github.com/afadesigns/zshellcheck/pkg/ast"
 )
 
@@ -19,9 +18,11 @@ func checkZC1032(node ast.Node) []Violation {
 	violations := []Violation{}
 
 	if letStmt, ok := node.(*ast.LetStatement); ok {
+		// Check for let i = i + 1
 		if infixExpr, ok := letStmt.Value.(*ast.InfixExpression); ok {
 			if leftIdent, ok := infixExpr.Left.(*ast.Identifier); ok {
 				if rightInt, ok := infixExpr.Right.(*ast.IntegerLiteral); ok {
+					// Match name, "+", and 1
 					if letStmt.Name.Value == leftIdent.Value && infixExpr.Operator == "+" && rightInt.Value == 1 {
 						violations = append(violations, Violation{
 							KataID:  "ZC1032",
