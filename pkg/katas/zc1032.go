@@ -1,13 +1,12 @@
 package katas
 
 import (
-	"reflect"
 
 	"github.com/afadesigns/zshellcheck/pkg/ast"
 )
 
 func init() {
-	RegisterKata(reflect.TypeOf(&ast.LetStatement{}), Kata{
+	RegisterKata(ast.LetStatementNode, Kata{
 		ID:          "ZC1032",
 		Title:       "Use `((...))` for C-style incrementing",
 		Description: "Instead of `let i=i+1`, you can use the more concise and idiomatic C-style " +

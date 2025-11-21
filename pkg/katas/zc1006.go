@@ -1,13 +1,12 @@
 package katas
 
 import (
-	"reflect"
 
 	"github.com/afadesigns/zshellcheck/pkg/ast"
 )
 
 func init() {
-	RegisterKata(reflect.TypeOf(&ast.SimpleCommand{}), Kata{
+	RegisterKata(ast.SimpleCommandNode, Kata{
 		ID:    "ZC1006",
 		Title: "Prefer [[ over test for tests",
 		Description: "The `test` command is an external command and may not be available on all systems. " +

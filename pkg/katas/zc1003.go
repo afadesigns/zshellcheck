@@ -1,13 +1,12 @@
 package katas
 
 import (
-	"reflect"
 
 	"github.com/afadesigns/zshellcheck/pkg/ast"
 )
 
 func init() {
-	RegisterKata(reflect.TypeOf(&ast.BracketExpression{}), Kata{
+	RegisterKata(ast.BracketExpressionNode, Kata{
 		ID:    "ZC1003",
 		Title: "Prefer [[ over [ for tests",
 		Description: "The [[...]] construct is a Zsh keyword, offering safer and more powerful conditional " +

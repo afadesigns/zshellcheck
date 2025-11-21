@@ -1,8 +1,6 @@
 package katas
 
 import (
-	"reflect"
-
 	"github.com/afadesigns/zshellcheck/pkg/ast"
 )
 
@@ -20,20 +18,29 @@ type Violation struct {
 	Column  int
 }
 
-var KatasByNodeType = make(map[reflect.Type][]Kata)
-var KatasByID = make(map[string]Kata)
-
-func RegisterKata(nodeType reflect.Type, kata Kata) {
-	KatasByNodeType[nodeType] = append(KatasByNodeType[nodeType], kata)
-	KatasByID[kata.ID] = kata
+type KatasRegistry struct {
+	KatasByNodeType map[ast.NodeType][]Kata
+	KatasByID       map[string]Kata
 }
 
-func Check(node ast.Node, disabledKatas []string) []Violation {
+// Registry is the global instance of KatasRegistry that holds all registered katas.
+var Registry = KatasRegistry{
+	KatasByNodeType: make(map[ast.NodeType][]Kata),
+	KatasByID:       make(map[string]Kata),
+}
+
+// RegisterKata registers a new kata with the global registry.
+func RegisterKata(nodeType ast.NodeType, kata Kata) {
+	Registry.KatasByNodeType[nodeType] = append(Registry.KatasByNodeType[nodeType], kata)
+	Registry.KatasByID[kata.ID] = kata
+}
+
+// Check runs all applicable katas against a given AST node.
+func (kr *KatasRegistry) Check(node ast.Node, disabledKatas []string) []Violation {
 	var violations []Violation
-	nodeType := reflect.TypeOf(node)
-	if katas, ok := KatasByNodeType[nodeType]; ok {
+	if katas, ok := kr.KatasByNodeType[node.Type()]; ok {
 		for _, kata := range katas {
-			if !isKataDisabled(kata.ID, disabledKatas) {
+			if !kr.isKataDisabled(kata.ID, disabledKatas) {
 				violations = append(violations, kata.Check(node)...)
 			}
 		}
@@ -41,7 +48,8 @@ func Check(node ast.Node, disabledKatas []string) []Violation {
 	return violations
 }
 
-func isKataDisabled(kataID string, disabledKatas []string) bool {
+// isKataDisabled checks if a kata is present in the list of disabled katas.
+func (kr *KatasRegistry) isKataDisabled(kataID string, disabledKatas []string) bool {
 	for _, disabledKata := range disabledKatas {
 		if kataID == disabledKata {
 			return true
@@ -50,7 +58,8 @@ func isKataDisabled(kataID string, disabledKatas []string) bool {
 	return false
 }
 
-func GetKata(id string) (Kata, bool) {
-	kata, ok := KatasByID[id]
+// GetKata retrieves a kata by its ID from the global registry.
+func (kr *KatasRegistry) GetKata(id string) (Kata, bool) {
+	kata, ok := kr.KatasByID[id]
 	return kata, ok
 }

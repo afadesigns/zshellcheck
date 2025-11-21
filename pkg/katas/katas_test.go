@@ -12,14 +12,14 @@ import (
 // walks the resulting AST, and runs the non-recursive Check function on
 // every node, returning all found violations. This perfectly mimics the
 // application's main execution loop.
-func check(input string, kataID string) []Violation {
+func check(input string, registry *KatasRegistry, kataID string) []Violation {
 	l := lexer.New(input)
 	p := parser.New(l)
 	program := p.ParseProgram()
 
 	var violations []Violation
 	ast.Walk(program, func(node ast.Node) bool {
-		foundViolations := Check(node, []string{})
+		foundViolations := registry.Check(node, []string{})
 		for _, v := range foundViolations {
 			if v.KataID == kataID {
 				violations = append(violations, v)

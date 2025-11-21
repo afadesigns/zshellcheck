@@ -154,6 +154,9 @@ func (p *Parser) parseStatement() ast.Statement {
 		return p.parseIfStatement()
 	case token.SHEBANG:
 		return p.parseShebangStatement()
+	case token.HASH:
+		// Skip comments for now
+		return nil
 	case token.FOR:
 		return p.parseForLoopStatement()
 	case token.IDENT:
@@ -161,7 +164,8 @@ func (p *Parser) parseStatement() ast.Statement {
 			return p.parseSimpleCommandStatement()
 		}
 		if p.peekTokenIs(token.IDENT) || p.peekTokenIs(token.STRING) || p.peekTokenIs(token.INT) ||
-			p.peekTokenIs(token.MINUS) || p.peekTokenIs(token.DOT) {
+			p.peekTokenIs(token.MINUS) || p.peekTokenIs(token.DOT) || p.peekTokenIs(token.VARIABLE) ||
+			p.peekTokenIs(token.DOLLAR) || p.peekTokenIs(token.DollarLbrace) || p.peekTokenIs(token.DOLLAR_LPAREN) {
 			return p.parseSimpleCommandStatement()
 		}
 		return p.parseExpressionStatement()
@@ -209,7 +213,7 @@ func (p *Parser) parseSingleCommand() ast.Expression {
 	cmd.Arguments = []ast.Expression{}
 
 	for !p.peekTokenIs(token.EOF) && !p.peekTokenIs(token.SEMICOLON) && !p.peekTokenIs(token.PIPE) &&
-		!p.peekTokenIs(token.RPAREN) && p.peekToken.Line == p.curToken.Line {
+		!p.peekTokenIs(token.RPAREN) && !p.peekTokenIs(token.HASH) && p.peekToken.Line == p.curToken.Line {
 		p.nextToken()
 		arg := p.parseExpression(CALL)
 		cmd.Arguments = append(cmd.Arguments, arg)
@@ -293,7 +297,12 @@ func (p *Parser) parseBlockStatement(terminators ...token.Type) *ast.BlockStatem
 		return false
 	}
 
+	loopCount := 0
 	for !isTerminator(p.curToken) && !p.curTokenIs(token.EOF) {
+		loopCount++
+		if loopCount > 10000 {
+			break
+		}
 		s := p.parseStatement()
 		if s != nil {
 			block.Statements = append(block.Statements, s)
@@ -563,61 +572,48 @@ func (p *Parser) parseShebangStatement() *ast.Shebang {
 func (p *Parser) parseForLoopStatement() *ast.ForLoopStatement {
 	stmt := &ast.ForLoopStatement{Token: p.curToken}
 
-	if !p.expectPeek(token.DoubleLparen) { // curToken is 'for', peekToken should be '(('. After expectPeek, curToken is '(('
+	if !p.expectPeek(token.DoubleLparen) {
 		return nil
 	}
 
-	// Parse Init
-	p.nextToken() // curToken is now 'i' (start of init expression)
-	stmt.Init = p.parseExpression(LOWEST) // Parses 'i=0'. curToken is '0'. peekToken is ';'
+	p.nextToken()
+	stmt.Init = p.parseExpression(LOWEST)
 
-	if !p.expectPeek(token.SEMICOLON) { // expects ';'
+	if !p.expectPeek(token.SEMICOLON) {
 		return nil
 	}
-	// After expectPeek, curToken is ';'. peekToken is 'i' (start of condition expression)
 
-	// Parse Condition
-	p.nextToken() // curToken becomes 'i' (start of condition expression)
-	stmt.Condition = p.parseExpression(LOWEST) // Parses 'i<10'. curToken is '10'. peekToken is ';'
+	p.nextToken()
+	stmt.Condition = p.parseExpression(LOWEST)
 
-	if !p.expectPeek(token.SEMICOLON) { // expects ';'
+	if !p.expectPeek(token.SEMICOLON) {
 		return nil
 	}
-	// After expectPeek, curToken is ';'. peekToken is 'i' (start of post expression)
 
-	// Parse Post
-	p.nextToken() // curToken becomes 'i' (start of post expression)
-	stmt.Post = p.parseExpression(LOWEST) // Parses 'i++'. curToken is '++'. peekToken is '))'
+	p.nextToken()
+	stmt.Post = p.parseExpression(LOWEST)
 
-	if !p.expectPeek(token.DoubleRparen) { // expects '))'
+	if !p.expectPeek(token.DoubleRparen) {
 		return nil
 	}
-	// After expectPeek, curToken is '))'. peekToken is ';' (before 'do')
 
-	// Now we are at the token after '))', which should be the SEMICOLON before 'do'
-	if !p.curTokenIs(token.SEMICOLON) { // current token should be the SEMICOLON
+	if p.peekTokenIs(token.SEMICOLON) {
+		p.nextToken()
+	}
+
+	if !p.expectPeek(token.IDENT) || p.curToken.Literal != "do" {
 		return nil
 	}
-	p.nextToken() // Consume the SEMICOLON. curToken is ';'. peekToken is 'do'
 
-	if !p.expectPeek(token.IDENT) || p.curToken.Literal != "do" { // expects 'do'
-		return nil
-	}
-	// After expectPeek, curToken is 'do'. peekToken is 'echo'
-
-	p.nextToken() // Consume "do". curToken is 'echo'.
+	p.nextToken()
 	stmt.Body = p.parseBlockStatement(token.DONE)
-
 	return stmt
 }
 
 func (p *Parser) parseDoubleParenExpression() ast.Expression {
 	p.nextToken()
 	exp := p.parseExpression(LOWEST)
-	if !p.expectPeek(token.RPAREN) {
-		return nil
-	}
-	if !p.expectPeek(token.RPAREN) {
+	if !p.expectPeek(token.DoubleRparen) {
 		return nil
 	}
 	return exp
@@ -634,6 +630,16 @@ func (p *Parser) peekTokenIs(t token.Type) bool {
 func (p *Parser) expectPeek(t token.Type) bool {
 	if p.peekTokenIs(t) {
 		p.nextToken()
+		return true
+	}
+	if t == token.RPAREN && p.peekTokenIs(token.DoubleRparen) {
+		p.curToken = p.peekToken
+		p.curToken.Type = token.RPAREN
+		p.curToken.Literal = ")"
+
+		p.peekToken.Type = token.RPAREN
+		p.peekToken.Literal = ")"
+		p.peekToken.Column++
 		return true
 	}
 	p.peekError(t)

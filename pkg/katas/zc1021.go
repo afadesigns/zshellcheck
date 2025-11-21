@@ -1,13 +1,12 @@
 package katas
 
 import (
-	"reflect"
 
 	"github.com/afadesigns/zshellcheck/pkg/ast"
 )
 
 func init() {
-	RegisterKata(reflect.TypeOf(&ast.SimpleCommand{}), Kata{
+	RegisterKata(ast.SimpleCommandNode, Kata{
 		ID:          "ZC1021",
 		Title:       "Use symbolic permissions with `chmod` instead of octal",
 		Description: "Symbolic permissions (e.g., `u+x`) are more readable and less error-prone than " +

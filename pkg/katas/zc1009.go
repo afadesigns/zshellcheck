@@ -1,13 +1,12 @@
 package katas
 
 import (
-	"reflect"
 
 	"github.com/afadesigns/zshellcheck/pkg/ast"
 )
 
 func init() {
-	RegisterKata(reflect.TypeOf(&ast.SimpleCommand{}), Kata{
+	RegisterKata(ast.SimpleCommandNode, Kata{
 		ID:    "ZC1009",
 		Title: "Use `((...))` for C-style arithmetic",
 		Description: "The `((...))` construct in Zsh allows for C-style arithmetic. " +

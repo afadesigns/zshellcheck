@@ -759,33 +759,79 @@ func TestForLoopStatement(t *testing.T) {
 
 
 
-	// Test Body statement
+		// Test Body statement
 
-	if len(stmt.Body.Statements) != 1 {
 
-		t.Fatalf("ForLoopStatement.Body.Statements does not contain 1 statement. got=%d", len(stmt.Body.Statements))
+
+		if len(stmt.Body.Statements) != 1 {
+
+
+
+			for i, s := range stmt.Body.Statements {
+
+
+
+				t.Logf("stmt %d: %T %s", i, s, s.String())
+
+
+
+			}
+
+
+
+			t.Fatalf("ForLoopStatement.Body.Statements does not contain 1 statement. got=%d", len(stmt.Body.Statements))
+
+
+
+		}
+
+		bodyStmt, ok := stmt.Body.Statements[0].(*ast.ExpressionStatement)
+
+		if !ok {
+
+			t.Fatalf("ForLoopStatement.Body.Statements[0] is not ast.ExpressionStatement. got=%T", bodyStmt)
+
+		}
+
+	
+
+		cmd, ok := bodyStmt.Expression.(*ast.SimpleCommand)
+
+		if !ok {
+
+			t.Fatalf("bodyStmt.Expression is not *ast.SimpleCommand. got=%T", bodyStmt.Expression)
+
+		}
+
+	
+
+		if cmd.Name.String() != "echo" {
+
+			t.Errorf("cmd.Name is not 'echo'. got=%q", cmd.Name.String())
+
+		}
+
+	
+
+		if len(cmd.Arguments) != 1 {
+
+			t.Fatalf("cmd.Arguments does not contain 1 argument. got=%d", len(cmd.Arguments))
+
+		}
+
+	
+
+		if cmd.Arguments[0].String() != "$i" {
+
+			t.Errorf("cmd.Arguments[0] is not '$i'. got=%q", cmd.Arguments[0].String())
+
+		}
 
 	}
 
-	bodyStmt, ok := stmt.Body.Statements[0].(*ast.ExpressionStatement)
+	
 
-	if !ok {
-
-		t.Fatalf("ForLoopStatement.Body.Statements[0] is not ast.ExpressionStatement. got=%T", bodyStmt)
-
-	}
-
-	if !testPrefixExpression(t, bodyStmt.Expression, "$", "i") {
-
-		return
-
-	}
-
-}
-
-
-
-func testPostfixExpression(t *testing.T, exp ast.Expression, left string, operator string) bool {
+	func testPostfixExpression(t *testing.T, exp ast.Expression, left string, operator string) bool {
 
 	postfixExp, ok := exp.(*ast.PostfixExpression)
 

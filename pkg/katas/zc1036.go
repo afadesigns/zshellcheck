@@ -1,13 +1,12 @@
 package katas
 
 import (
-	"reflect"
 
 	"github.com/afadesigns/zshellcheck/pkg/ast"
 )
 
 func init() {
-	RegisterKata(reflect.TypeOf(&ast.SimpleCommand{}), Kata{
+	RegisterKata(ast.SimpleCommandNode, Kata{
 		ID:          "ZC1036",
 		Title:       "Prefer `[[ ... ]]` over `test` command",
 		Description: "The `[[ ... ]]` construct is a more powerful and safer alternative to the `test` " +

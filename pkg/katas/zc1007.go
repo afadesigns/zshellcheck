@@ -1,13 +1,12 @@
 package katas
 
 import (
-	"reflect"
 
 	"github.com/afadesigns/zshellcheck/pkg/ast"
 )
 
 func init() {
-	RegisterKata(reflect.TypeOf(&ast.SimpleCommand{}), Kata{
+	RegisterKata(ast.SimpleCommandNode, Kata{
 		ID:    "ZC1007",
 		Title: "Avoid using `chmod 777`",
 		Description: "Using `chmod 777` is a security risk as it gives read, write, and execute " +

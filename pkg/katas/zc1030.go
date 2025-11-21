@@ -1,13 +1,12 @@
 package katas
 
 import (
-	"reflect"
 
 	"github.com/afadesigns/zshellcheck/pkg/ast"
 )
 
 func init() {
-	RegisterKata(reflect.TypeOf(&ast.SimpleCommand{}), Kata{
+	RegisterKata(ast.SimpleCommandNode, Kata{
 		ID:          "ZC1030",
 		Title:       "Use `printf` instead of `echo`",
 		Description: "The `echo` command's behavior can be inconsistent across different shells and " +
@@ -45,4 +44,3 @@ func checkZC1030(node ast.Node) []Violation {
 		},
 	}
 }
-

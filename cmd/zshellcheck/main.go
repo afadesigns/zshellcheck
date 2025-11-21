@@ -29,8 +29,10 @@ func main() {
 		os.Exit(1)
 	}
 
+	kataRegistry := &katas.Registry
+
 	for _, filename := range os.Args[1:] {
-		processFile(filename, os.Stdout, os.Stderr, config)
+		processFile(filename, os.Stdout, os.Stderr, config, kataRegistry)
 	}
 }
 
@@ -53,7 +55,7 @@ func loadConfig(path string) (Config, error) {
 	return config, nil
 }
 
-func processFile(filename string, out, errOut io.Writer, config Config) {
+func processFile(filename string, out, errOut io.Writer, config Config, registry *katas.KatasRegistry) {
 	data, err := os.ReadFile(filename)
 	if err != nil {
 		fmt.Fprintf(errOut, "Error reading file %s: %s\n", filename, err)
@@ -74,7 +76,7 @@ func processFile(filename string, out, errOut io.Writer, config Config) {
 
 	violations := []katas.Violation{}
 	ast.Walk(program, func(node ast.Node) bool {
-		violations = append(violations, katas.Check(node, config.DisabledKatas)...)
+		violations = append(violations, registry.Check(node, config.DisabledKatas)...)
 		return true // Continue walking
 	})
 

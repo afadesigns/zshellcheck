@@ -1,13 +1,12 @@
 package katas
 
 import (
-	"reflect"
 
 	"github.com/afadesigns/zshellcheck/pkg/ast"
 )
 
 func init() {
-	RegisterKata(reflect.TypeOf(&ast.CommandSubstitution{}), Kata{
+	RegisterKata(ast.CommandSubstitutionNode, Kata{
 		ID:          "ZC1015",
 		Title:       "Use `$(...)` for command substitution instead of backticks",
 		Description: "The `$(...)` syntax is the modern, recommended way to perform command substitution. " +

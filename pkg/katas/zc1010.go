@@ -1,13 +1,12 @@
 package katas
 
 import (
-	"reflect"
 
 	"github.com/afadesigns/zshellcheck/pkg/ast"
 )
 
 func init() {
-	RegisterKata(reflect.TypeOf(&ast.BracketExpression{}), Kata{
+	RegisterKata(ast.BracketExpressionNode, Kata{
 		ID:    "ZC1010",
 		Title: "Use `[[ ... ]]` instead of `[ ... ]`",
 		Description: "The `[[ ... ]]` construct is a Zsh keyword and is generally safer and more powerful " +

@@ -1,13 +1,12 @@
 package katas
 
 import (
-	"reflect"
 
 	"github.com/afadesigns/zshellcheck/pkg/ast"
 )
 
 func init() {
-	RegisterKata(reflect.TypeOf(&ast.LetStatement{}), Kata{
+	RegisterKata(ast.LetStatementNode, Kata{
 		ID:          "ZC1026",
 		Title:       "Use `$((...))` for arithmetic expansion",
 		Description: "The `$((...))` syntax is the modern, recommended way to perform arithmetic expansion. " +
