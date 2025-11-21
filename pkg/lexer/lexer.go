@@ -14,8 +14,8 @@ type Lexer struct {
 }
 
 func New(input string) *Lexer {
-	l := &Lexer{input: input, line: 1, column: 0}
-	l.readChar()
+	l := &Lexer{input: input, line: 1, column: 0} // column is 0-indexed initially
+	l.readChar() // This initializes l.ch and l.position, setting column to 1
 	return l
 }
 
@@ -139,9 +139,33 @@ func (l *Lexer) NextToken() token.Token {
 	case '/':
 		tok = newToken(token.SLASH, l.ch, l.line, l.column)
 	case '<':
-		tok = newToken(token.LT, l.ch, l.line, l.column)
+		if l.peekChar() == '<' {
+			ch := l.ch
+			l.readChar()
+			literal := string(ch) + string(l.ch)
+			tok = token.Token{Type: token.LTLT, Literal: literal, Line: l.line, Column: l.column}
+		} else if l.peekChar() == '&' {
+			ch := l.ch
+			l.readChar()
+			literal := string(ch) + string(l.ch)
+			tok = token.Token{Type: token.LTAMP, Literal: literal, Line: l.line, Column: l.column}
+		} else {
+			tok = newToken(token.LT, l.ch, l.line, l.column)
+		}
 	case '>':
-		tok = newToken(token.GT, l.ch, l.line, l.column)
+		if l.peekChar() == '>' {
+			ch := l.ch
+			l.readChar()
+			literal := string(ch) + string(l.ch)
+			tok = token.Token{Type: token.GTGT, Literal: literal, Line: l.line, Column: l.column}
+		} else if l.peekChar() == '&' {
+			ch := l.ch
+			l.readChar()
+			literal := string(ch) + string(l.ch)
+			tok = token.Token{Type: token.GTAMP, Literal: literal, Line: l.line, Column: l.column}
+		} else {
+			tok = newToken(token.GT, l.ch, l.line, l.column)
+		}
 	case '{':
 		tok = newToken(token.LBRACE, l.ch, l.line, l.column)
 	case '}':

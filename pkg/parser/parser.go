@@ -12,34 +12,33 @@ import (
 const (
 	_ int = iota
 	LOWEST
-	LOGICAL     // || or &&
 	EQUALS      // ==
 	LESSGREATER // > or <
 	SUM         // +
 	PRODUCT     // *
 	PREFIX      // -X or !X
+	POSTFIX     // X++
 	CALL        // myFunction(X)
 	INDEX       // array[index]
-	POSTFIX     // i++
 )
 
 var precedences = map[token.Type]int{
-	token.AND:      LOGICAL,
-	token.OR:       LOGICAL,
-	token.EQ:       EQUALS,
-	token.NotEq:    EQUALS,
-	token.LT:       LESSGREATER,
-	token.GT:       LESSGREATER,
-	token.PLUS:     SUM,
-	token.MINUS:    SUM,
-	token.SLASH:    PRODUCT,
-	token.ASTERISK: PRODUCT,
-	token.LPAREN:   CALL,
-	token.LBRACKET: INDEX,
-	token.PIPE:     CALL,
-	token.ASSIGN:   EQUALS,
-	token.INC:      POSTFIX,
-	token.DEC:      POSTFIX,
+	token.EQ:            EQUALS,
+	token.NotEq:         EQUALS,
+	token.LT:            LESSGREATER,
+	token.GT:            LESSGREATER,
+	token.PLUS:          SUM,
+	token.MINUS:         SUM,
+	token.SLASH:         PRODUCT,
+	token.ASTERISK:      PRODUCT,
+	token.LPAREN:        CALL,
+	token.LBRACKET:      INDEX,
+	token.DollarLbrace:  INDEX,
+	token.DOLLAR_LPAREN: CALL,
+	token.DoubleLparen:  CALL,
+	token.ASSIGN:        EQUALS,
+	token.INC:           POSTFIX,
+	token.DEC:           POSTFIX,
 }
 
 type (
@@ -93,15 +92,32 @@ func New(l *lexer.Lexer) *Parser {
 	p.registerInfix(token.GT, p.parseInfixExpression)
 	p.registerInfix(token.LPAREN, p.parseCallExpression)
 	p.registerInfix(token.LBRACKET, p.parseIndexExpression)
-	p.registerInfix(token.PIPE, p.parseInfixExpression)
 	p.registerInfix(token.ASSIGN, p.parseInfixExpression)
 	p.registerInfix(token.INC, p.parsePostfixExpression)
 	p.registerInfix(token.DEC, p.parsePostfixExpression)
+	// Redirection operators
+	p.registerInfix(token.GTGT, p.parseRedirection)
+	p.registerInfix(token.LTLT, p.parseRedirection)
+	p.registerInfix(token.GTAMP, p.parseRedirection)
+	p.registerInfix(token.LTAMP, p.parseRedirection)
 
-	p.nextToken()
-	p.nextToken()
+	p.nextToken() // Initialize curToken
+	p.nextToken() // Initialize peekToken
 
 	return p
+}
+
+func (p *Parser) parseRedirection(left ast.Expression) ast.Expression {
+	expr := &ast.Redirection{
+		Token:    p.curToken,
+		Operator: p.curToken.Literal,
+		Left:     left,
+	}
+
+	p.nextToken()
+	expr.Right = p.parseExpression(LOWEST) 
+
+	return expr
 }
 
 func (p *Parser) parseIndexExpression(left ast.Expression) ast.Expression {
@@ -121,28 +137,23 @@ func (p *Parser) Errors() []string {
 	return p.errors
 }
 
-func (p *Parser) nextToken() {
-	p.curToken = p.peekToken
-	p.peekToken = p.l.NextToken()
-}
-
 func (p *Parser) ParseProgram() *ast.Program {
 	program := &ast.Program{}
 	program.Statements = []ast.Statement{}
 
-	for p.curToken.Type != token.EOF {
-		if p.curTokenIs(token.SEMICOLON) {
-			p.nextToken()
-			continue
-		}
+	for !p.curTokenIs(token.EOF) {
 		stmt := p.parseStatement()
 		if stmt != nil {
 			program.Statements = append(program.Statements, stmt)
 		}
 		p.nextToken()
 	}
-
 	return program
+}
+
+func (p *Parser) nextToken() {
+	p.curToken = p.peekToken
+	p.peekToken = p.l.NextToken()
 }
 
 func (p *Parser) parseStatement() ast.Statement {
@@ -168,6 +179,8 @@ func (p *Parser) parseStatement() ast.Statement {
 		return p.parseWhileLoopStatement()
 	case token.LBRACE:
 		return p.parseBlockStatement(token.RBRACE)
+	case token.LPAREN:
+		return p.parseSubshellStatement()
 	case token.COLON, token.DOT, token.LBRACKET:
 		return p.parseSimpleCommandStatement()
 	case token.CASE:
@@ -205,9 +218,6 @@ func (p *Parser) parseCommandList() ast.Expression {
 	for p.peekTokenIs(token.AND) || p.peekTokenIs(token.OR) {
 		p.nextToken()
 		op := p.curToken
-		// Command pipeline follows (parseCommandPipeline handles simple commands and pipes)
-		// But we need to move to start of next command. 
-		// nextToken was called. curToken is AND.
 		p.nextToken() // move to start of right command
 		right := p.parseCommandPipeline()
 		left = &ast.InfixExpression{
@@ -240,21 +250,50 @@ func (p *Parser) parseCommandPipeline() ast.Expression {
 	return left
 }
 
+func (p *Parser) isCommandDelimiter(t token.Token) bool {
+	return t.Type == token.EOF || t.Type == token.SEMICOLON || t.Type == token.PIPE ||
+		t.Type == token.AND || t.Type == token.OR ||
+		t.Type == token.RPAREN || t.Type == token.LPAREN || t.Type == token.RBRACE ||
+		t.Type == token.HASH ||
+		t.Type == token.THEN || t.Type == token.ELSE || t.Type == token.ELIF || t.Type == token.Fi ||
+		t.Type == token.DO || t.Type == token.DONE ||
+		t.Type == token.ESAC || t.Type == token.DSEMI ||
+		t.Type == token.GT || t.Type == token.LT ||
+		t.Type == token.GTGT || t.Type == token.LTLT ||
+		t.Type == token.GTAMP || t.Type == token.LTAMP
+}
+
 func (p *Parser) parseSingleCommand() ast.Expression {
 	cmd := &ast.SimpleCommand{
 		Token: p.curToken,
 		Name:  &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal},
 	}
-	cmd.Arguments = []ast.Expression{}
 
-	for !p.peekTokenIs(token.EOF) && !p.peekTokenIs(token.SEMICOLON) && !p.peekTokenIs(token.PIPE) &&
-		!p.peekTokenIs(token.AND) && !p.peekTokenIs(token.OR) &&
-		!p.peekTokenIs(token.RPAREN) && !p.peekTokenIs(token.LPAREN) && !p.peekTokenIs(token.RBRACE) &&
-		!p.peekTokenIs(token.HASH) &&
-		!p.peekTokenIs(token.THEN) && !p.peekTokenIs(token.ELSE) && !p.peekTokenIs(token.ELIF) && !p.peekTokenIs(token.Fi) &&
-		!p.peekTokenIs(token.DO) && !p.peekTokenIs(token.DONE) &&
-		!p.peekTokenIs(token.ESAC) && !p.peekTokenIs(token.DSEMI) &&
-		p.peekToken.Line == p.curToken.Line {
+	// Check for function definition syntax: name()
+	if p.peekTokenIs(token.LPAREN) {
+		p.nextToken() // curToken is (
+		if p.peekTokenIs(token.RPAREN) {
+			p.nextToken() // curToken is )
+			// Function Definition!
+			funcDef := &ast.FunctionDefinition{
+				Token: cmd.Token,
+				Name:  cmd.Name.(*ast.Identifier),
+			}
+
+			p.nextToken() // Move to start of body
+			funcDef.Body = p.parseStatement()
+			return funcDef
+		} else {
+			// It was not (), it was `name ( ...`
+			arg := p.parseCommandWord()
+			cmd.Arguments = append(cmd.Arguments, arg)
+		}
+	} else {
+		cmd.Arguments = []ast.Expression{}
+	}
+
+	// Continue parsing arguments
+	for !p.isCommandDelimiter(p.peekToken) && p.peekToken.Line == p.curToken.Line {
 		p.nextToken()
 		arg := p.parseCommandWord()
 		cmd.Arguments = append(cmd.Arguments, arg)
@@ -275,9 +314,7 @@ func (p *Parser) parseCommandWord() ast.Expression {
 	}
 
 	// Continue parsing while the next token is adjacent (no preceding space)
-	for !p.peekToken.HasPrecedingSpace && !p.peekTokenIs(token.EOF) &&
-		!p.peekTokenIs(token.SEMICOLON) && !p.peekTokenIs(token.PIPE) &&
-		!p.peekTokenIs(token.RPAREN) && !p.peekTokenIs(token.HASH) &&
+	for !p.peekToken.HasPrecedingSpace && !p.isCommandDelimiter(p.peekToken) &&
 		p.peekToken.Line == p.curToken.Line {
 
 		p.nextToken()
@@ -344,7 +381,6 @@ func (p *Parser) parseIfStatement() *ast.IfStatement {
 	stmt.Condition = p.parseBlockStatement(token.THEN)
 
 	if !p.curTokenIs(token.THEN) {
-		// If we stopped for EOF or other reason
 		return nil
 	}
 
@@ -366,25 +402,28 @@ func (p *Parser) parseBlockStatement(terminators ...token.Type) *ast.BlockStatem
 	block := &ast.BlockStatement{Token: p.curToken}
 	block.Statements = []ast.Statement{}
 
-	isTerminator := func(tok token.Token) bool {
+	for !p.curTokenIs(token.EOF) {
+		isTerm := false
 		for _, t := range terminators {
-			if tok.Type == t {
-				return true
+			if p.curTokenIs(t) {
+				isTerm = true
+				break
 			}
 		}
-		return false
-	}
-
-	loopCount := 0
-	for !isTerminator(p.curToken) && !p.curTokenIs(token.EOF) {
-		loopCount++
-		if loopCount > 10000 {
+		if isTerm {
 			break
 		}
-		s := p.parseStatement()
-		if s != nil {
-			block.Statements = append(block.Statements, s)
+
+		if p.curTokenIs(token.SEMICOLON) {
+			p.nextToken()
+			continue
 		}
+
+		stmt := p.parseStatement()
+		if stmt != nil {
+			block.Statements = append(block.Statements, stmt)
+		}
+
 		p.nextToken()
 	}
 	return block
@@ -397,6 +436,7 @@ func (p *Parser) parseExpression(precedence int) ast.Expression {
 		return nil
 	}
 	leftExp := prefix()
+
 	for !p.peekTokenIs(token.SEMICOLON) && precedence < p.peekPrecedence() {
 		infix := p.infixParseFns[p.peekToken.Type]
 		if infix == nil {
@@ -490,7 +530,6 @@ func (p *Parser) parseInfixExpression(left ast.Expression) ast.Expression {
 	expression := &ast.InfixExpression{
 		Token:    p.curToken,
 		Operator: p.curToken.Literal,
-		Left:     left,
 	}
 	precedence := p.curPrecedence()
 	p.nextToken()
@@ -554,91 +593,77 @@ func (p *Parser) parseInvalidArrayAccessPrefix() ast.Expression {
 	return exp
 }
 
+func (p *Parser) parseSubshellStatement() ast.Statement {
+	subshellToken := p.curToken
+	p.nextToken()
+	block := p.parseBlockStatement(token.RPAREN)
+	if !p.curTokenIs(token.RPAREN) {
+		p.peekError(token.RPAREN)
+		return nil
+	}
+	p.nextToken()
+	block.Token = subshellToken
+	return block
+}
+
 func (p *Parser) parseCaseStatement() *ast.CaseStatement {
 	stmt := &ast.CaseStatement{Token: p.curToken}
-
-	p.nextToken() // consume CASE
+	p.nextToken()
 	stmt.Value = p.parseExpression(LOWEST)
 
 	if !p.expectPeek(token.IN) {
 		return nil
 	}
-	p.nextToken() // consume IN
+	p.nextToken()
 
 	for !p.curTokenIs(token.ESAC) && !p.curTokenIs(token.EOF) {
-		// Allow optional newlines before patterns
-		for p.curTokenIs(token.SEMICOLON) { // Lexer might emit semicolons for newlines if I configured it so?
-			// Or parser skips them? parseBlockStatement skips them.
-			// But here we are in Case body.
+		for p.curTokenIs(token.SEMICOLON) {
 			p.nextToken()
 		}
 		if p.curTokenIs(token.ESAC) {
 			break
 		}
-
 		clause := &ast.CaseClause{Token: p.curToken}
-		
-		// Parse patterns
-		// Optional leading (
 		if p.curTokenIs(token.LPAREN) {
 			p.nextToken()
 		}
-		
-		// Patterns separated by |
 		for {
-			// Parse pattern word. 
-			// Should be parseCommandWord? Or parseExpression?
-			// Patterns are words. Glob patterns.
-			// parseCommandWord matches "word" logic.
 			pat := p.parseCommandWord()
 			clause.Patterns = append(clause.Patterns, pat)
-			
 			if p.peekTokenIs(token.PIPE) {
-				p.nextToken() // consume arg
-				p.nextToken() // consume |
+				p.nextToken()
+				p.nextToken()
 			} else {
 				break
 			}
 		}
-
 		if !p.expectPeek(token.RPAREN) {
 			return nil
 		}
-		p.nextToken() // consume )
-
-		// Parse body
+		p.nextToken()
 		clause.Body = p.parseBlockStatement(token.DSEMI, token.ESAC)
-		
 		stmt.Clauses = append(stmt.Clauses, clause)
-
 		if p.curTokenIs(token.DSEMI) {
-			p.nextToken() // consume ;;
+			p.nextToken()
 		}
 	}
-
 	return stmt
 }
 
 func (p *Parser) parseFunctionLiteral() ast.Expression {
 	lit := &ast.FunctionLiteral{Token: p.curToken}
-
-	// Zsh functions can be anonymous `function() {}` or named `function my_func() {}`
 	if p.peekTokenIs(token.IDENT) {
-		p.nextToken() // consume function name
+		p.nextToken()
 	}
-
 	if !p.expectPeek(token.LPAREN) {
 		return nil
 	}
-
 	lit.Parameters = p.parseFunctionParameters()
-
 	if !p.expectPeek(token.LBRACE) {
 		return nil
 	}
-	p.nextToken() // consume "{"
+	p.nextToken()
 	lit.Body = p.parseBlockStatement(token.RBRACE)
-
 	return lit
 }
 
@@ -719,51 +744,76 @@ func (p *Parser) parseForLoopStatement() *ast.ForLoopStatement {
 		// Arithmetic for loop: for (( init; cond; post ))
 		p.nextToken() // consume ((
 
+		// Init (optional)
 		if !p.peekTokenIs(token.SEMICOLON) {
-			stmt.Init = p.parseExpression(LOWEST)
+			p.nextToken()
+			if p.prefixParseFns[p.curToken.Type] != nil {
+				stmt.Init = p.parseExpression(LOWEST)
+			} else {
+				p.noPrefixParseFnError(p.curToken.Type)
+				return nil
+			}
 		}
-
 		if !p.expectPeek(token.SEMICOLON) {
 			return nil
 		}
 
-		// Consumed semicolon.
-		// Now Cond.
+		// Condition (optional)
 		if !p.peekTokenIs(token.SEMICOLON) {
-			stmt.Condition = p.parseExpression(LOWEST)
+			p.nextToken()
+			if p.prefixParseFns[p.curToken.Type] != nil {
+				stmt.Condition = p.parseExpression(LOWEST)
+			} else {
+				p.noPrefixParseFnError(p.curToken.Type)
+				return nil
+			}
 		}
-
 		if !p.expectPeek(token.SEMICOLON) {
 			return nil
 		}
 
-		// Consumed semicolon.
-		// Now Post.
+		// Post (optional)
 		if !p.peekTokenIs(token.DoubleRparen) {
-			stmt.Post = p.parseExpression(LOWEST)
+			p.nextToken()
+			if p.prefixParseFns[p.curToken.Type] != nil {
+				stmt.Post = p.parseExpression(LOWEST)
+			} else {
+				p.noPrefixParseFnError(p.curToken.Type)
+				return nil
+			}
 		}
 
 		if !p.expectPeek(token.DoubleRparen) {
 			return nil
 		}
-	} else {
-		// For-each loop: for name [in words]; do
-		if !p.expectPeek(token.IDENT) {
+
+		// Optional semicolon before DO
+		if p.peekTokenIs(token.SEMICOLON) {
+			p.nextToken()
+		}
+
+		if !p.expectPeek(token.DO) {
 			return nil
 		}
-		// Use Init field to store the variable name (as Identifier)
-		stmt.Init = &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
+		p.nextToken() // consume DO
+		stmt.Body = p.parseBlockStatement(token.DONE)
+		return stmt
+	}
 
-		if p.peekTokenIs(token.IN) {
-			p.nextToken() // consume "in"
-			
-			stmt.Items = []ast.Expression{}
-			for !p.peekTokenIs(token.SEMICOLON) && !p.peekTokenIs(token.DO) && !p.peekTokenIs(token.EOF) &&
-				p.peekToken.Line == p.curToken.Line {
-				p.nextToken()
-				arg := p.parseCommandWord()
-				stmt.Items = append(stmt.Items, arg)
-			}
+	// For-each loop: for name [in words]; do
+	if !p.expectPeek(token.IDENT) {
+		return nil
+	}
+	stmt.Init = &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
+
+	if p.peekTokenIs(token.IN) {
+		p.nextToken()
+		stmt.Items = []ast.Expression{}
+		for !p.peekTokenIs(token.SEMICOLON) && !p.peekTokenIs(token.DO) && !p.peekTokenIs(token.EOF) &&
+			p.peekToken.Line == p.curToken.Line {
+			p.nextToken()
+			arg := p.parseCommandWord()
+			stmt.Items = append(stmt.Items, arg)
 		}
 	}
 
@@ -782,18 +832,13 @@ func (p *Parser) parseForLoopStatement() *ast.ForLoopStatement {
 
 func (p *Parser) parseWhileLoopStatement() *ast.WhileLoopStatement {
 	stmt := &ast.WhileLoopStatement{Token: p.curToken}
-
 	p.nextToken()
-	
 	stmt.Condition = p.parseBlockStatement(token.DO)
-
 	if !p.curTokenIs(token.DO) {
 		return nil
 	}
-
-	p.nextToken() // consume DO
+	p.nextToken()
 	stmt.Body = p.parseBlockStatement(token.DONE)
-
 	return stmt
 }
 
@@ -817,16 +862,6 @@ func (p *Parser) peekTokenIs(t token.Type) bool {
 func (p *Parser) expectPeek(t token.Type) bool {
 	if p.peekTokenIs(t) {
 		p.nextToken()
-		return true
-	}
-	if t == token.RPAREN && p.peekTokenIs(token.DoubleRparen) {
-		p.curToken = p.peekToken
-		p.curToken.Type = token.RPAREN
-		p.curToken.Literal = ")"
-
-		p.peekToken.Type = token.RPAREN
-		p.peekToken.Literal = ")"
-		p.peekToken.Column++
 		return true
 	}
 	p.peekError(t)

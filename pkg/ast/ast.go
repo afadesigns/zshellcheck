@@ -37,7 +37,54 @@ const (
 	IndexExpressionNode
 	ConcatenatedExpressionNode
 	CaseStatementNode
+	RedirectionNode
+	FunctionDefinitionNode
 )
+
+type FunctionDefinition struct {
+	Token token.Token // The name token
+	Name  *Identifier
+	Body  Statement   // The function body (usually BlockStatement)
+}
+
+func (fd *FunctionDefinition) Type() NodeType       { return FunctionDefinitionNode }
+func (fd *FunctionDefinition) expressionNode()      {}
+func (fd *FunctionDefinition) TokenLiteral() string { return fd.Token.Literal }
+func (fd *FunctionDefinition) String() string {
+	var out []byte
+	if fd.Name != nil {
+		out = append(out, []byte(fd.Name.String())...)
+	}
+	out = append(out, []byte("() ")...)
+	if fd.Body != nil {
+		out = append(out, []byte(fd.Body.String())...)
+	}
+	return string(out)
+}
+
+type Redirection struct {
+	Token    token.Token
+	Left     Expression
+	Operator string
+	Right    Expression
+}
+
+func (r *Redirection) Type() NodeType       { return RedirectionNode }
+func (r *Redirection) expressionNode()      {}
+func (r *Redirection) TokenLiteral() string { return r.Token.Literal }
+func (r *Redirection) String() string {
+	var out []byte
+	if r.Left != nil {
+		out = append(out, []byte(r.Left.String())...)
+	}
+	out = append(out, []byte(" ")...)
+	out = append(out, []byte(r.Operator)...)
+	out = append(out, []byte(" ")...)
+	if r.Right != nil {
+		out = append(out, []byte(r.Right.String())...)
+	}
+	return string(out)
+}
 
 type Node interface {
 	TokenLiteral() string
@@ -745,5 +792,11 @@ func Walk(node Node, f WalkFn) {
 			}
 			Walk(c.Body, f)
 		}
+	case *Redirection:
+		Walk(n.Left, f)
+		Walk(n.Right, f)
+	case *FunctionDefinition:
+		Walk(n.Name, f)
+		Walk(n.Body, f)
 	}
 }

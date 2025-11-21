@@ -265,7 +265,8 @@ func TestOperatorPrecedenceParsing(t *testing.T) {
 }
 
 func TestIfStatement(t *testing.T) {
-	input := `if 1 < 2; then return true; fi`
+	input := `if ((1 < 2)); then return true; fi`
+
 	l := lexer.New(input)
 	p := New(l)
 	program := p.ParseProgram()
@@ -314,7 +315,7 @@ func TestIfStatement(t *testing.T) {
 }
 
 func TestIfElseStatement(t *testing.T) {
-	input := `if 1 > 2; then return true; else return false; fi`
+	input := `if ((1 > 2)); then return true; else return false; fi`
 	l := lexer.New(input)
 	p := New(l)
 	program := p.ParseProgram()
@@ -716,7 +717,9 @@ func TestArrayAccessDollarLbrace(t *testing.T) {
 
 func TestForLoopStatement(t *testing.T) {
 
-	input := `for ((i=0; i<10; i++)); do echo $i; done`
+
+
+	input := `for ((i=0;i<10;i++)) do echo $i; done`
 
 
 
@@ -924,7 +927,7 @@ func testPrefixExpression(t *testing.T, exp ast.Expression, operator string, rig
 
 func TestForLoopStatementStub(t *testing.T) { // Renamed from TestForLoopStatement, now a stub for later use.
 
-	input := `for ((i=0; i<10; i++ )); do echo $i; done`
+	input := `for ((i=0;i<10;i++)) do echo $i; done`
 
 
 

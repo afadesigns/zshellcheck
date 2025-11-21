@@ -29,11 +29,14 @@ const (
 	INC      = "++"
 	DEC      = "--"
 
-	LT = "<"
-	GT = ">"
-
-	EQ    = "=="
-	NotEq = "!="
+	GT       = ">"
+	LT       = "<"
+	GTGT     = ">>"
+	LTLT     = "<<"
+	GTAMP    = ">&"
+	LTAMP    = "<&"
+	EQ       = "=="
+	NotEq    = "!="
 
 	// Delimiters
 	COMMA        = ","
