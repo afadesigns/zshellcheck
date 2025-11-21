@@ -1,16 +1,15 @@
 package katas
 
 import (
-	"reflect"
-
+    "strings"
 	"github.com/afadesigns/zshellcheck/pkg/ast"
 )
 
 func init() {
-	RegisterKata(reflect.TypeOf(&ast.CommandSubstitution{}), Kata{
+	RegisterKata(ast.SimpleCommandNode, Kata{
 		ID:          "ZC1012",
-		Title:       "Use `$(command)` instead of backticks for command substitution",
-		Description: "The `$(command)` syntax is generally preferred over backticks `` `command` `` for command substitution. It's easier to read, can be nested, and avoids issues with backslashes.",
+		Title:       "Use `read -r` to prevent backslash escaping",
+		Description: "By default, `read` interprets backslashes as escape characters. Use `read -r` to treat backslashes literally, which is usually what you want.",
 		Check:       checkZC1012,
 	})
 }
@@ -18,13 +17,32 @@ func init() {
 func checkZC1012(node ast.Node) []Violation {
 	violations := []Violation{}
 
-	if cmdSub, ok := node.(*ast.CommandSubstitution); ok {
-		violations = append(violations, Violation{
-			KataID:  "ZC1012",
-			Message: "Use `$(command)` instead of backticks for command substitution.",
-			Line:    cmdSub.Token.Line,
-			Column:  cmdSub.Token.Column,
-		})
+	if cmd, ok := node.(*ast.SimpleCommand); ok {
+		if cmd.Name.String() == "read" {
+			hasR := false
+			for _, arg := range cmd.Arguments {
+				s := arg.String()
+                
+                // Handle PrefixExpression String() format: "(-r)" -> "-r"
+                s = strings.Trim(s, "()")
+                
+                if len(s) > 0 && s[0] == '-' {
+                    if strings.Contains(s, "r") {
+                        hasR = true
+                        break
+                    }
+                }
+			}
+
+			if !hasR {
+				violations = append(violations, Violation{
+					KataID:  "ZC1012",
+					Message: "Use `read -r` to read input without interpreting backslashes.",
+					Line:    cmd.Token.Line,
+					Column:  cmd.Token.Column,
+				})
+			}
+		}
 	}
 
 	return violations

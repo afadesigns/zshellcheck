@@ -1,12 +1,13 @@
 package token
 
-type TokenType string
+type Type string
 
 type Token struct {
-	Type    TokenType
-	Literal string
-	Line    int
-	Column  int
+	Type              Type
+	Literal           string
+	Line              int
+	Column            int
+	HasPrecedingSpace bool
 }
 
 const (
@@ -28,43 +29,54 @@ const (
 	INC      = "++"
 	DEC      = "--"
 
-	LT = "<"
-	GT = ">"
-
-	EQ     = "=="
-	NOT_EQ = "!="
+	GT       = ">"
+	LT       = "<"
+	GTGT     = ">>"
+	LTLT     = "<<"
+	GTAMP    = ">&"
+	LTAMP    = "<&"
+	EQ       = "=="
+	NotEq    = "!="
 
 	// Delimiters
-	COMMA         = ","
-	SEMICOLON     = ";"
-	COLON         = ":"
-	LPAREN        = "("
-	RPAREN        = ")"
-	LBRACE        = "{"
-	RBRACE        = "}"
-	LBRACKET      = "["
-	RBRACKET      = "]"
-	LDBRACKET     = "[["
-	RDBRACKET     = "]]"
-	DOUBLE_LPAREN = "(("
+	COMMA        = ","
+	SEMICOLON    = ";"
+	COLON        = ":"
+	LPAREN       = "("
+	RPAREN       = ")"
+	LBRACE       = "{"
+	RBRACE       = "}"
+	LBRACKET     = "["
+	RBRACKET     = "]"
+	LDBRACKET    = "[["
+	RDBRACKET    = "]]"
+	DoubleLparen = "(("
+	DoubleRparen = "))"
 
 	// Keywords
 	FUNCTION = "FUNCTION"
 	LET      = "LET"
 	TRUE     = "TRUE"
 	FALSE    = "FALSE"
-	IF       = "IF"
+	If       = "IF"
 	ELSE     = "ELSE"
 	RETURN   = "RETURN"
 	THEN     = "THEN"
-	FI       = "FI"
+	Fi       = "FI"
 	FOR      = "FOR"
+	WHILE    = "WHILE"
+	DO       = "DO"
 	DONE     = "DONE"
+	IN       = "IN"
+	CASE     = "CASE"
+	ESAC     = "ESAC"
+	ELIF     = "ELIF"
 
 	// Zsh-specific tokens (initial)
 	DOLLAR        = "$"
-	DOLLAR_LBRACE = "${"
+	DollarLbrace  = "${"
 	DOLLAR_LPAREN = "$("
+	VARIABLE      = "VARIABLE"
 	HASH          = "#"
 	AMPERSAND     = "&"
 	PIPE          = "|"
@@ -78,27 +90,34 @@ const (
 	// Zsh-specific operators (initial)
 	AND = "&&"
 	OR  = "||"
+	DSEMI = ";;"
 
 	// Zsh-specific delimiters (initial)
 	LARRAY = "("
 	RARRAY = ")"
 )
 
-var keywords = map[string]TokenType{
+var keywords = map[string]Type{
 	"function": FUNCTION,
 	"let":      LET,
 	"true":     TRUE,
 	"false":    FALSE,
-	"if":       IF,
+	"if":       If,
 	"else":     ELSE,
 	"return":   RETURN,
 	"then":     THEN,
-	"fi":       FI,
+	"fi":       Fi,
 	"for":      FOR,
+	"while":    WHILE,
+	"do":       DO,
 	"done":     DONE,
+	"in":       IN,
+	"case":     CASE,
+	"esac":     ESAC,
+	"elif":     ELIF,
 }
 
-func LookupIdent(ident string) TokenType {
+func LookupIdent(ident string) Type {
 	if tok, ok := keywords[ident]; ok {
 		return tok
 	}

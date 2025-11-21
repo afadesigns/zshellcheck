@@ -34,10 +34,16 @@ func TestWalk(t *testing.T) {
 		{
 			"If Statement",
 			&IfStatement{
-				Condition: &InfixExpression{
-					Left:     &IntegerLiteral{Value: 1},
-					Operator: "<",
-					Right:    &IntegerLiteral{Value: 2},
+				Condition: &BlockStatement{
+					Statements: []Statement{
+						&ExpressionStatement{
+							Expression: &InfixExpression{
+								Left:     &IntegerLiteral{Value: 1},
+								Operator: "<",
+								Right:    &IntegerLiteral{Value: 2},
+							},
+						},
+					},
 				},
 				Consequence: &BlockStatement{
 					Statements: []Statement{
@@ -47,7 +53,7 @@ func TestWalk(t *testing.T) {
 					},
 				},
 			},
-			7, // If, Infix, Int, Int, Block, ExprStmt, Ident
+			9, // Corrected count: If(1) + CondBlock(1) + CondExpr(1) + Infix(1) + Int(1) + Int(1) + ConsBlock(1) + ConsExpr(1) + Ident(1) = 9
 		},
 	}
 
@@ -63,5 +69,28 @@ func TestWalk(t *testing.T) {
 				t.Errorf("Walk did not visit all nodes. got=%d, want=%d", len(nodes), tt.expectedCount)
 			}
 		})
+	}
+}
+
+func TestProgram_String(t *testing.T) {
+	program := &Program{
+		Statements: []Statement{
+			&LetStatement{
+				Token: token.Token{Type: token.LET, Literal: "let"},
+				Name: &Identifier{
+					Token: token.Token{Type: token.IDENT, Literal: "myVar"},
+					Value: "myVar",
+				},
+				Value: &Identifier{
+					Token: token.Token{Type: token.IDENT, Literal: "anotherVar"},
+					Value: "anotherVar",
+				},
+			},
+		},
+	}
+
+	expected := "let myVar = anotherVar;"
+	if program.String() != expected {
+		t.Errorf("program.String() wrong. expected=%q, got=%q", expected, program.String())
 	}
 }

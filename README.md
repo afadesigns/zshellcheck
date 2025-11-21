@@ -63,22 +63,27 @@ if [[ $ZSH_VERSION > 5.0 ]]; then # ZShellCheck: [ZC1003] Prefer [[...]] over [.
 fi
 ```
 
-## Installation
+## Getting Started
 
-(Coming soon)
+### Installation
 
-### Homebrew (macOS)
+#### Homebrew (macOS)
 ```sh
 brew install afadesigns/zshellcheck/zshellcheck
 ```
 
-### Go
+#### Go
 ```sh
 go install github.com/afadesigns/zshellcheck/cmd/zshellcheck@latest
 ```
 
-### From Binary
+#### From Binary
 Download the latest release from the [Releases](https://github.com/afadesigns/zshellcheck/releases) page.
+
+### Usage
+```sh
+zshellcheck your_script.zsh
+```
 
 ## The Dojo (Usage)
 ```sh
@@ -90,3 +95,36 @@ zshellcheck your_script.zsh
 ZShellCheck uses a system of "Katas" (rules) to teach you better Zsh. Each Kata has a unique ID and a detailed explanation.
 
 ➡️ [**See the full list of Katas in our Wiki**](https://github.com/afadesigns/zshellcheck/wiki)
+
+## Development
+
+Interested in contributing to ZShellCheck? Here's how to get started:
+
+1.  **Clone the repository:**
+    ```sh
+    git clone https://github.com/afadesigns/zshellcheck.git
+    ```
+2.  **Install dependencies:**
+    ```sh
+    go mod tidy
+    ```
+3.  **Run the tests:**
+    ```sh
+    go test ./...
+    ```
+4.  **Build the binary:**
+    ```sh
+    go build ./cmd/zshellcheck
+    ```
+
+## Contributing
+
+We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for more details.
+
+## License
+
+ZShellCheck is licensed under the [MIT License](LICENSE).
+
+## Code of Conduct
+
+Please note that this project is released with a [Contributor Code of Conduct](CODE_OF_CONDUCT.md). By participating in this project you agree to abide by its terms.
