@@ -9,28 +9,36 @@ import (
 
 func TestCheckZC1012(t *testing.T) {
 	tests := []struct {
+		name     string
 		input    string
 		expected []katas.Violation
 	}{
 		{
-			input: "`ls`",
+			name:  "read without flags",
+			input: `read line`,
 			expected: []katas.Violation{
 				{
 					KataID:  "ZC1012",
-					Message: "Use `$(command)` instead of backticks for command substitution.",
+					Message: "Use `read -r` to read input without interpreting backslashes.",
 					Line:    1,
 					Column:  1,
 				},
 			},
 		},
 		{
-			input:    `$(ls)`,
+			name:     "read with -r",
+			input:    `read -r line`,
+			expected: []katas.Violation{},
+		},
+        {
+			name:     "read with -er",
+			input:    `read -er line`, // heuristic support
 			expected: []katas.Violation{},
 		},
 	}
 
 	for _, tt := range tests {
-		t.Run(tt.input, func(t *testing.T) {
+		t.Run(tt.name, func(t *testing.T) {
 			violations := testutil.Check(tt.input, "ZC1012")
 			testutil.AssertViolations(t, tt.input, violations, tt.expected)
 		})
