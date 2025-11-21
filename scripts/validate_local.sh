@@ -5,8 +5,12 @@ ZSHELLCHECK_BIN="./zshellcheck"
 TARGET_DIR="/home/rtx/.config/zsh"
 
 if [ ! -f "$ZSHELLCHECK_BIN" ]; then
-    echo "Building zshellcheck..."
-    go build -o zshellcheck cmd/zshellcheck/main.go
+echo "Building zshellcheck..."
+go build -o zshellcheck ./cmd/zshellcheck
+if [ $? -ne 0 ]; then
+    echo "Build failed."
+    exit 1
+fi
 fi
 
 echo "Running zshellcheck against $TARGET_DIR..."

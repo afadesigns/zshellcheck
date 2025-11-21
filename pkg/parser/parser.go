@@ -12,6 +12,7 @@ import (
 const (
 	_ int = iota
 	LOWEST
+	LOGICAL     // || or &&
 	EQUALS      // ==
 	LESSGREATER // > or <
 	SUM         // +
@@ -23,6 +24,8 @@ const (
 )
 
 var precedences = map[token.Type]int{
+	token.AND:      LOGICAL,
+	token.OR:       LOGICAL,
 	token.EQ:       EQUALS,
 	token.NotEq:    EQUALS,
 	token.LT:       LESSGREATER,
@@ -68,7 +71,7 @@ func New(l *lexer.Lexer) *Parser {
 	p.registerPrefix(token.LPAREN, p.parseGroupedExpression)
 	p.registerPrefix(token.FUNCTION, p.parseFunctionLiteral)
 	p.registerPrefix(token.STRING, p.parseStringLiteral)
-	p.registerPrefix(token.LBRACKET, p.parseBracketExpression)
+	p.registerPrefix(token.LBRACKET, p.parseSingleCommand)
 	p.registerPrefix(token.LDBRACKET, p.parseDoubleBracketExpression)
 	p.registerPrefix(token.DollarLbrace, p.parseArrayAccess)
 	p.registerPrefix(token.DOLLAR, p.parseInvalidArrayAccessPrefix)
@@ -82,6 +85,8 @@ func New(l *lexer.Lexer) *Parser {
 	p.registerInfix(token.MINUS, p.parseInfixExpression)
 	p.registerInfix(token.SLASH, p.parseInfixExpression)
 	p.registerInfix(token.ASTERISK, p.parseInfixExpression)
+	p.registerInfix(token.AND, p.parseInfixExpression)
+	p.registerInfix(token.OR, p.parseInfixExpression)
 	p.registerInfix(token.EQ, p.parseInfixExpression)
 	p.registerInfix(token.NotEq, p.parseInfixExpression)
 	p.registerInfix(token.LT, p.parseInfixExpression)
@@ -159,6 +164,14 @@ func (p *Parser) parseStatement() ast.Statement {
 		return nil
 	case token.FOR:
 		return p.parseForLoopStatement()
+	case token.WHILE:
+		return p.parseWhileLoopStatement()
+	case token.LBRACE:
+		return p.parseBlockStatement(token.RBRACE)
+	case token.COLON, token.DOT, token.LBRACKET:
+		return p.parseSimpleCommandStatement()
+	case token.CASE:
+		return p.parseCaseStatement()
 	case token.IDENT:
 		if p.curToken.Literal == "test" {
 			return p.parseSimpleCommandStatement()
@@ -177,13 +190,35 @@ func (p *Parser) parseStatement() ast.Statement {
 func (p *Parser) parseSimpleCommandStatement() ast.Statement {
 	stmt := &ast.ExpressionStatement{Token: p.curToken}
 
-	stmt.Expression = p.parseCommandPipeline()
+	stmt.Expression = p.parseCommandList()
 
 	if p.peekTokenIs(token.SEMICOLON) {
 		p.nextToken()
 	}
 
 	return stmt
+}
+
+func (p *Parser) parseCommandList() ast.Expression {
+	left := p.parseCommandPipeline()
+
+	for p.peekTokenIs(token.AND) || p.peekTokenIs(token.OR) {
+		p.nextToken()
+		op := p.curToken
+		// Command pipeline follows (parseCommandPipeline handles simple commands and pipes)
+		// But we need to move to start of next command. 
+		// nextToken was called. curToken is AND.
+		p.nextToken() // move to start of right command
+		right := p.parseCommandPipeline()
+		left = &ast.InfixExpression{
+			Token:    op,
+			Operator: op.Literal,
+			Left:     left,
+			Right:    right,
+		}
+	}
+
+	return left
 }
 
 func (p *Parser) parseCommandPipeline() ast.Expression {
@@ -213,13 +248,56 @@ func (p *Parser) parseSingleCommand() ast.Expression {
 	cmd.Arguments = []ast.Expression{}
 
 	for !p.peekTokenIs(token.EOF) && !p.peekTokenIs(token.SEMICOLON) && !p.peekTokenIs(token.PIPE) &&
-		!p.peekTokenIs(token.RPAREN) && !p.peekTokenIs(token.HASH) && p.peekToken.Line == p.curToken.Line {
+		!p.peekTokenIs(token.AND) && !p.peekTokenIs(token.OR) &&
+		!p.peekTokenIs(token.RPAREN) && !p.peekTokenIs(token.LPAREN) && !p.peekTokenIs(token.RBRACE) &&
+		!p.peekTokenIs(token.HASH) &&
+		!p.peekTokenIs(token.THEN) && !p.peekTokenIs(token.ELSE) && !p.peekTokenIs(token.ELIF) && !p.peekTokenIs(token.Fi) &&
+		!p.peekTokenIs(token.DO) && !p.peekTokenIs(token.DONE) &&
+		!p.peekTokenIs(token.ESAC) && !p.peekTokenIs(token.DSEMI) &&
+		p.peekToken.Line == p.curToken.Line {
 		p.nextToken()
-		arg := p.parseExpression(CALL)
+		arg := p.parseCommandWord()
 		cmd.Arguments = append(cmd.Arguments, arg)
 	}
 
 	return cmd
+}
+
+func (p *Parser) parseCommandWord() ast.Expression {
+	firstToken := p.curToken
+	parts := []ast.Expression{}
+
+	// Parse the first part
+	if p.prefixParseFns[p.curToken.Type] == nil {
+		parts = append(parts, &ast.StringLiteral{Token: p.curToken, Value: p.curToken.Literal})
+	} else {
+		parts = append(parts, p.parseExpression(CALL))
+	}
+
+	// Continue parsing while the next token is adjacent (no preceding space)
+	for !p.peekToken.HasPrecedingSpace && !p.peekTokenIs(token.EOF) &&
+		!p.peekTokenIs(token.SEMICOLON) && !p.peekTokenIs(token.PIPE) &&
+		!p.peekTokenIs(token.RPAREN) && !p.peekTokenIs(token.HASH) &&
+		p.peekToken.Line == p.curToken.Line {
+
+		p.nextToken()
+
+		if p.prefixParseFns[p.curToken.Type] == nil {
+			// Treat as literal string part
+			parts = append(parts, &ast.StringLiteral{Token: p.curToken, Value: p.curToken.Literal})
+		} else {
+			parts = append(parts, p.parseExpression(CALL))
+		}
+	}
+
+	if len(parts) == 1 {
+		return parts[0]
+	}
+
+	return &ast.ConcatenatedExpression{
+		Token: firstToken,
+		Parts: parts,
+	}
 }
 
 func (p *Parser) parseLetStatement() *ast.LetStatement {
@@ -263,13 +341,13 @@ func (p *Parser) parseExpressionStatement() *ast.ExpressionStatement {
 func (p *Parser) parseIfStatement() *ast.IfStatement {
 	stmt := &ast.IfStatement{Token: p.curToken}
 	p.nextToken()
-	stmt.Condition = p.parseExpression(LOWEST)
-	if p.peekTokenIs(token.SEMICOLON) {
-		p.nextToken()
-	}
-	if !p.expectPeek(token.THEN) {
+	stmt.Condition = p.parseBlockStatement(token.THEN)
+
+	if !p.curTokenIs(token.THEN) {
+		// If we stopped for EOF or other reason
 		return nil
 	}
+
 	p.nextToken() // consume "then"
 	stmt.Consequence = p.parseBlockStatement(token.ELSE, token.Fi)
 
@@ -476,6 +554,71 @@ func (p *Parser) parseInvalidArrayAccessPrefix() ast.Expression {
 	return exp
 }
 
+func (p *Parser) parseCaseStatement() *ast.CaseStatement {
+	stmt := &ast.CaseStatement{Token: p.curToken}
+
+	p.nextToken() // consume CASE
+	stmt.Value = p.parseExpression(LOWEST)
+
+	if !p.expectPeek(token.IN) {
+		return nil
+	}
+	p.nextToken() // consume IN
+
+	for !p.curTokenIs(token.ESAC) && !p.curTokenIs(token.EOF) {
+		// Allow optional newlines before patterns
+		for p.curTokenIs(token.SEMICOLON) { // Lexer might emit semicolons for newlines if I configured it so?
+			// Or parser skips them? parseBlockStatement skips them.
+			// But here we are in Case body.
+			p.nextToken()
+		}
+		if p.curTokenIs(token.ESAC) {
+			break
+		}
+
+		clause := &ast.CaseClause{Token: p.curToken}
+		
+		// Parse patterns
+		// Optional leading (
+		if p.curTokenIs(token.LPAREN) {
+			p.nextToken()
+		}
+		
+		// Patterns separated by |
+		for {
+			// Parse pattern word. 
+			// Should be parseCommandWord? Or parseExpression?
+			// Patterns are words. Glob patterns.
+			// parseCommandWord matches "word" logic.
+			pat := p.parseCommandWord()
+			clause.Patterns = append(clause.Patterns, pat)
+			
+			if p.peekTokenIs(token.PIPE) {
+				p.nextToken() // consume arg
+				p.nextToken() // consume |
+			} else {
+				break
+			}
+		}
+
+		if !p.expectPeek(token.RPAREN) {
+			return nil
+		}
+		p.nextToken() // consume )
+
+		// Parse body
+		clause.Body = p.parseBlockStatement(token.DSEMI, token.ESAC)
+		
+		stmt.Clauses = append(stmt.Clauses, clause)
+
+		if p.curTokenIs(token.DSEMI) {
+			p.nextToken() // consume ;;
+		}
+	}
+
+	return stmt
+}
+
 func (p *Parser) parseFunctionLiteral() ast.Expression {
 	lit := &ast.FunctionLiteral{Token: p.curToken}
 
@@ -572,41 +715,85 @@ func (p *Parser) parseShebangStatement() *ast.Shebang {
 func (p *Parser) parseForLoopStatement() *ast.ForLoopStatement {
 	stmt := &ast.ForLoopStatement{Token: p.curToken}
 
-	if !p.expectPeek(token.DoubleLparen) {
-		return nil
-	}
+	if p.peekTokenIs(token.DoubleLparen) {
+		// Arithmetic for loop: for (( init; cond; post ))
+		p.nextToken() // consume ((
 
-	p.nextToken()
-	stmt.Init = p.parseExpression(LOWEST)
+		if !p.peekTokenIs(token.SEMICOLON) {
+			stmt.Init = p.parseExpression(LOWEST)
+		}
 
-	if !p.expectPeek(token.SEMICOLON) {
-		return nil
-	}
+		if !p.expectPeek(token.SEMICOLON) {
+			return nil
+		}
 
-	p.nextToken()
-	stmt.Condition = p.parseExpression(LOWEST)
+		// Consumed semicolon.
+		// Now Cond.
+		if !p.peekTokenIs(token.SEMICOLON) {
+			stmt.Condition = p.parseExpression(LOWEST)
+		}
 
-	if !p.expectPeek(token.SEMICOLON) {
-		return nil
-	}
+		if !p.expectPeek(token.SEMICOLON) {
+			return nil
+		}
 
-	p.nextToken()
-	stmt.Post = p.parseExpression(LOWEST)
+		// Consumed semicolon.
+		// Now Post.
+		if !p.peekTokenIs(token.DoubleRparen) {
+			stmt.Post = p.parseExpression(LOWEST)
+		}
 
-	if !p.expectPeek(token.DoubleRparen) {
-		return nil
+		if !p.expectPeek(token.DoubleRparen) {
+			return nil
+		}
+	} else {
+		// For-each loop: for name [in words]; do
+		if !p.expectPeek(token.IDENT) {
+			return nil
+		}
+		// Use Init field to store the variable name (as Identifier)
+		stmt.Init = &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
+
+		if p.peekTokenIs(token.IN) {
+			p.nextToken() // consume "in"
+			
+			stmt.Items = []ast.Expression{}
+			for !p.peekTokenIs(token.SEMICOLON) && !p.peekTokenIs(token.DO) && !p.peekTokenIs(token.EOF) &&
+				p.peekToken.Line == p.curToken.Line {
+				p.nextToken()
+				arg := p.parseCommandWord()
+				stmt.Items = append(stmt.Items, arg)
+			}
+		}
 	}
 
 	if p.peekTokenIs(token.SEMICOLON) {
 		p.nextToken()
 	}
 
-	if !p.expectPeek(token.IDENT) || p.curToken.Literal != "do" {
+	if !p.expectPeek(token.DO) {
 		return nil
 	}
 
 	p.nextToken()
 	stmt.Body = p.parseBlockStatement(token.DONE)
+	return stmt
+}
+
+func (p *Parser) parseWhileLoopStatement() *ast.WhileLoopStatement {
+	stmt := &ast.WhileLoopStatement{Token: p.curToken}
+
+	p.nextToken()
+	
+	stmt.Condition = p.parseBlockStatement(token.DO)
+
+	if !p.curTokenIs(token.DO) {
+		return nil
+	}
+
+	p.nextToken() // consume DO
+	stmt.Body = p.parseBlockStatement(token.DONE)
+
 	return stmt
 }
 

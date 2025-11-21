@@ -24,8 +24,7 @@ func TestZC1003(t *testing.T) {
 			expected: []katas.Violation{
 				{
 					KataID:  "ZC1003",
-					Message: "Prefer [[ over [ for tests. " +
-						"[[ is a Zsh keyword that offers safer and more powerful conditional expressions.",
+					Message: "Use `((...))` for arithmetic comparisons instead of `[` or `test`.",
 					Line:    1,
 					Column:  1,
 				},

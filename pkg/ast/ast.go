@@ -22,6 +22,7 @@ const (
 	BlockStatementNode
 	IfStatementNode
 	ForLoopStatementNode
+	WhileLoopStatementNode
 	FunctionLiteralNode
 	CallExpressionNode
 	StringLiteralNode
@@ -34,6 +35,8 @@ const (
 	DollarParenExpressionNode
 	SimpleCommandNode
 	IndexExpressionNode
+	ConcatenatedExpressionNode
+	CaseStatementNode
 )
 
 type Node interface {
@@ -242,7 +245,7 @@ func (bs *BlockStatement) String() string {
 
 type IfStatement struct {
 	Token       token.Token // The 'if' token
-	Condition   Expression
+	Condition   *BlockStatement
 	Consequence *BlockStatement
 	Alternative *BlockStatement
 }
@@ -270,9 +273,10 @@ func (is *IfStatement) String() string {
 
 type ForLoopStatement struct {
 	Token     token.Token // The 'for' token
-	Init      Expression
-	Condition Expression
-	Post      Expression
+	Init      Expression  // Variable name (for-each) or Init expr (arithmetic)
+	Condition Expression  // Arithmetic condition
+	Post      Expression  // Arithmetic post
+	Items     []Expression // Items to iterate over (for-each)
 	Body      *BlockStatement
 }
 
@@ -281,21 +285,65 @@ func (fls *ForLoopStatement) statementNode()       {}
 func (fls *ForLoopStatement) TokenLiteral() string { return fls.Token.Literal }
 func (fls *ForLoopStatement) String() string {
 	var out []byte
-	out = append(out, []byte("for ((")...)
-	if fls.Init != nil {
-		out = append(out, []byte(fls.Init.String())...)
+	// Heuristic: if Condition or Post is present, or Items is nil (and not implicit?), it's arithmetic?
+	// Actually, explicit `Items` makes it for-each.
+	// But `for i` (implicit in) has Items=nil.
+	// Arithmetic `for ((...))` usually has params. `for ((;;))` is possible.
+	// I'll assume if Items is non-nil (even empty) it's for-each.
+	// Or if Init is Identifier and others are nil?
+	
+	if fls.Items != nil {
+		out = append(out, []byte("for ")...)
+		if fls.Init != nil {
+			out = append(out, []byte(fls.Init.String())...)
+		}
+		out = append(out, []byte(" in ")...)
+		for _, item := range fls.Items {
+			out = append(out, []byte(item.String())...)
+			out = append(out, []byte(" ")...)
+		}
+		out = append(out, []byte("; do ")...)
+	} else {
+		out = append(out, []byte("for ((")...)
+		if fls.Init != nil {
+			out = append(out, []byte(fls.Init.String())...)
+		}
+		out = append(out, []byte("; ")...)
+		if fls.Condition != nil {
+			out = append(out, []byte(fls.Condition.String())...)
+		}
+		out = append(out, []byte("; ")...)
+		if fls.Post != nil {
+			out = append(out, []byte(fls.Post.String())...)
+		}
+		out = append(out, []byte(")); do ")...)
 	}
-	out = append(out, []byte("; ")...)
-	if fls.Condition != nil {
-		out = append(out, []byte(fls.Condition.String())...)
-	}
-	out = append(out, []byte("; ")...)
-	if fls.Post != nil {
-		out = append(out, []byte(fls.Post.String())...)
-	}
-	out = append(out, []byte(")); do ")...)
+	
 	if fls.Body != nil {
 		out = append(out, []byte(fls.Body.String())...)
+	}
+	out = append(out, []byte("done")...)
+	return string(out)
+}
+
+type WhileLoopStatement struct {
+	Token     token.Token // The 'while' token
+	Condition *BlockStatement
+	Body      *BlockStatement
+}
+
+func (wls *WhileLoopStatement) Type() NodeType       { return WhileLoopStatementNode }
+func (wls *WhileLoopStatement) statementNode()       {}
+func (wls *WhileLoopStatement) TokenLiteral() string { return wls.Token.Literal }
+func (wls *WhileLoopStatement) String() string {
+	var out []byte
+	out = append(out, []byte("while ")...)
+	if wls.Condition != nil {
+		out = append(out, []byte(wls.Condition.String())...)
+	}
+	out = append(out, []byte("; do ")...)
+	if wls.Body != nil {
+		out = append(out, []byte(wls.Body.String())...)
 	}
 	out = append(out, []byte("done")...)
 	return string(out)
@@ -519,6 +567,67 @@ func (sc *SimpleCommand) String() string {
 	return string(out)
 }
 
+type ConcatenatedExpression struct {
+	Token token.Token
+	Parts []Expression
+}
+
+func (ce *ConcatenatedExpression) Type() NodeType       { return ConcatenatedExpressionNode }
+func (ce *ConcatenatedExpression) expressionNode()      {}
+func (ce *ConcatenatedExpression) TokenLiteral() string { return ce.Token.Literal }
+func (ce *ConcatenatedExpression) String() string {
+	var out []byte
+	for _, p := range ce.Parts {
+		out = append(out, []byte(p.String())...)
+	}
+	return string(out)
+}
+
+type CaseStatement struct {
+	Token   token.Token // The 'case' token
+	Value   Expression
+	Clauses []*CaseClause
+}
+
+func (cs *CaseStatement) Type() NodeType       { return CaseStatementNode }
+func (cs *CaseStatement) statementNode()       {}
+func (cs *CaseStatement) TokenLiteral() string { return cs.Token.Literal }
+func (cs *CaseStatement) String() string {
+	var out []byte
+	out = append(out, []byte("case ")...)
+	if cs.Value != nil {
+		out = append(out, []byte(cs.Value.String())...)
+	}
+	out = append(out, []byte(" in ")...)
+	for _, c := range cs.Clauses {
+		out = append(out, []byte(c.String())...)
+	}
+	out = append(out, []byte("esac")...)
+	return string(out)
+}
+
+type CaseClause struct {
+	Token    token.Token // The first token of pattern
+	Patterns []Expression
+	Body     *BlockStatement
+}
+
+func (cc *CaseClause) String() string {
+	var out []byte
+	for i, p := range cc.Patterns {
+		out = append(out, []byte(p.String())...)
+		if i < len(cc.Patterns)-1 {
+			out = append(out, []byte(" | ")...)
+		}
+	}
+	out = append(out, []byte(") ")...)
+	if cc.Body != nil {
+		out = append(out, []byte(cc.Body.String())...)
+	}
+	out = append(out, []byte(" ;; ")...)
+	return string(out)
+}
+
 type WalkFn func(node Node) bool
 
 func Walk(node Node, f WalkFn) {
@@ -577,6 +686,12 @@ func Walk(node Node, f WalkFn) {
 		Walk(n.Init, f)
 		Walk(n.Condition, f)
 		Walk(n.Post, f)
+		for _, item := range n.Items {
+			Walk(item, f)
+		}
+		Walk(n.Body, f)
+	case *WhileLoopStatement:
+		Walk(n.Condition, f)
 		Walk(n.Body, f)
 	case *FunctionLiteral:
 		for _, param := range n.Parameters {
@@ -617,6 +732,18 @@ func Walk(node Node, f WalkFn) {
 		Walk(n.Name, f)
 		for _, arg := range n.Arguments {
 			Walk(arg, f)
+		}
+	case *ConcatenatedExpression:
+		for _, p := range n.Parts {
+			Walk(p, f)
+		}
+	case *CaseStatement:
+		Walk(n.Value, f)
+		for _, c := range n.Clauses {
+			for _, p := range c.Patterns {
+				Walk(p, f)
+			}
+			Walk(c.Body, f)
 		}
 	}
 }

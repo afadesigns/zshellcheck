@@ -276,10 +276,22 @@ func TestIfStatement(t *testing.T) {
 	}
 	stmt, ok := program.Statements[0].(*ast.IfStatement)
 	if !ok {
-		t.Fatalf("program.Statements[0] is not ast.IfStatement. got=%T", program.Statements[0])
+		t.Fatalf("program.Statements[0] is not ast.IfStatement. got=%T",
+			program.Statements[0])
 	}
 
-	if !testInfixExpression(t, stmt.Condition, 1, "<", 2) {
+	if len(stmt.Condition.Statements) != 1 {
+		t.Fatalf("stmt.Condition.Statements does not contain 1 statement. got=%d",
+			len(stmt.Condition.Statements))
+	}
+
+	condStmt, ok := stmt.Condition.Statements[0].(*ast.ExpressionStatement)
+	if !ok {
+		t.Fatalf("stmt.Condition.Statements[0] is not ast.ExpressionStatement. got=%T",
+			stmt.Condition.Statements[0])
+	}
+
+	if !testInfixExpression(t, condStmt.Expression, 1, "<", 2) {
 		return
 	}
 
@@ -313,13 +325,24 @@ func TestIfElseStatement(t *testing.T) {
 	}
 	stmt, ok := program.Statements[0].(*ast.IfStatement)
 	if !ok {
-		t.Fatalf("program.Statements[0] is not ast.IfStatement. got=%T", program.Statements[0])
+		t.Fatalf("program.Statements[0] is not ast.IfStatement. got=%T",
+			program.Statements[0])
 	}
 
-	if !testInfixExpression(t, stmt.Condition, 1, ">", 2) {
+	if len(stmt.Condition.Statements) != 1 {
+		t.Fatalf("stmt.Condition.Statements does not contain 1 statement. got=%d",
+			len(stmt.Condition.Statements))
+	}
+
+	condStmt, ok := stmt.Condition.Statements[0].(*ast.ExpressionStatement)
+	if !ok {
+		t.Fatalf("stmt.Condition.Statements[0] is not ast.ExpressionStatement. got=%T",
+			stmt.Condition.Statements[0])
+	}
+
+	if !testInfixExpression(t, condStmt.Expression, 1, ">", 2) {
 		return
 	}
-
 	if len(stmt.Consequence.Statements) != 1 {
 		t.Fatalf("consequence is not 1 statement. got=%d", len(stmt.Consequence.Statements))
 	}
@@ -901,7 +924,7 @@ func testPrefixExpression(t *testing.T, exp ast.Expression, operator string, rig
 
 func TestForLoopStatementStub(t *testing.T) { // Renamed from TestForLoopStatement, now a stub for later use.
 
-	input := `for ((i=0; i<10; i++)); do echo $i; done`
+	input := `for ((i=0; i<10; i++ )); do echo $i; done`
 
 
 

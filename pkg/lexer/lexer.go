@@ -47,9 +47,33 @@ func (l *Lexer) peekChar() byte {
 func (l *Lexer) NextToken() token.Token {
 	var tok token.Token
 
-	l.skipWhitespace()
+	hasSpace := l.skipWhitespace()
+	tok.HasPrecedingSpace = hasSpace
+
+	if l.ch == '#' {
+		// Shebang check (must be at start of file, or maybe just check sequence #!)
+		// Usually only valid at start. But strict check: col 1, line 1?
+		// For robustness, if #! appears, it's shebang token.
+		if l.peekChar() == '!' {
+			// Consume until end of line
+			start := l.position
+			for l.ch != '\n' && l.ch != 0 {
+				l.readChar()
+			}
+			literal := l.input[start:l.position]
+			return token.Token{Type: token.SHEBANG, Literal: literal, Line: l.line, Column: l.column}
+		}
+
+		// Comment check: only if preceded by space or start of line
+		if hasSpace || l.column == 1 {
+			l.skipComment()
+			return l.NextToken()
+		}
+	}
 
 	switch l.ch {
+	case '#':
+		tok = newToken(token.HASH, l.ch, l.line, l.column)
 	case '=':
 		if l.peekChar() == '=' {
 			ch := l.ch
@@ -166,15 +190,7 @@ func (l *Lexer) NextToken() token.Token {
 			}
 			tok = newToken(token.DOLLAR, l.ch, l.line, l.column)
 		}
-	case '#':
-		if l.peekChar() == '!' {
-			tok.Type = token.SHEBANG
-			tok.Literal = l.readShebang()
-			tok.Line = l.line
-			tok.Column = l.column
-			return tok
-		}
-		tok = newToken(token.HASH, l.ch, l.line, l.column)
+
 	case '&':
 		if l.peekChar() == '&' {
 			ch := l.ch
@@ -273,8 +289,21 @@ func (l *Lexer) readShebang() string {
 	return l.input[position:l.position]
 }
 
-func (l *Lexer) skipWhitespace() {
+func (l *Lexer) skipWhitespace() bool {
+	skipped := false
 	for l.ch == ' ' || l.ch == '\t' || l.ch == '\n' || l.ch == '\r' {
+		skipped = true
+		if l.ch == '\n' {
+			l.line++
+			l.column = 0
+		}
+		l.readChar()
+	}
+	return skipped
+}
+
+func (l *Lexer) skipComment() {
+	for l.ch != '\n' && l.ch != 0 {
 		l.readChar()
 	}
 }
@@ -284,7 +313,8 @@ func newToken(tokenType token.Type, ch byte, line, column int) token.Token {
 }
 
 func isLetter(ch byte) bool {
-	return 'a' <= ch && ch <= 'z' || 'A' <= ch && ch <= 'Z' || ch == '_' || ch == '-'
+	return 'a' <= ch && ch <= 'z' || 'A' <= ch && ch <= 'Z' || ch == '_' ||
+		ch == '/' || ch == '.' || ch == '@' || ch == ':' || ch == '~'
 }
 
 func isDigit(ch byte) bool {

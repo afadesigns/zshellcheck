@@ -3,10 +3,11 @@ package token
 type Type string
 
 type Token struct {
-	Type    Type
-	Literal string
-	Line    int
-	Column  int
+	Type              Type
+	Literal           string
+	Line              int
+	Column            int
+	HasPrecedingSpace bool
 }
 
 const (
@@ -60,7 +61,13 @@ const (
 	THEN     = "THEN"
 	Fi       = "FI"
 	FOR      = "FOR"
+	WHILE    = "WHILE"
+	DO       = "DO"
 	DONE     = "DONE"
+	IN       = "IN"
+	CASE     = "CASE"
+	ESAC     = "ESAC"
+	ELIF     = "ELIF"
 
 	// Zsh-specific tokens (initial)
 	DOLLAR        = "$"
@@ -80,6 +87,7 @@ const (
 	// Zsh-specific operators (initial)
 	AND = "&&"
 	OR  = "||"
+	DSEMI = ";;"
 
 	// Zsh-specific delimiters (initial)
 	LARRAY = "("
@@ -97,7 +105,13 @@ var keywords = map[string]Type{
 	"then":     THEN,
 	"fi":       Fi,
 	"for":      FOR,
+	"while":    WHILE,
+	"do":       DO,
 	"done":     DONE,
+	"in":       IN,
+	"case":     CASE,
+	"esac":     ESAC,
+	"elif":     ELIF,
 }
 
 func LookupIdent(ident string) Type {

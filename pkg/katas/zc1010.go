@@ -1,17 +1,15 @@
 package katas
 
 import (
-
 	"github.com/afadesigns/zshellcheck/pkg/ast"
 )
 
 func init() {
-	RegisterKata(ast.BracketExpressionNode, Kata{
+	RegisterKata(ast.SimpleCommandNode, Kata{
 		ID:    "ZC1010",
-		Title: "Use `[[ ... ]]` instead of `[ ... ]`",
-		Description: "The `[[ ... ]]` construct is a Zsh keyword and is generally safer and more powerful " +
-			"than the `[ ... ]` command (which is an alias for `test`). `[[ ... ]]` prevents word " +
-			"splitting and pathname expansion, and supports advanced features like regex matching.",
+		Title: "Use `[[ ... ]]` instead of `[ ... ]` or `test`",
+		Description: "The `[[` construct is more powerful and safer than `[` or `test`. " +
+			"It prevents word splitting and glob expansion of its arguments.",
 		Check: checkZC1010,
 	})
 }
@@ -19,13 +17,17 @@ func init() {
 func checkZC1010(node ast.Node) []Violation {
 	violations := []Violation{}
 
-	if bracketExpr, ok := node.(*ast.BracketExpression); ok {
-		violations = append(violations, Violation{
-			KataID:  "ZC1010",
-			Message: "Use `[[ ... ]]` instead of `[ ... ]` for safer and more powerful tests.",
-			Line:    bracketExpr.Token.Line,
-			Column:  bracketExpr.Token.Column,
-		})
+	if cmd, ok := node.(*ast.SimpleCommand); ok {
+		if ident, ok := cmd.Name.(*ast.Identifier); ok {
+			if ident.Value == "[" || ident.Value == "test" {
+				violations = append(violations, Violation{
+					KataID:  "ZC1010",
+					Message: "Use `[[ ... ]]` instead of `[ ... ]` or `test`. `[[` is safer and more powerful.",
+					Line:    ident.Token.Line,
+						Column:  ident.Token.Column,
+				})
+			}
+		}
 	}
 
 	return violations

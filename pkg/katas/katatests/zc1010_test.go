@@ -17,7 +17,7 @@ func TestCheckZC1010(t *testing.T) {
 			expected: []katas.Violation{
 				{
 					KataID:  "ZC1010",
-					Message: "Use `[[ ... ]]` instead of `[ ... ]` for safer and more powerful tests.",
+					Message: "Use `[[ ... ]]` instead of `[ ... ]` or `test`. `[[` is safer and more powerful.",
 					Line:    1,
 					Column:  1,
 				},
