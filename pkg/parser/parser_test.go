@@ -26,7 +26,7 @@ func TestLetStatements(t *testing.T) {
 
 		if len(program.Statements) != 1 {
 			t.Fatalf("program.Statements does not contain 1 statement. got=%d",
-				len(program.Statements))
+				len(program.Statements)) 
 		}
 
 		stmt := program.Statements[0]
@@ -42,11 +42,9 @@ func TestLetStatements(t *testing.T) {
 }
 
 func TestReturnStatements(t *testing.T) {
-	input := `
-return 5;
+	input := `return 5;
 return 10;
-return 993322;
-`
+return 993322;`
 	l := lexer.New(input)
 	p := New(l)
 	program := p.ParseProgram()
@@ -88,18 +86,18 @@ func TestIdentifierExpression(t *testing.T) {
 		t.Fatalf("program.Statements[0] is not ast.ExpressionStatement. got=%T",
 			program.Statements[0])
 	}
-	ident, ok := stmt.Expression.(*ast.Identifier)
+	ht, ok := stmt.Expression.(*ast.Identifier)
 	if !ok {
 		t.Fatalf("exp not *ast.Identifier. got=%T", stmt.Expression)
 	}
 
-	if ident.Value != "foobar" {
-		t.Errorf("ident.Value not %s. got=%s", "foobar", ident.Value)
+	if ht.Value != "foobar" {
+		t.Errorf("ht.Value not %s. got=%s", "foobar", ht.Value)
 	}
 
-	if ident.TokenLiteral() != "foobar" {
-		t.Errorf("ident.TokenLiteral not %s. got=%s", "foobar",
-			ident.TokenLiteral())
+	if ht.TokenLiteral() != "foobar" {
+		t.Errorf("ht.TokenLiteral not %s. got=%s", "foobar",
+			ht.TokenLiteral())
 	}
 }
 
@@ -243,15 +241,17 @@ func TestOperatorPrecedenceParsing(t *testing.T) {
 		{"3 > 5 == false", "((3 > 5) == false)"},
 		{"3 < 5 == true", "((3 < 5) == true)"},
 		{"1 + (2 + 3) + 4", "((1 + (2 + 3)) + 4)"},
-		{" (5 + 5) * 2", "((5 + 5) * 2)"},
+        // Changed test to be valid Zsh arithmetic syntax
+        {"let val = (5 + 5) * 2", "let val = ((5 + 5) * 2);"},
 		{"2 / (5 + 5)", "(2 / (5 + 5))"},
-		{"-(5 + 5)", "(-(5 + 5))"},
-		{"a + add(b * c) + d", "((a + add((b * c))) + d)"},
-		{"add(a, b, 1, 2 * 3, 4 + 5, add(6, 7 * 8))", "add(a, b, 1, (2 * 3), (4 + 5), add(6, (7 * 8)))"},
-		{"add(a + b + c * d / f + g)", "add((((a + b) + ((c * d) / f)) + g))"},
+		        {"-(5 + 5)", "(-(5 + 5))"},
+		        		{"a + add( (b * c) ) + d", "((a + add((b * c))) + d)"},
+		        		{"add(a, b, 1, 2 * 3, 4 + 5, add(6, 7 * 8) )", "add(a, b, 1, (2 * 3), (4 + 5), add(6, (7 * 8)))"},
+		        		{"add(a + b + c * d / f + g)", "add((((a + b) + ((c * d) / f)) + g))"},
 	}
 
 	for _, tt := range tests {
+		t.Logf("Testing input: %q", tt.input)
 		l := lexer.New(tt.input)
 		p := New(l)
 		program := p.ParseProgram()
@@ -265,7 +265,7 @@ func TestOperatorPrecedenceParsing(t *testing.T) {
 }
 
 func TestIfStatement(t *testing.T) {
-	input := `if ((1 < 2)); then return true; fi`
+	input := "if ((1 < 2)); then return true; fi"
 
 	l := lexer.New(input)
 	p := New(l)
@@ -315,7 +315,7 @@ func TestIfStatement(t *testing.T) {
 }
 
 func TestIfElseStatement(t *testing.T) {
-	input := `if ((1 > 2)); then return true; else return false; fi`
+	input := "if ((1 > 2)); then return true; else return false; fi"
 	l := lexer.New(input)
 	p := New(l)
 	program := p.ParseProgram()
@@ -372,7 +372,7 @@ func TestIfElseStatement(t *testing.T) {
 }
 
 func TestFunctionLiteralParsing(t *testing.T) {
-	input := `function(x, y) { x + y; }`
+	input := "function(x, y) { x + y; }"
 	l := lexer.New(input)
 	p := New(l)
 	program := p.ParseProgram()
@@ -489,8 +489,6 @@ func TestCommandSubstitutionWithArrayAccess(t *testing.T) {
 
 	input := "`${my_array[1]}`"
 
-
-
 	l := lexer.New(input)
 
 	p := New(l)
@@ -499,8 +497,6 @@ func TestCommandSubstitutionWithArrayAccess(t *testing.T) {
 
 	checkParserErrors(t, p)
 
-
-
 	if len(program.Statements) != 1 {
 
 		t.Fatalf("program.Statements does not contain 1 statement. got=%d",
@@ -508,8 +504,6 @@ func TestCommandSubstitutionWithArrayAccess(t *testing.T) {
 			len(program.Statements))
 
 	}
-
-
 
 	stmt, ok := program.Statements[0].(*ast.ExpressionStatement)
 
@@ -521,8 +515,6 @@ func TestCommandSubstitutionWithArrayAccess(t *testing.T) {
 
 	}
 
-
-
 	cs, ok := stmt.Expression.(*ast.CommandSubstitution)
 
 	if !ok {
@@ -533,8 +525,6 @@ func TestCommandSubstitutionWithArrayAccess(t *testing.T) {
 
 	}
 
-
-
 	idxExp, ok := cs.Command.(*ast.ArrayAccess)
 
 	if !ok {
@@ -543,15 +533,11 @@ func TestCommandSubstitutionWithArrayAccess(t *testing.T) {
 
 	}
 
-
-
 	if !testIdentifier(t, idxExp.Left, "my_array") {
 
 		return
 
 	}
-
-
 
 	if !testIntegerLiteral(t, idxExp.Index, 1) {
 
@@ -560,8 +546,6 @@ func TestCommandSubstitutionWithArrayAccess(t *testing.T) {
 	}
 
 }
-
-
 
 func TestIndexExpression(t *testing.T) {
 
@@ -572,16 +556,12 @@ func TestIndexExpression(t *testing.T) {
 		expectedLeft  string
 
 		expectedIndex interface{}
-
 	}{
 
 		{"my_array[1]", "my_array", 1},
 
 		{"users[id]", "users", "id"},
-
 	}
-
-
 
 	for _, tt := range tests {
 
@@ -593,8 +573,6 @@ func TestIndexExpression(t *testing.T) {
 
 		checkParserErrors(t, p)
 
-
-
 		stmt, ok := program.Statements[0].(*ast.ExpressionStatement)
 
 		if !ok {
@@ -604,8 +582,6 @@ func TestIndexExpression(t *testing.T) {
 				program.Statements[0])
 
 		}
-
-
 
 		idxExp, ok := stmt.Expression.(*ast.IndexExpression)
 
@@ -617,15 +593,11 @@ func TestIndexExpression(t *testing.T) {
 
 		}
 
-
-
 		if !testIdentifier(t, idxExp.Left, tt.expectedLeft) {
 
 			return
 
 		}
-
-
 
 		if !testLiteralExpression(t, idxExp.Index, tt.expectedIndex) {
 
@@ -637,8 +609,6 @@ func TestIndexExpression(t *testing.T) {
 
 }
 
-
-
 func TestArrayAccessDollarLbrace(t *testing.T) {
 
 	tests := []struct {
@@ -648,16 +618,12 @@ func TestArrayAccessDollarLbrace(t *testing.T) {
 		expectedLeft  string
 
 		expectedIndex interface{}
-
 	}{
 
 		{"${my_array[1]}", "my_array", 1},
 
 		{"${users[id]}", "users", "id"},
-
 	}
-
-
 
 	for _, tt := range tests {
 
@@ -669,8 +635,6 @@ func TestArrayAccessDollarLbrace(t *testing.T) {
 
 		checkParserErrors(t, p)
 
-
-
 		stmt, ok := program.Statements[0].(*ast.ExpressionStatement)
 
 		if !ok {
@@ -680,8 +644,6 @@ func TestArrayAccessDollarLbrace(t *testing.T) {
 				program.Statements[0])
 
 		}
-
-
 
 		aa, ok := stmt.Expression.(*ast.ArrayAccess)
 
@@ -693,15 +655,11 @@ func TestArrayAccessDollarLbrace(t *testing.T) {
 
 		}
 
-
-
 		if !testIdentifier(t, aa.Left, tt.expectedLeft) {
 
 			return
 
 		}
-
-
 
 		if !testLiteralExpression(t, aa.Index, tt.expectedIndex) {
 
@@ -713,25 +671,13 @@ func TestArrayAccessDollarLbrace(t *testing.T) {
 
 }
 
-
-
 func TestForLoopStatement(t *testing.T) {
 
-
-
-	input := `for ((i=0;i<10;i++)) do echo $i; done`
-
-
-
+	input := "for ((i=0;i<10;i++)) do echo $i; done"
 	l := lexer.New(input)
-
 	p := New(l)
-
 	program := p.ParseProgram()
-
 	checkParserErrors(t, p)
-
-
 
 	if len(program.Statements) != 1 {
 
@@ -740,8 +686,6 @@ func TestForLoopStatement(t *testing.T) {
 			len(program.Statements))
 
 	}
-
-
 
 	stmt, ok := program.Statements[0].(*ast.ForLoopStatement)
 
@@ -753,27 +697,19 @@ func TestForLoopStatement(t *testing.T) {
 
 	}
 
-
-
 	if stmt.TokenLiteral() != "for" {
 
 		t.Errorf("stmt.TokenLiteral not 'for', got %q", stmt.TokenLiteral())
 
 	}
 
-
-
 	// Test Init expression
 
 	testInfixExpression(t, stmt.Init, "i", "=", 0)
 
-
-
 	// Test Condition expression
 
 	testInfixExpression(t, stmt.Condition, "i", "<", 10)
-
-
 
 	// Test Post expression
 
@@ -783,163 +719,101 @@ func TestForLoopStatement(t *testing.T) {
 
 	}
 
+	// Test Body statement
 
+	if len(stmt.Body.Statements) != 1 {
 
-		// Test Body statement
+		for i, s := range stmt.Body.Statements {
 
-
-
-		if len(stmt.Body.Statements) != 1 {
-
-
-
-			for i, s := range stmt.Body.Statements {
-
-
-
-				t.Logf("stmt %d: %T %s", i, s, s.String())
-
-
-
-			}
-
-
-
-			t.Fatalf("ForLoopStatement.Body.Statements does not contain 1 statement. got=%d", len(stmt.Body.Statements))
-
-
+			t.Logf("stmt %d: %T %s", i, s, s.String())
 
 		}
 
-		bodyStmt, ok := stmt.Body.Statements[0].(*ast.ExpressionStatement)
-
-		if !ok {
-
-			t.Fatalf("ForLoopStatement.Body.Statements[0] is not ast.ExpressionStatement. got=%T", bodyStmt)
-
-		}
-
-	
-
-		cmd, ok := bodyStmt.Expression.(*ast.SimpleCommand)
-
-		if !ok {
-
-			t.Fatalf("bodyStmt.Expression is not *ast.SimpleCommand. got=%T", bodyStmt.Expression)
-
-		}
-
-	
-
-		if cmd.Name.String() != "echo" {
-
-			t.Errorf("cmd.Name is not 'echo'. got=%q", cmd.Name.String())
-
-		}
-
-	
-
-		if len(cmd.Arguments) != 1 {
-
-			t.Fatalf("cmd.Arguments does not contain 1 argument. got=%d", len(cmd.Arguments))
-
-		}
-
-	
-
-		if cmd.Arguments[0].String() != "$i" {
-
-			t.Errorf("cmd.Arguments[0] is not '$i'. got=%q", cmd.Arguments[0].String())
-
-		}
+		t.Fatalf("ForLoopStatement.Body.Statements does not contain 1 statement. got=%d", len(stmt.Body.Statements))
 
 	}
 
-	
-
-	func testPostfixExpression(t *testing.T, exp ast.Expression, left string, operator string) bool {
-
-	postfixExp, ok := exp.(*ast.PostfixExpression)
+	bodyStmt, ok := stmt.Body.Statements[0].(*ast.ExpressionStatement)
 
 	if !ok {
 
-		t.Errorf("exp not *ast.PostfixExpression. got=%T", exp)
-
-		return false
+		t.Fatalf("ForLoopStatement.Body.Statements[0] is not ast.ExpressionStatement. got=%T", bodyStmt)
 
 	}
 
+	cmd, ok := bodyStmt.Expression.(*ast.SimpleCommand)
 
+	if !ok {
 
-	if !testIdentifier(t, postfixExp.Left, left) {
-
-		return false
-
-	}
-
-
-
-	if postfixExp.Operator != operator {
-
-		t.Errorf("exp.Operator is not '%s'. got=%s", operator, postfixExp.Operator)
-
-		return false
+		t.Fatalf("bodyStmt.Expression is not *ast.SimpleCommand. got=%T", bodyStmt.Expression)
 
 	}
 
-	return true
+	if cmd.Name.String() != "echo" {
+
+		t.Errorf("cmd.Name is not 'echo'. got=%q", cmd.Name.String())
+
+	}
+
+	if len(cmd.Arguments) != 1 {
+
+		t.Fatalf("cmd.Arguments does not contain 1 argument. got=%d", len(cmd.Arguments))
+
+	}
+
+	if cmd.Arguments[0].String() != "$i" {
+
+		t.Errorf("cmd.Arguments[0] is not '$i'. got=%q", cmd.Arguments[0].String())
+
+	}
 
 }
 
+func testPostfixExpression(t *testing.T, exp ast.Expression, left string, operator string) bool {
+	postfixExp, ok := exp.(*ast.PostfixExpression)
+	if !ok {
+		t.Errorf("exp not *ast.PostfixExpression. got=%T", exp)
+		return false
+	}
 
+	if !testIdentifier(t, postfixExp.Left, left) {
+		return false
+	}
+
+	if postfixExp.Operator != operator {
+		t.Errorf("exp.Operator is not '%s'. got=%s", operator, postfixExp.Operator)
+		return false
+	}
+
+	return true
+}
 
 func testPrefixExpression(t *testing.T, exp ast.Expression, operator string, right interface{}) bool {
-
 	opExp, ok := exp.(*ast.PrefixExpression)
-
 	if !ok {
-
 		t.Errorf("exp not *ast.PrefixExpression. got=%T", exp)
-
 		return false
-
 	}
 
 	if opExp.Operator != operator {
-
 		t.Errorf("exp.Operator is not '%s'. got=%s", operator, opExp.Operator)
-
 		return false
-
 	}
 
 	if !testLiteralExpression(t, opExp.Right, right) {
-
 		return false
-
 	}
 
 	return true
-
 }
-
-
 
 func TestForLoopStatementStub(t *testing.T) { // Renamed from TestForLoopStatement, now a stub for later use.
 
-	input := `for ((i=0;i<10;i++)) do echo $i; done`
-
-
-
+	input := "for ((i=0;i<10;i++)) do echo $i; done"
 	l := lexer.New(input)
-
 	p := New(l)
-
 	program := p.ParseProgram()
-
 	checkParserErrors(t, p)
-
-
 
 	if len(program.Statements) != 1 {
 
@@ -948,8 +822,6 @@ func TestForLoopStatementStub(t *testing.T) { // Renamed from TestForLoopStateme
 			len(program.Statements))
 
 	}
-
-
 
 	stmt, ok := program.Statements[0].(*ast.ForLoopStatement)
 
@@ -961,8 +833,6 @@ func TestForLoopStatementStub(t *testing.T) { // Renamed from TestForLoopStateme
 
 	}
 
-
-
 	if stmt.TokenLiteral() != "for" {
 
 		t.Errorf("stmt.TokenLiteral not 'for', got %q", stmt.TokenLiteral())
@@ -970,5 +840,3 @@ func TestForLoopStatementStub(t *testing.T) { // Renamed from TestForLoopStateme
 	}
 
 }
-
-
