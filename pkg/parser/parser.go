@@ -264,7 +264,8 @@ func (p *Parser) isCommandDelimiter(t token.Token) bool {
 		t.Type == token.ESAC || t.Type == token.DSEMI ||
 		t.Type == token.GT || t.Type == token.LT ||
 		t.Type == token.GTGT || t.Type == token.LTLT ||
-		t.Type == token.GTAMP || t.Type == token.LTAMP
+		t.Type == token.GTAMP || t.Type == token.LTAMP ||
+		t.Type == token.BACKTICK
 }
 
 func (p *Parser) parseSingleCommand() ast.Expression {
@@ -656,7 +657,7 @@ func (p *Parser) parseFunctionLiteral() ast.Expression {
 func (p *Parser) parseCommandSubstitution() ast.Expression {
 	exp := &ast.CommandSubstitution{Token: p.curToken}
 	p.nextToken()
-	exp.Command = p.parseExpression(LOWEST)
+	exp.Command = p.parseCommandList()
 	if !p.expectPeek(token.BACKTICK) {
 		return nil
 	}
@@ -681,7 +682,7 @@ func (p *Parser) parseDollarParenExpression() ast.Expression {
 	}
 
 	p.nextToken()
-	exp.Command = p.parseExpression(LOWEST)
+	exp.Command = p.parseCommandList()
 	if !p.expectPeek(token.RPAREN) {
 		return nil
 	}

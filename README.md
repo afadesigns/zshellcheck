@@ -101,6 +101,7 @@ zshellcheck [flags] <file1.zsh> [file2.zsh]...
 | **ZC1047** | Avoid `sudo` in scripts |
 | **ZC1048** | Avoid `source` with relative paths |
 | **ZC1049** | Prefer functions over aliases |
+| **ZC1050** | Avoid iterating over `ls` output |
 
 </details>
 
