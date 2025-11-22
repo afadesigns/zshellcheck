@@ -105,6 +105,7 @@ zshellcheck [flags] <file1.zsh> [file2.zsh]...
 | **ZC1051** | Quote variables in `rm` to avoid globbing |
 | **ZC1052** | Avoid `sed -i` for portability |
 | **ZC1053** | Silence `grep` output in conditions |
+| **ZC1054** | Use POSIX classes in regex/glob |
 
 </details>
 

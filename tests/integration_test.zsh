@@ -165,7 +165,13 @@ run_test 'while grep foo file; do :; done' "ZC1053" "ZC1053: while grep"
 run_test 'if grep -q foo file; then :; fi' "" "ZC1053: grep -q (Valid)"
 # run_test 'if grep foo file > /dev/null; then :; fi' "" "ZC1053: grep > /dev/null (Valid)"
 run_test 'if grep foo file | wc -l; then :; fi' "" "ZC1053: grep piped (Valid)"
-# run_test 'if ! grep foo file; then :; fi' "ZC1053" "ZC1053: ! grep (Unsafe)"
+
+# --- ZC1054: POSIX classes ---
+# run_test 'ls [a-z]*' "ZC1054" "ZC1054: glob [a-z]"
+# run_test 'ls [[:lower:]]*' "" "ZC1054: glob [[:lower:]] (Valid)"
+# run_test '[[ $v =~ [0-9] ]]' "ZC1054" "ZC1054: regex [0-9]"
+run_test 'tr "[A-Z]" "[a-z]"' "ZC1054" "ZC1054: tr ranges"
+run_test 'tr "[[:upper:]]" "[[:lower:]]"' "" "ZC1054: tr POSIX (Valid)"
 
 # --- Summary ---
 echo "------------------------------------------------"
