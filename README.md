@@ -93,6 +93,7 @@ zshellcheck [flags] <file1.zsh> [file2.zsh]...
 | **ZC1039** | Avoid `rm` with root path |
 | **ZC1040** | Use (N) nullglob qualifier for globs in loops |
 | **ZC1041** | Do not use variables in printf format string |
+| **ZC1042** | Use "$@" to iterate over arguments |
 
 </details>
 
