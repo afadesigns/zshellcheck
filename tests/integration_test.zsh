@@ -82,6 +82,11 @@ run_test 'if ((1 < 2)); then return true; fi' "" "Parser: If Statement"
 run_test 'rm /' "ZC1039" "ZC1039: rm /"
 run_test 'rm /tmp' "" "ZC1039: rm /tmp (Valid)"
 
+# --- ZC1040: Nullglob in loops ---
+run_test 'for i in *.txt; do printf "%s\n" "$i"; done' "ZC1040" "ZC1040: Missing (N)"
+run_test 'for i in *.txt(N); do printf "%s\n" "$i"; done' "" "ZC1040: With (N)"
+run_test 'for i in *; do printf "%s\n" "$i"; done' "ZC1040" "ZC1040: * missing (N)"
+
 # --- Summary ---
 echo "------------------------------------------------"
 if [[ $FAILURES -eq 0 ]]; then
