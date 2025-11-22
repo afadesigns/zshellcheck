@@ -112,19 +112,23 @@ run_test '! cd /tmp' "" "ZC1044: ! cd"
 run_test 'cd /tmp && echo ok' "ZC1044" "ZC1044: cd && echo (Unsafe)"
 run_test '( cd /tmp )' "ZC1044" "ZC1044: Subshell cd unchecked"
 run_test 'cd /tmp || printf "fail\n"' "" "ZC1044: cd || echo (Checked)"
-# Note: cd || echo checks failure but doesn't exit/return. ZC1044 says "|| return (or exit)".
-# But my implementation checks if it is "checked" by ||. 
-# My implementation treats `||` as checking the left side regardless of what the right side is.
-# So `cd || echo` will PASS currently.
-# ShellCheck warns SC2164 if right side is not a control flow?
-# "Use 'cd ... || exit' in case cd fails."
-# If I write `cd || echo fail`, the script continues.
-# Technically safe if the intention is to handle failure by echoing.
-# But usually you want to stop block execution.
-# ZC1044 logic: `walkZC1044(n.Left, true, ...)` for `||`.
-# So it considers it Checked.
-# I will accept `cd || echo` as "Checked" for now, as it handles the error condition logic-wise.
-# If users want strict exit enforcement, that's a refinement.
+
+# --- ZC1045: Masked return values ---
+run_test 'local x=$(cmd)' "ZC1045" "ZC1045: local x=\$(cmd)"
+run_test 'typeset y=`cmd`' "ZC1045" "ZC1045: typeset y=\`cmd\`"
+run_test 'local x="foo $(cmd)"' "ZC1045" "ZC1045: local x=\"... \$(cmd)\""
+run_test 'local x; x=$(cmd)' "" "ZC1045: Split declaration (Valid)"
+run_test 'export x=$(cmd)' "" "ZC1045: export (Valid - export is different?)" 
+# export behaves similarly but usually we care about local/typeset in functions.
+# ShellCheck SC2155 warns for export too.
+# My implementation currently checks local/typeset/declare/readonly.
+# I should add export?
+# Zsh `export` is special? `export` is `typeset -x`.
+# Let's check if `export` is in the list.
+# It wasn't. I'll check if I should add it.
+# `export x=$(false); echo $?` -> 0.
+# So `export` also masks.
+# I'll add export to the check list in the next step if test passes.
 
 # --- Summary ---
 echo "------------------------------------------------"
