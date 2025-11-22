@@ -102,6 +102,7 @@ zshellcheck [flags] <file1.zsh> [file2.zsh]...
 | **ZC1048** | Avoid `source` with relative paths |
 | **ZC1049** | Prefer functions over aliases |
 | **ZC1050** | Avoid iterating over `ls` output |
+| **ZC1051** | Quote variables in `rm` to avoid globbing |
 
 </details>
 
