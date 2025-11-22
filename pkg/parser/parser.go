@@ -170,6 +170,7 @@ func (p *Parser) parseStatement() ast.Statement {
 	case token.SHEBANG:
 		return p.parseShebangStatement()
 	case token.HASH:
+		// Skip comments for now
 		return nil
 	case token.FOR:
 		return p.parseForLoopStatement()
@@ -267,10 +268,12 @@ func (p *Parser) parseSingleCommand() ast.Expression {
 		Name:  &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal},
 	}
 
+	// Check for function definition syntax: name()
 	if p.peekTokenIs(token.LPAREN) {
 		p.nextToken() // curToken is (
 		if p.peekTokenIs(token.RPAREN) {
 			p.nextToken() // curToken is )
+			// Function Definition!
 			funcDef := &ast.FunctionDefinition{
 				Token: cmd.Token,
 				Name:  cmd.Name.(*ast.Identifier),
@@ -280,6 +283,7 @@ func (p *Parser) parseSingleCommand() ast.Expression {
 			funcDef.Body = p.parseStatement()
 			return funcDef
 		} else {
+			// It was not (), it was `name ( ...`
 			arg := p.parseCommandWord()
 			cmd.Arguments = append(cmd.Arguments, arg)
 		}
@@ -287,6 +291,7 @@ func (p *Parser) parseSingleCommand() ast.Expression {
 		cmd.Arguments = []ast.Expression{}
 	}
 
+	// Continue parsing arguments
 	for !p.isCommandDelimiter(p.peekToken) && p.peekToken.Line == p.curToken.Line {
 		p.nextToken()
 		arg := p.parseCommandWord()
@@ -300,18 +305,21 @@ func (p *Parser) parseCommandWord() ast.Expression {
 	firstToken := p.curToken
 	parts := []ast.Expression{}
 
+	// Parse the first part
 	if p.prefixParseFns[p.curToken.Type] == nil {
 		parts = append(parts, &ast.StringLiteral{Token: p.curToken, Value: p.curToken.Literal})
 	} else {
 		parts = append(parts, p.parseExpression(CALL))
 	}
 
+	// Continue parsing while the next token is adjacent (no preceding space)
 	for !p.peekToken.HasPrecedingSpace && !p.isCommandDelimiter(p.peekToken) &&
 		p.peekToken.Line == p.curToken.Line {
 
 		p.nextToken()
 
 		if p.prefixParseFns[p.curToken.Type] == nil {
+			// Treat as literal string part
 			parts = append(parts, &ast.StringLiteral{Token: p.curToken, Value: p.curToken.Literal})
 		} else {
 			parts = append(parts, p.parseExpression(CALL))
@@ -871,14 +879,6 @@ func (p *Parser) expectPeek(t token.Type) bool {
 		p.nextToken()
 		return true
 	}
-	// Special handling for ) matching ))
-	if t == token.RPAREN && p.peekTokenIs(token.DoubleRparen) {
-		p.peekToken.Type = token.RPAREN
-		p.peekToken.Literal = ")"
-		p.curToken = token.Token{Type: token.RPAREN, Literal: ")", Line: p.peekToken.Line, Column: p.peekToken.Column}
-		return true
-	}
-
 	p.peekError(t)
 	return false
 }
