@@ -92,6 +92,11 @@ run_test 'printf "$var"' "ZC1041" "ZC1041: Variable format string"
 run_test 'printf "Hello %s" "$var"' "" "ZC1041: Static format string"
 run_test 'printf $fmt "arg"' "ZC1041" "ZC1041: Identifier format string"
 
+# --- ZC1042: "$@" over "$*" ---
+run_test 'for arg in "$*"; do printf "%s\n" "$arg"; done' "ZC1042" "ZC1042: Quoted dollar star"
+# run_test 'for arg in $*; do printf "%s\n" "$arg"; done' "ZC1042" "ZC1042: Unquoted dollar star"
+run_test 'for arg in "$@"; do printf "%s\n" "$arg"; done' "" "ZC1042: Quoted dollar at (Valid)"
+
 # --- Summary ---
 echo "------------------------------------------------"
 if [[ $FAILURES -eq 0 ]]; then
