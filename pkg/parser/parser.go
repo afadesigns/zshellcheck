@@ -195,7 +195,7 @@ func (p *Parser) parseStatement() ast.Statement {
 		if p.peekTokenIs(token.IDENT) || p.peekTokenIs(token.STRING) || p.peekTokenIs(token.INT) ||
 			p.peekTokenIs(token.MINUS) || p.peekTokenIs(token.DOT) || p.peekTokenIs(token.VARIABLE) ||
 			p.peekTokenIs(token.DOLLAR) || p.peekTokenIs(token.DollarLbrace) || p.peekTokenIs(token.DOLLAR_LPAREN) ||
-			p.peekTokenIs(token.SLASH) || p.peekTokenIs(token.TILDE) {
+			p.peekTokenIs(token.SLASH) || p.peekTokenIs(token.TILDE) || p.peekTokenIs(token.ASTERISK) {
 			return p.parseSimpleCommandStatement()
 		}
 		return p.parseExpressionStatement()
@@ -539,14 +539,17 @@ func (p *Parser) parseArrayAccess() ast.Expression {
 		return nil
 	}
 	exp.Left = p.parseIdentifier()
-	if !p.expectPeek(token.LBRACKET) {
-		return nil
+	
+	// check for optional index
+	if p.peekTokenIs(token.LBRACKET) {
+		p.nextToken() // consume [
+		p.nextToken() // move to start of index expression
+		exp.Index = p.parseExpression(LOWEST)
+		if !p.expectPeek(token.RBRACKET) {
+			return nil
+		}
 	}
-	p.nextToken()
-	exp.Index = p.parseExpression(LOWEST)
-	if !p.expectPeek(token.RBRACKET) {
-		return nil
-	}
+	
 	if !p.expectPeek(token.RBRACE) {
 		return nil
 	}
