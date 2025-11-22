@@ -95,6 +95,7 @@ zshellcheck [flags] <file1.zsh> [file2.zsh]...
 | **ZC1041** | Do not use variables in printf format string |
 | **ZC1042** | Use "$@" to iterate over arguments |
 | **ZC1043** | Use `local` for variables in functions |
+| **ZC1044** | Check for unchecked `cd` commands |
 
 </details>
 
