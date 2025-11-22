@@ -1,5 +1,15 @@
 # zshellcheck
 
+
+  ______      _          _ _  _____ _               _    
+ |___  /     | |        | | |/ ____| |             | |   
+    / /   ___| |__   ___| | | |    | |__   ___  ___| | __
+   / /   / __| '_ \ / _ \ | | |    | '_ \ / _ \/ __| |/ /
+  / /__  \__ \ | | |  __/ | | |____| | | |  __/ (__|   < 
+ /_____| |___/_| |_|\___|_|_|\_____|_| |_|\___|\___|_|\_\
+                                                         
+                                                         
+
 `zshellcheck` is a static analysis tool (linter) specifically designed for Zsh scripts. Unlike `shellcheck`, which focuses on POSIX sh/bash compatibility, `zshellcheck` understands Zsh syntax, best practices, and common pitfalls.
 
 It parses Zsh scripts into an Abstract Syntax Tree (AST) and runs a series of checks ("Katas") to identify issues.
