@@ -1,6 +1,8 @@
 package katas
 
 import (
+	"strings"
+
 	"github.com/afadesigns/zshellcheck/pkg/ast"
 )
 
@@ -29,7 +31,8 @@ func checkZC1039(node ast.Node) []Violation {
 
 	for _, arg := range cmd.Arguments {
 		if str, ok := arg.(*ast.StringLiteral); ok {
-			if str.Value == "/" {
+			val := strings.Trim(str.Value, "\"'")
+			if val == "/" {
 				violations = append(violations, Violation{
 					KataID:  "ZC1039",
 					Message: "Avoid `rm` on the root directory `/`. This is highly dangerous.",

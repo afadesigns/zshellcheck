@@ -87,6 +87,11 @@ run_test 'for i in *.txt; do printf "%s\n" "$i"; done' "ZC1040" "ZC1040: Missing
 run_test 'for i in *.txt(N); do printf "%s\n" "$i"; done' "" "ZC1040: With (N)"
 run_test 'for i in *; do printf "%s\n" "$i"; done' "ZC1040" "ZC1040: * missing (N)"
 
+# --- ZC1041: printf format string ---
+run_test 'printf "$var"' "ZC1041" "ZC1041: Variable format string"
+run_test 'printf "Hello %s" "$var"' "" "ZC1041: Static format string"
+run_test 'printf $fmt "arg"' "ZC1041" "ZC1041: Identifier format string"
+
 # --- Summary ---
 echo "------------------------------------------------"
 if [[ $FAILURES -eq 0 ]]; then

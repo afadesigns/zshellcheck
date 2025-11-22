@@ -34,6 +34,12 @@ func checkZC1040(node ast.Node) []Violation {
 		// but do NOT contain (N) or (N-...) qualifiers.
 		
 		val := getStringValue(item)
+		
+		// If it is quoted, it is NOT a glob expansion.
+		if len(val) > 0 && (val[0] == '"' || val[0] == '\'') {
+			continue
+		}
+
 		if isGlob(val) && !hasNullGlobQualifier(val) {
 			violations = append(violations, Violation{
 				KataID:  "ZC1040",
