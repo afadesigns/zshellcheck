@@ -173,6 +173,12 @@ run_test 'if grep foo file | wc -l; then :; fi' "" "ZC1053: grep piped (Valid)"
 run_test 'tr "[A-Z]" "[a-z]"' "ZC1054" "ZC1054: tr ranges"
 run_test 'tr "[[:upper:]]" "[[:lower:]]"' "" "ZC1054: tr POSIX (Valid)"
 
+# --- ZC1055: Null checks ---
+run_test '[[ $var == "" ]]' "ZC1055" "ZC1055: == empty"
+run_test '[[ "" != $var ]]' "ZC1055" "ZC1055: != empty"
+run_test '[[ -z $var ]]' "" "ZC1055: -z (Valid)"
+run_test '[[ -n $var ]]' "" "ZC1055: -n (Valid)"
+
 # --- Summary ---
 echo "------------------------------------------------"
 if [[ $FAILURES -eq 0 ]]; then
