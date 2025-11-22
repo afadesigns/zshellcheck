@@ -97,6 +97,11 @@ run_test 'for arg in "$*"; do printf "%s\n" "$arg"; done' "ZC1042" "ZC1042: Quot
 # run_test 'for arg in $*; do printf "%s\n" "$arg"; done' "ZC1042" "ZC1042: Unquoted dollar star"
 run_test 'for arg in "$@"; do printf "%s\n" "$arg"; done' "" "ZC1042: Quoted dollar at (Valid)"
 
+# --- ZC1043: Local variables in functions ---
+run_test 'fn() { var=1; }' "ZC1043" "ZC1043: Global var"
+run_test 'fn() { local var=1; }' "" "ZC1043: Local var"
+run_test 'var=1' "" "ZC1043: Global scope (Valid)"
+
 # --- Summary ---
 echo "------------------------------------------------"
 if [[ $FAILURES -eq 0 ]]; then
