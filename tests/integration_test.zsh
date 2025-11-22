@@ -130,6 +130,12 @@ run_test 'printf "eval\n"' "" "ZC1046: echo word eval (Valid)"
 run_test 'sudo ls' "ZC1047" "ZC1047: sudo"
 run_test 'printf "sudo\n"' "" "ZC1047: echo sudo (Valid)"
 
+# --- ZC1048: Relative source ---
+run_test 'source ./lib.zsh' "ZC1048" "ZC1048: source ./"
+run_test '. ../lib.zsh' "ZC1048" "ZC1048: . ../"
+run_test 'source "${0:a:h}/lib.zsh"' "" "ZC1048: Absolute source (Valid)"
+run_test 'source /etc/profile' "" "ZC1048: Absolute path (Valid)"
+
 # --- Summary ---
 echo "------------------------------------------------"
 if [[ $FAILURES -eq 0 ]]; then
