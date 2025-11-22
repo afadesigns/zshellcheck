@@ -107,6 +107,7 @@ zshellcheck [flags] <file1.zsh> [file2.zsh]...
 | **ZC1053** | Silence `grep` output in conditions |
 | **ZC1054** | Use POSIX classes in regex/glob |
 | **ZC1055** | Use `[[ -n/-z ]]` for empty string checks |
+| **ZC1056** | Avoid `$((...))` as a statement |
 
 </details>
 

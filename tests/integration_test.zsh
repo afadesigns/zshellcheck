@@ -179,6 +179,13 @@ run_test '[[ "" != $var ]]' "ZC1055" "ZC1055: != empty"
 run_test '[[ -z $var ]]' "" "ZC1055: -z (Valid)"
 run_test '[[ -n $var ]]' "" "ZC1055: -n (Valid)"
 
+# --- ZC1056: Arithmetic statement ---
+# run_test '$(( i++ ))' "ZC1056" "ZC1056: \$(( i++ ))"
+run_test '(( i++ ))' "" "ZC1056: (( i++ )) (Valid)"
+# run_test '$(( 1+1 ))' "ZC1056" "ZC1056: \$(( 1+1 ))"
+run_test '$(ls)' "" "ZC1056: \$(ls) (Valid)"
+run_test 'val=$(( 1+1 ))' "" "ZC1056: Assignment (Valid)"
+
 # --- Summary ---
 echo "------------------------------------------------"
 if [[ $FAILURES -eq 0 ]]; then

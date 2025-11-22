@@ -700,6 +700,13 @@ func (p *Parser) parseDollarParenExpression() ast.Expression {
 		p.nextToken()
 		p.nextToken() // consume `(`
 		cmd := p.parseExpression(LOWEST)
+		
+		if p.peekTokenIs(token.DoubleRparen) {
+			p.nextToken() // consume ))
+			exp.Command = cmd
+			return exp
+		}
+
 		if !p.expectPeek(token.RPAREN) {
 			return nil
 		}
