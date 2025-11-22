@@ -126,6 +126,10 @@ run_test 'builtin eval "ls -l"' "ZC1046" "ZC1046: builtin eval"
 run_test 'command eval "ls -l"' "ZC1046" "ZC1046: command eval"
 run_test 'printf "eval\n"' "" "ZC1046: echo word eval (Valid)"
 
+# --- ZC1047: Avoid sudo ---
+run_test 'sudo ls' "ZC1047" "ZC1047: sudo"
+run_test 'printf "sudo\n"' "" "ZC1047: echo sudo (Valid)"
+
 # --- Summary ---
 echo "------------------------------------------------"
 if [[ $FAILURES -eq 0 ]]; then
