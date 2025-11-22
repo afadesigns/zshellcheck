@@ -47,9 +47,9 @@ type GroupedExpression struct {
 	Exp   Expression
 }
 
-func (ge *GroupedExpression) Type() NodeType       { return GroupedExpressionNode }
-func (ge *GroupedExpression) expressionNode()      {}
-func (ge *GroupedExpression) TokenLiteral() string { return ge.Token.Literal }
+func (ge *GroupedExpression) Type() NodeType                { return GroupedExpressionNode }
+func (ge *GroupedExpression) expressionNode()               {}
+func (ge *GroupedExpression) TokenLiteral() string          { return ge.Token.Literal }
 func (ge *GroupedExpression) TokenLiteralNode() token.Token { return ge.Token }
 func (ge *GroupedExpression) String() string {
 	return "(" + ge.Exp.String() + ")"
@@ -134,7 +134,6 @@ func (p *Program) TokenLiteralNode() token.Token {
 	}
 	return token.Token{}
 }
-
 
 func (p *Program) String() string {
 	var out []byte
@@ -341,10 +340,10 @@ func (is *IfStatement) String() string {
 }
 
 type ForLoopStatement struct {
-	Token     token.Token // The 'for' token
-	Init      Expression  // Variable name (for-each) or Init expr (arithmetic)
-	Condition Expression  // Arithmetic condition
-	Post      Expression  // Arithmetic post
+	Token     token.Token  // The 'for' token
+	Init      Expression   // Variable name (for-each) or Init expr (arithmetic)
+	Condition Expression   // Arithmetic condition
+	Post      Expression   // Arithmetic post
 	Items     []Expression // Items to iterate over (for-each)
 	Body      *BlockStatement
 }
@@ -360,7 +359,7 @@ func (fls *ForLoopStatement) String() string {
 	// Arithmetic `for ((...))` usually has params. `for ((;;))` is possible.
 	// I'll assume if Items is non-nil (even empty) it's for-each.
 	// Or if Init is Identifier and others are nil?
-	
+
 	if fls.Items != nil {
 		out = append(out, []byte("for ")...)
 		if fls.Init != nil {
@@ -387,7 +386,7 @@ func (fls *ForLoopStatement) String() string {
 		}
 		out = append(out, []byte(")); do ")...)
 	}
-	
+
 	if fls.Body != nil {
 		out = append(out, []byte(fls.Body.String())...)
 	}
@@ -825,33 +824,33 @@ func Walk(node Node, f WalkFn) {
 	}
 }
 
-func (n *FunctionDefinition) TokenLiteralNode() token.Token { return n.Token }
-func (n *Redirection) TokenLiteralNode() token.Token { return n.Token }
-func (n *LetStatement) TokenLiteralNode() token.Token { return n.Token }
-func (n *ReturnStatement) TokenLiteralNode() token.Token { return n.Token }
-func (n *ExpressionStatement) TokenLiteralNode() token.Token { return n.Token }
-func (n *Identifier) TokenLiteralNode() token.Token { return n.Token }
-func (n *IntegerLiteral) TokenLiteralNode() token.Token { return n.Token }
-func (n *Boolean) TokenLiteralNode() token.Token { return n.Token }
-func (n *PrefixExpression) TokenLiteralNode() token.Token { return n.Token }
-func (n *PostfixExpression) TokenLiteralNode() token.Token { return n.Token }
-func (n *InfixExpression) TokenLiteralNode() token.Token { return n.Token }
-func (n *BlockStatement) TokenLiteralNode() token.Token { return n.Token }
-func (n *IfStatement) TokenLiteralNode() token.Token { return n.Token }
-func (n *ForLoopStatement) TokenLiteralNode() token.Token { return n.Token }
-func (n *WhileLoopStatement) TokenLiteralNode() token.Token { return n.Token }
-func (n *FunctionLiteral) TokenLiteralNode() token.Token { return n.Token }
-func (n *CallExpression) TokenLiteralNode() token.Token { return n.Token }
-func (n *StringLiteral) TokenLiteralNode() token.Token { return n.Token }
-func (n *BracketExpression) TokenLiteralNode() token.Token { return n.Token }
+func (n *FunctionDefinition) TokenLiteralNode() token.Token      { return n.Token }
+func (n *Redirection) TokenLiteralNode() token.Token             { return n.Token }
+func (n *LetStatement) TokenLiteralNode() token.Token            { return n.Token }
+func (n *ReturnStatement) TokenLiteralNode() token.Token         { return n.Token }
+func (n *ExpressionStatement) TokenLiteralNode() token.Token     { return n.Token }
+func (n *Identifier) TokenLiteralNode() token.Token              { return n.Token }
+func (n *IntegerLiteral) TokenLiteralNode() token.Token          { return n.Token }
+func (n *Boolean) TokenLiteralNode() token.Token                 { return n.Token }
+func (n *PrefixExpression) TokenLiteralNode() token.Token        { return n.Token }
+func (n *PostfixExpression) TokenLiteralNode() token.Token       { return n.Token }
+func (n *InfixExpression) TokenLiteralNode() token.Token         { return n.Token }
+func (n *BlockStatement) TokenLiteralNode() token.Token          { return n.Token }
+func (n *IfStatement) TokenLiteralNode() token.Token             { return n.Token }
+func (n *ForLoopStatement) TokenLiteralNode() token.Token        { return n.Token }
+func (n *WhileLoopStatement) TokenLiteralNode() token.Token      { return n.Token }
+func (n *FunctionLiteral) TokenLiteralNode() token.Token         { return n.Token }
+func (n *CallExpression) TokenLiteralNode() token.Token          { return n.Token }
+func (n *StringLiteral) TokenLiteralNode() token.Token           { return n.Token }
+func (n *BracketExpression) TokenLiteralNode() token.Token       { return n.Token }
 func (n *DoubleBracketExpression) TokenLiteralNode() token.Token { return n.Token }
-func (n *ArrayAccess) TokenLiteralNode() token.Token { return n.Token }
-func (n *IndexExpression) TokenLiteralNode() token.Token { return n.Token }
-func (n *InvalidArrayAccess) TokenLiteralNode() token.Token { return n.Token }
-func (n *CommandSubstitution) TokenLiteralNode() token.Token { return n.Token }
-func (n *Shebang) TokenLiteralNode() token.Token { return n.Token }
-func (n *DollarParenExpression) TokenLiteralNode() token.Token { return n.Token }
-func (n *SimpleCommand) TokenLiteralNode() token.Token { return n.Token }
-func (n *ConcatenatedExpression) TokenLiteralNode() token.Token { return n.Token }
-func (n *CaseStatement) TokenLiteralNode() token.Token { return n.Token }
-func (n *CaseClause) TokenLiteralNode() token.Token { return n.Token }
+func (n *ArrayAccess) TokenLiteralNode() token.Token             { return n.Token }
+func (n *IndexExpression) TokenLiteralNode() token.Token         { return n.Token }
+func (n *InvalidArrayAccess) TokenLiteralNode() token.Token      { return n.Token }
+func (n *CommandSubstitution) TokenLiteralNode() token.Token     { return n.Token }
+func (n *Shebang) TokenLiteralNode() token.Token                 { return n.Token }
+func (n *DollarParenExpression) TokenLiteralNode() token.Token   { return n.Token }
+func (n *SimpleCommand) TokenLiteralNode() token.Token           { return n.Token }
+func (n *ConcatenatedExpression) TokenLiteralNode() token.Token  { return n.Token }
+func (n *CaseStatement) TokenLiteralNode() token.Token           { return n.Token }
+func (n *CaseClause) TokenLiteralNode() token.Token              { return n.Token }

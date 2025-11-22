@@ -9,4 +9,3 @@ func TestKatas(t *testing.T) {
 		t.Errorf("Registry is empty")
 	}
 }
-
