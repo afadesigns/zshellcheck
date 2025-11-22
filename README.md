@@ -91,6 +91,8 @@ zshellcheck [flags] <file1.zsh> [file2.zsh]...
 | **ZC1037** | Use 'print -r --' for variable expansion |
 | **ZC1038** | Avoid useless use of cat |
 | **ZC1039** | Avoid `rm` with root path |
+| **ZC1040** | Use (N) nullglob qualifier for globs in loops |
+| **ZC1041** | Do not use variables in printf format string |
 
 </details>
 
