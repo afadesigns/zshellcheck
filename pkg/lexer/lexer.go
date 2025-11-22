@@ -194,7 +194,7 @@ func (l *Lexer) NextToken() token.Token {
 		switch l.peekChar() {
 		case '{':
 			tok.Type = token.DollarLbrace
-			tok.Literal = "$"
+			tok.Literal = "${"
 			tok.Line = l.line
 			tok.Column = l.column
 			l.readChar()

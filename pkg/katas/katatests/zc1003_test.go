@@ -15,12 +15,12 @@ func TestZC1003(t *testing.T) {
 	}{
 		{
 			name:     "valid arithmetic test",
-			input:    `(( 1 > 0 ))`,
+			input:    "(( 1 > 0 ))",
 			expected: []katas.Violation{},
 		},
 		{
 			name:  "invalid arithmetic test",
-			input: `[ 1 -gt 0 ]`,
+			input: "[ 1 -gt 0 ]", // Ensure spaces
 			expected: []katas.Violation{
 				{
 					KataID:  "ZC1003",
