@@ -186,6 +186,12 @@ run_test '(( i++ ))' "" "ZC1056: (( i++ )) (Valid)"
 run_test '$(ls)' "" "ZC1056: \$(ls) (Valid)"
 run_test 'val=$(( 1+1 ))' "" "ZC1056: Assignment (Valid)"
 
+# --- ZC1057: ls assignment ---
+run_test 'files=$(ls)' "ZC1057" "ZC1057: files=\$(ls)"
+run_test 'files=`ls *.txt`' "ZC1057" "ZC1057: files=\`ls\`"
+run_test 'local files=$(ls)' "ZC1057" "ZC1057: local files=\$(ls)"
+# run_test 'files=(*)' "" "ZC1057: files=(*) (Valid)"
+
 # --- Summary ---
 echo "------------------------------------------------"
 if [[ $FAILURES -eq 0 ]]; then
