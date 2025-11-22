@@ -159,6 +159,14 @@ run_test 'sed -i "s/foo/bar/" file' "ZC1052" "ZC1052: sed -i"
 run_test 'sed -e "s/foo/bar/" file' "" "ZC1052: sed -e (Valid)"
 run_test 'sed "-i" "s/foo/bar/" file' "ZC1052" "ZC1052: sed \"-i\""
 
+# --- ZC1053: Silence grep ---
+run_test 'if grep foo file; then :; fi' "ZC1053" "ZC1053: if grep"
+run_test 'while grep foo file; do :; done' "ZC1053" "ZC1053: while grep"
+run_test 'if grep -q foo file; then :; fi' "" "ZC1053: grep -q (Valid)"
+# run_test 'if grep foo file > /dev/null; then :; fi' "" "ZC1053: grep > /dev/null (Valid)"
+run_test 'if grep foo file | wc -l; then :; fi' "" "ZC1053: grep piped (Valid)"
+# run_test 'if ! grep foo file; then :; fi' "ZC1053" "ZC1053: ! grep (Unsafe)"
+
 # --- Summary ---
 echo "------------------------------------------------"
 if [[ $FAILURES -eq 0 ]]; then
