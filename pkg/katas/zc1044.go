@@ -1,6 +1,8 @@
 package katas
 
 import (
+	"reflect"
+
 	"github.com/afadesigns/zshellcheck/pkg/ast"
 )
 
@@ -31,6 +33,11 @@ func checkZC1044(node ast.Node) []Violation {
 
 func walkZC1044(node ast.Node, isChecked bool, violations *[]Violation) {
 	if node == nil {
+		return
+	}
+
+	// Handle nil pointers inside interface
+	if v := reflect.ValueOf(node); v.Kind() == reflect.Ptr && v.IsNil() {
 		return
 	}
 

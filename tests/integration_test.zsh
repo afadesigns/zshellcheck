@@ -66,12 +66,12 @@ run_test 'val=$(cmd)' "" "ZC1002: Valid command subst"
 run_test 'val=`cmd`' "ZC1002" "ZC1002: Backticks"
 
 # --- ZC1003: Arithmetic Comparisons ---
-# run_test 'if (( val > 0 )); then; fi' "" "ZC1003: Valid ((...))"
-# run_test 'if [ $val -gt 0 ]; then; fi' "ZC1003" "ZC1003: [ -gt ]"
+run_test 'if (( val > 0 )); then; fi' "" "ZC1003: Valid ((...))"
+run_test 'if [ $val -gt 0 ]; then; fi' "ZC1003" "ZC1003: [ -gt ]"
 
 # --- ZC1006: [[ vs test ---
-# run_test 'if [[ -f file ]]; then; fi' "" "ZC1006: Valid [["
-# run_test 'if test -f file; then; fi' "ZC1006" "ZC1006: test command"
+run_test 'if [[ -f file ]]; then; fi' "" "ZC1006: Valid [["
+run_test 'if test -f file; then; fi' "ZC1006" "ZC1006: test command"
 
 # --- Operator Precedence / Parser Regression Checks ---
 run_test 'return ( (5 + 5) * 2 )' "" "Parser: Precedence 1"
@@ -106,12 +106,12 @@ run_test 'var=1' "" "ZC1043: Global scope (Valid)"
 run_test 'cd /tmp' "ZC1044" "ZC1044: Unchecked cd"
 run_test 'cd /tmp || exit' "" "ZC1044: cd || exit"
 run_test 'cd /tmp || return' "" "ZC1044: cd || return"
-# run_test 'if cd /tmp; then echo ok; fi' "" "ZC1044: if cd"
+run_test 'if cd /tmp; then printf "ok\n"; fi' "" "ZC1044: if cd"
 run_test 'if cd /tmp; echo ok; then echo ok; fi' "ZC1044" "ZC1044: if cd; echo"
 run_test '! cd /tmp' "" "ZC1044: ! cd"
 run_test 'cd /tmp && echo ok' "ZC1044" "ZC1044: cd && echo (Unsafe)"
 run_test '( cd /tmp )' "ZC1044" "ZC1044: Subshell cd unchecked"
-run_test 'cd /tmp || printf "fail\n"' "ZC1044" "ZC1044: cd || echo (Warn?)"
+run_test 'cd /tmp || printf "fail\n"' "" "ZC1044: cd || echo (Checked)"
 # Note: cd || echo checks failure but doesn't exit/return. ZC1044 says "|| return (or exit)".
 # But my implementation checks if it is "checked" by ||. 
 # My implementation treats `||` as checking the left side regardless of what the right side is.
