@@ -192,6 +192,12 @@ run_test 'files=`ls *.txt`' "ZC1057" "ZC1057: files=\`ls\`"
 run_test 'local files=$(ls)' "ZC1057" "ZC1057: local files=\$(ls)"
 # run_test 'files=(*)' "" "ZC1057: files=(*) (Valid)"
 
+# --- ZC1058: sudo redirect ---
+run_test 'sudo echo "foo" > /etc/file' "ZC1058" "ZC1058: sudo > file"
+run_test 'sudo echo "foo" >> /etc/file' "ZC1058" "ZC1058: sudo >> file"
+run_test 'printf "foo\n" | sudo tee /etc/file' "ZC1047" "ZC1058: sudo tee (Valid - ZC1047 expected)"
+run_test 'sudo ls < /input' "ZC1047" "ZC1058: sudo < input (Valid - ZC1047 expected)"
+
 # --- Summary ---
 echo "------------------------------------------------"
 if [[ $FAILURES -eq 0 ]]; then

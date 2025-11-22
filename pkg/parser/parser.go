@@ -247,8 +247,8 @@ func (p *Parser) parseCommandPipeline() ast.Expression {
 
 	// Parse redirections
 	for p.peekTokenIs(token.GT) || p.peekTokenIs(token.GTGT) || 
-		p.peekTokenIs(token.LTLT) || p.peekTokenIs(token.GTAMP) || 
-		p.peekTokenIs(token.LTAMP) {
+		p.peekTokenIs(token.LT) || p.peekTokenIs(token.LTLT) || 
+		p.peekTokenIs(token.GTAMP) || p.peekTokenIs(token.LTAMP) {
 		
 		p.nextToken()
 		op := p.curToken
