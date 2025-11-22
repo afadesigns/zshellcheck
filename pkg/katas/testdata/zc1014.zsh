@@ -1,0 +1,1 @@
+git checkout my-branch

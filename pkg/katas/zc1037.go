@@ -1,35 +1,44 @@
 package katas
 
 import (
-	"reflect"
 
 	"github.com/afadesigns/zshellcheck/pkg/ast"
+	"github.com/afadesigns/zshellcheck/pkg/token"
 )
 
 func init() {
-	RegisterKata(reflect.TypeOf(&ast.PrefixExpression{}), Kata{
+	RegisterKata(ast.SimpleCommandNode, Kata{
 		ID:          "ZC1037",
-		Title:       "Quote variable expansions",
-		Description: "Unquoted variable expansions can lead to unexpected behavior due to word splitting and globbing. It is recommended to quote all variable expansions.",
+		Title:       "Use 'print -r --' for variable expansion",
+		Description: "Using 'echo' to print strings containing variables can lead to unexpected behavior " +
+			"if the variable contains special characters or flags. A safer, more reliable alternative " +
+			"is 'print -r --'.",
 		Check:       checkZC1037,
 	})
 }
 
 func checkZC1037(node ast.Node) []Violation {
-	violations := []Violation{}
+	cmd, ok := node.(*ast.SimpleCommand)
+	if !ok {
+		return nil
+	}
 
-	if prefix, ok := node.(*ast.PrefixExpression); ok {
-		if prefix.Operator == "$" {
-			if _, ok := prefix.Right.(*ast.Identifier); ok {
-				violations = append(violations, Violation{
+	if cmd.Name.TokenLiteral() != "echo" {
+		return nil
+	}
+
+	for _, arg := range cmd.Arguments {
+		if ident, ok := arg.(*ast.Identifier); ok && ident.Token.Type == token.VARIABLE {
+			return []Violation{
+				{
 					KataID:  "ZC1037",
-					Message: "Unquoted variable expansion. Quote to prevent word splitting and globbing.",
-					Line:    prefix.Token.Line,
-					Column:  prefix.Token.Column,
-				})
+					Message: "Use 'print -r --' instead of 'echo' to reliably print variable expansions.",
+					Line:    cmd.Token.Line,
+					Column:  cmd.Token.Column,
+				},
 			}
 		}
 	}
 
-	return violations
+	return nil
 }

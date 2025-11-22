@@ -1,0 +1,6 @@
+# A list of kata codes to disable.
+# For example:
+# disabled_katas:
+#   - ZC1001
+#   - ZC1002
+disabled_katas: []

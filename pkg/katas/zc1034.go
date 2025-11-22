@@ -1,16 +1,17 @@
 package katas
 
 import (
-	"reflect"
 
 	"github.com/afadesigns/zshellcheck/pkg/ast"
 )
 
 func init() {
-	RegisterKata(reflect.TypeOf(&ast.ExpressionStatement{}), Kata{
+	RegisterKata(ast.ExpressionStatementNode, Kata{
 		ID:          "ZC1034",
 		Title:       "Use `command -v` instead of `which`",
-		Description: "`which` is an external command and may not be available or consistent across all systems. `command -v` is a POSIX standard and a shell builtin, making it more portable and reliable for checking if a command exists.",
+		Description: "`which` is an external command and may not be available or consistent across all " +
+			"systems. `command -v` is a POSIX standard and a shell builtin, making it more portable " +
+			"and reliable for checking if a command exists.",
 		Check:       checkZC1034,
 	})
 }

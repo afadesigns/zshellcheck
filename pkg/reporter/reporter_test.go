@@ -4,21 +4,23 @@ import (
 	"bytes"
 	"testing"
 
-	"github.com/afadesigns/zshellcheck/pkg/katas"
 	"github.com/afadesigns/zshellcheck/pkg/ast"
-	"reflect"
+	"github.com/afadesigns/zshellcheck/pkg/katas"
 )
 
 func TestTextReporter_Report(t *testing.T) {
 	// Register a dummy kata for testing purposes
-	katas.RegisterKata(reflect.TypeOf(&ast.Identifier{}), katas.Kata{
-		ID:    "ZC9999",
+	// Using a unique ID to avoid conflicts with existing katas if tests are run in parallel.
+	const testKataID = "ZC9999"
+	katas.RegisterKata(ast.IdentifierNode, katas.Kata{
+		ID:    testKataID,
 		Title: "Test Kata",
+		Check: func(node ast.Node) []katas.Violation { return nil }, // Dummy check function
 	})
 
 	violations := []katas.Violation{
 		{
-			KataID:  "ZC9999",
+			KataID:  testKataID,
 			Message: "This is a test violation.",
 		},
 	}
