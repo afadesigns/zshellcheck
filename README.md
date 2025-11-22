@@ -100,6 +100,7 @@ zshellcheck [flags] <file1.zsh> [file2.zsh]...
 | **ZC1046** | Avoid `eval` |
 | **ZC1047** | Avoid `sudo` in scripts |
 | **ZC1048** | Avoid `source` with relative paths |
+| **ZC1049** | Prefer functions over aliases |
 
 </details>
 
