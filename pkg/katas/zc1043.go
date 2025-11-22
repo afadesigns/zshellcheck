@@ -45,12 +45,6 @@ func checkZC1043(node ast.Node) []Violation {
 		
 		return true
 	})
-		if _, ok := n.(*ast.FunctionDefinition); ok && n != funcDef {
-			return false
-		}
-		
-		return true
-	})
 
 	return violations
 }
