@@ -136,6 +136,12 @@ run_test '. ../lib.zsh' "ZC1048" "ZC1048: . ../"
 run_test 'source "${0:a:h}/lib.zsh"' "" "ZC1048: Absolute source (Valid)"
 run_test 'source /etc/profile' "" "ZC1048: Absolute path (Valid)"
 
+# --- ZC1049: Aliases ---
+run_test 'alias foo="echo bar"' "ZC1049" "ZC1049: alias definition"
+run_test 'alias -g G="| grep"' "ZC1049" "ZC1049: global alias"
+run_test 'unalias foo' "" "ZC1049: unalias (Valid)"
+run_test 'function foo() { printf "bar\n"; }' "" "ZC1049: function (Valid)"
+
 # --- Summary ---
 echo "------------------------------------------------"
 if [[ $FAILURES -eq 0 ]]; then
