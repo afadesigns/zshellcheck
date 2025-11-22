@@ -25,7 +25,7 @@ func NewTextReporter(writer io.Writer) *TextReporter {
 // Report prints the violations to the writer.
 func (r *TextReporter) Report(violations []katas.Violation) error {
 	for _, v := range violations {
-		kata, ok := katas.GetKata(v.KataID)
+		kata, ok := katas.Registry.GetKata(v.KataID)
 		if !ok {
 			return fmt.Errorf("kata with ID %s not found", v.KataID)
 		}
