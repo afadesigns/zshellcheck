@@ -39,12 +39,26 @@ const (
 	CaseStatementNode
 	RedirectionNode
 	FunctionDefinitionNode
+	GroupedExpressionNode
 )
+
+type GroupedExpression struct {
+	Token token.Token // The '(' token
+	Exp   Expression
+}
+
+func (ge *GroupedExpression) Type() NodeType       { return GroupedExpressionNode }
+func (ge *GroupedExpression) expressionNode()      {}
+func (ge *GroupedExpression) TokenLiteral() string { return ge.Token.Literal }
+func (ge *GroupedExpression) TokenLiteralNode() token.Token { return ge.Token }
+func (ge *GroupedExpression) String() string {
+	return "(" + ge.Exp.String() + ")"
+}
 
 type FunctionDefinition struct {
 	Token token.Token // The name token
 	Name  *Identifier
-	Body  Statement   // The function body (usually BlockStatement)
+	Body  Statement // The function body (usually BlockStatement)
 }
 
 func (fd *FunctionDefinition) Type() NodeType       { return FunctionDefinitionNode }
@@ -90,6 +104,7 @@ type Node interface {
 	TokenLiteral() string
 	String() string
 	Type() NodeType
+	TokenLiteralNode() token.Token
 }
 
 type Statement interface {
@@ -113,6 +128,13 @@ func (p *Program) TokenLiteral() string {
 	}
 	return ""
 }
+func (p *Program) TokenLiteralNode() token.Token {
+	if len(p.Statements) > 0 {
+		return p.Statements[0].TokenLiteralNode()
+	}
+	return token.Token{}
+}
+
 
 func (p *Program) String() string {
 	var out []byte
@@ -798,5 +820,38 @@ func Walk(node Node, f WalkFn) {
 	case *FunctionDefinition:
 		Walk(n.Name, f)
 		Walk(n.Body, f)
+	case *GroupedExpression:
+		Walk(n.Exp, f)
 	}
 }
+
+func (n *FunctionDefinition) TokenLiteralNode() token.Token { return n.Token }
+func (n *Redirection) TokenLiteralNode() token.Token { return n.Token }
+func (n *LetStatement) TokenLiteralNode() token.Token { return n.Token }
+func (n *ReturnStatement) TokenLiteralNode() token.Token { return n.Token }
+func (n *ExpressionStatement) TokenLiteralNode() token.Token { return n.Token }
+func (n *Identifier) TokenLiteralNode() token.Token { return n.Token }
+func (n *IntegerLiteral) TokenLiteralNode() token.Token { return n.Token }
+func (n *Boolean) TokenLiteralNode() token.Token { return n.Token }
+func (n *PrefixExpression) TokenLiteralNode() token.Token { return n.Token }
+func (n *PostfixExpression) TokenLiteralNode() token.Token { return n.Token }
+func (n *InfixExpression) TokenLiteralNode() token.Token { return n.Token }
+func (n *BlockStatement) TokenLiteralNode() token.Token { return n.Token }
+func (n *IfStatement) TokenLiteralNode() token.Token { return n.Token }
+func (n *ForLoopStatement) TokenLiteralNode() token.Token { return n.Token }
+func (n *WhileLoopStatement) TokenLiteralNode() token.Token { return n.Token }
+func (n *FunctionLiteral) TokenLiteralNode() token.Token { return n.Token }
+func (n *CallExpression) TokenLiteralNode() token.Token { return n.Token }
+func (n *StringLiteral) TokenLiteralNode() token.Token { return n.Token }
+func (n *BracketExpression) TokenLiteralNode() token.Token { return n.Token }
+func (n *DoubleBracketExpression) TokenLiteralNode() token.Token { return n.Token }
+func (n *ArrayAccess) TokenLiteralNode() token.Token { return n.Token }
+func (n *IndexExpression) TokenLiteralNode() token.Token { return n.Token }
+func (n *InvalidArrayAccess) TokenLiteralNode() token.Token { return n.Token }
+func (n *CommandSubstitution) TokenLiteralNode() token.Token { return n.Token }
+func (n *Shebang) TokenLiteralNode() token.Token { return n.Token }
+func (n *DollarParenExpression) TokenLiteralNode() token.Token { return n.Token }
+func (n *SimpleCommand) TokenLiteralNode() token.Token { return n.Token }
+func (n *ConcatenatedExpression) TokenLiteralNode() token.Token { return n.Token }
+func (n *CaseStatement) TokenLiteralNode() token.Token { return n.Token }
+func (n *CaseClause) TokenLiteralNode() token.Token { return n.Token }

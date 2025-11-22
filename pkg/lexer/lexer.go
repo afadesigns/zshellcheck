@@ -141,31 +141,33 @@ func (l *Lexer) NextToken() token.Token {
 	case '/':
 		tok = newToken(token.SLASH, l.ch, l.line, l.column)
 	case '<':
-		if l.peekChar() == '<' {
+		switch l.peekChar() {
+		case '<':
 			ch := l.ch
 			l.readChar()
 			literal := string(ch) + string(l.ch)
 			tok = token.Token{Type: token.LTLT, Literal: literal, Line: l.line, Column: l.column}
-		} else if l.peekChar() == '&' {
+		case '&':
 			ch := l.ch
 			l.readChar()
 			literal := string(ch) + string(l.ch)
 			tok = token.Token{Type: token.LTAMP, Literal: literal, Line: l.line, Column: l.column}
-		} else {
+		default:
 			tok = newToken(token.LT, l.ch, l.line, l.column)
 		}
 	case '>':
-		if l.peekChar() == '>' {
+		switch l.peekChar() {
+		case '>':
 			ch := l.ch
 			l.readChar()
 			literal := string(ch) + string(l.ch)
 			tok = token.Token{Type: token.GTGT, Literal: literal, Line: l.line, Column: l.column}
-		} else if l.peekChar() == '&' {
+		case '&':
 			ch := l.ch
 			l.readChar()
 			literal := string(ch) + string(l.ch)
 			tok = token.Token{Type: token.GTAMP, Literal: literal, Line: l.line, Column: l.column}
-		} else {
+		default:
 			tok = newToken(token.GT, l.ch, l.line, l.column)
 		}
 	case '{':
@@ -311,15 +313,7 @@ func (l *Lexer) readString() string {
 	return l.input[position:l.position]
 }
 
-func (l *Lexer) readShebang() string {
-	position := l.position
-	for l.ch != 10 && l.ch != 0 { // \n
-		l.readChar()
-	}
-	return l.input[position:l.position]
-}
-
-func (l *Lexer) skipWhitespace() bool {
+func (l *Lexer) skipWhitespace() {
 	skipped := false
 	for l.ch == ' ' || l.ch == 9 || l.ch == 10 || l.ch == 13 { // \t \n \r
 		skipped = true

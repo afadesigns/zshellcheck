@@ -8,8 +8,9 @@ func init() {
 	RegisterKata(ast.SimpleCommandNode, Kata{
 		ID:          "ZC1010",
 		Title:       "Use [[ ... ]] instead of [ ... ]",
-		Description: "Zsh's [[ ... ]] is more powerful and safer than [ ... ]. It supports pattern matching, regex, and doesn't require quoting variables to prevent word splitting.",
-		Check:       checkZC1010,
+		Description: "Zsh's [[ ... ]] is more powerful and safer than [ ... ]. " +
+			"It supports pattern matching, regex, and doesn't require quoting variables to prevent word splitting.",
+		Check: checkZC1010,
 	})
 }
 

@@ -253,7 +253,7 @@ func (p *Parser) parseCommandPipeline() ast.Expression {
 func (p *Parser) isCommandDelimiter(t token.Token) bool {
 	return t.Type == token.EOF || t.Type == token.SEMICOLON || t.Type == token.PIPE ||
 		t.Type == token.AND || t.Type == token.OR ||
-		t.Type == token.RPAREN || t.Type == token.LPAREN || t.Type == token.RBRACE ||
+		t.Type == token.RPAREN || t.Type == token.RBRACE ||
 		t.Type == token.HASH ||
 		t.Type == token.THEN || t.Type == token.ELSE || t.Type == token.ELIF || t.Type == token.Fi ||
 		t.Type == token.DO || t.Type == token.DONE ||
@@ -486,26 +486,6 @@ func (p *Parser) parsePostfixExpression(left ast.Expression) ast.Expression {
 	return &ast.PostfixExpression{Token: p.curToken, Left: left, Operator: p.curToken.Literal}
 }
 
-func (p *Parser) parseBracketExpression() ast.Expression {
-	bracketToken := p.curToken
-	p.nextToken()
-	expressions := []ast.Expression{}
-	for !p.curTokenIs(token.RBRACKET) && !p.curTokenIs(token.EOF) {
-		exp := p.parseExpression(LOWEST)
-		if exp != nil {
-			expressions = append(expressions, exp)
-		}
-		if !p.curTokenIs(token.RBRACKET) && !p.curTokenIs(token.EOF) {
-			p.nextToken()
-		}
-	}
-	if !p.curTokenIs(token.RBRACKET) {
-		p.peekError(token.RBRACKET)
-		return nil
-	}
-	return &ast.BracketExpression{Token: bracketToken, Expressions: expressions}
-}
-
 func (p *Parser) parseDoubleBracketExpression() ast.Expression {
 	bracketToken := p.curToken
 	p.nextToken()
@@ -539,12 +519,13 @@ func (p *Parser) parseInfixExpression(left ast.Expression) ast.Expression {
 }
 
 func (p *Parser) parseGroupedExpression() ast.Expression {
+	tok := p.curToken
 	p.nextToken()
 	exp := p.parseExpression(LOWEST)
 	if !p.expectPeek(token.RPAREN) {
 		return nil
 	}
-	return exp
+	return &ast.GroupedExpression{Token: tok, Exp: exp}
 }
 
 func (p *Parser) parseArrayAccess() ast.Expression {

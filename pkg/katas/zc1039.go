@@ -8,8 +8,9 @@ func init() {
 	RegisterKata(ast.SimpleCommandNode, Kata{
 		ID:          "ZC1039",
 		Title:       "Avoid `rm` with root path",
-		Description: "Running `rm` on the root directory `/` is dangerous. Ensure you are not deleting the entire filesystem.",
-		Check:       checkZC1039,
+		Description: "Running `rm` on the root directory `/` is dangerous. " +
+			"Ensure you are not deleting the entire filesystem.",
+		Check: checkZC1039,
 	})
 }
 

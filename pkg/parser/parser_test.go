@@ -788,25 +788,6 @@ func testPostfixExpression(t *testing.T, exp ast.Expression, left string, operat
 	return true
 }
 
-func testPrefixExpression(t *testing.T, exp ast.Expression, operator string, right interface{}) bool {
-	opExp, ok := exp.(*ast.PrefixExpression)
-	if !ok {
-		t.Errorf("exp not *ast.PrefixExpression. got=%T", exp)
-		return false
-	}
-
-	if opExp.Operator != operator {
-		t.Errorf("exp.Operator is not '%s'. got=%s", operator, opExp.Operator)
-		return false
-	}
-
-	if !testLiteralExpression(t, opExp.Right, right) {
-		return false
-	}
-
-	return true
-}
-
 func TestForLoopStatementStub(t *testing.T) { // Renamed from TestForLoopStatement, now a stub for later use.
 
 	input := "for ((i=0;i<10;i++)) do echo $i; done"

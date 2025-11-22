@@ -29,14 +29,14 @@ const (
 	INC      = "++"
 	DEC      = "--"
 
-	GT       = ">"
-	LT       = "<"
-	GTGT     = ">>"
-	LTLT     = "<<"
-	GTAMP    = ">&"
-	LTAMP    = "<&"
-	EQ       = "=="
-	NotEq    = "!="
+	GT    = ">"
+	LT    = "<"
+	GTGT  = ">>"
+	LTLT  = "<<"
+	GTAMP = ">&"
+	LTAMP = "<&"
+	EQ    = "=="
+	NotEq = "!="
 
 	// Delimiters
 	COMMA        = ","
@@ -88,8 +88,8 @@ const (
 	SHEBANG       = "#!"
 
 	// Zsh-specific operators
-	AND = "&&"
-	OR  = "||"
+	AND   = "&&"
+	OR    = "||"
 	DSEMI = ";;"
 
 	// Zsh-specific delimiters
