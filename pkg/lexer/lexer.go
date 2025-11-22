@@ -15,7 +15,7 @@ type Lexer struct {
 
 func New(input string) *Lexer {
 	l := &Lexer{input: input, line: 1, column: 0} // column is 0-indexed initially
-	l.readChar() // This initializes l.ch and l.position, setting column to 1
+	l.readChar()                                  // This initializes l.ch and l.position, setting column to 1
 	return l
 }
 
@@ -89,7 +89,7 @@ func (l *Lexer) NextToken() token.Token {
 		}
 	case ':':
 		tok = newToken(token.COLON, l.ch, l.line, l.column)
-	case '(': 
+	case '(':
 		if l.peekChar() == '(' {
 			ch := l.ch
 			l.readChar()
@@ -200,7 +200,7 @@ func (l *Lexer) NextToken() token.Token {
 			tok.Line = l.line
 			tok.Column = l.column
 			l.readChar()
-		case '(': 
+		case '(':
 			tok.Type = token.DOLLAR_LPAREN
 			tok.Literal = "$("
 			tok.Line = l.line
