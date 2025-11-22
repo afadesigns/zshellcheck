@@ -195,7 +195,7 @@ func (p *Parser) parseStatement() ast.Statement {
 		if p.peekTokenIs(token.IDENT) || p.peekTokenIs(token.STRING) || p.peekTokenIs(token.INT) ||
 			p.peekTokenIs(token.MINUS) || p.peekTokenIs(token.DOT) || p.peekTokenIs(token.VARIABLE) ||
 			p.peekTokenIs(token.DOLLAR) || p.peekTokenIs(token.DollarLbrace) || p.peekTokenIs(token.DOLLAR_LPAREN) ||
-			p.peekTokenIs(token.SLASH) || p.peekTokenIs(token.TILDE) || p.peekTokenIs(token.ASTERISK) {
+			p.peekTokenIs(token.SLASH) || p.peekTokenIs(token.TILDE) || p.peekTokenIs(token.ASTERISK) || p.peekTokenIs(token.BANG) {
 			return p.parseSimpleCommandStatement()
 		}
 		return p.parseExpressionStatement()
@@ -236,7 +236,33 @@ func (p *Parser) parseCommandList() ast.Expression {
 }
 
 func (p *Parser) parseCommandPipeline() ast.Expression {
+	if p.curTokenIs(token.BANG) {
+		tok := p.curToken
+		p.nextToken()
+		right := p.parseCommandPipeline()
+		return &ast.PrefixExpression{Token: tok, Operator: "!", Right: right}
+	}
+
 	left := p.parseSingleCommand()
+
+	// Parse redirections
+	for p.peekTokenIs(token.GT) || p.peekTokenIs(token.GTGT) || 
+		p.peekTokenIs(token.LTLT) || p.peekTokenIs(token.GTAMP) || 
+		p.peekTokenIs(token.LTAMP) {
+		
+		p.nextToken()
+		op := p.curToken
+		p.nextToken() // consume op
+		// Redirection target is file/expression. Use parseCommandWord to handle paths/strings correctly.
+		right := p.parseCommandWord()
+		
+		left = &ast.Redirection{
+			Token:    op,
+			Left:     left,
+			Operator: op.Literal,
+			Right:    right,
+		}
+	}
 
 	if p.peekTokenIs(token.PIPE) {
 		p.nextToken() // consume '|'
