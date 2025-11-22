@@ -240,15 +240,14 @@ func TestOperatorPrecedenceParsing(t *testing.T) {
 		{"false", "false"},
 		{"3 > 5 == false", "((3 > 5) == false)"},
 		{"3 < 5 == true", "((3 < 5) == true)"},
-		{"1 + (2 + 3) + 4", "((1 + (2 + 3)) + 4)"},
-        // Changed test to be valid Zsh arithmetic syntax
-        {"let val = (5 + 5) * 2", "let val = ((5 + 5) * 2);"},
-		{"2 / (5 + 5)", "(2 / (5 + 5))"},
-		        {"-(5 + 5)", "(-(5 + 5))"},
-		        		{"a + add( (b * c) ) + d", "((a + add((b * c))) + d)"},
-		        		{"add(a, b, 1, 2 * 3, 4 + 5, add(6, 7 * 8) )", "add(a, b, 1, (2 * 3), (4 + 5), add(6, (7 * 8)))"},
-		        		{"add(a + b + c * d / f + g)", "add((((a + b) + ((c * d) / f)) + g))"},
-	}
+				{"1 + (2 + 3) + 4", "((1 + ((2 + 3))) + 4)"},
+				// Changed test to be valid Zsh arithmetic syntax
+				{"let val = (5 + 5) * 2", "let val = (((5 + 5)) * 2);"},
+				{"2 / (5 + 5)", "(2 / ((5 + 5)))"},
+				{"-(5 + 5)", "(-((5 + 5)))"},
+				{"a + add( (b * c) ) + d", "((a + add(((b * c)))) + d)"},
+				{"add(a, b, 1, 2 * 3, 4 + 5, add(6, 7 * 8) )", "add(a, b, 1, (2 * 3), (4 + 5), add(6, (7 * 8)))"},
+				{"add(a + b + c * d / f + g)", "add((((a + b) + ((c * d) / f)) + g))"},	}
 
 	for _, tt := range tests {
 		t.Logf("Testing input: %q", tt.input)

@@ -313,9 +313,9 @@ func (l *Lexer) readString() string {
 	return l.input[position:l.position]
 }
 
-func (l *Lexer) skipWhitespace() {
+func (l *Lexer) skipWhitespace() bool {
 	skipped := false
-	for l.ch == ' ' || l.ch == 9 || l.ch == 10 || l.ch == 13 { // \t \n \r
+	for l.ch == ' ' || l.ch == '\t' || l.ch == '\n' || l.ch == '\r' {
 		skipped = true
 		if l.ch == 10 { // \n
 			l.line++
