@@ -115,7 +115,7 @@ run_test 'cd /tmp || printf "fail\n"' "" "ZC1044: cd || echo (Checked)"
 
 # --- ZC1045: Masked return values ---
 run_test 'local x=$(cmd)' "ZC1045" "ZC1045: local x=\$(cmd)"
-run_test 'typeset y=`cmd`' "ZC1045" "ZC1045: typeset y=\`cmd\`"
+run_test 'typeset y=$(cmd)' "ZC1045" "ZC1045: typeset y=\$(cmd)"
 run_test 'local x="foo $(cmd)"' "ZC1045" "ZC1045: local x=\"... \$(cmd)\""
 run_test 'local x; x=$(cmd)' "" "ZC1045: Split declaration (Valid)"
 run_test 'export x=$(cmd)' "" "ZC1045: export (Valid - export is different?)" 
@@ -141,6 +141,12 @@ run_test 'alias foo="echo bar"' "ZC1049" "ZC1049: alias definition"
 run_test 'alias -g G="| grep"' "ZC1049" "ZC1049: global alias"
 run_test 'unalias foo' "" "ZC1049: unalias (Valid)"
 run_test 'function foo() { printf "bar\n"; }' "" "ZC1049: function (Valid)"
+
+# --- ZC1050: Iterating over ls ---
+run_test 'for f in $(ls *.txt(N) ); do printf "%s\n" "$f"; done' "ZC1050" "ZC1050: for in \$(ls)"
+run_test 'for f in `ls *.txt(N)`; do printf "%s\n" "$f"; done' "ZC1050" "ZC1050: for in \`ls\`"
+run_test 'for f in *.txt(N); do printf "%s\n" "$f"; done' "" "ZC1050: for in glob (Valid)"
+run_test 'for f in $(find .); do printf "%s\n" "$f"; done' "" "ZC1050: for in find (Valid - specific to ls)"
 
 # --- Summary ---
 echo "------------------------------------------------"
