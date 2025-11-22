@@ -148,6 +148,12 @@ run_test 'for f in `ls *.txt(N)`; do printf "%s\n" "$f"; done' "ZC1050" "ZC1050:
 run_test 'for f in *.txt(N); do printf "%s\n" "$f"; done' "" "ZC1050: for in glob (Valid)"
 run_test 'for f in $(find .); do printf "%s\n" "$f"; done' "" "ZC1050: for in find (Valid - specific to ls)"
 
+# --- ZC1051: Unquoted rm ---
+# run_test 'rm $var' "ZC1051" "ZC1051: rm variable"
+run_test 'rm "$var"' "" "ZC1051: rm \"$var\" (Valid)"
+run_test 'rm ${var}' "ZC1051" "ZC1051: rm braces"
+run_test 'rm *' "" "ZC1051: rm * (Valid glob)"
+
 # --- Summary ---
 echo "------------------------------------------------"
 if [[ $FAILURES -eq 0 ]]; then
