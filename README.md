@@ -90,6 +90,7 @@ zshellcheck [flags] <file1.zsh> [file2.zsh]...
 | **ZC1036** | Prefer `[[ ... ]]` over `test` command |
 | **ZC1037** | Use 'print -r --' for variable expansion |
 | **ZC1038** | Avoid useless use of cat |
+| **ZC1039** | Avoid `rm` with root path |
 
 </details>
 
