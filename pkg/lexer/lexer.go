@@ -252,7 +252,12 @@ func (l *Lexer) NextToken() token.Token {
 		tok.Type = token.STRING
 		tok.Line = l.line
 		tok.Column = l.column
-		tok.Literal = l.readString()
+		tok.Literal = l.readString('"')
+	case '\'':
+		tok.Type = token.STRING
+		tok.Line = l.line
+		tok.Column = l.column
+		tok.Literal = l.readString('\'')
 	case 0:
 		tok.Literal = ""
 		tok.Type = token.EOF
@@ -302,15 +307,18 @@ func (l *Lexer) readNumber() string {
 	return l.input[position:l.position]
 }
 
-func (l *Lexer) readString() string {
-	position := l.position + 1
+func (l *Lexer) readString(quote byte) string {
+	position := l.position // include opening quote
 	for {
 		l.readChar()
-		if l.ch == '"' || l.ch == 0 {
+		if l.ch == quote || l.ch == 0 {
 			break
 		}
+		if l.ch == '\\' {
+			l.readChar() // skip escaped char
+		}
 	}
-	return l.input[position:l.position]
+	return l.input[position : l.position+1] // include closing quote
 }
 
 func (l *Lexer) skipWhitespace() bool {
