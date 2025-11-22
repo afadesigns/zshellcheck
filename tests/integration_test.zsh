@@ -119,16 +119,12 @@ run_test 'typeset y=`cmd`' "ZC1045" "ZC1045: typeset y=\`cmd\`"
 run_test 'local x="foo $(cmd)"' "ZC1045" "ZC1045: local x=\"... \$(cmd)\""
 run_test 'local x; x=$(cmd)' "" "ZC1045: Split declaration (Valid)"
 run_test 'export x=$(cmd)' "" "ZC1045: export (Valid - export is different?)" 
-# export behaves similarly but usually we care about local/typeset in functions.
-# ShellCheck SC2155 warns for export too.
-# My implementation currently checks local/typeset/declare/readonly.
-# I should add export?
-# Zsh `export` is special? `export` is `typeset -x`.
-# Let's check if `export` is in the list.
-# It wasn't. I'll check if I should add it.
-# `export x=$(false); echo $?` -> 0.
-# So `export` also masks.
-# I'll add export to the check list in the next step if test passes.
+
+# --- ZC1046: Avoid eval ---
+run_test 'eval "ls -l"' "ZC1046" "ZC1046: eval"
+run_test 'builtin eval "ls -l"' "ZC1046" "ZC1046: builtin eval"
+run_test 'command eval "ls -l"' "ZC1046" "ZC1046: command eval"
+run_test 'printf "eval\n"' "" "ZC1046: echo word eval (Valid)"
 
 # --- Summary ---
 echo "------------------------------------------------"
