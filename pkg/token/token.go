@@ -72,7 +72,7 @@ const (
 	ESAC     = "ESAC"
 	ELIF     = "ELIF"
 
-	// Zsh-specific tokens (initial)
+	// Zsh-specific tokens
 	DOLLAR        = "$"
 	DollarLbrace  = "${"
 	DOLLAR_LPAREN = "$("
@@ -87,12 +87,12 @@ const (
 	DOT           = "."
 	SHEBANG       = "#!"
 
-	// Zsh-specific operators (initial)
+	// Zsh-specific operators
 	AND = "&&"
 	OR  = "||"
 	DSEMI = ";;"
 
-	// Zsh-specific delimiters (initial)
+	// Zsh-specific delimiters
 	LARRAY = "("
 	RARRAY = ")"
 )

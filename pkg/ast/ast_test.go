@@ -53,7 +53,7 @@ func TestWalk(t *testing.T) {
 					},
 				},
 			},
-			9, // Corrected count: If(1) + CondBlock(1) + CondExpr(1) + Infix(1) + Int(1) + Int(1) + ConsBlock(1) + ConsExpr(1) + Ident(1) = 9
+			9, // If, Block, ExprStmt, Infix, Int, Int, Block, ExprStmt, Ident
 		},
 	}
 

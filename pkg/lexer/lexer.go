@@ -26,7 +26,7 @@ func (l *Lexer) readChar() {
 		l.ch = l.input[l.readPosition]
 	}
 
-	if l.ch == '\n' {
+	if l.ch == 10 { // \n
 		l.line++
 		l.column = 0
 	} else {
@@ -48,13 +48,12 @@ func (l *Lexer) NextToken() token.Token {
 	var tok token.Token
 
 	hasSpace := l.skipWhitespace()
-    // We don't set tok.HasPrecedingSpace here because 'tok' is empty and might be overwritten.
-    // We will set it explicitly before returning.
+	// Store hasSpace but set it on tok later because tok is re-assigned below.
 
 	if l.ch == '#' {
 		if l.peekChar() == '!' {
 			start := l.position
-			for l.ch != '\n' && l.ch != 0 {
+			for l.ch != 10 && l.ch != 0 { // \n
 				l.readChar()
 			}
 			literal := l.input[start:l.position]
@@ -213,7 +212,7 @@ func (l *Lexer) NextToken() token.Token {
 				tok.Literal = "$" + l.readIdentifier()
 				tok.Line = l.line
 				tok.Column = col
-                tok.HasPrecedingSpace = hasSpace // SET
+				tok.HasPrecedingSpace = hasSpace
 				return tok
 			}
 			tok = newToken(token.DOLLAR, l.ch, l.line, l.column)
@@ -265,7 +264,7 @@ func (l *Lexer) NextToken() token.Token {
 			tok.Type = token.LookupIdent(tok.Literal)
 			tok.Line = line
 			tok.Column = col
-            tok.HasPrecedingSpace = hasSpace // SET
+			tok.HasPrecedingSpace = hasSpace
 			return tok
 		case isDigit(l.ch):
 			line, col := l.line, l.column
@@ -273,7 +272,7 @@ func (l *Lexer) NextToken() token.Token {
 			tok.Literal = l.readNumber()
 			tok.Line = line
 			tok.Column = col
-            tok.HasPrecedingSpace = hasSpace // SET
+			tok.HasPrecedingSpace = hasSpace
 			return tok
 		default:
 			tok = newToken(token.ILLEGAL, l.ch, l.line, l.column)
@@ -281,13 +280,13 @@ func (l *Lexer) NextToken() token.Token {
 	}
 
 	l.readChar()
-    tok.HasPrecedingSpace = hasSpace // SET for single char tokens
+	tok.HasPrecedingSpace = hasSpace
 	return tok
 }
 
 func (l *Lexer) readIdentifier() string {
 	position := l.position
-	for isLetter(l.ch) || isDigit(l.ch) || l.ch == '-' { // Added '-'
+	for isLetter(l.ch) || isDigit(l.ch) || l.ch == '-' {
 		l.readChar()
 	}
 	return l.input[position:l.position]
@@ -314,7 +313,7 @@ func (l *Lexer) readString() string {
 
 func (l *Lexer) readShebang() string {
 	position := l.position
-	for l.ch != '\n' && l.ch != 0 {
+	for l.ch != 10 && l.ch != 0 { // \n
 		l.readChar()
 	}
 	return l.input[position:l.position]
@@ -322,9 +321,9 @@ func (l *Lexer) readShebang() string {
 
 func (l *Lexer) skipWhitespace() bool {
 	skipped := false
-	for l.ch == ' ' || l.ch == '\t' || l.ch == '\n' || l.ch == '\r' {
+	for l.ch == ' ' || l.ch == 9 || l.ch == 10 || l.ch == 13 { // \t \n \r
 		skipped = true
-		if l.ch == '\n' {
+		if l.ch == 10 { // \n
 			l.line++
 			l.column = 0
 		}
@@ -334,7 +333,7 @@ func (l *Lexer) skipWhitespace() bool {
 }
 
 func (l *Lexer) skipComment() {
-	for l.ch != '\n' && l.ch != 0 {
+	for l.ch != 10 && l.ch != 0 { // \n
 		l.readChar()
 	}
 }

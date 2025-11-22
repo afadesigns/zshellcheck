@@ -36,6 +36,7 @@ var precedences = map[token.Type]int{
 	token.DollarLbrace:  INDEX,
 	token.DOLLAR_LPAREN: CALL,
 	token.DoubleLparen:  CALL,
+	token.DoubleRparen:  LOWEST, // Ensure precedence is defined
 	token.ASSIGN:        EQUALS,
 	token.INC:           POSTFIX,
 	token.DEC:           POSTFIX,
@@ -527,11 +528,9 @@ func (p *Parser) parseDoubleBracketExpression() ast.Expression {
 }
 
 func (p *Parser) parseInfixExpression(left ast.Expression) ast.Expression {
-    // Ensure debugging is off
 	expression := &ast.InfixExpression{
 		Token:    p.curToken,
 		Operator: p.curToken.Literal,
-		Left:     left,
 	}
 	precedence := p.curPrecedence()
 	p.nextToken()
@@ -881,6 +880,33 @@ func (p *Parser) expectPeek(t token.Type) bool {
 		p.nextToken()
 		return true
 	}
+	// Special handling for ) matching ))
+	if t == token.RPAREN && p.peekTokenIs(token.DoubleRparen) {
+		// We expected ), but got )).
+		// Treat the first half of )) as ).
+		// Hack: We manually advance state as if we read ).
+		// But wait, p.peekToken is DoubleRparen.
+		// We need to make it look like we consumed ) and next token is ).
+		
+		// Since Lexer already consumed )), we can't really split it easily here without hacking Token.
+		// A better hack:
+		// Return true, and MUTATE p.peekToken to be RPAREN?
+		// So the NEXT consumer sees the second ).
+		
+		p.peekToken.Type = token.RPAREN
+		p.peekToken.Literal = ")"
+		// We do NOT call nextToken here.
+		// We return true to say "we consumed the expected )".
+		// And we leave peekToken as ) for the *next* call.
+		// Wait, expectPeek implies "consume peek if matches".
+		// If we return true, caller thinks we consumed the expected token.
+		// And caller expects `p.curToken` to be the consumed token.
+		
+		p.curToken = token.Token{Type: token.RPAREN, Literal: ")", Line: p.peekToken.Line, Column: p.peekToken.Column}
+		// We leave p.peekToken as ) (modified from ))).
+		return true
+	}
+
 	p.peekError(t)
 	return false
 }
