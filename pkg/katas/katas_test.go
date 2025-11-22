@@ -5,8 +5,7 @@ import (
 )
 
 func TestKatas(t *testing.T) {
-	registry := GetRegistry()
-	if len(registry) == 0 {
+	if len(Registry.KatasByID) == 0 {
 		t.Errorf("Registry is empty")
 	}
 }
