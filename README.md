@@ -97,6 +97,7 @@ zshellcheck [flags] <file1.zsh> [file2.zsh]...
 | **ZC1043** | Use `local` for variables in functions |
 | **ZC1044** | Check for unchecked `cd` commands |
 | **ZC1045** | Declare and assign separately to avoid masking return values |
+| **ZC1046** | Avoid `eval` |
 
 </details>
 
