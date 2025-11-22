@@ -48,14 +48,11 @@ func (l *Lexer) NextToken() token.Token {
 	var tok token.Token
 
 	hasSpace := l.skipWhitespace()
-	tok.HasPrecedingSpace = hasSpace
+    // We don't set tok.HasPrecedingSpace here because 'tok' is empty and might be overwritten.
+    // We will set it explicitly before returning.
 
 	if l.ch == '#' {
-		// Shebang check (must be at start of file, or maybe just check sequence #!)
-		// Usually only valid at start. But strict check: col 1, line 1?
-		// For robustness, if #! appears, it's shebang token.
 		if l.peekChar() == '!' {
-			// Consume until end of line
 			start := l.position
 			for l.ch != '\n' && l.ch != 0 {
 				l.readChar()
@@ -64,7 +61,6 @@ func (l *Lexer) NextToken() token.Token {
 			return token.Token{Type: token.SHEBANG, Literal: literal, Line: l.line, Column: l.column}
 		}
 
-		// Comment check: only if preceded by space or start of line
 		if hasSpace || l.column == 1 {
 			l.skipComment()
 			return l.NextToken()
@@ -84,10 +80,17 @@ func (l *Lexer) NextToken() token.Token {
 			tok = newToken(token.ASSIGN, l.ch, l.line, l.column)
 		}
 	case ';':
-		tok = newToken(token.SEMICOLON, l.ch, l.line, l.column)
+		if l.peekChar() == ';' {
+			ch := l.ch
+			l.readChar()
+			literal := string(ch) + string(l.ch)
+			tok = token.Token{Type: token.DSEMI, Literal: literal, Line: l.line, Column: l.column}
+		} else {
+			tok = newToken(token.SEMICOLON, l.ch, l.line, l.column)
+		}
 	case ':':
 		tok = newToken(token.COLON, l.ch, l.line, l.column)
-	case '(':
+	case '(': 
 		if l.peekChar() == '(' {
 			ch := l.ch
 			l.readChar()
@@ -192,11 +195,11 @@ func (l *Lexer) NextToken() token.Token {
 		switch l.peekChar() {
 		case '{':
 			tok.Type = token.DollarLbrace
-			tok.Literal = "${"
+			tok.Literal = "$"
 			tok.Line = l.line
 			tok.Column = l.column
 			l.readChar()
-		case '(':
+		case '(': 
 			tok.Type = token.DOLLAR_LPAREN
 			tok.Literal = "$("
 			tok.Line = l.line
@@ -210,6 +213,7 @@ func (l *Lexer) NextToken() token.Token {
 				tok.Literal = "$" + l.readIdentifier()
 				tok.Line = l.line
 				tok.Column = col
+                tok.HasPrecedingSpace = hasSpace // SET
 				return tok
 			}
 			tok = newToken(token.DOLLAR, l.ch, l.line, l.column)
@@ -261,6 +265,7 @@ func (l *Lexer) NextToken() token.Token {
 			tok.Type = token.LookupIdent(tok.Literal)
 			tok.Line = line
 			tok.Column = col
+            tok.HasPrecedingSpace = hasSpace // SET
 			return tok
 		case isDigit(l.ch):
 			line, col := l.line, l.column
@@ -268,6 +273,7 @@ func (l *Lexer) NextToken() token.Token {
 			tok.Literal = l.readNumber()
 			tok.Line = line
 			tok.Column = col
+            tok.HasPrecedingSpace = hasSpace // SET
 			return tok
 		default:
 			tok = newToken(token.ILLEGAL, l.ch, l.line, l.column)
@@ -275,12 +281,13 @@ func (l *Lexer) NextToken() token.Token {
 	}
 
 	l.readChar()
+    tok.HasPrecedingSpace = hasSpace // SET for single char tokens
 	return tok
 }
 
 func (l *Lexer) readIdentifier() string {
 	position := l.position
-	for isLetter(l.ch) || isDigit(l.ch) {
+	for isLetter(l.ch) || isDigit(l.ch) || l.ch == '-' { // Added '-'
 		l.readChar()
 	}
 	return l.input[position:l.position]
