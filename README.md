@@ -99,6 +99,7 @@ zshellcheck [flags] <file1.zsh> [file2.zsh]...
 | **ZC1045** | Declare and assign separately to avoid masking return values |
 | **ZC1046** | Avoid `eval` |
 | **ZC1047** | Avoid `sudo` in scripts |
+| **ZC1048** | Avoid `source` with relative paths |
 
 </details>
 
