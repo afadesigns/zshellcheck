@@ -177,7 +177,11 @@ func (p *Parser) parseStatement() ast.Statement {
 	case token.WHILE:
 		return p.parseWhileLoopStatement()
 	case token.LBRACE:
-		return p.parseBlockStatement(token.RBRACE)
+		tok := p.curToken
+		p.nextToken()
+		block := p.parseBlockStatement(token.RBRACE)
+		block.Token = tok
+		return block
 	case token.LPAREN:
 		return p.parseSubshellStatement()
 	case token.COLON, token.DOT, token.LBRACKET:
