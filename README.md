@@ -103,6 +103,7 @@ zshellcheck [flags] <file1.zsh> [file2.zsh]...
 | **ZC1049** | Prefer functions over aliases |
 | **ZC1050** | Avoid iterating over `ls` output |
 | **ZC1051** | Quote variables in `rm` to avoid globbing |
+| **ZC1052** | Avoid `sed -i` for portability |
 
 </details>
 

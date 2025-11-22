@@ -154,6 +154,11 @@ run_test 'rm "$var"' "" "ZC1051: rm \"$var\" (Valid)"
 run_test 'rm ${var}' "ZC1051" "ZC1051: rm braces"
 run_test 'rm *' "" "ZC1051: rm * (Valid glob)"
 
+# --- ZC1052: sed -i ---
+run_test 'sed -i "s/foo/bar/" file' "ZC1052" "ZC1052: sed -i"
+run_test 'sed -e "s/foo/bar/" file' "" "ZC1052: sed -e (Valid)"
+run_test 'sed "-i" "s/foo/bar/" file' "ZC1052" "ZC1052: sed \"-i\""
+
 # --- Summary ---
 echo "------------------------------------------------"
 if [[ $FAILURES -eq 0 ]]; then
