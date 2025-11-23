@@ -58,15 +58,15 @@ jobs:
         if: runner.os != 'Linux'
         run: go test -v ./...
 
-      - name: Upload coverage to Codecov
-        if: runner.os == 'Linux'
-        uses: codecov/codecov-action@v4.5.0
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          files: ./coverage.out
-          flags: unittests
-          name: codecov-umbrella
-          fail_ci_if_error: true
+      # - name: Upload coverage to Codecov
+      #   if: runner.os == 'Linux'
+      #   uses: codecov/codecov-action@v4.5.0
+      #   with:
+      #     token: ${{ secrets.CODECOV_TOKEN }}
+      #     files: ./coverage.out
+      #     flags: unittests
+      #     name: codecov-umbrella
+      #     fail_ci_if_error: true
 
   lint:
     name: Lint
