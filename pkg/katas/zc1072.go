@@ -8,10 +8,11 @@ import (
 
 func init() {
 	RegisterKata(ast.InfixExpressionNode, Kata{
-		ID:          "ZC1072",
-		Title:       "Use `awk` instead of `grep | awk`",
-		Description: "`grep pattern | awk '{...}'` is inefficient. Use `awk '/pattern/ {...}'` to combine matching and processing in a single process.",
-		Check:       checkZC1072,
+		ID:    "ZC1072",
+		Title: "Use `awk` instead of `grep | awk`",
+		Description: "`grep pattern | awk '{...}'` is inefficient. " +
+			"Use `awk '/pattern/ {...}'` to combine matching and processing in a single process.",
+		Check: checkZC1072,
 	})
 }
 
@@ -44,7 +45,7 @@ func checkZC1072(node ast.Node) []Violation {
 	// Only if grep does something awk can't easily do (like -r recursive search) should we allow it?
 	// Awk doesn't do recursive directory search by default.
 	// So if grep has `-r` or `-R`, it's valid.
-	
+
 	if hasRecursiveFlag(grepCmd) {
 		return nil
 	}
