@@ -24,8 +24,8 @@ func TestZC1072(t *testing.T) {
 			expected: []katas.Violation{},
 		},
 		{
-			name:     "invalid grep awk",
-			input:    `grep pattern file | awk '{print $1}'`,
+			name:  "invalid grep awk",
+			input: `grep pattern file | awk '{print $1}'`,
 			expected: []katas.Violation{
 				{
 					KataID:  "ZC1072",
@@ -36,8 +36,8 @@ func TestZC1072(t *testing.T) {
 			},
 		},
 		{
-			name:     "invalid grep awk with flags",
-			input:    `grep -i pattern file | awk '{print}'`,
+			name:  "invalid grep awk with flags",
+			input: `grep -i pattern file | awk '{print}'`,
 			expected: []katas.Violation{
 				{
 					KataID:  "ZC1072",
