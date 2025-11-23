@@ -72,4 +72,4 @@ jobs:
           cd wiki_repo
           git add .
           git diff-index --quiet HEAD || git commit -m "Docs: Update Wiki from Starlight build" # Only commit if changes exist
-          git push origin main
+          git push origin master
