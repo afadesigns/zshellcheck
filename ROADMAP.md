@@ -24,4 +24,4 @@ ZShellCheck is an evolving static analysis tool for Zsh. Our primary goal is to 
 
 **Current Progress:** Version 0.0.73 (73/1000 Katas).
 
-Check the [README](./README.md) for the list of currently implemented Katas.
+For the list of currently implemented Katas, please refer to the [GitHub Wiki](https://github.com/afadesigns/zshellcheck/wiki).
