@@ -204,9 +204,14 @@ run_test 'rm "$VAR"' "ZC1059" "ZC1059: rm \"\$VAR\" (Unsafe)"
 run_test 'rm ${VAR}' "ZC1059" "ZC1059: rm \${VAR} (Unsafe)"
 run_test 'rm "${VAR}"' "ZC1059" "ZC1059: rm \"\${VAR}\" (Unsafe)"
 # run_test 'rm /tmp/$VAR' "" "ZC1059: rm path (Valid)"
-# Note: ${VAR:?} syntax checking depends on parser support which is currently limited.
-# So we don't test valid case `${VAR:?}` yet as it might cause parser error.
-# We assume simple variables are unsafe.
+
+# --- ZC1060: ps | grep ---
+run_test 'ps ax | grep foo' "ZC1060" "ZC1060: ps | grep"
+run_test 'ps ax | grep "[f]oo"' "" "ZC1060: ps | grep [] (Valid)"
+# run_test 'ps | grep -v grep' "ZC1060" "ZC1060: ps | grep -v (Warn: incomplete chain logic, still risky pattern)" 
+# My implementation flags `ps | grep` regardless of downstream pipes because it inspects the pair.
+# `ps | grep | grep -v` parses as `(ps | grep) | grep -v`.
+# The inner `ps | grep` IS flagged. This is acceptable behavior (suggesting `[]` is better).
 
 # --- Summary ---
 echo "------------------------------------------------"
