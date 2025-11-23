@@ -109,6 +109,7 @@ zshellcheck [flags] <file1.zsh> [file2.zsh]...
 | **ZC1055** | Use `[[ -n/-z ]]` for empty string checks |
 | **ZC1056** | Avoid `$((...))` as a statement |
 | **ZC1057** | Avoid `ls` in assignments |
+| **ZC1058** | Avoid `sudo` with redirection |
 
 </details>
 
