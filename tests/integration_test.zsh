@@ -263,6 +263,12 @@ run_test 'ls() { ls -G; }' "ZC1070" "ZC1070: recursive ls"
 run_test 'cd() { builtin cd "$@"; }' "" "ZC1070: builtin cd (Valid)"
 run_test 'myfunc() { myfunc; }' "" "ZC1070: recursive custom (Valid/Ignored)"
 
+# --- ZC1072: grep | awk ---
+run_test 'grep pattern file | awk "{print $1}"' "ZC1072" "ZC1072: grep | awk"
+run_test 'grep -i pattern file | gawk "{print}"' "ZC1072" "ZC1072: grep -i | gawk"
+run_test 'grep -r pattern . | awk "{print}"' "" "ZC1072: grep -r | awk (Valid)"
+run_test 'awk "/pattern/ {print}" file' "" "ZC1072: awk only (Valid)"
+
 # --- Summary ---
 echo "------------------------------------------------"
 if [[ $FAILURES -eq 0 ]]; then
