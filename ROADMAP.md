@@ -1,39 +1,40 @@
-# Roadmap
+# ZShellCheck Roadmap
 
-## Versioning Strategy
-We aim to implement at least **1000 Katas** (checks).
-- **Version 1.0.0** will be released upon reaching Kata #1000 (ZC2000).
-- Version format: `Major.Minor.Patch`.
-- `Major`: Thousands of Katas (0 for <1000).
-- `Minor`: Hundreds of Katas.
-- `Patch`: Tens of Katas.
-- The exact version is updated with every Kata implemented, appending the units digit if necessary (e.g., `0.0.51`).
+ZShellCheck is an evolving static analysis tool for Zsh. Our primary goal is to reach 1000 Katas (checks) to ensure comprehensive coverage of Zsh scripting pitfalls.
+
+## 🚀 Milestones
+
+### ✅ Version 0.0.x - The Foundation
+- [x] Establish core architecture (Lexer, Parser, AST, Walker).
+- [x] Implement basic linting framework.
+- [x] Set up CI/CD pipeline (GitHub Actions).
+- [x] Create initial set of ~70 Katas.
+
+### 🚧 Version 0.1.0 - The First 100
+- [ ] **Goal:** Implement 100 high-value Katas.
+- [ ] Refine Parser to support complex Zsh constructs (arrays, arithmetic, expansions).
+- [ ] Improve error reporting and output formatting.
+
+### 🔮 Version 0.5.0 - Mid-Term Goals
+- [ ] **Goal:** Reach 500 Katas.
+- [ ] Deep analysis (control flow, variable scoping).
+- [ ] Auto-fix capabilities for simple violations.
+- [ ] Plugin system for custom checks.
+
+### 🌟 Version 1.0.0 - The 1000 Kata Milestone
+- [ ] **Goal:** Complete 1000 Katas covering:
+    - Syntax errors
+    - Portability issues
+    - Performance bottlenecks
+    - Security vulnerabilities
+    - Best practices
+- [ ] Stable API for integrations.
+- [ ] Comprehensive documentation and wiki.
+
+## 📈 Progress Tracking
 
 **Current Progress:** 73 Katas implemented (Version 0.0.73).
 
-## Milestones
+We track progress by version number. Version `0.x.y` roughly corresponds to `x*100 + y` Katas (e.g., `0.0.73` = 73 Katas).
 
-### Phase 1: Core Stability & Basic Katas (0.0.0 - 0.1.0)
-- [x] Stabilize Parser (Arithmetic, Conditions, Loops, Command Substitution).
-- [x] Robust Integration Test Suite (`tests/integration_test.zsh`).
-- [x] Basic Checks (ZC1001-ZC1050).
-- [ ] Expand to 100 Katas (ZC1051-ZC1100).
-
-### Phase 2: Advanced Analysis (0.1.0 - 0.5.0)
-- [ ] **Deep Variable Expansion Parsing:** Support `${name: ...}`, `${(f)...}`, etc.
-- [ ] **Globbing Analysis:** Extended glob patterns.
-- [ ] **Data Flow Analysis:** Track variable types (array vs scalar) and potential values.
-- [ ] **Autofix:** Automatic code correction.
-
-### Phase 3: Maturity (0.5.0 - 1.0.0)
-- [ ] Full Zsh Grammar Support.
-- [ ] LSP Server Implementation.
-- [ ] Plugin Architecture.
-- [ ] 1000+ Katas.
-
-## Planned Katas (Upcoming)
-- **ZC1051:** Check for `rm` variable expansion safety.
-- **ZC1052:** Warn about `sed -i` portability.
-- **ZC1053:** Prefer `builtin cd` or check `cd` behavior.
-- **ZC1054:** Check for valid shebangs (more strict).
-- **ZC1055:** Warn about `echo` flags (portability).
+Check the [README](./README.md) for the list of currently implemented Katas.
