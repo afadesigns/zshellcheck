@@ -1,19 +1,18 @@
 package katas
 
 import (
-
 	"github.com/afadesigns/zshellcheck/pkg/ast"
 	"github.com/afadesigns/zshellcheck/pkg/token"
 )
 
 func init() {
 	RegisterKata(ast.SimpleCommandNode, Kata{
-		ID:          "ZC1037",
-		Title:       "Use 'print -r --' for variable expansion",
+		ID:    "ZC1037",
+		Title: "Use 'print -r --' for variable expansion",
 		Description: "Using 'echo' to print strings containing variables can lead to unexpected behavior " +
 			"if the variable contains special characters or flags. A safer, more reliable alternative " +
 			"is 'print -r --'.",
-		Check:       checkZC1037,
+		Check: checkZC1037,
 	})
 }
 

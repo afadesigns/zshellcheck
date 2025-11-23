@@ -116,7 +116,7 @@ func (p *Parser) parseRedirection(left ast.Expression) ast.Expression {
 	}
 
 	p.nextToken()
-	expr.Right = p.parseExpression(LOWEST) 
+	expr.Right = p.parseExpression(LOWEST)
 
 	return expr
 }
@@ -196,15 +196,50 @@ func (p *Parser) parseStatement() ast.Statement {
 		}
 		if p.peekTokenIs(token.IDENT) || p.peekTokenIs(token.STRING) || p.peekTokenIs(token.INT) ||
 			p.peekTokenIs(token.MINUS) || p.peekTokenIs(token.DOT) || p.peekTokenIs(token.VARIABLE) ||
-			p.peekTokenIs(token.DOLLAR) || p.peekTokenIs(token.DollarLbrace) || p.peekTokenIs(token.DOLLAR_LPAREN) ||
-			p.peekTokenIs(token.SLASH) || p.peekTokenIs(token.TILDE) || p.peekTokenIs(token.ASTERISK) || p.peekTokenIs(token.BANG) ||
-			p.peekTokenIs(token.LPAREN) {
+			p.peekTokenIs(token.DOLLAR) || p.peekTokenIs(token.DollarLbrace) ||
+			p.peekTokenIs(token.DOLLAR_LPAREN) || p.peekTokenIs(token.SLASH) ||
+			p.peekTokenIs(token.TILDE) || p.peekTokenIs(token.ASTERISK) ||
+			p.peekTokenIs(token.BANG) {
 			return p.parseSimpleCommandStatement()
 		}
-		return p.parseExpressionStatement()
+		return p.parseExpressionOrFunctionDefinition()
 	default:
-		return p.parseExpressionStatement()
+		return p.parseExpressionOrFunctionDefinition()
 	}
+}
+
+func (p *Parser) parseExpressionOrFunctionDefinition() ast.Statement {
+	stmt := p.parseExpressionStatement()
+
+	// Check if it matches function definition pattern: name()
+	if call, ok := stmt.Expression.(*ast.CallExpression); ok {
+		if len(call.Arguments) == 0 {
+			if ident, ok := call.Function.(*ast.Identifier); ok {
+				// It is `name()`. In Zsh this must be followed by a body to be a valid definition.
+				// If we are here, we consumed `name` and `()`.
+				// Parse the next statement as body.
+				funcDef := &ast.FunctionDefinition{
+					Token: ident.Token,
+					Name:  ident,
+				}
+				// We expect a statement now.
+				// If we are at semicolon, skip it? `func(); body` is valid? No. `func() body`.
+				// But lexer might have produced semicolon if newline?
+				// If next is `{`, `(` (subshell body), or command.
+
+				// If we are at EOF or semicolon without body, it's just a CallExpression (incomplete func def).
+				if p.curTokenIs(token.SEMICOLON) || p.curTokenIs(token.EOF) {
+					return stmt
+				}
+
+				// Parse body
+				p.nextToken() // Move to start of body statement
+				funcDef.Body = p.parseStatement()
+				return funcDef
+			}
+		}
+	}
+	return stmt
 }
 
 func (p *Parser) parseSimpleCommandStatement() ast.Statement {
@@ -249,16 +284,16 @@ func (p *Parser) parseCommandPipeline() ast.Expression {
 	left := p.parseSingleCommand()
 
 	// Parse redirections
-	for p.peekTokenIs(token.GT) || p.peekTokenIs(token.GTGT) || 
-		p.peekTokenIs(token.LT) || p.peekTokenIs(token.LTLT) || 
+	for p.peekTokenIs(token.GT) || p.peekTokenIs(token.GTGT) ||
+		p.peekTokenIs(token.LT) || p.peekTokenIs(token.LTLT) ||
 		p.peekTokenIs(token.GTAMP) || p.peekTokenIs(token.LTAMP) {
-		
+
 		p.nextToken()
 		op := p.curToken
 		p.nextToken() // consume op
 		// Redirection target is file/expression. Use parseCommandWord to handle paths/strings correctly.
 		right := p.parseCommandWord()
-		
+
 		left = &ast.Redirection{
 			Token:    op,
 			Left:     left,
@@ -291,7 +326,7 @@ func (p *Parser) isCommandDelimiter(t token.Token) bool {
 	if t.Type == token.BACKTICK && p.inBackticks == 0 {
 		return false
 	}
-	
+
 	return t.Type == token.EOF || t.Type == token.SEMICOLON || t.Type == token.PIPE ||
 		t.Type == token.AND || t.Type == token.OR ||
 		t.Type == token.RPAREN || t.Type == token.RBRACE ||
@@ -575,7 +610,7 @@ func (p *Parser) parseArrayAccess() ast.Expression {
 		return nil
 	}
 	exp.Left = p.parseIdentifier()
-	
+
 	// check for optional index
 	if p.peekTokenIs(token.LBRACKET) {
 		p.nextToken() // consume [
@@ -585,7 +620,7 @@ func (p *Parser) parseArrayAccess() ast.Expression {
 			return nil
 		}
 	}
-	
+
 	if !p.expectPeek(token.RBRACE) {
 		return nil
 	}
@@ -697,11 +732,11 @@ func (p *Parser) parseFunctionLiteral() ast.Expression {
 func (p *Parser) parseCommandSubstitution() ast.Expression {
 	exp := &ast.CommandSubstitution{Token: p.curToken}
 	p.nextToken()
-	
+
 	p.inBackticks++
 	exp.Command = p.parseCommandList()
 	p.inBackticks--
-	
+
 	if !p.expectPeek(token.BACKTICK) {
 		return nil
 	}
@@ -710,12 +745,12 @@ func (p *Parser) parseCommandSubstitution() ast.Expression {
 
 func (p *Parser) parseDollarParenExpression() ast.Expression {
 	exp := &ast.DollarParenExpression{Token: p.curToken}
-	
+
 	if p.peekTokenIs(token.LPAREN) {
 		p.nextToken()
 		p.nextToken() // consume `(`
 		cmd := p.parseExpression(LOWEST)
-		
+
 		if p.peekTokenIs(token.DoubleRparen) {
 			p.nextToken() // consume ))
 			exp.Command = cmd

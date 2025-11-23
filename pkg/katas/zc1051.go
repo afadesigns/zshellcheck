@@ -6,10 +6,11 @@ import (
 
 func init() {
 	RegisterKata(ast.SimpleCommandNode, Kata{
-		ID:          "ZC1051",
-		Title:       "Quote variables in `rm` to avoid globbing",
-		Description: "`rm $VAR` is dangerous if `$VAR` contains spaces or glob characters. Quote the variable (`rm \"$VAR\"`) to ensure safe deletion.",
-		Check:       checkZC1051,
+		ID:    "ZC1051",
+		Title: "Quote variables in `rm` to avoid globbing",
+		Description: "`rm $VAR` is dangerous if `$VAR` contains spaces or glob characters. " +
+			"Quote the variable (`rm \"$VAR\"`) to ensure safe deletion.",
+		Check: checkZC1051,
 	})
 }
 
@@ -28,7 +29,7 @@ func checkZC1051(node ast.Node) []Violation {
 
 	for _, arg := range cmd.Arguments {
 		isUnquoted := false
-		
+
 		switch n := arg.(type) {
 		case *ast.Identifier:
 			// $VAR
@@ -40,7 +41,6 @@ func checkZC1051(node ast.Node) []Violation {
 			}
 		case *ast.ArrayAccess:
 			// ${var[...]} unquoted
-			isUnquoted = true // In Zsh ${...} is usually safe from word splitting?
 			// Zsh DOES NOT split unquoted variable expansions by default!
 			// BUT it DOES glob them.
 			// `rm $var`. If var="a b", it deletes "a b" (one file).
@@ -52,7 +52,7 @@ func checkZC1051(node ast.Node) []Violation {
 			// $(...)
 			isUnquoted = true
 		}
-		
+
 		if isUnquoted {
 			violations = append(violations, Violation{
 				KataID:  "ZC1051",

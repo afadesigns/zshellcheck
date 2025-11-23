@@ -18,13 +18,13 @@ func TestCheckZC1014(t *testing.T) {
 				{
 					KataID:  "ZC1014",
 					Message: "Use `git switch` or `git restore` instead of the ambiguous `git checkout`.",
-										Line:    1,
-										Column:  1,
-									},
-								},
-							},
-							{
-								input:    `[ -f file ]`,
+					Line:    1,
+					Column:  1,
+				},
+			},
+		},
+		{
+			input:    `[ -f file ]`,
 			expected: []katas.Violation{},
 		},
 		{

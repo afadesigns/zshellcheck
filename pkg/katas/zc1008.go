@@ -1,7 +1,6 @@
 package katas
 
 import (
-
 	"github.com/afadesigns/zshellcheck/pkg/ast"
 )
 

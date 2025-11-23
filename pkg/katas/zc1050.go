@@ -6,10 +6,11 @@ import (
 
 func init() {
 	RegisterKata(ast.ForLoopStatementNode, Kata{
-		ID:          "ZC1050",
-		Title:       "Avoid iterating over `ls` output",
-		Description: "Iterating over `ls` output is fragile because filenames can contain spaces and newlines. Use globs (e.g. `for f in *.txt`) instead.",
-		Check:       checkZC1050,
+		ID:    "ZC1050",
+		Title: "Avoid iterating over `ls` output",
+		Description: "Iterating over `ls` output is fragile because filenames can contain spaces and newlines. " +
+			"Use globs (e.g. `for f in *.txt`) instead.",
+		Check: checkZC1050,
 	})
 }
 
@@ -33,10 +34,11 @@ func checkZC1050(node ast.Node) []Violation {
 			if simpleCmd, ok := cmd.(*ast.SimpleCommand); ok {
 				if name, ok := simpleCmd.Name.(*ast.Identifier); ok && name.Value == "ls" {
 					violations = append(violations, Violation{
-						KataID:  "ZC1050",
-						Message: "Avoid iterating over `ls` output. Use globs (e.g. `*.txt`) to handle filenames with spaces correctly.",
-						Line:    item.TokenLiteralNode().Line,
-						Column:  item.TokenLiteralNode().Column,
+						KataID: "ZC1050",
+						Message: "Avoid iterating over `ls` output. " +
+							"Use globs (e.g. `*.txt`) to handle filenames with spaces correctly.",
+						Line:   item.TokenLiteralNode().Line,
+						Column: item.TokenLiteralNode().Column,
 					})
 				}
 			}

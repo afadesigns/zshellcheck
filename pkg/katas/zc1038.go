@@ -22,7 +22,7 @@ func checkZC1038(node ast.Node) []Violation {
 	if !ok {
 		return violations
 	}
-	
+
 	if infix.Operator != "|" {
 		return violations
 	}
@@ -36,7 +36,7 @@ func checkZC1038(node ast.Node) []Violation {
 	if !ok {
 		return violations
 	}
-	
+
 	if ident.Value != "cat" {
 		return violations
 	}

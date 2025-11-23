@@ -6,10 +6,12 @@ import (
 
 func init() {
 	RegisterKata(ast.SimpleCommandNode, Kata{
-		ID:          "ZC1052",
-		Title:       "Avoid `sed -i` for portability",
-		Description: "`sed -i` usage varies between GNU/Linux and macOS/BSD. macOS requires an extension argument (e.g. `sed -i ''`), while GNU does not. Use a temporary file and `mv`, or `perl -i`, for portability.",
-		Check:       checkZC1052,
+		ID:    "ZC1052",
+		Title: "Avoid `sed -i` for portability",
+		Description: "`sed -i` usage varies between GNU/Linux and macOS/BSD. " +
+			"macOS requires an extension argument (e.g. `sed -i ''`), while GNU does not. " +
+			"Use a temporary file and `mv`, or `perl -i`, for portability.",
+		Check: checkZC1052,
 	})
 }
 
@@ -30,13 +32,13 @@ func checkZC1052(node ast.Node) []Violation {
 		// Arguments can be PrefixExpression (-i), or Concatenated, or StringLiteral if quoted?
 		// Parser usually handles `-i` as PrefixExpression(Operator="-", Right=Identifier("i"))
 		// Or if it's `-i.bak`, it might be different.
-		
+
 		// Let's check string representation for simplicity, or specific types if robust.
 		// `-i` string rep is `-i`.
-		
+
 		// Wait, `parsePrefixExpression` handles `-`.
 		// `-i` -> Prefix(-, Ident(i)).
-		
+
 		if prefix, ok := arg.(*ast.PrefixExpression); ok && prefix.Operator == "-" {
 			if ident, ok := prefix.Right.(*ast.Identifier); ok && ident.Value == "i" {
 				violations = append(violations, Violation{

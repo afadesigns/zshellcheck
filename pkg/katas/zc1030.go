@@ -1,18 +1,17 @@
 package katas
 
 import (
-
 	"github.com/afadesigns/zshellcheck/pkg/ast"
 )
 
 func init() {
 	RegisterKata(ast.SimpleCommandNode, Kata{
-		ID:          "ZC1030",
-		Title:       "Use `printf` instead of `echo`",
+		ID:    "ZC1030",
+		Title: "Use `printf` instead of `echo`",
 		Description: "The `echo` command's behavior can be inconsistent across different shells and " +
 			"environments, especially with flags and escape sequences. `printf` provides more reliable " +
 			"and portable string formatting.",
-		Check:       checkZC1030,
+		Check: checkZC1030,
 	})
 }
 

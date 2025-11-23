@@ -6,11 +6,11 @@ import (
 
 func init() {
 	RegisterKata(ast.LetStatementNode, Kata{
-		ID:          "ZC1032",
-		Title:       "Use `((...))` for C-style incrementing",
+		ID:    "ZC1032",
+		Title: "Use `((...))` for C-style incrementing",
 		Description: "Instead of `let i=i+1`, you can use the more concise and idiomatic C-style " +
 			"increment `(( i++ ))` in Zsh.",
-		Check:       checkZC1032,
+		Check: checkZC1032,
 	})
 }
 

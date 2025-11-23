@@ -78,8 +78,8 @@ $#&|`
 		{token.NotEq, "!="},
 		{token.INT, "10"},
 		{token.SEMICOLON, ";"},
-		{token.STRING, "foobar"},
-		{token.STRING, "foo bar"},
+		{token.STRING, "\"foobar\""},
+		{token.STRING, "\"foo bar\""},
 		{token.If, "if"},
 		{token.LPAREN, "("},
 		{token.INT, "5"},
@@ -194,7 +194,8 @@ func TestNextToken_ZshArrayAndCommandSubstitution(t *testing.T) {
 	tests := []struct {
 		expectedType    token.Type
 		expectedLiteral string
-	}{{token.BACKTICK, "`"},
+	}{
+		{token.BACKTICK, "`"},
 		{token.DollarLbrace, "${"},
 		{token.IDENT, "my_array"},
 		{token.LBRACKET, "["},

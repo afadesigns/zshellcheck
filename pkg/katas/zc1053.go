@@ -8,16 +8,18 @@ import (
 
 func init() {
 	RegisterKata(ast.IfStatementNode, Kata{
-		ID:          "ZC1053",
-		Title:       "Silence `grep` output in conditions",
-		Description: "Using `grep` in a condition prints matches to stdout. Use `grep -q` (or `> /dev/null`) to silence output if you only care about the exit code.",
-		Check:       checkZC1053,
+		ID:    "ZC1053",
+		Title: "Silence `grep` output in conditions",
+		Description: "Using `grep` in a condition prints matches to stdout. " +
+			"Use `grep -q` (or `> /dev/null`) to silence output if you only care about the exit code.",
+		Check: checkZC1053,
 	})
 	RegisterKata(ast.WhileLoopStatementNode, Kata{
-		ID:          "ZC1053",
-		Title:       "Silence `grep` output in conditions",
-		Description: "Using `grep` in a condition prints matches to stdout. Use `grep -q` (or `> /dev/null`) to silence output if you only care about the exit code.",
-		Check:       checkZC1053,
+		ID:    "ZC1053",
+		Title: "Silence `grep` output in conditions",
+		Description: "Using `grep` in a condition prints matches to stdout. " +
+			"Use `grep -q` (or `> /dev/null`) to silence output if you only care about the exit code.",
+		Check: checkZC1053,
 	})
 }
 
@@ -52,7 +54,8 @@ func walkZC1053(node ast.Node, isSilenced bool, violations *[]Violation) {
 	switch n := node.(type) {
 	case *ast.BlockStatement:
 		for _, stmt := range n.Statements {
-			// In a block (condition), usually all statements execute, but only the last one's exit code matters for the condition?
+			// In a block (condition), usually all statements execute, but only the last one's exit code
+			// matters for the condition?
 			// No, `if cmd1; cmd2; then`. Both execute. `cmd1` prints. `cmd2` prints.
 			// Should we check ALL commands in condition?
 			// Yes, because `grep` printing in a condition is usually unwanted noise.
@@ -89,7 +92,7 @@ func walkZC1053(node ast.Node, isSilenced bool, violations *[]Violation) {
 		checkCommandZC1053(n, isSilenced, violations)
 	case *ast.GroupedExpression:
 		walkZC1053(n.Exp, isSilenced, violations)
-	// case *ast.Subshell:
+		// case *ast.Subshell:
 		// Handled by BlockStatement
 	}
 }

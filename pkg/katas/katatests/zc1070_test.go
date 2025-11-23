@@ -24,8 +24,8 @@ func TestZC1070(t *testing.T) {
 			expected: []katas.Violation{},
 		},
 		{
-			name:     "invalid recursive wrapper",
-			input:    `cd() { cd "$@"; }`,
+			name:  "invalid recursive wrapper",
+			input: `cd() { cd "$@"; }`,
 			expected: []katas.Violation{
 				{
 					KataID:  "ZC1070",
@@ -36,8 +36,8 @@ func TestZC1070(t *testing.T) {
 			},
 		},
 		{
-			name:     "invalid recursive ls wrapper",
-			input:    `ls() { ls -G; }`,
+			name:  "invalid recursive ls wrapper",
+			input: `ls() { ls -G; }`,
 			expected: []katas.Violation{
 				{
 					KataID:  "ZC1070",
@@ -53,7 +53,7 @@ func TestZC1070(t *testing.T) {
 			expected: []katas.Violation{},
 		},
 		{
-			name:     "valid recursive with condition (false positive risk)",
+			name: "valid recursive with condition (false positive risk)",
 			// Static analysis warns anyway because it sees direct recursion.
 			// ZC1070 intends to warn about WRAPPERS where you usually mean builtin.
 			// For algorithms, recursion is valid.
@@ -65,17 +65,17 @@ func TestZC1070(t *testing.T) {
 			// If `myfunc` is a function, `command myfunc` ignores function? Yes.
 			// So if I want to call the *function* recursively, I use `myfunc`.
 			// So ZC1070 flagged valid recursion as error if I imply "infinite recursion".
-			
+
 			// Let's stick to checking builtins to be safe?
 			// Or accept that "recursive function" warning is useful but wording should change.
 			// "Recursive call detected. If wrapping a builtin/command, use `builtin` or `command`."
 			// But for standard recursion `fib(n-1)`, this warning is annoying.
-			
+
 			// Decision: Limit to known builtins + `ls`, `grep` etc?
 			// Or just "standard builtins".
 			// Let's update logic to only flag if name is in a "common wrapper targets" list?
 			// Or "common builtins".
-			
+
 			input:    `fib() { fib $(($1-1)); }`,
 			expected: []katas.Violation{}, // Should NOT warn for generic recursion?
 		},

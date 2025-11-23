@@ -6,10 +6,11 @@ import (
 
 func init() {
 	RegisterKata(ast.SimpleCommandNode, Kata{
-		ID:          "ZC1041",
-		Title:       "Do not use variables in printf format string",
-		Description: "Using variables in `printf` format strings allows for format string attacks and unexpected behavior if the variable contains `%`. Use `printf '%s' \"$var\"` instead.",
-		Check:       checkZC1041,
+		ID:    "ZC1041",
+		Title: "Do not use variables in printf format string",
+		Description: "Using variables in `printf` format strings allows for format string attacks and unexpected behavior " +
+			"if the variable contains `%`. Use `printf '%s' \"$var\"` instead.",
+		Check: checkZC1041,
 	})
 }
 
@@ -32,7 +33,7 @@ func checkZC1041(node ast.Node) []Violation {
 
 	// The first argument should be a static StringLiteral.
 	// If it is an Identifier ($var), ConcatenatedExpression ("$var"), or CommandSubstitution, warn.
-	// Note: A StringLiteral might still contain interpolation if the lexer didn't split it, 
+	// Note: A StringLiteral might still contain interpolation if the lexer didn't split it,
 	// but generally in this AST, StringLiteral is safe/static or single-quoted.
 	// We warn if it's NOT a StringLiteral.
 

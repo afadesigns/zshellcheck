@@ -33,7 +33,7 @@ func checkZC1054(node ast.Node) []Violation {
 			// But regex `\[[a-z]-[a-z]\]` matches `[a-z]` but not `[[:lower:]]`
 			// Wait, `[[:lower:]]` contains `[:` which is not `[a-z]-[a-z]`.
 			// So it should be safe.
-			
+
 			violations = append(violations, Violation{
 				KataID:  "ZC1054",
 				Message: "Ranges like `[a-z]` are locale-dependent. Use POSIX classes like `[[:lower:]]` or `[[:digit:]]`.",

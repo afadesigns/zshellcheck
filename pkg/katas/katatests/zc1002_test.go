@@ -23,11 +23,11 @@ func TestZC1002(t *testing.T) {
 			input: `x=` + "`ls`",
 			expected: []katas.Violation{
 				{
-					KataID:  "ZC1002",
+					KataID: "ZC1002",
 					Message: "Use $(...) instead of backticks for command substitution. " +
 						"The `$(...)` syntax is more readable and can be nested easily.",
-					Line:    1,
-					Column:  3,
+					Line:   1,
+					Column: 3,
 				},
 			},
 		},

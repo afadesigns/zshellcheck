@@ -63,6 +63,7 @@ type FunctionDefinition struct {
 
 func (fd *FunctionDefinition) Type() NodeType       { return FunctionDefinitionNode }
 func (fd *FunctionDefinition) expressionNode()      {}
+func (fd *FunctionDefinition) statementNode()       {}
 func (fd *FunctionDefinition) TokenLiteral() string { return fd.Token.Literal }
 func (fd *FunctionDefinition) String() string {
 	var out []byte
@@ -128,6 +129,7 @@ func (p *Program) TokenLiteral() string {
 	}
 	return ""
 }
+
 func (p *Program) TokenLiteralNode() token.Token {
 	if len(p.Statements) > 0 {
 		return p.Statements[0].TokenLiteralNode()
