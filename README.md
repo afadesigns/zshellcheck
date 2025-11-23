@@ -112,6 +112,7 @@ zshellcheck [flags] <file1.zsh> [file2.zsh]...
 | **ZC1058** | Avoid `sudo` with redirection |
 | **ZC1059** | Use `${var:?}` for `rm` arguments |
 | **ZC1060** | Avoid `ps | grep` without exclusion |
+| **ZC1061** | Prefer `{start..end}` over `seq` |
 
 </details>
 
