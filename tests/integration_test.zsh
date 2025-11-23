@@ -257,6 +257,12 @@ run_test 'fn() { local x=1; }' "" "ZC1069: local in func (Valid)"
 run_test 'if true; then local x=1; fi' "ZC1069" "ZC1069: local in if (global)"
 run_test '( local x=1 )' "ZC1069" "ZC1069: local in subshell (global)"
 
+# --- ZC1070: Infinite recursion ---
+run_test 'cd() { cd "$@"; }' "ZC1070" "ZC1070: recursive cd"
+run_test 'ls() { ls -G; }' "ZC1070" "ZC1070: recursive ls"
+run_test 'cd() { builtin cd "$@"; }' "" "ZC1070: builtin cd (Valid)"
+run_test 'myfunc() { myfunc; }' "" "ZC1070: recursive custom (Valid/Ignored)"
+
 # --- Summary ---
 echo "------------------------------------------------"
 if [[ $FAILURES -eq 0 ]]; then
