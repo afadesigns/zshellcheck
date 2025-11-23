@@ -219,6 +219,10 @@ run_test 'seq 5' "ZC1061" "ZC1061: seq command"
 run_test 'egrep "pattern" file' "ZC1062" "ZC1062: egrep"
 run_test 'grep -E "pattern" file' "" "ZC1062: grep -E (Valid)"
 
+# --- ZC1063: fgrep ---
+run_test 'fgrep "pattern" file' "ZC1063" "ZC1063: fgrep"
+run_test 'grep -F "pattern" file' "" "ZC1063: grep -F (Valid)"
+
 # --- Summary ---
 echo "------------------------------------------------"
 if [[ $FAILURES -eq 0 ]]; then

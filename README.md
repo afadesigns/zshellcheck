@@ -114,6 +114,7 @@ zshellcheck [flags] <file1.zsh> [file2.zsh]...
 | **ZC1060** | Avoid `ps | grep` without exclusion |
 | **ZC1061** | Prefer `{start..end}` over `seq` |
 | **ZC1062** | Prefer `grep -E` over `egrep` |
+| **ZC1063** | Prefer `grep -F` over `fgrep` |
 
 </details>
 
