@@ -227,6 +227,12 @@ run_test 'grep -F "pattern" file' "" "ZC1063: grep -F (Valid)"
 run_test 'type ls' "ZC1064" "ZC1064: type"
 run_test 'command -v ls' "" "ZC1064: command -v (Valid)"
 
+# --- ZC1065: Spaces in test ---
+run_test '[foo]' "ZC1065" "ZC1065: [foo]"
+run_test '[[foo]]' "ZC1065" "ZC1065: [[foo]]"
+# run_test '[ foo ]' "" "ZC1065: [ foo ] (Valid)"
+run_test '[[ foo ]]' "" "ZC1065: [[ foo ]] (Valid)"
+
 # --- Summary ---
 echo "------------------------------------------------"
 if [[ $FAILURES -eq 0 ]]; then
