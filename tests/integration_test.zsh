@@ -223,6 +223,10 @@ run_test 'grep -E "pattern" file' "" "ZC1062: grep -E (Valid)"
 run_test 'fgrep "pattern" file' "ZC1063" "ZC1063: fgrep"
 run_test 'grep -F "pattern" file' "" "ZC1063: grep -F (Valid)"
 
+# --- ZC1064: type vs command -v ---
+run_test 'type ls' "ZC1064" "ZC1064: type"
+run_test 'command -v ls' "" "ZC1064: command -v (Valid)"
+
 # --- Summary ---
 echo "------------------------------------------------"
 if [[ $FAILURES -eq 0 ]]; then
