@@ -215,6 +215,10 @@ run_test 'for i in $(seq 1 10); do :; done' "ZC1061" "ZC1061: for seq"
 run_test 'for i in {1..10}; do :; done' "" "ZC1061: for range (Valid)"
 run_test 'seq 5' "ZC1061" "ZC1061: seq command"
 
+# --- ZC1062: egrep ---
+run_test 'egrep "pattern" file' "ZC1062" "ZC1062: egrep"
+run_test 'grep -E "pattern" file' "" "ZC1062: grep -E (Valid)"
+
 # --- Summary ---
 echo "------------------------------------------------"
 if [[ $FAILURES -eq 0 ]]; then
