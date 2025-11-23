@@ -8,9 +8,12 @@ export default defineConfig({
   integrations: [
     starlight({
       title: 'ZShellCheck',
-      social: {
-        github: 'https://github.com/afadesigns/zshellcheck',
-      },
+      social: [
+        {
+          icon: 'github',
+          link: 'https://github.com/afadesigns/zshellcheck',
+        },
+      ],
       sidebar: [
         {
           label: 'Start Here',
