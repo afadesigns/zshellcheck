@@ -244,6 +244,12 @@ run_test 'export var=`cmd`' "ZC1067" "ZC1067: export var=\`cmd\`"
 run_test 'var=$(cmd); export var' "" "ZC1067: var=\$(cmd); export var (Valid)"
 run_test 'export var="value"' "" "ZC1067: export var=\"value\" (Valid)"
 
+# --- ZC1068: Hook functions ---
+run_test 'precmd() { :; }' "ZC1068" "ZC1068: precmd()"
+run_test 'function chpwd() { :; }' "ZC1068" "ZC1068: function chpwd()"
+run_test 'autoload -Uz add-zsh-hook; add-zsh-hook precmd my_func' "" "ZC1068: add-zsh-hook (Valid)"
+run_test 'my_func() { :; }' "" "ZC1068: normal function (Valid)"
+
 # --- Summary ---
 echo "------------------------------------------------"
 if [[ $FAILURES -eq 0 ]]; then

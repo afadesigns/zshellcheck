@@ -16,6 +16,9 @@ func Check(code string, kataID string) []katas.Violation {
 
 	var violations []katas.Violation
 	ast.Walk(program, func(node ast.Node) bool {
+		if node == nil {
+			return true
+		}
 		if katasForNode, ok := katas.Registry.KatasByNodeType[node.Type()]; ok {
 			for _, kata := range katasForNode {
 				if kata.ID == kataID {

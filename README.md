@@ -119,6 +119,7 @@ zshellcheck [flags] <file1.zsh> [file2.zsh]...
 | **ZC1065** | Ensure spaces around `[` and `[[` |
 | **ZC1066** | Avoid iterating over `cat` output |
 | **ZC1067** | Separate `export` and assignment to avoid masking return codes |
+| **ZC1068** | Use `add-zsh-hook` instead of defining hook functions directly |
 
 </details>
 

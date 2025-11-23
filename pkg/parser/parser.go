@@ -197,7 +197,8 @@ func (p *Parser) parseStatement() ast.Statement {
 		if p.peekTokenIs(token.IDENT) || p.peekTokenIs(token.STRING) || p.peekTokenIs(token.INT) ||
 			p.peekTokenIs(token.MINUS) || p.peekTokenIs(token.DOT) || p.peekTokenIs(token.VARIABLE) ||
 			p.peekTokenIs(token.DOLLAR) || p.peekTokenIs(token.DollarLbrace) || p.peekTokenIs(token.DOLLAR_LPAREN) ||
-			p.peekTokenIs(token.SLASH) || p.peekTokenIs(token.TILDE) || p.peekTokenIs(token.ASTERISK) || p.peekTokenIs(token.BANG) {
+			p.peekTokenIs(token.SLASH) || p.peekTokenIs(token.TILDE) || p.peekTokenIs(token.ASTERISK) || p.peekTokenIs(token.BANG) ||
+			p.peekTokenIs(token.LPAREN) {
 			return p.parseSimpleCommandStatement()
 		}
 		return p.parseExpressionStatement()
@@ -679,6 +680,7 @@ func (p *Parser) parseFunctionLiteral() ast.Expression {
 	lit := &ast.FunctionLiteral{Token: p.curToken}
 	if p.peekTokenIs(token.IDENT) {
 		p.nextToken()
+		lit.Name = p.curToken.Literal
 	}
 	if !p.expectPeek(token.LPAREN) {
 		return nil

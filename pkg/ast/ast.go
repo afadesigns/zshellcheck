@@ -419,6 +419,7 @@ func (wls *WhileLoopStatement) String() string {
 
 type FunctionLiteral struct {
 	Token      token.Token // The 'fn' token
+	Name       string      // The function name (optional)
 	Parameters []*Identifier
 	Body       *BlockStatement
 }
