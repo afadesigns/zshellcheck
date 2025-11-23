@@ -116,6 +116,7 @@ zshellcheck [flags] <file1.zsh> [file2.zsh]...
 | **ZC1062** | Prefer `grep -E` over `egrep` |
 | **ZC1063** | Prefer `grep -F` over `fgrep` |
 | **ZC1064** | Prefer `command -v` over `type` |
+| **ZC1065** | Ensure spaces around `[` and `[[` |
 
 </details>
 
