@@ -1,92 +1,138 @@
-<div align="center">
-  <!-- ASCII Art Placeholder -->
-  <pre>
-    ____  __          __               __   ______          __
-   / __ \/ /_  ____  / /_  ____ ______/ /__/ ____/___  ____/ /__
-  / /_/ / __ \/ __ \/ __ \/ __ `/ ___/ //_/ /   / __ \/ __  / _ \
- / ____/ / / / /_/ / / / / /_/ / /__/ ,< / /___/ /_/ / /_/ /  __/
-/_/   /_/ /_/\____/_/ /_/\__,_/\___/_/|_|\____/\____/\__,_/\___/
-  </pre>
-  <!-- ASCII Art Placeholder -->
+# ZShellCheck
 
-  <h1>ZShellCheck</h1>
-  <p><strong>Your wise sensei for clean, fast, and safe Zsh.</strong></p>
-
-  <p>
-    <a href="https://github.com/afadesigns/zshellcheck/actions/workflows/test.yml"><img src="https://github.com/afadesigns/zshellcheck/actions/workflows/test.yml/badge.svg" alt="CI Status"></a>
-    <a href="https://golang.org/"><img src="https://img.shields.io/badge/Go-1.18+-blue.svg" alt="Go Version"></a>
-    <a href="https://github.com/afadesigns/zshellcheck/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License"></a>
-    <a href="https://github.com/afadesigns/zshellcheck/stargazers"><img src="https://img.shields.io/github/stars/afadesigns/zshellcheck.svg?style=social&label=Star" alt="GitHub Stars"></a>
-  </p>
-</div>
-
-## Why ZShellCheck?
-
-Zsh is a powerful, feature-rich shell, but its complexity can lead to subtle bugs, performance issues, and hard-to-maintain scripts. While `bash` has `ShellCheck`, Zsh has lacked a dedicated, modern static analysis tool that understands its unique syntax and semantics. ZShellCheck fills this gap, providing a friendly "sensei" to guide you toward writing better Zsh code.
-
-## Show, Don't Tell
-
-*(Animated GIF of ZShellCheck in action will be here)*
-
-## Gallery of Wisdom (Features)
-
-Here are a few examples of how ZShellCheck helps you improve your Zsh code.
-
-### ❌ Before (The "Confused Grasshopper")
-```zsh
-# Example 1: Incorrect array access
-my_array=(one two three)
-echo $my_array[1] # This doesn't do what you think!
-
-# Example 2: Using legacy command substitution
-files=`ls *.zsh`
-
-# Example 3: Unsafe use of '['
-if [ $ZSH_VERSION > 5.0 ]; then
-  echo "Modern Zsh"
-fi
+```
+ mmmmmm  mmmm  #             ""#    ""#      mmm  #                    #
+     #" #"   " # mm    mmm     #      #    m"   " # mm    mmm    mmm   #   m
+   m#   "#mmm  #"  #  #"  #    #      #    #      #"  #  #"  #  #"  "  # m"
+  m"        "# #   #  #""""    #      #    #      #   #  #""""  #      #"#
+ ##mmmm "mmm#" #   #  "#mm"    "mm    "mm   "mmm" #   #  "#mm"  "#mm"  #  "m
 ```
 
-### ✅ After (The "Enlightened Master")
-```zsh
-# Example 1: Correct array access
-my_array=(one two three)
-echo $my_array[1] # ZShellCheck: [ZC1001] Use ${my_array[1]} for array element access.
-echo ${my_array[1]}
+`zshellcheck` is a static analysis tool (linter) specifically designed for Zsh scripts. Unlike `shellcheck`, which focuses on POSIX sh/bash compatibility, `zshellcheck` understands Zsh syntax, best practices, and common pitfalls.
 
-# Example 2: Using modern command substitution
-files=$(ls *.zsh) # ZShellCheck: [ZC1002] Use $(...) instead of backticks for command substitution.
+It parses Zsh scripts into an Abstract Syntax Tree (AST) and runs a series of checks ("Katas") to identify issues.
 
-# Example 3: Safe and powerful '[['
-if [[ $ZSH_VERSION > 5.0 ]]; then # ZShellCheck: [ZC1003] Prefer [[...]] over [...] for modern Zsh tests.
-  echo "Modern Zsh"
-fi
-```
+## Features
+
+-   **Zsh-Specific Parsing:** Handles Zsh constructs like `[[ ... ]]`, `(( ... ))`, arrays, associative arrays, and modifiers.
+-   **Extensible Katas:** Rules are implemented as independent "Katas" that can be easily added or disabled.
+-   **Configurable:** Disable specific checks via `.zshellcheckrc` configuration file.
+-   **Integration Ready:** Designed to work with `pre-commit` and CI pipelines.
 
 ## Installation
 
-(Coming soon)
+### From Source
 
-### Homebrew (macOS)
-```sh
-brew install afadesigns/zshellcheck/zshellcheck
-```
-
-### Go
-```sh
+```bash
 go install github.com/afadesigns/zshellcheck/cmd/zshellcheck@latest
 ```
 
-### From Binary
-Download the latest release from the [Releases](https://github.com/afadesigns/zshellcheck/releases) page.
+### Pre-commit Hook
 
-## The Dojo (Usage)
-```sh
-zshellcheck your_script.zsh
+Add this to your `.pre-commit-config.yaml`:
+
+```yaml
+-   repo: https://github.com/afadesigns/zshellcheck
+    rev: main # or specific tag
+    hooks:
+    -   id: zshellcheck
 ```
 
-## Learn the Katas (Rules)
+## Usage
 
-ZShellCheck uses a system of "Katas" (rules) to teach you better Zsh. Each Kata has a unique ID and a detailed explanation.
+```bash
+zshellcheck [flags] <file1.zsh> [file2.zsh]...
+```
 
-➡️ [**See the full list of Katas in our Wiki**](https://github.com/afadesigns/zshellcheck/wiki)
+**Flags:**
+- `-format [text|json]`: Output format (default: "text").
+
+## Implemented Checks (Katas)
+
+<details>
+<summary>Click to expand full list of implemented checks</summary>
+
+| ID | Title |
+| :--- | :--- |
+| **ZC1001** | Use ${} for array element access |
+| **ZC1002** | Use $(...) instead of backticks |
+| **ZC1003** | Use `((...))` for arithmetic comparisons instead of `[` or `test` |
+| **ZC1005** | Use whence instead of which |
+| **ZC1006** | Prefer [[ over test for tests |
+| **ZC1007** | Avoid using `chmod 777` |
+| **ZC1008** | Use `\$(())` for arithmetic operations |
+| **ZC1009** | Use `((...))` for C-style arithmetic |
+| **ZC1010** | Use [[ ... ]] instead of [ ... ] |
+| **ZC1011** | Use `git` porcelain commands instead of plumbing commands |
+| **ZC1012** | Use `read -r` to prevent backslash escaping |
+| **ZC1013** | Use `((...))` for arithmetic operations instead of `let` |
+| **ZC1014** | Use `git switch` or `git restore` instead of `git checkout` |
+| **ZC1015** | Use `$(...)` for command substitution instead of backticks |
+| **ZC1017** | Use `print -r` to print strings literally |
+| **ZC1018** | Use `((...))` for C-style arithmetic instead of `expr` |
+| **ZC1019** | Use `whence` instead of `which` |
+| **ZC1020** | Use `[[ ... ]]` for tests instead of `test` |
+| **ZC1021** | Use symbolic permissions with `chmod` instead of octal |
+| **ZC1022** | Use `$((...))` for arithmetic expansion |
+| **ZC1023** | Use `$((...))` for arithmetic expansion |
+| **ZC1024** | Use `$((...))` for arithmetic expansion |
+| **ZC1025** | Use `$((...))` for arithmetic expansion |
+| **ZC1026** | Use `$((...))` for arithmetic expansion |
+| **ZC1027** | Use `$((...))` for arithmetic expansion |
+| **ZC1028** | Use `$((...))` for arithmetic expansion |
+| **ZC1029** | Use `$((...))` for arithmetic expansion |
+| **ZC1030** | Use `printf` instead of `echo` |
+| **ZC1031** | Use `#!/usr/bin/env zsh` for portability |
+| **ZC1032** | Use `((...))` for C-style incrementing |
+| **ZC1033** | Use `$((...))` for arithmetic expansion |
+| **ZC1034** | Use `command -v` instead of `which` |
+| **ZC1035** | Use `$((...))` for arithmetic expansion |
+| **ZC1036** | Prefer `[[ ... ]]` over `test` command |
+| **ZC1037** | Use 'print -r --' for variable expansion |
+| **ZC1038** | Avoid useless use of cat |
+| **ZC1039** | Avoid `rm` with root path |
+| **ZC1040** | Use (N) nullglob qualifier for globs in loops |
+| **ZC1041** | Do not use variables in printf format string |
+| **ZC1042** | Use "$@" to iterate over arguments |
+| **ZC1043** | Use `local` for variables in functions |
+| **ZC1044** | Check for unchecked `cd` commands |
+| **ZC1045** | Declare and assign separately to avoid masking return values |
+| **ZC1046** | Avoid `eval` |
+| **ZC1047** | Avoid `sudo` in scripts |
+| **ZC1048** | Avoid `source` with relative paths |
+| **ZC1049** | Prefer functions over aliases |
+| **ZC1050** | Avoid iterating over `ls` output |
+| **ZC1051** | Quote variables in `rm` to avoid globbing |
+| **ZC1052** | Avoid `sed -i` for portability |
+| **ZC1053** | Silence `grep` output in conditions |
+| **ZC1054** | Use POSIX classes in regex/glob |
+| **ZC1055** | Use `[[ -n/-z ]]` for empty string checks |
+| **ZC1056** | Avoid `$((...))` as a statement |
+| **ZC1057** | Avoid `ls` in assignments |
+| **ZC1058** | Avoid `sudo` with redirection |
+| **ZC1059** | Use `${var:?}` for `rm` arguments |
+| **ZC1060** | Avoid `ps | grep` without exclusion |
+| **ZC1061** | Prefer `{start..end}` over `seq` |
+| **ZC1062** | Prefer `grep -E` over `egrep` |
+| **ZC1063** | Prefer `grep -F` over `fgrep` |
+| **ZC1064** | Prefer `command -v` over `type` |
+| **ZC1065** | Ensure spaces around `[` and `[[` |
+| **ZC1066** | Avoid iterating over `cat` output |
+| **ZC1067** | Separate `export` and assignment to avoid masking return codes |
+| **ZC1068** | Use `add-zsh-hook` instead of defining hook functions directly |
+| **ZC1069** | Avoid `local` outside of functions |
+| **ZC1070** | Use `builtin` or `command` to avoid infinite recursion in wrapper functions |
+| **ZC1071** | Use `+=` for appending to arrays |
+| **ZC1072** | Use `awk` instead of `grep | awk` |
+
+</details>
+
+## Configuration
+
+Create a `.zshellcheckrc` file in your project root:
+
+```yaml
+disabled_katas:
+  - ZC1005
+  - ZC1011
+```

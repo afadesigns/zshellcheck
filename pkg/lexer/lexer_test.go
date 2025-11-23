@@ -24,7 +24,7 @@ if (5 < 10) { return true; } else { return false; }
 $#&|`
 
 	tests := []struct {
-		expectedType    token.TokenType
+		expectedType    token.Type
 		expectedLiteral string
 	}{
 		{token.LET, "let"},
@@ -75,12 +75,12 @@ $#&|`
 		{token.INT, "5"},
 		{token.SEMICOLON, ";"},
 		{token.INT, "5"},
-		{token.NOT_EQ, "!="},
+		{token.NotEq, "!="},
 		{token.INT, "10"},
 		{token.SEMICOLON, ";"},
-		{token.STRING, "foobar"},
-		{token.STRING, "foo bar"},
-		{token.IF, "if"},
+		{token.STRING, "\"foobar\""},
+		{token.STRING, "\"foo bar\""},
+		{token.If, "if"},
 		{token.LPAREN, "("},
 		{token.INT, "5"},
 		{token.LT, "<"},
@@ -102,7 +102,7 @@ $#&|`
 		{token.INT, "10"},
 		{token.SEMICOLON, ";"},
 		{token.INT, "10"},
-		{token.NOT_EQ, "!="},
+		{token.NotEq, "!="},
 		{token.INT, "9"},
 		{token.SEMICOLON, ";"},
 		{token.DOLLAR, "$"},
@@ -138,7 +138,7 @@ func TestNextToken_ZshSpecific(t *testing.T) {
 	`
 
 	tests := []struct {
-		expectedType    token.TokenType
+		expectedType    token.Type
 		expectedLiteral string
 	}{
 		{token.IDENT, "local"},
@@ -156,13 +156,13 @@ func TestNextToken_ZshSpecific(t *testing.T) {
 		{token.IDENT, "two"},
 		{token.IDENT, "three"},
 		{token.RPAREN, ")"},
-		{token.DOLLAR_LBRACE, "${"},
+		{token.DollarLbrace, "${"},
 		{token.LPAREN, "("},
 		{token.IDENT, "f"},
 		{token.RPAREN, ")"},
 		{token.IDENT, "foo"},
 		{token.RBRACE, "}"},
-		{token.DOLLAR_LBRACE, "${"},
+		{token.DollarLbrace, "${"},
 		{token.LPAREN, "("},
 		{token.IDENT, "z"},
 		{token.RPAREN, ")"},
@@ -192,11 +192,11 @@ func TestNextToken_ZshArrayAndCommandSubstitution(t *testing.T) {
 	input := "`${my_array[1]}`"
 
 	tests := []struct {
-		expectedType    token.TokenType
+		expectedType    token.Type
 		expectedLiteral string
 	}{
 		{token.BACKTICK, "`"},
-		{token.DOLLAR_LBRACE, "${"},
+		{token.DollarLbrace, "${"},
 		{token.IDENT, "my_array"},
 		{token.LBRACKET, "["},
 		{token.INT, "1"},

@@ -1,30 +1,32 @@
 package katas
 
 import (
-	"reflect"
-
 	"github.com/afadesigns/zshellcheck/pkg/ast"
 )
 
 func init() {
-	RegisterKata(reflect.TypeOf(&ast.BracketExpression{}), Kata{
-		ID:          "ZC1010",
-		Title:       "Use `[[ ... ]]` instead of `[ ... ]`",
-		Description: "The `[[ ... ]]` construct is a Zsh keyword and is generally safer and more powerful than the `[ ... ]` command (which is an alias for `test`). `[[ ... ]]` prevents word splitting and pathname expansion, and supports advanced features like regex matching.",
-		Check:       checkZC1010,
+	RegisterKata(ast.SimpleCommandNode, Kata{
+		ID:    "ZC1010",
+		Title: "Use [[ ... ]] instead of [ ... ]",
+		Description: "Zsh's [[ ... ]] is more powerful and safer than [ ... ]. " +
+			"It supports pattern matching, regex, and doesn't require quoting variables to prevent word splitting.",
+		Check: checkZC1010,
 	})
 }
 
 func checkZC1010(node ast.Node) []Violation {
 	violations := []Violation{}
 
-	if bracketExpr, ok := node.(*ast.BracketExpression); ok {
-		violations = append(violations, Violation{
-			KataID:  "ZC1010",
-			Message: "Use `[[ ... ]]` instead of `[ ... ]` for safer and more powerful tests.",
-			Line:    bracketExpr.Token.Line,
-			Column:  bracketExpr.Token.Column,
-		})
+	if cmd, ok := node.(*ast.SimpleCommand); ok {
+		// Check if command name is "["
+		if cmd.Name.String() == "[" {
+			violations = append(violations, Violation{
+				KataID:  "ZC1010",
+				Message: "Use `[[ ... ]]` instead of `[ ... ]` or `test`. `[[` is safer and more powerful.",
+				Line:    cmd.Token.Line,
+				Column:  cmd.Token.Column,
+			})
+		}
 	}
 
 	return violations

@@ -1,17 +1,16 @@
 package katas
 
 import (
-	"reflect"
-
 	"github.com/afadesigns/zshellcheck/pkg/ast"
 )
 
 func init() {
-	RegisterKata(reflect.TypeOf(&ast.Shebang{}), Kata{
-		ID:          "ZC1031",
-		Title:       "Use `#!/usr/bin/env zsh` for portability",
-		Description: "Using `#!/usr/bin/env zsh` is more portable than `#!/bin/zsh` because it searches for the `zsh` executable in the user's `PATH`.",
-		Check:       checkZC1031,
+	RegisterKata(ast.ShebangNode, Kata{
+		ID:    "ZC1031",
+		Title: "Use `#!/usr/bin/env zsh` for portability",
+		Description: "Using `#!/usr/bin/env zsh` is more portable than `#!/bin/zsh` because it searches " +
+			"for the `zsh` executable in the user's `PATH`.",
+		Check: checkZC1031,
 	})
 }
 

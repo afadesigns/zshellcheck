@@ -1,30 +1,43 @@
 package katas
 
 import (
-	"reflect"
+	"strings"
 
 	"github.com/afadesigns/zshellcheck/pkg/ast"
 )
 
 func init() {
-	RegisterKata(reflect.TypeOf(&ast.BracketExpression{}), Kata{
-		ID:          "ZC1003",
-		Title:       "Prefer [[ over [ for tests",
-		Description: "The [[...]] construct is a Zsh keyword, offering safer and more powerful conditional expressions than the traditional [ command. It prevents word splitting and pathname expansion, and supports advanced features like regex matching.",
-		Check:       checkZC1003,
+	RegisterKata(ast.SimpleCommandNode, Kata{
+		ID:    "ZC1003",
+		Title: "Use `((...))` for arithmetic comparisons instead of `[` or `test`",
+		Description: "Bash/Zsh have a dedicated arithmetic context `((...))` " +
+			"which is cleaner and faster than `[` or `test` for numeric comparisons.",
+		Check: checkZC1003,
 	})
 }
 
 func checkZC1003(node ast.Node) []Violation {
 	violations := []Violation{}
 
-	if bracketExp, ok := node.(*ast.BracketExpression); ok {
-		violations = append(violations, Violation{
-			KataID:  "ZC1003",
-			Message: "Prefer [[ over [ for tests. [[ is a Zsh keyword that offers safer and more powerful conditional expressions.",
-			Line:    bracketExp.Token.Line,
-			Column:  bracketExp.Token.Column,
-		})
+	if cmd, ok := node.(*ast.SimpleCommand); ok {
+		name := cmd.Name.String()
+		if name == "[" || name == "test" {
+			for _, arg := range cmd.Arguments {
+				val := arg.String()
+				// Trim parens added by AST String() method for expressions
+				val = strings.Trim(val, "()")
+
+				if val == "-eq" || val == "-ne" || val == "-lt" || val == "-le" || val == "-gt" || val == "-ge" {
+					violations = append(violations, Violation{
+						KataID:  "ZC1003",
+						Message: "Use `((...))` for arithmetic comparisons instead of `[` or `test`.",
+						Line:    cmd.Token.Line,
+						Column:  cmd.Token.Column,
+					})
+					return violations
+				}
+			}
+		}
 	}
 
 	return violations

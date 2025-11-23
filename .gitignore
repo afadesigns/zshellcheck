@@ -31,3 +31,5 @@ go.work
 /build/
 \n# Codex\n.codex\ncodex
 .codex/
+bin/
+zshellcheck
