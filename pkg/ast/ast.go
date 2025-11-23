@@ -63,6 +63,7 @@ type FunctionDefinition struct {
 
 func (fd *FunctionDefinition) Type() NodeType       { return FunctionDefinitionNode }
 func (fd *FunctionDefinition) expressionNode()      {}
+func (fd *FunctionDefinition) statementNode()       {}
 func (fd *FunctionDefinition) TokenLiteral() string { return fd.Token.Literal }
 func (fd *FunctionDefinition) String() string {
 	var out []byte

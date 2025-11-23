@@ -199,13 +199,47 @@ func (p *Parser) parseStatement() ast.Statement {
 			p.peekTokenIs(token.DOLLAR) || p.peekTokenIs(token.DollarLbrace) ||
 			p.peekTokenIs(token.DOLLAR_LPAREN) || p.peekTokenIs(token.SLASH) ||
 			p.peekTokenIs(token.TILDE) || p.peekTokenIs(token.ASTERISK) ||
-			p.peekTokenIs(token.BANG) || p.peekTokenIs(token.LPAREN) {
+			p.peekTokenIs(token.BANG) {
 			return p.parseSimpleCommandStatement()
 		}
-		return p.parseExpressionStatement()
+		return p.parseExpressionOrFunctionDefinition()
 	default:
-		return p.parseExpressionStatement()
+		return p.parseExpressionOrFunctionDefinition()
 	}
+}
+
+func (p *Parser) parseExpressionOrFunctionDefinition() ast.Statement {
+	stmt := p.parseExpressionStatement()
+
+	// Check if it matches function definition pattern: name()
+	if call, ok := stmt.Expression.(*ast.CallExpression); ok {
+		if len(call.Arguments) == 0 {
+			if ident, ok := call.Function.(*ast.Identifier); ok {
+				// It is `name()`. In Zsh this must be followed by a body to be a valid definition.
+				// If we are here, we consumed `name` and `()`.
+				// Parse the next statement as body.
+				funcDef := &ast.FunctionDefinition{
+					Token: ident.Token,
+					Name:  ident,
+				}
+				// We expect a statement now.
+				// If we are at semicolon, skip it? `func(); body` is valid? No. `func() body`.
+				// But lexer might have produced semicolon if newline?
+				// If next is `{`, `(` (subshell body), or command.
+				
+				// If we are at EOF or semicolon without body, it's just a CallExpression (incomplete func def).
+				if p.curTokenIs(token.SEMICOLON) || p.curTokenIs(token.EOF) {
+					return stmt
+				}
+				
+				// Parse body
+				p.nextToken() // Move to start of body statement
+				funcDef.Body = p.parseStatement()
+				return funcDef
+			}
+		}
+	}
+	return stmt
 }
 
 func (p *Parser) parseSimpleCommandStatement() ast.Statement {
