@@ -121,6 +121,7 @@ zshellcheck [flags] <file1.zsh> [file2.zsh]...
 | **ZC1067** | Separate `export` and assignment to avoid masking return codes |
 | **ZC1068** | Use `add-zsh-hook` instead of defining hook functions directly |
 | **ZC1069** | Avoid `local` outside of functions |
+| **ZC1070** | Use `builtin` or `command` to avoid infinite recursion in wrapper functions |
 
 </details>
 
