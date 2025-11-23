@@ -226,12 +226,12 @@ func (p *Parser) parseExpressionOrFunctionDefinition() ast.Statement {
 				// If we are at semicolon, skip it? `func(); body` is valid? No. `func() body`.
 				// But lexer might have produced semicolon if newline?
 				// If next is `{`, `(` (subshell body), or command.
-				
+
 				// If we are at EOF or semicolon without body, it's just a CallExpression (incomplete func def).
 				if p.curTokenIs(token.SEMICOLON) || p.curTokenIs(token.EOF) {
 					return stmt
 				}
-				
+
 				// Parse body
 				p.nextToken() // Move to start of body statement
 				funcDef.Body = p.parseStatement()

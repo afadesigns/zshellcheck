@@ -242,7 +242,7 @@ func TestOperatorPrecedenceParsing(t *testing.T) {
 		// Stmt 1: Let. Stmt 2: -5 * 5.
 		// We can wrap the second part too? `let _ = -5 * 5`?
 		// Input: "let _ = 3 + 4; let _ = -5 * 5".
-		
+
 		{"let _ = 5 > 4 == 3 < 4", "let _ = ((5 > 4) == (3 < 4));"},
 		{"let _ = 5 < 4 != 3 > 4", "let _ = ((5 < 4) != (3 > 4));"},
 		{"let _ = 3 + 4 * 5 == 3 * 1 + 4 * 5", "let _ = ((3 + (4 * 5)) == ((3 * 1) + (4 * 5)));"},
