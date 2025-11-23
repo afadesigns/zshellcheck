@@ -6,6 +6,10 @@ on:
       - main
     paths:
       - 'docs/**'
+  workflow_dispatch:
+
+permissions:
+  contents: write  # Required to push to the wiki repository
 
 jobs:
   publish-wiki:
@@ -14,13 +18,39 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v5
 
+      - name: Setup Node.js for Astro Build
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: 'npm'
+          cache-dependency-path: docs/package-lock.json
+
+      - name: Install dependencies (Docs)
+        run: cd docs && npm ci
+
+      - name: Build Starlight Docs
+        run: cd docs && npm run build
+
       - name: Prepare Wiki Content
         run: |
+          mkdir wiki_repo
+          cd wiki_repo
+          
+          # Clone the wiki repository
+          # The GITHUB_TOKEN has permissions to push to the wiki if contents: write is set
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git clone https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.wiki.git .
+          
+          # Clear existing content if any, except .git
+          find . -maxdepth 1 ! -name ".git" ! -name "." ! -name ".." -exec rm -rf {} + 
+          
+          # Copy the built markdown files from docs/dist/ (or docs/src/content/docs/ if directly copying raw MD)
+          # For Starlight, built output is usually HTML. We need the raw markdown for the wiki.
+          # So let's re-use the wiki_staging logic.
+          cd .. # Go back to root to access docs/src/content/docs
+
           mkdir wiki_staging
-          # Copy files, ignoring the structure for now as Wiki is flat by default
-          # But we want to maintain structure if possible?
-          # GitHub Wiki supports folders but sidebar is flat.
-          # Let's just copy the markdown files.
           cp -r docs/src/content/docs/* wiki_staging/
           
           # Rename index.mdx to Home.md for Wiki homepage
@@ -32,10 +62,14 @@ jobs:
           find wiki_staging -name "*.mdx" -exec sh -c 'mv "$1" "${1%.mdx}.md"' _ {} \;
           
           # Strip frontmatter (Wiki doesn't use it like Starlight)
-          # A simple sed to remove content between --- and --- at start of file
-          find wiki_staging -name "*.md" -exec sed -i '1 { /^---/ { :a N; /\n---/! ba; d} }' {} + 
+          find wiki_staging -name "*.md" -exec sed -i '1 { /^---/ { :a N; /\n---/! ba; d} }' {} +
+          
+          # Move prepared content into the cloned wiki repo
+          mv wiki_staging/* wiki_repo/
 
-      - name: Upload to Wiki
-        uses: spenserblack/actions-wiki-sync@v0.1.0
-        with:
-          wiki_root: wiki_staging
+      - name: Commit and Push to Wiki
+        run: |
+          cd wiki_repo
+          git add .
+          git diff-index --quiet HEAD || git commit -m "Docs: Update Wiki from Starlight build" # Only commit if changes exist
+          git push origin main
