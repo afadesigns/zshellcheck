@@ -9,7 +9,7 @@ We aim to implement at least **1000 Katas** (checks).
 - `Patch`: Tens of Katas.
 - The exact version is updated with every Kata implemented, appending the units digit if necessary (e.g., `0.0.51`).
 
-**Current Progress:** 49 Katas implemented (Version 0.0.4.9).
+**Current Progress:** 66 Katas implemented (Version 0.0.66).
 
 ## Milestones
 
