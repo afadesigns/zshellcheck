@@ -111,6 +111,7 @@ zshellcheck [flags] <file1.zsh> [file2.zsh]...
 | **ZC1057** | Avoid `ls` in assignments |
 | **ZC1058** | Avoid `sudo` with redirection |
 | **ZC1059** | Use `${var:?}` for `rm` arguments |
+| **ZC1060** | Avoid `ps | grep` without exclusion |
 
 </details>
 
