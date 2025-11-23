@@ -269,6 +269,11 @@ run_test 'grep -i pattern file | gawk "{print}"' "ZC1072" "ZC1072: grep -i | gaw
 run_test 'grep -r pattern . | awk "{print}"' "" "ZC1072: grep -r | awk (Valid)"
 run_test 'awk "/pattern/ {print}" file' "" "ZC1072: awk only (Valid)"
 
+# --- ZC1073: Unnecessary $ in arithmetic ---
+run_test '(( $x > 5 ))' "ZC1073" "ZC1073: (( \$x ))"
+run_test '(( x > 5 ))' "" "ZC1073: (( x )) (Valid)"
+run_test '(( $# > 0 ))' "" "ZC1073: (( \$# )) (Valid)"
+
 # --- Summary ---
 echo "------------------------------------------------"
 if [[ $FAILURES -eq 0 ]]; then

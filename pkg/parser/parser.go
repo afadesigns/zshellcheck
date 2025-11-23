@@ -186,6 +186,12 @@ func (p *Parser) parseStatement() ast.Statement {
 		return block
 	case token.LPAREN:
 		return p.parseSubshellStatement()
+	case token.DoubleLparen:
+		cmd := p.parseArithmeticCommand()
+		if cmd == nil {
+			return nil
+		}
+		return cmd
 	case token.COLON, token.DOT, token.LBRACKET:
 		return p.parseSimpleCommandStatement()
 	case token.CASE:
@@ -629,11 +635,16 @@ func (p *Parser) parseArrayAccess() ast.Expression {
 }
 
 func (p *Parser) parseInvalidArrayAccessPrefix() ast.Expression {
-	dollarToken := p.curToken
-	if !p.expectPeek(token.IDENT) {
-		return nil
-	}
-
+	    dollarToken := p.curToken
+	    if p.peekTokenIs(token.HASH) || p.peekTokenIs(token.INT) || p.peekTokenIs(token.ASTERISK) || p.peekTokenIs(token.BANG) || p.peekTokenIs(token.MINUS) {
+	        p.nextToken()
+	        ident := &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
+	        return &ast.PrefixExpression{Token: dollarToken, Operator: "$", Right: ident}
+	    }
+	
+	    if !p.expectPeek(token.IDENT) {
+	        return nil
+	    }
 	ident := &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
 
 	if !p.peekTokenIs(token.LBRACKET) {
@@ -928,6 +939,17 @@ func (p *Parser) parseWhileLoopStatement() *ast.WhileLoopStatement {
 	p.nextToken()
 	stmt.Body = p.parseBlockStatement(token.DONE)
 	return stmt
+}
+
+func (p *Parser) parseArithmeticCommand() *ast.ArithmeticCommand {
+	cmd := &ast.ArithmeticCommand{Token: p.curToken}
+	p.nextToken()
+	cmd.Expression = p.parseExpression(LOWEST)
+
+	if !p.expectPeek(token.DoubleRparen) {
+		return nil
+	}
+	return cmd
 }
 
 func (p *Parser) parseDoubleParenExpression() ast.Expression {
