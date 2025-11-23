@@ -113,11 +113,33 @@ individual, or aggression toward or disparagement of classes of individuals.
 **Consequence**: A permanent ban from any sort of public interaction within
 the community.
 
+## Enforcement
+
+Instances of abusive, harassing, or otherwise unacceptable behavior may be
+reported by contacting the project team at [INSERT CONTACT METHOD]. All
+complaints will be reviewed and investigated and will result in a response that
+is deemed necessary and appropriate to the circumstances. The project team is
+obligated to maintain confidentiality with regard to the reporter of an incident.
+Further details of specific enforcement policies may be posted separately.
+
+Project maintainers who do not follow or enforce the Code of Conduct in good
+faith may face temporary or permanent repercussions as determined by other
+members of the project's leadership.
+
+## Community Guidelines for Discussions
+
+We use [GitHub Discussions](https://github.com/afadesigns/zshellcheck/discussions) as our primary forum for the community. We encourage you to:
+
+*   **Ask Questions (Q&A)**: If you are unsure about how to use ZShellCheck or how to solve a specific Zsh scripting problem.
+*   **Share Ideas**: If you have a suggestion for a new feature or a new Kata.
+*   **Show and Tell**: Share your success stories and scripts improved by ZShellCheck.
+*   **Be Respectful**: Treat everyone with respect and kindness. We are here to learn from each other.
+
+Please search existing discussions before starting a new one to avoid duplicates.
+
 ## Attribution
 
-This Code of Conduct is adapted from the [Contributor Covenant][homepage],
-version 2.1, available at
-[https://www.contributor-covenant.org/version/2/1/code_of_conduct.html][v2.1].
+This Code of Conduct is adapted from the [Contributor Covenant][homepage], version 1.4,
+available at https://www.contributor-covenant.org/version/1/4/code-of-conduct.html
 
 [homepage]: https://www.contributor-covenant.org
-[v2.1]: https://www.contributor-covenant.org/version/2/1/code_of_conduct.html
