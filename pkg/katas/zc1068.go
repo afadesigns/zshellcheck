@@ -47,13 +47,14 @@ func checkZC1068(node ast.Node) []Violation {
 
 	if specialHooks[name] {
 		return []Violation{
-			            {
-			                KataID:  "ZC1068",
-			                Message: "Defining `" + name + "` directly overwrites existing hooks. " +
-			                    "Use `autoload -Uz add-zsh-hook; add-zsh-hook " + name + " my_func` instead.",
-			                Line:   tokenLine,
-			                Column: tokenCol,
-			            },		}
+			{
+				KataID: "ZC1068",
+				Message: "Defining `" + name + "` directly overwrites existing hooks. " +
+					"Use `autoload -Uz add-zsh-hook; add-zsh-hook " + name + " my_func` instead.",
+				Line:   tokenLine,
+				Column: tokenCol,
+			},
+		}
 	}
 
 	return nil

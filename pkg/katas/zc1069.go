@@ -6,8 +6,8 @@ import (
 
 func init() {
 	RegisterKata(ast.ProgramNode, Kata{
-		ID:          "ZC1069",
-		Title:       "Avoid `local` outside of functions",
+		ID:    "ZC1069",
+		Title: "Avoid `local` outside of functions",
 		Description: "The `local` builtin can only be used inside functions. " +
 			"Using it in the global scope causes an error.",
 		Check: checkZC1069,

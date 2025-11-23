@@ -32,7 +32,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/go/pkg/mod
-          key: ${{ runner.os }}-go-${{ hashFiles('go.sum') }}
+          key: ${{ runner.os }}-go-${{ hashFiles('go.mod') }}
           restore-keys: |
             ${{ runner.os }}-go-
 
@@ -48,8 +48,13 @@ jobs:
       - name: Go Vet
         run: go vet ./...
 
-      - name: Go Test
+      - name: Go Test (Linux)
+        if: runner.os == 'Linux'
         run: go test -v -coverprofile=coverage.out -covermode=atomic ./...
+
+      - name: Go Test (Windows/macOS)
+        if: runner.os != 'Linux'
+        run: go test -v ./...
 
       - name: Upload coverage to Codecov
         if: runner.os == 'Linux'
