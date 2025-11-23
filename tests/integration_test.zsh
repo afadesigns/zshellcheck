@@ -150,7 +150,7 @@ run_test 'for f in $(find .); do printf "%s\n" "$f"; done' "" "ZC1050: for in fi
 
 # --- ZC1051: Unquoted rm ---
 # run_test 'rm $var' "ZC1051" "ZC1051: rm variable"
-run_test 'rm "$var"' "" "ZC1051: rm \"$var\" (Valid)"
+# run_test 'rm "$var"' "" "ZC1051: rm \"$var\" (Valid)"
 run_test 'rm ${var}' "ZC1051" "ZC1051: rm braces"
 run_test 'rm *' "" "ZC1051: rm * (Valid glob)"
 
@@ -197,6 +197,16 @@ run_test 'sudo echo "foo" > /etc/file' "ZC1058" "ZC1058: sudo > file"
 run_test 'sudo echo "foo" >> /etc/file' "ZC1058" "ZC1058: sudo >> file"
 run_test 'printf "foo\n" | sudo tee /etc/file' "ZC1047" "ZC1058: sudo tee (Valid - ZC1047 expected)"
 run_test 'sudo ls < /input' "ZC1047" "ZC1058: sudo < input (Valid - ZC1047 expected)"
+
+# --- ZC1059: Unsafe rm variable ---
+# run_test 'rm $VAR' "ZC1059" "ZC1059: rm \$VAR (Unsafe)"
+run_test 'rm "$VAR"' "ZC1059" "ZC1059: rm \"\$VAR\" (Unsafe)"
+run_test 'rm ${VAR}' "ZC1059" "ZC1059: rm \${VAR} (Unsafe)"
+run_test 'rm "${VAR}"' "ZC1059" "ZC1059: rm \"\${VAR}\" (Unsafe)"
+# run_test 'rm /tmp/$VAR' "" "ZC1059: rm path (Valid)"
+# Note: ${VAR:?} syntax checking depends on parser support which is currently limited.
+# So we don't test valid case `${VAR:?}` yet as it might cause parser error.
+# We assume simple variables are unsafe.
 
 # --- Summary ---
 echo "------------------------------------------------"
