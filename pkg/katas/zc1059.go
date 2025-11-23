@@ -8,8 +8,9 @@ func init() {
 	RegisterKata(ast.SimpleCommandNode, Kata{
 		ID:          "ZC1059",
 		Title:       "Use `${var:?}` for `rm` arguments",
-		Description: "Deleting a directory based on a variable is dangerous if the variable is empty or unset. Use `${var:?}` to fail if empty, or check explicitly.",
-		Check:       checkZC1059,
+		Description: "Deleting a directory based on a variable is dangerous if the variable is empty or unset. " +
+			"Use `${var:?}` to fail if empty, or check explicitly.",
+		Check: checkZC1059,
 	})
 }
 

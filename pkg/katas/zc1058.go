@@ -8,8 +8,8 @@ func init() {
 	RegisterKata(ast.RedirectionNode, Kata{
 		ID:    "ZC1058",
 		Title: "Avoid `sudo` with redirection",
-		Description: "Redirecting output of `sudo` (e.g. `sudo cmd > /file`) fails if the current user doesn't have permission. " +
-			"Use `| sudo tee /file` instead.",
+		Description: "Redirecting output of `sudo` (e.g. `sudo cmd > /file`) fails if the current user " +
+			"doesn't have permission. Use `| sudo tee /file` instead.",
 		Check: checkZC1058,
 	})
 }

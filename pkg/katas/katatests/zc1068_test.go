@@ -45,7 +45,8 @@ func TestZC1068(t *testing.T) {
 					Message: "Defining `chpwd` directly overwrites existing hooks. " +
 						"Use `autoload -Uz add-zsh-hook; add-zsh-hook chpwd my_func` instead.",
 					Line:   1,
-					Column: 1, // Start of "function" keyword usually, or name depending on parser.
+					// Start of "function" keyword usually, or name depending on parser.
+					Column: 1,
 				},
 			},
 		},
