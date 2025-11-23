@@ -12,6 +12,8 @@ export default defineConfig({
         {
           icon: 'github',
           link: 'https://github.com/afadesigns/zshellcheck',
+          label: 'GitHub',
+          href: 'https://github.com/afadesigns/zshellcheck',
         },
       ],
       sidebar: [
