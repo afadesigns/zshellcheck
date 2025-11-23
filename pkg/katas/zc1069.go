@@ -6,10 +6,11 @@ import (
 
 func init() {
 	RegisterKata(ast.ProgramNode, Kata{
-		ID:          "ZC1069",
-		Title:       "Avoid `local` outside of functions",
-		Description: "The `local` builtin can only be used inside functions. Using it in the global scope causes an error.",
-		Check:       checkZC1069,
+		ID:    "ZC1069",
+		Title: "Avoid `local` outside of functions",
+		Description: "The `local` builtin can only be used inside functions. " +
+			"Using it in the global scope causes an error.",
+		Check: checkZC1069,
 	})
 }
 
@@ -20,7 +21,7 @@ func checkZC1069(node ast.Node) []Violation {
 	}
 
 	violations := []Violation{}
-	
+
 	// Helper to walk and track scope
 	var walk func(n ast.Node, inFunction bool)
 	walk = func(n ast.Node, inFunction bool) {
@@ -33,10 +34,11 @@ func checkZC1069(node ast.Node) []Violation {
 			if name, ok := cmd.Name.(*ast.Identifier); ok && (name.Value == "local" || name.Value == "typeset") {
 				if name.Value == "local" && !inFunction {
 					violations = append(violations, Violation{
-						KataID:  "ZC1069",
-						Message: "`local` can only be used inside functions. Use `typeset`, `declare`, or just assignment for global variables.",
-						Line:    name.Token.Line,
-						Column:  name.Token.Column,
+						KataID: "ZC1069",
+						Message: "`local` can only be used inside functions. " +
+							"Use `typeset`, `declare`, or just assignment for global variables.",
+						Line:   name.Token.Line,
+						Column: name.Token.Column,
 					})
 				}
 			}

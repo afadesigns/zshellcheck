@@ -16,11 +16,11 @@ func TestCheckZC1006(t *testing.T) {
 			input: `test 1 -eq 1`,
 			expected: []katas.Violation{
 				{
-					KataID:  "ZC1006",
+					KataID: "ZC1006",
 					Message: "Prefer [[ over test for tests. " +
 						"[[ is a Zsh keyword that offers safer and more powerful conditional expressions.",
-					Line:    1,
-					Column:  1,
+					Line:   1,
+					Column: 1,
 				},
 			},
 		},

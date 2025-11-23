@@ -6,8 +6,8 @@ import (
 
 func init() {
 	RegisterKata(ast.CommandSubstitutionNode, Kata{
-		ID:          "ZC1002",
-		Title:       "Use $(...) instead of backticks",
+		ID:    "ZC1002",
+		Title: "Use $(...) instead of backticks",
 		Description: "Backticks are the old-style command substitution. " +
 			"$(...) is nesting-safe, easier to read, and generally preferred.",
 		Check: checkZC1002,

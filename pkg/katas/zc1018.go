@@ -1,18 +1,17 @@
 package katas
 
 import (
-
 	"github.com/afadesigns/zshellcheck/pkg/ast"
 )
 
 func init() {
 	RegisterKata(ast.SimpleCommandNode, Kata{
-		ID:          "ZC1018",
-		Title:       "Use `((...))` for C-style arithmetic instead of `expr`",
+		ID:    "ZC1018",
+		Title: "Use `((...))` for C-style arithmetic instead of `expr`",
 		Description: "The `((...))` construct in Zsh allows for C-style arithmetic. " +
 			"It is generally more efficient and readable than using `expr` or other " +
 			"external commands for arithmetic.",
-		Check:       checkZC1018,
+		Check: checkZC1018,
 	})
 }
 

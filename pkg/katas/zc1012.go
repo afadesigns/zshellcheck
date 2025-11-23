@@ -1,14 +1,15 @@
 package katas
 
 import (
-    "strings"
+	"strings"
+
 	"github.com/afadesigns/zshellcheck/pkg/ast"
 )
 
 func init() {
 	RegisterKata(ast.SimpleCommandNode, Kata{
-		ID:          "ZC1012",
-		Title:       "Use `read -r` to prevent backslash escaping",
+		ID:    "ZC1012",
+		Title: "Use `read -r` to prevent backslash escaping",
 		Description: "By default, `read` interprets backslashes as escape characters. " +
 			"Use `read -r` to treat backslashes literally, which is usually what you want.",
 		Check: checkZC1012,
@@ -23,16 +24,16 @@ func checkZC1012(node ast.Node) []Violation {
 			hasR := false
 			for _, arg := range cmd.Arguments {
 				s := arg.String()
-                
-                // Handle PrefixExpression String() format: "(-r)" -> "-r"
-                s = strings.Trim(s, "()")
-                
-                if len(s) > 0 && s[0] == '-' {
-                    if strings.Contains(s, "r") {
-                        hasR = true
-                        break
-                    }
-                }
+
+				// Handle PrefixExpression String() format: "(-r)" -> "-r"
+				s = strings.Trim(s, "()")
+
+				if len(s) > 0 && s[0] == '-' {
+					if strings.Contains(s, "r") {
+						hasR = true
+						break
+					}
+				}
 			}
 
 			if !hasR {

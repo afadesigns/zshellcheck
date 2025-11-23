@@ -8,10 +8,11 @@ import (
 
 func init() {
 	RegisterKata(ast.ProgramNode, Kata{
-		ID:          "ZC1044",
-		Title:       "Check for unchecked `cd` commands",
-		Description: "`cd` failures should be handled to avoid executing commands in the wrong directory. Use `cd ... || return` (or `exit`).",
-		Check:       checkZC1044,
+		ID:    "ZC1044",
+		Title: "Check for unchecked `cd` commands",
+		Description: "`cd` failures should be handled to avoid executing commands in the wrong directory. " +
+			"Use `cd ... || return` (or `exit`).",
+		Check: checkZC1044,
 	})
 }
 
@@ -23,11 +24,11 @@ func checkZC1044(node ast.Node) []Violation {
 	// BUT, standard ast.Walk visits all nodes and calls Check.
 	// If Check returns violations, they are added.
 	// So if we implement a full walker here, it works.
-	
+
 	violations := []Violation{}
-	
+
 	walkZC1044(node, false, &violations)
-	
+
 	return violations
 }
 
@@ -77,13 +78,14 @@ func walkZC1044(node ast.Node, isChecked bool, violations *[]Violation) {
 	case *ast.ExpressionStatement:
 		walkZC1044(n.Expression, isChecked, violations)
 	case *ast.InfixExpression:
-		if n.Operator == "||" {
+		switch n.Operator {
+		case "||":
 			walkZC1044(n.Left, true, violations) // Left checked by Right
 			walkZC1044(n.Right, isChecked, violations)
-		} else if n.Operator == "&&" {
+		case "&&":
 			walkZC1044(n.Left, isChecked, violations) // Left inherits check
 			walkZC1044(n.Right, isChecked, violations)
-		} else {
+		default:
 			walkZC1044(n.Left, false, violations)
 			walkZC1044(n.Right, false, violations)
 		}
@@ -103,7 +105,7 @@ func walkZC1044(node ast.Node, isChecked bool, violations *[]Violation) {
 		}
 	case *ast.CommandSubstitution:
 		walkZC1044(n.Command, false, violations) // Inner command starts unchecked
-	
+
 	// Recursion for other nodes
 	default:
 		// Use generic walk or manual?

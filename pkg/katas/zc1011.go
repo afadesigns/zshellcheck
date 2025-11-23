@@ -1,7 +1,6 @@
 package katas
 
 import (
-
 	"github.com/afadesigns/zshellcheck/pkg/ast"
 )
 
@@ -13,7 +12,7 @@ var plumbingCommands = map[string]string{
 
 func init() {
 	RegisterKata(ast.SimpleCommandNode, Kata{
-		ID:    "ZC1011",	
+		ID:    "ZC1011",
 		Title: "Use `git` porcelain commands instead of plumbing commands",
 		Description: "Plumbing commands in `git` are designed for scripting and can be unstable. " +
 			"Porcelain commands are designed for interactive use and are more stable.",

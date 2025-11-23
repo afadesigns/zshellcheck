@@ -36,4 +36,3 @@ func TestCheckZC1028(t *testing.T) {
 		})
 	}
 }
-

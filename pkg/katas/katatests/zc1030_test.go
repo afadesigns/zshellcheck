@@ -14,9 +14,10 @@ func TestCheckZC1030(t *testing.T) {
 		expected []katas.Violation
 	}{
 		{
-			            name:  "echo with a simple string",
-			            input: `echo "hello"`,
-			            expected: []katas.Violation{				{
+			name:  "echo with a simple string",
+			input: `echo "hello"`,
+			expected: []katas.Violation{
+				{
 					KataID:  "ZC1030",
 					Message: "Use `printf` for more reliable and portable string formatting instead of `echo`.",
 					Line:    1,
@@ -30,8 +31,8 @@ func TestCheckZC1030(t *testing.T) {
 			expected: []katas.Violation{},
 		},
 		{
-			name:     "echo with a variable",
-			input:    `echo "$foo"`,
+			name:  "echo with a variable",
+			input: `echo "$foo"`,
 			expected: []katas.Violation{
 				{
 					KataID:  "ZC1030",

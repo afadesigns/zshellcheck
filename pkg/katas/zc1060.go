@@ -6,10 +6,11 @@ import (
 
 func init() {
 	RegisterKata(ast.InfixExpressionNode, Kata{
-		ID:          "ZC1060",
-		Title:       "Avoid `ps | grep` without exclusion",
-		Description: "`ps | grep pattern` often matches the grep process itself. Use `grep [p]attern`, `pgrep`, or exclude grep with `grep -v grep`.",
-		Check:       checkZC1060,
+		ID:    "ZC1060",
+		Title: "Avoid `ps | grep` without exclusion",
+		Description: "`ps | grep pattern` often matches the grep process itself. " +
+			"Use `grep [p]attern`, `pgrep`, or exclude grep with `grep -v grep`.",
+		Check: checkZC1060,
 	})
 }
 
@@ -28,7 +29,7 @@ func checkZC1060(node ast.Node) []Violation {
 	if !isCommandName(pipe.Right, "grep") {
 		return nil
 	}
-	
+
 	// Check if grep arguments exclude the grep process
 	// Strategies:
 	// 1. `grep -v grep` (chained pipe?)
@@ -38,22 +39,22 @@ func checkZC1060(node ast.Node) []Violation {
 	//    We can't see the parent here easily.
 	//    BUT, `ps | grep foo` is inherently risky unless `foo` uses `[]`.
 	// 2. Pattern uses `[]`. e.g. `grep [f]oo`.
-	
+
 	// We inspect `grep` arguments.
 	cmd, ok := pipe.Right.(*ast.SimpleCommand)
 	if !ok {
 		return nil // complex command
 	}
-	
+
 	hasExclusion := false
-	
+
 	for _, arg := range cmd.Arguments {
 		// Check if arg contains `[` and `]`.
 		val := getStringValueZC1060(arg)
 		// Naive check for `[...]` pattern
 		// If it starts with - (flag), ignore unless it is -v grep?
 		// But we only check THIS grep.
-		
+
 		if len(val) > 0 && val[0] != '-' {
 			// Assume this is the pattern
 			// Check for brackets
@@ -98,7 +99,7 @@ func getStringValueZC1060(node ast.Node) string {
 		return n.Value
 	case *ast.ConcatenatedExpression:
 		// Simplify
-		return "" 
+		return ""
 	case *ast.Identifier:
 		return n.Value
 	}

@@ -18,13 +18,13 @@ func TestCheckZC1013(t *testing.T) {
 				{
 					KataID:  "ZC1013",
 					Message: "Use `((...))` for arithmetic operations instead of `let`.",
-					 Line:    1,
-					 Column:  1,
-					  },
-					  },
-					 },
-					 {
-					  input:    `[[ -f file ]]`,
+					Line:    1,
+					Column:  1,
+				},
+			},
+		},
+		{
+			input:    `[[ -f file ]]`,
 			expected: []katas.Violation{},
 		},
 	}

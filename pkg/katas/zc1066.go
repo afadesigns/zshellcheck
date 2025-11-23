@@ -6,10 +6,11 @@ import (
 
 func init() {
 	RegisterKata(ast.ForLoopStatementNode, Kata{
-		ID:          "ZC1066",
-		Title:       "Avoid iterating over `cat` output",
-		Description: "Iterating over `cat` output is fragile because lines can contain spaces. Use `while IFS= read -r line; do ... done < file` or `($(<file))` array expansion.",
-		Check:       checkZC1066,
+		ID:    "ZC1066",
+		Title: "Avoid iterating over `cat` output",
+		Description: "Iterating over `cat` output is fragile because lines can contain spaces. " +
+			"Use `while IFS= read -r line; do ... done < file` or `($(<file))` array expansion.",
+		Check: checkZC1066,
 	})
 }
 
