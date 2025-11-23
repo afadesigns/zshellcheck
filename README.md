@@ -118,6 +118,7 @@ zshellcheck [flags] <file1.zsh> [file2.zsh]...
 | **ZC1064** | Prefer `command -v` over `type` |
 | **ZC1065** | Ensure spaces around `[` and `[[` |
 | **ZC1066** | Avoid iterating over `cat` output |
+| **ZC1067** | Separate `export` and assignment to avoid masking return codes |
 
 </details>
 

@@ -118,7 +118,7 @@ run_test 'local x=$(cmd)' "ZC1045" "ZC1045: local x=\$(cmd)"
 run_test 'typeset y=$(cmd)' "ZC1045" "ZC1045: typeset y=\$(cmd)"
 run_test 'local x="foo $(cmd)"' "ZC1045" "ZC1045: local x=\"... \$(cmd)\""
 run_test 'local x; x=$(cmd)' "" "ZC1045: Split declaration (Valid)"
-run_test 'export x=$(cmd)' "" "ZC1045: export (Valid - export is different?)" 
+run_test 'export x=$(cmd)' "ZC1067" "ZC1045: export (Caught by ZC1067)" 
 
 # --- ZC1046: Avoid eval ---
 run_test 'eval "ls -l"' "ZC1046" "ZC1046: eval"
@@ -237,6 +237,12 @@ run_test '[[ foo ]]' "" "ZC1065: [[ foo ]] (Valid)"
 run_test 'for l in $(cat file); do :; done' "ZC1066" "ZC1066: for in \$(cat)"
 run_test 'for l in `cat file`; do :; done' "ZC1066" "ZC1066: for in \`cat\`"
 # run_test 'while IFS= read -r l; do :; done < file' "" "ZC1066: while read (Valid)"
+
+# --- ZC1067: export masking return value ---
+run_test 'export var=$(cmd)' "ZC1067" "ZC1067: export var=\$(cmd)"
+run_test 'export var=`cmd`' "ZC1067" "ZC1067: export var=\`cmd\`"
+run_test 'var=$(cmd); export var' "" "ZC1067: var=\$(cmd); export var (Valid)"
+run_test 'export var="value"' "" "ZC1067: export var=\"value\" (Valid)"
 
 # --- Summary ---
 echo "------------------------------------------------"

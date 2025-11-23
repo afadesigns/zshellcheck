@@ -55,6 +55,8 @@ type Parser struct {
 
 	prefixParseFns map[token.Type]prefixParseFn
 	infixParseFns  map[token.Type]infixParseFn
+
+	inBackticks int
 }
 
 func New(l *lexer.Lexer) *Parser {
@@ -281,6 +283,14 @@ func (p *Parser) parseCommandPipeline() ast.Expression {
 }
 
 func (p *Parser) isCommandDelimiter(t token.Token) bool {
+	if t.Type == token.BACKTICK && p.inBackticks > 0 {
+		return true // Terminating backtick is a delimiter
+	}
+	// If NOT in backticks, start backtick is NOT a delimiter (it starts a substitution)
+	if t.Type == token.BACKTICK && p.inBackticks == 0 {
+		return false
+	}
+	
 	return t.Type == token.EOF || t.Type == token.SEMICOLON || t.Type == token.PIPE ||
 		t.Type == token.AND || t.Type == token.OR ||
 		t.Type == token.RPAREN || t.Type == token.RBRACE ||
@@ -290,8 +300,7 @@ func (p *Parser) isCommandDelimiter(t token.Token) bool {
 		t.Type == token.ESAC || t.Type == token.DSEMI ||
 		t.Type == token.GT || t.Type == token.LT ||
 		t.Type == token.GTGT || t.Type == token.LTLT ||
-		t.Type == token.GTAMP || t.Type == token.LTAMP ||
-		t.Type == token.BACKTICK
+		t.Type == token.GTAMP || t.Type == token.LTAMP
 }
 
 func (p *Parser) parseSingleCommand() ast.Expression {
@@ -686,7 +695,11 @@ func (p *Parser) parseFunctionLiteral() ast.Expression {
 func (p *Parser) parseCommandSubstitution() ast.Expression {
 	exp := &ast.CommandSubstitution{Token: p.curToken}
 	p.nextToken()
+	
+	p.inBackticks++
 	exp.Command = p.parseCommandList()
+	p.inBackticks--
+	
 	if !p.expectPeek(token.BACKTICK) {
 		return nil
 	}

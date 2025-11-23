@@ -646,7 +646,9 @@ func (ce *ConcatenatedExpression) TokenLiteral() string { return ce.Token.Litera
 func (ce *ConcatenatedExpression) String() string {
 	var out []byte
 	for _, p := range ce.Parts {
-		out = append(out, []byte(p.String())...)
+		if p != nil {
+			out = append(out, []byte(p.String())...)
+		}
 	}
 	return string(out)
 }
@@ -794,6 +796,7 @@ func Walk(node Node, f WalkFn) {
 		Walk(n.Left, f)
 		Walk(n.Index, f)
 	case *CommandSubstitution:
+		Walk(n.Command, f)
 	case *DollarParenExpression:
 		Walk(n.Command, f)
 	case *SimpleCommand:
