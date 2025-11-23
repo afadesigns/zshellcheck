@@ -1,0 +1,38 @@
+---
+title: ZShellCheck
+description: A static analysis tool for Zsh scripts.
+template: splash
+hero:
+  tagline: Static analysis for Zsh scripts.
+  actions:
+    - text: Get Started
+      link: /zshellcheck/guides/installation/
+      icon: right-arrow
+      variant: primary
+    - text: View on GitHub
+      link: https://github.com/afadesigns/zshellcheck
+      icon: external
+---
+
+import { Card, CardGrid } from '@astrojs/starlight/components';
+
+## Overview
+
+`zshellcheck` is a static analysis tool (linter) specifically designed for Zsh scripts. Unlike `shellcheck`, which focuses on POSIX sh/bash compatibility, `zshellcheck` understands Zsh syntax, best practices, and common pitfalls.
+
+It parses Zsh scripts into an Abstract Syntax Tree (AST) and runs a series of checks ("Katas") to identify issues.
+
+<CardGrid>
+	<Card title="Zsh-Specific" icon="linux">
+		Handles `[[ ... ]]`, `(( ... ))`, arrays, and modifiers.
+	</Card>
+	<Card title="Extensible" icon="puzzle">
+		Rules implemented as independent "Katas".
+	</Card>
+	<Card title="Configurable" icon="setting">
+		Disable specific checks via configuration.
+	</Card>
+	<Card title="CI Ready" icon="rocket">
+		Designed for pre-commit and CI pipelines.
+	</Card>
+</CardGrid>
