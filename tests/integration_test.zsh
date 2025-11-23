@@ -117,7 +117,7 @@ run_test 'cd /tmp || printf "fail\n"' "" "ZC1044: cd || echo (Checked)"
 run_test 'local x=$(cmd)' "ZC1045" "ZC1045: local x=\$(cmd)"
 run_test 'typeset y=$(cmd)' "ZC1045" "ZC1045: typeset y=\$(cmd)"
 run_test 'local x="foo $(cmd)"' "ZC1045" "ZC1045: local x=\"... \$(cmd)\""
-run_test 'local x; x=$(cmd)' "" "ZC1045: Split declaration (Valid)"
+run_test 'fn() { local x; x=$(cmd); }' "" "ZC1045: Split declaration (Valid)"
 run_test 'export x=$(cmd)' "ZC1067" "ZC1045: export (Caught by ZC1067)" 
 
 # --- ZC1046: Avoid eval ---
@@ -249,6 +249,13 @@ run_test 'precmd() { :; }' "ZC1068" "ZC1068: precmd()"
 run_test 'function chpwd() { :; }' "ZC1068" "ZC1068: function chpwd()"
 run_test 'autoload -Uz add-zsh-hook; add-zsh-hook precmd my_func' "" "ZC1068: add-zsh-hook (Valid)"
 run_test 'my_func() { :; }' "" "ZC1068: normal function (Valid)"
+
+# --- ZC1069: local scope ---
+run_test 'local x=1' "ZC1069" "ZC1069: local global"
+run_test 'typeset x=1' "" "ZC1069: typeset global (Valid)"
+run_test 'fn() { local x=1; }' "" "ZC1069: local in func (Valid)"
+run_test 'if true; then local x=1; fi' "ZC1069" "ZC1069: local in if (global)"
+run_test '( local x=1 )' "ZC1069" "ZC1069: local in subshell (global)"
 
 # --- Summary ---
 echo "------------------------------------------------"

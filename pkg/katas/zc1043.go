@@ -20,27 +20,51 @@ func checkZC1043(node ast.Node) []Violation {
 	}
 
 	violations := []Violation{}
+	locals := make(map[string]bool)
 
 	ast.Walk(funcDef.Body, func(n ast.Node) bool {
-		// We only care about "naked" assignments, which are ExpressionStatements containing an assignment.
-		// Assignments inside `local x=1` are part of SimpleCommand and handled differently (not as naked ExpressionStatement).
-		
-		if exprStmt, ok := n.(*ast.ExpressionStatement); ok {
-			if assign, ok := exprStmt.Expression.(*ast.InfixExpression); ok && assign.Operator == "=" {
-				if ident, ok := assign.Left.(*ast.Identifier); ok {
-					violations = append(violations, Violation{
-						KataID:  "ZC1043",
-						Message: "Variable '" + ident.Value + "' is assigned without 'local'. It will be global. Use `local " + ident.Value + "=" + assign.Right.String() + "`.",
-						Line:    ident.Token.Line,
-						Column:  ident.Token.Column,
-					})
-				}
-			}
-		}
-		
 		// Stop walking into nested function definitions
 		if _, ok := n.(*ast.FunctionDefinition); ok && n != funcDef {
 			return false
+		}
+
+		// Track local declarations
+		if cmd, ok := n.(*ast.SimpleCommand); ok {
+			nameStr := cmd.Name.String()
+			if nameStr == "local" || nameStr == "typeset" || nameStr == "declare" || nameStr == "integer" || nameStr == "float" || nameStr == "readonly" {
+				for _, arg := range cmd.Arguments {
+					// Arg can be "x" or "x=1" or "-r"
+					argStr := arg.String()
+					if len(argStr) > 0 && argStr[0] == '-' {
+						continue // Skip options
+					}
+					// Extract name before '='
+					varName := argStr
+					for i, c := range argStr {
+						if c == '=' {
+							varName = argStr[:i]
+							break
+						}
+					}
+					locals[varName] = true
+				}
+			}
+		}
+
+		// Check assignments
+		if exprStmt, ok := n.(*ast.ExpressionStatement); ok {
+			if assign, ok := exprStmt.Expression.(*ast.InfixExpression); ok && assign.Operator == "=" {
+				if ident, ok := assign.Left.(*ast.Identifier); ok {
+					if !locals[ident.Value] {
+						violations = append(violations, Violation{
+							KataID:  "ZC1043",
+							Message: "Variable '" + ident.Value + "' is assigned without 'local'. It will be global. Use `local " + ident.Value + "=" + assign.Right.String() + "`.",
+							Line:    ident.Token.Line,
+							Column:  ident.Token.Column,
+						})
+					}
+				}
+			}
 		}
 		
 		return true
