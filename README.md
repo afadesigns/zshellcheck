@@ -117,6 +117,7 @@ zshellcheck [flags] <file1.zsh> [file2.zsh]...
 | **ZC1063** | Prefer `grep -F` over `fgrep` |
 | **ZC1064** | Prefer `command -v` over `type` |
 | **ZC1065** | Ensure spaces around `[` and `[[` |
+| **ZC1066** | Avoid iterating over `cat` output |
 
 </details>
 

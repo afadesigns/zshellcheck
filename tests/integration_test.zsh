@@ -233,6 +233,11 @@ run_test '[[foo]]' "ZC1065" "ZC1065: [[foo]]"
 # run_test '[ foo ]' "" "ZC1065: [ foo ] (Valid)"
 run_test '[[ foo ]]' "" "ZC1065: [[ foo ]] (Valid)"
 
+# --- ZC1066: cat iteration ---
+run_test 'for l in $(cat file); do :; done' "ZC1066" "ZC1066: for in \$(cat)"
+run_test 'for l in `cat file`; do :; done' "ZC1066" "ZC1066: for in \`cat\`"
+# run_test 'while IFS= read -r l; do :; done < file' "" "ZC1066: while read (Valid)"
+
 # --- Summary ---
 echo "------------------------------------------------"
 if [[ $FAILURES -eq 0 ]]; then
