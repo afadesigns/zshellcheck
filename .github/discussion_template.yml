@@ -1,0 +1,25 @@
+categories:
+  - name: 📣 Announcements
+    emoji: 📣
+    description: "News, updates, and releases from the ZShellCheck team."
+    is_answerable: false
+  - name: 💡 Ideas
+    emoji: 💡
+    description: "Share ideas for new features, Katas, or improvements."
+    is_answerable: true
+  - name: 🙏 Q&A
+    emoji: 🙏
+    description: "Ask questions about using or contributing to ZShellCheck."
+    is_answerable: true
+  - name: 🐞 Bug Reports
+    emoji: 🐞
+    description: "Discuss potential bugs or unexpected behavior before opening an issue."
+    is_answerable: true
+  - name: 💬 General
+    emoji: 💬
+    description: "Chat about anything related to Zsh, shell scripting, or static analysis."
+    is_answerable: false
+  - name: 🤝 Show and Tell
+    emoji: 🤝
+    description: "Show off your Zsh scripts improved by ZShellCheck!"
+    is_answerable: false
