@@ -208,10 +208,12 @@ run_test 'rm "${VAR}"' "ZC1059" "ZC1059: rm \"\${VAR}\" (Unsafe)"
 # --- ZC1060: ps | grep ---
 run_test 'ps ax | grep foo' "ZC1060" "ZC1060: ps | grep"
 run_test 'ps ax | grep "[f]oo"' "" "ZC1060: ps | grep [] (Valid)"
-# run_test 'ps | grep -v grep' "ZC1060" "ZC1060: ps | grep -v (Warn: incomplete chain logic, still risky pattern)" 
-# My implementation flags `ps | grep` regardless of downstream pipes because it inspects the pair.
-# `ps | grep | grep -v` parses as `(ps | grep) | grep -v`.
-# The inner `ps | grep` IS flagged. This is acceptable behavior (suggesting `[]` is better).
+# run_test 'ps | grep -v grep' "ZC1060" "ZC1060: ps | grep -v (Warn: incomplete chain logic, still risky pattern)"
+
+# --- ZC1061: seq vs range ---
+run_test 'for i in $(seq 1 10); do :; done' "ZC1061" "ZC1061: for seq"
+run_test 'for i in {1..10}; do :; done' "" "ZC1061: for range (Valid)"
+run_test 'seq 5' "ZC1061" "ZC1061: seq command"
 
 # --- Summary ---
 echo "------------------------------------------------"
