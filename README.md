@@ -110,6 +110,7 @@ zshellcheck [flags] <file1.zsh> [file2.zsh]...
 | **ZC1056** | Avoid `$((...))` as a statement |
 | **ZC1057** | Avoid `ls` in assignments |
 | **ZC1058** | Avoid `sudo` with redirection |
+| **ZC1059** | Use `${var:?}` for `rm` arguments |
 
 </details>
 
