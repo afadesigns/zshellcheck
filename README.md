@@ -122,7 +122,6 @@ zshellcheck [flags] <file1.zsh> [file2.zsh]...
 | **ZC1068** | Use `add-zsh-hook` instead of defining hook functions directly |
 | **ZC1069** | Avoid `local` outside of functions |
 | **ZC1070** | Use `builtin` or `command` to avoid infinite recursion in wrapper functions |
-| **ZC1071** | Use `+=` for appending to arrays |
 | **ZC1072** | Use `awk` instead of `grep | awk` |
 
 </details>
