@@ -1,8 +1,9 @@
 package katas
 
 import (
-	"github.com/afadesigns/zshellcheck/pkg/ast"
 	"strings"
+
+	"github.com/afadesigns/zshellcheck/pkg/ast"
 )
 
 func init() {

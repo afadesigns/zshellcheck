@@ -42,11 +42,11 @@ func checkZC1040(node ast.Node) []Violation {
 
 		if isGlob(val) && !hasNullGlobQualifier(val) {
 			violations = append(violations, Violation{
-				KataID:  "ZC1040",
+				KataID: "ZC1040",
 				Message: "Glob pattern '" + val + "' may error if no files match. " +
 					"Append '(N)' to enable nullglob behavior: '" + val + "(N)'",
-				Line:    item.TokenLiteralNode().Line,
-				Column:  item.TokenLiteralNode().Column,
+				Line:   item.TokenLiteralNode().Line,
+				Column: item.TokenLiteralNode().Column,
 			})
 		}
 	}

@@ -6,8 +6,8 @@ import (
 
 func init() {
 	RegisterKata(ast.SimpleCommandNode, Kata{
-		ID:          "ZC1057",
-		Title:       "Avoid `ls` in assignments",
+		ID:    "ZC1057",
+		Title: "Avoid `ls` in assignments",
 		Description: "Assigning the output of `ls` to a variable is fragile. " +
 			"Use globs or arrays (e.g. `files=(*)`) to handle filenames correctly.",
 		Check: checkZC1057,

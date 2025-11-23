@@ -25,22 +25,23 @@ func TestZC1067(t *testing.T) {
 		},
 		{
 			name:  "invalid export command substitution",
-			            input: `export var=$(cmd)`,
-			            expected: []katas.Violation{
-			                {
-			                    KataID:  "ZC1067",
-			                    Message: "Exporting and assigning a command substitution in one step masks the return value. " +
-			                        "Use `var=$(cmd); export var`.",
-			                    Line:   1,
-			                    Column: 1,
-			                },
-			            },		},
+			input: `export var=$(cmd)`,
+			expected: []katas.Violation{
+				{
+					KataID: "ZC1067",
+					Message: "Exporting and assigning a command substitution in one step masks the return value. " +
+						"Use `var=$(cmd); export var`.",
+					Line:   1,
+					Column: 1,
+				},
+			},
+		},
 		{
 			name:  "invalid export backticks",
 			input: "export var=`cmd`",
 			expected: []katas.Violation{
 				{
-					KataID:  "ZC1067",
+					KataID: "ZC1067",
 					Message: "Exporting and assigning a command substitution in one step masks the return value. " +
 						"Use `var=$(cmd); export var`.",
 					Line:   1,

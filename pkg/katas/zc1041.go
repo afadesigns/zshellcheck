@@ -6,11 +6,11 @@ import (
 
 func init() {
 	RegisterKata(ast.SimpleCommandNode, Kata{
-		ID:          "ZC1041",
-		Title:       "Do not use variables in printf format string",
+		ID:    "ZC1041",
+		Title: "Do not use variables in printf format string",
 		Description: "Using variables in `printf` format strings allows for format string attacks and unexpected behavior " +
 			"if the variable contains `%`. Use `printf '%s' \"$var\"` instead.",
-		Check:       checkZC1041,
+		Check: checkZC1041,
 	})
 }
 

@@ -6,8 +6,8 @@ import (
 
 func init() {
 	RegisterKata(ast.SimpleCommandNode, Kata{
-		ID:          "ZC1047",
-		Title:       "Avoid `sudo` in scripts",
+		ID:    "ZC1047",
+		Title: "Avoid `sudo` in scripts",
 		Description: "Using `sudo` in scripts is generally discouraged. It makes the script interactive and less portable. " +
 			"Run the script as root or use `sudo` to invoke the script.",
 		Check: checkZC1047,

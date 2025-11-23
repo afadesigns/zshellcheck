@@ -6,8 +6,8 @@ import (
 
 func init() {
 	RegisterKata(ast.SimpleCommandNode, Kata{
-		ID:          "ZC1064",
-		Title:       "Prefer `command -v` over `type`",
+		ID:    "ZC1064",
+		Title: "Prefer `command -v` over `type`",
 		Description: "`type` output format varies and is not POSIX standard for checking existence. " +
 			"`command -v` is quieter and standard.",
 		Check: checkZC1064,

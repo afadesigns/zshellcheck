@@ -128,6 +128,7 @@ func (p *Program) TokenLiteral() string {
 	}
 	return ""
 }
+
 func (p *Program) TokenLiteralNode() token.Token {
 	if len(p.Statements) > 0 {
 		return p.Statements[0].TokenLiteralNode()

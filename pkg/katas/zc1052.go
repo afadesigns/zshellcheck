@@ -6,8 +6,8 @@ import (
 
 func init() {
 	RegisterKata(ast.SimpleCommandNode, Kata{
-		ID:          "ZC1052",
-		Title:       "Avoid `sed -i` for portability",
+		ID:    "ZC1052",
+		Title: "Avoid `sed -i` for portability",
 		Description: "`sed -i` usage varies between GNU/Linux and macOS/BSD. " +
 			"macOS requires an extension argument (e.g. `sed -i ''`), while GNU does not. " +
 			"Use a temporary file and `mv`, or `perl -i`, for portability.",

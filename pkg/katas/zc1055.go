@@ -6,8 +6,8 @@ import (
 
 func init() {
 	RegisterKata(ast.InfixExpressionNode, Kata{
-		ID:          "ZC1055",
-		Title:       "Use `[[ -n/-z ]]` for empty string checks",
+		ID:    "ZC1055",
+		Title: "Use `[[ -n/-z ]]` for empty string checks",
 		Description: "Comparing with empty string is less idiomatic than using `[[ -z $var ]]` (is empty) " +
 			"or `[[ -n $var ]]` (is not empty).",
 		Check: checkZC1055,

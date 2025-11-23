@@ -6,8 +6,8 @@ import (
 
 func init() {
 	kata := Kata{
-		ID:          "ZC1068",
-		Title:       "Use `add-zsh-hook` instead of defining hook functions directly",
+		ID:    "ZC1068",
+		Title: "Use `add-zsh-hook` instead of defining hook functions directly",
 		Description: "Defining special functions like `precmd`, `preexec`, `chpwd`, etc. directly overwrites any " +
 			"previously defined hooks. Use `autoload -Uz add-zsh-hook; add-zsh-hook <hook> <function>` to append to the hook list safely.",
 		Check: checkZC1068,
@@ -47,7 +47,7 @@ func checkZC1068(node ast.Node) []Violation {
 	if specialHooks[name] {
 		return []Violation{
 			{
-				KataID:  "ZC1068",
+				KataID: "ZC1068",
 				Message: "Defining `" + name + "` directly overwrites existing hooks. " +
 					"Use `autoload -Uz add-zsh-hook; add-zsh-hook " + name + " my_func` instead.",
 				Line:   tokenLine,

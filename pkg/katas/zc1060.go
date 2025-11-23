@@ -6,8 +6,8 @@ import (
 
 func init() {
 	RegisterKata(ast.InfixExpressionNode, Kata{
-		ID:          "ZC1060",
-		Title:       "Avoid `ps | grep` without exclusion",
+		ID:    "ZC1060",
+		Title: "Avoid `ps | grep` without exclusion",
 		Description: "`ps | grep pattern` often matches the grep process itself. " +
 			"Use `grep [p]attern`, `pgrep`, or exclude grep with `grep -v grep`.",
 		Check: checkZC1060,

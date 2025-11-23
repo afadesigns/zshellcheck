@@ -8,8 +8,8 @@ import (
 
 func init() {
 	RegisterKata(ast.IfStatementNode, Kata{
-		ID:          "ZC1053",
-		Title:       "Silence `grep` output in conditions",
+		ID:    "ZC1053",
+		Title: "Silence `grep` output in conditions",
 		Description: "Using `grep` in a condition prints matches to stdout. " +
 			"Use `grep -q` (or `> /dev/null`) to silence output if you only care about the exit code.",
 		Check: checkZC1053,

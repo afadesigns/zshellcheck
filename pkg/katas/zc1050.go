@@ -6,8 +6,8 @@ import (
 
 func init() {
 	RegisterKata(ast.ForLoopStatementNode, Kata{
-		ID:          "ZC1050",
-		Title:       "Avoid iterating over `ls` output",
+		ID:    "ZC1050",
+		Title: "Avoid iterating over `ls` output",
 		Description: "Iterating over `ls` output is fragile because filenames can contain spaces and newlines. " +
 			"Use globs (e.g. `for f in *.txt`) instead.",
 		Check: checkZC1050,

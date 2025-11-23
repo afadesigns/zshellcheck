@@ -6,8 +6,8 @@ import (
 
 func init() {
 	RegisterKata(ast.FunctionDefinitionNode, Kata{
-		ID:          "ZC1043",
-		Title:       "Use `local` for variables in functions",
+		ID:    "ZC1043",
+		Title: "Use `local` for variables in functions",
 		Description: "Variables defined in functions are global by default in Zsh. " +
 			"Use `local` to scope them to the function.",
 		Check: checkZC1043,
@@ -59,7 +59,7 @@ func checkZC1043(node ast.Node) []Violation {
 				if ident, ok := assign.Left.(*ast.Identifier); ok {
 					if !locals[ident.Value] {
 						violations = append(violations, Violation{
-							KataID:  "ZC1043",
+							KataID: "ZC1043",
 							Message: "Variable '" + ident.Value + "' is assigned without 'local'. It will be global. " +
 								"Use `local " + ident.Value + "=" + assign.Right.String() + "`.",
 							Line:   ident.Token.Line,

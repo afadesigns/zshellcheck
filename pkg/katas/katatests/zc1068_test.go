@@ -28,7 +28,7 @@ func TestZC1068(t *testing.T) {
 			input: `precmd() { echo "prompt"; }`,
 			expected: []katas.Violation{
 				{
-					KataID:  "ZC1068",
+					KataID: "ZC1068",
 					Message: "Defining `precmd` directly overwrites existing hooks. " +
 						"Use `autoload -Uz add-zsh-hook; add-zsh-hook precmd my_func` instead.",
 					Line:   1,
@@ -41,7 +41,7 @@ func TestZC1068(t *testing.T) {
 			input: `function chpwd() { ls; }`,
 			expected: []katas.Violation{
 				{
-					KataID:  "ZC1068",
+					KataID: "ZC1068",
 					Message: "Defining `chpwd` directly overwrites existing hooks. " +
 						"Use `autoload -Uz add-zsh-hook; add-zsh-hook chpwd my_func` instead.",
 					Line:   1,

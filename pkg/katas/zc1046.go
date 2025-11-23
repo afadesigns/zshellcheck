@@ -6,8 +6,8 @@ import (
 
 func init() {
 	RegisterKata(ast.SimpleCommandNode, Kata{
-		ID:          "ZC1046",
-		Title:       "Avoid `eval`",
+		ID:    "ZC1046",
+		Title: "Avoid `eval`",
 		Description: "`eval` is dangerous as it executes arbitrary code. " +
 			"Use arrays, parameter expansion, or other constructs instead.",
 		Check: checkZC1046,

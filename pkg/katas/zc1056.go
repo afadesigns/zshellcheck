@@ -6,8 +6,8 @@ import (
 
 func init() {
 	RegisterKata(ast.SimpleCommandNode, Kata{
-		ID:          "ZC1056",
-		Title:       "Avoid `$((...))` as a statement",
+		ID:    "ZC1056",
+		Title: "Avoid `$((...))` as a statement",
 		Description: "Using `$((...))` as a statement tries to execute the result as a command. " +
 			"Use `((...))` for arithmetic evaluation/assignment.",
 		Check: checkZC1056,

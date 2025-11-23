@@ -6,8 +6,8 @@ import (
 
 func init() {
 	RegisterKata(ast.FunctionDefinitionNode, Kata{
-		ID:          "ZC1070",
-		Title:       "Use `builtin` or `command` to avoid infinite recursion in wrapper functions",
+		ID:    "ZC1070",
+		Title: "Use `builtin` or `command` to avoid infinite recursion in wrapper functions",
 		Description: "When defining a wrapper function with the same name as a builtin or command (e.g., `cd`), " +
 			"calling the command directly inside the function causes infinite recursion. " +
 			"Use `builtin cd` or `command cd`.",

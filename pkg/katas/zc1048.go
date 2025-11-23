@@ -8,8 +8,8 @@ import (
 
 func init() {
 	RegisterKata(ast.SimpleCommandNode, Kata{
-		ID:          "ZC1048",
-		Title:       "Avoid `source` with relative paths",
+		ID:    "ZC1048",
+		Title: "Avoid `source` with relative paths",
 		Description: "Sourcing a file with a relative path (e.g. `source ./lib.zsh`) depends on the current working directory. " +
 			"Use `${0:a:h}/lib.zsh` to source relative to the script location.",
 		Check: checkZC1048,

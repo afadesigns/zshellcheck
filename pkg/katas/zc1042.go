@@ -8,8 +8,8 @@ import (
 
 func init() {
 	RegisterKata(ast.ForLoopStatementNode, Kata{
-		ID:          "ZC1042",
-		Title:       "Use \"$@\" to iterate over arguments",
+		ID:    "ZC1042",
+		Title: "Use \"$@\" to iterate over arguments",
 		Description: "`$*` joins all arguments into a single string, which is rarely what you want in a loop. " +
 			"Use `\"$@\"` to iterate over each argument individually.",
 		Check: checkZC1042,
@@ -70,7 +70,7 @@ func checkZC1042(node ast.Node) []Violation {
 
 		if found {
 			violations = append(violations, Violation{
-				KataID:  "ZC1042",
+				KataID: "ZC1042",
 				Message: "Use \"$@\" instead of \"$*\" (or $*) to iterate over arguments. " +
 					"\"$*\" merges arguments into a single string.",
 				Line:   item.TokenLiteralNode().Line,

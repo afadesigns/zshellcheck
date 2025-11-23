@@ -6,8 +6,8 @@ import (
 
 func init() {
 	RegisterKata(ast.SimpleCommandNode, Kata{
-		ID:          "ZC1045",
-		Title:       "Declare and assign separately to avoid masking return values",
+		ID:    "ZC1045",
+		Title: "Declare and assign separately to avoid masking return values",
 		Description: "Declaring a variable with `local var=$(cmd)` masks the return value of `cmd`. " +
 			"The `local` command returns 0 (success) even if `cmd` fails. " +
 			"Declare the variable first (`local var`), then assign it (`var=$(cmd)`).",
@@ -32,7 +32,7 @@ func checkZC1045(node ast.Node) []Violation {
 		// Check if arg is an assignment containing a command substitution
 		if hasCommandSubstitutionAssignment(arg) {
 			violations = append(violations, Violation{
-				KataID:  "ZC1045",
+				KataID: "ZC1045",
 				Message: "Declare and assign separately to avoid masking return values. " +
 					"`local var=$(cmd)` masks the exit code of `cmd`.",
 				Line:   arg.TokenLiteralNode().Line,
