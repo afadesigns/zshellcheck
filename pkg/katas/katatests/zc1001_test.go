@@ -23,11 +23,11 @@ func TestZC1001(t *testing.T) {
 			input: `echo $my_array[1]`,
 			expected: []katas.Violation{
 				{
-					KataID:  "ZC1001",
+					KataID: "ZC1001",
 					Message: "Use ${} for array element access. " +
 						"Accessing array elements with `$my_array[...]` is not the correct syntax in Zsh.",
-					Line:    1,
-					Column:  6,
+					Line:   1,
+					Column: 6,
 				},
 			},
 		},

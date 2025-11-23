@@ -8,8 +8,8 @@ import (
 
 func init() {
 	RegisterKata(ast.ForLoopStatementNode, Kata{
-		ID:          "ZC1040",
-		Title:       "Use (N) nullglob qualifier for globs in loops",
+		ID:    "ZC1040",
+		Title: "Use (N) nullglob qualifier for globs in loops",
 		Description: "In Zsh, a glob that matches nothing (e.g., `*.txt`) will cause an error by default. " +
 			"Use the `(N)` glob qualifier to make it null (empty) if no matches found, preventing the error.",
 		Check: checkZC1040,
@@ -32,9 +32,9 @@ func checkZC1040(node ast.Node) []Violation {
 	for _, item := range loop.Items {
 		// We are looking for string literals that look like globs (contain *, ?, etc)
 		// but do NOT contain (N) or (N-...) qualifiers.
-		
+
 		val := getStringValue(item)
-		
+
 		// If it is quoted, it is NOT a glob expansion.
 		if len(val) > 0 && (val[0] == '"' || val[0] == '\'') {
 			continue
@@ -43,7 +43,8 @@ func checkZC1040(node ast.Node) []Violation {
 		if isGlob(val) && !hasNullGlobQualifier(val) {
 			violations = append(violations, Violation{
 				KataID:  "ZC1040",
-				Message: "Glob pattern '" + val + "' may error if no files match. Append '(N)' to enable nullglob behavior: '" + val + "(N)'",
+				Message: "Glob pattern '" + val + "' may error if no files match. " +
+					"Append '(N)' to enable nullglob behavior: '" + val + "(N)'",
 				Line:    item.TokenLiteralNode().Line,
 				Column:  item.TokenLiteralNode().Column,
 			})

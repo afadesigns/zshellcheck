@@ -1,18 +1,17 @@
 package katas
 
 import (
-
 	"github.com/afadesigns/zshellcheck/pkg/ast"
 )
 
 func init() {
 	RegisterKata(ast.SimpleCommandNode, Kata{
-		ID:          "ZC1014",
-		Title:       "Use `git switch` or `git restore` instead of `git checkout`",
+		ID:    "ZC1014",
+		Title: "Use `git switch` or `git restore` instead of `git checkout`",
 		Description: "The `git checkout` command can be ambiguous. `git switch` is used for switching " +
 			"branches and `git restore` is used for restoring files. Using these more specific commands " +
 			"can make your scripts clearer and less error-prone.",
-		Check:       checkZC1014,
+		Check: checkZC1014,
 	})
 }
 

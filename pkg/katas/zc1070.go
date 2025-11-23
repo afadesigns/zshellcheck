@@ -8,8 +8,10 @@ func init() {
 	RegisterKata(ast.FunctionDefinitionNode, Kata{
 		ID:          "ZC1070",
 		Title:       "Use `builtin` or `command` to avoid infinite recursion in wrapper functions",
-		Description: "When defining a wrapper function with the same name as a builtin or command (e.g., `cd`), calling the command directly inside the function causes infinite recursion. Use `builtin cd` or `command cd`.",
-		Check:       checkZC1070,
+		Description: "When defining a wrapper function with the same name as a builtin or command (e.g., `cd`), " +
+			"calling the command directly inside the function causes infinite recursion. " +
+			"Use `builtin cd` or `command cd`.",
+		Check: checkZC1070,
 	})
 }
 
@@ -20,7 +22,7 @@ func checkZC1070(node ast.Node) []Violation {
 	}
 
 	name := funcDef.Name.String()
-	
+
 	// Only check for common builtins/commands to avoid flagging valid recursive algorithms
 	targets := map[string]bool{
 		"cd": true, "echo": true, "printf": true, "read": true, "source": true, ".": true,
@@ -30,7 +32,7 @@ func checkZC1070(node ast.Node) []Violation {
 		"ls": true, "grep": true, "mkdir": true, "rm": true, "mv": true, "cp": true, "git": true,
 		"dirs": true, "popd": true, "pushd": true,
 	}
-	
+
 	if !targets[name] {
 		return nil
 	}
@@ -56,22 +58,23 @@ func checkZC1070(node ast.Node) []Violation {
 				// But here `cmd.Name` IS `name`.
 				// So `builtin cd` -> Name="builtin", Args=["cd"]
 				// `cd` -> Name="cd".
-				
+
 				// If Name == function name, it IS a recursive call.
 				// Unless it is `builtin` or `command`?
 				// If I write `builtin cd`, the parser sees Name="builtin".
 				// So if Name matches `name`, it is NOT `builtin` or `command`.
-				
+
 				// Exception: `command` might not be a keyword in parser?
 				// `command -v cd` -> Name="command".
-				
+
 				// So if `cmdName == name`, it is a direct call.
-				
+
 				violations = append(violations, Violation{
-					KataID:  "ZC1070",
-					Message: "Recursive call to `" + name + "` inside `" + name + "`. Use `builtin " + name + "` or `command " + name + "` to invoke the underlying command.",
-					Line:    cmd.Token.Line,
-					Column:  cmd.Token.Column,
+					KataID: "ZC1070",
+					Message: "Recursive call to `" + name + "` inside `" + name + "`. " +
+						"Use `builtin " + name + "` or `command " + name + "` to invoke the underlying command.",
+					Line:   cmd.Token.Line,
+					Column: cmd.Token.Column,
 				})
 			}
 		}

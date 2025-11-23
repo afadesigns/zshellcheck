@@ -24,26 +24,28 @@ func TestZC1069(t *testing.T) {
 			expected: []katas.Violation{},
 		},
 		{
-			name:     "invalid local global",
-			input:    `local x=1`,
+			name:  "invalid local global",
+			input: `local x=1`,
 			expected: []katas.Violation{
 				{
 					KataID:  "ZC1069",
-					Message: "`local` can only be used inside functions. Use `typeset`, `declare`, or just assignment for global variables.",
-					Line:    1,
-					Column:  1,
+					Message: "`local` can only be used inside functions. " +
+						"Use `typeset`, `declare`, or just assignment for global variables.",
+					Line:   1,
+					Column: 1,
 				},
 			},
 		},
 		{
-			name:     "invalid local in if block (global)",
-			input:    `if true; then local x=1; fi`,
+			name:  "invalid local in if block (global)",
+			input: `if true; then local x=1; fi`,
 			expected: []katas.Violation{
 				{
 					KataID:  "ZC1069",
-					Message: "`local` can only be used inside functions. Use `typeset`, `declare`, or just assignment for global variables.",
-					Line:    1,
-					Column:  15,
+					Message: "`local` can only be used inside functions. " +
+						"Use `typeset`, `declare`, or just assignment for global variables.",
+					Line:   1,
+					Column: 15,
 				},
 			},
 		},
@@ -53,14 +55,15 @@ func TestZC1069(t *testing.T) {
 			expected: []katas.Violation{},
 		},
 		{
-			name:     "invalid local in subshell (global)",
-			input:    `( local x=1 )`,
+			name:  "invalid local in subshell (global)",
+			input: `( local x=1 )`,
 			expected: []katas.Violation{
 				{
 					KataID:  "ZC1069",
-					Message: "`local` can only be used inside functions. Use `typeset`, `declare`, or just assignment for global variables.",
-					Line:    1,
-					Column:  3,
+					Message: "`local` can only be used inside functions. " +
+						"Use `typeset`, `declare`, or just assignment for global variables.",
+					Line:   1,
+					Column: 3,
 				},
 			},
 		},

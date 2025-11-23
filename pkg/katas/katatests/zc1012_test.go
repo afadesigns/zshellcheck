@@ -30,7 +30,7 @@ func TestCheckZC1012(t *testing.T) {
 			input:    `read -r line`,
 			expected: []katas.Violation{},
 		},
-        {
+		{
 			name:     "read with -er",
 			input:    `read -er line`, // heuristic support
 			expected: []katas.Violation{},

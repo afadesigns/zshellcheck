@@ -8,14 +8,16 @@ func init() {
 	RegisterKata(ast.SimpleCommandNode, Kata{
 		ID:          "ZC1057",
 		Title:       "Avoid `ls` in assignments",
-		Description: "Assigning the output of `ls` to a variable is fragile. Use globs or arrays (e.g. `files=(*)`) to handle filenames correctly.",
-		Check:       checkZC1057,
+		Description: "Assigning the output of `ls` to a variable is fragile. " +
+			"Use globs or arrays (e.g. `files=(*)`) to handle filenames correctly.",
+		Check: checkZC1057,
 	})
 	RegisterKata(ast.InfixExpressionNode, Kata{
-		ID:          "ZC1057",
-		Title:       "Avoid `ls` in assignments",
-		Description: "Assigning the output of `ls` to a variable is fragile. Use globs or arrays (e.g. `files=(*)`) to handle filenames correctly.",
-		Check:       checkZC1057,
+		ID:    "ZC1057",
+		Title: "Avoid `ls` in assignments",
+		Description: "Assigning the output of `ls` to a variable is fragile. " +
+			"Use globs or arrays (e.g. `files=(*)`) to handle filenames correctly.",
+		Check: checkZC1057,
 	})
 }
 
@@ -73,9 +75,9 @@ func isLsSubstitution(node ast.Node) bool {
 	// Reuse logic from ZC1050?
 	// ZC1050 `getCommandFromSubstitution` returns the command.
 	// We check if command is `ls`.
-	
+
 	var cmd ast.Expression
-	
+
 	switch n := node.(type) {
 	case *ast.CommandSubstitution:
 		cmd = n.Command
@@ -84,7 +86,7 @@ func isLsSubstitution(node ast.Node) bool {
 	default:
 		return false
 	}
-	
+
 	// Check if cmd is `ls`
 	// cmd can be SimpleCommand or Infix (pipeline).
 	// If simple command `ls ...`

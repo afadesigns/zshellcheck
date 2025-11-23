@@ -8,8 +8,10 @@ func init() {
 	RegisterKata(ast.SimpleCommandNode, Kata{
 		ID:          "ZC1045",
 		Title:       "Declare and assign separately to avoid masking return values",
-		Description: "Declaring a variable with `local var=$(cmd)` masks the return value of `cmd`. The `local` command returns 0 (success) even if `cmd` fails. Declare the variable first (`local var`), then assign it (`var=$(cmd)`).",
-		Check:       checkZC1045,
+		Description: "Declaring a variable with `local var=$(cmd)` masks the return value of `cmd`. " +
+			"The `local` command returns 0 (success) even if `cmd` fails. " +
+			"Declare the variable first (`local var`), then assign it (`var=$(cmd)`).",
+		Check: checkZC1045,
 	})
 }
 
@@ -31,9 +33,10 @@ func checkZC1045(node ast.Node) []Violation {
 		if hasCommandSubstitutionAssignment(arg) {
 			violations = append(violations, Violation{
 				KataID:  "ZC1045",
-				Message: "Declare and assign separately to avoid masking return values. `local var=$(cmd)` masks the exit code of `cmd`.",
-				Line:    arg.TokenLiteralNode().Line,
-				Column:  arg.TokenLiteralNode().Column,
+				Message: "Declare and assign separately to avoid masking return values. " +
+					"`local var=$(cmd)` masks the exit code of `cmd`.",
+				Line:   arg.TokenLiteralNode().Line,
+				Column: arg.TokenLiteralNode().Column,
 			})
 		}
 	}
@@ -45,7 +48,7 @@ func hasCommandSubstitutionAssignment(arg ast.Expression) bool {
 	// Argument structure depends on parsing.
 	// Usually ConcatenatedExpression for `var=$(cmd)`: [Identifier(var), StringLiteral(=), DollarParenExpression]
 	// Or `var=`cmd``: [Identifier(var), StringLiteral(=), CommandSubstitution]
-	
+
 	concat, ok := arg.(*ast.ConcatenatedExpression)
 	if !ok {
 		return false
@@ -59,7 +62,7 @@ func hasCommandSubstitutionAssignment(arg ast.Expression) bool {
 			hasEquals = true
 			continue
 		}
-		
+
 		if hasEquals {
 			// Check if RHS has command substitution
 			if isCommandSubstitution(part) {

@@ -8,8 +8,9 @@ func init() {
 	RegisterKata(ast.SimpleCommandNode, Kata{
 		ID:          "ZC1056",
 		Title:       "Avoid `$((...))` as a statement",
-		Description: "Using `$((...))` as a statement tries to execute the result as a command. Use `((...))` for arithmetic evaluation/assignment.",
-		Check:       checkZC1056,
+		Description: "Using `$((...))` as a statement tries to execute the result as a command. " +
+			"Use `((...))` for arithmetic evaluation/assignment.",
+		Check: checkZC1056,
 	})
 }
 
@@ -21,7 +22,7 @@ func checkZC1056(node ast.Node) []Violation {
 
 	// Check if the command Name is a DollarParenExpression (arithmetic)
 	var dpe *ast.DollarParenExpression
-	
+
 	if d, ok := cmd.Name.(*ast.DollarParenExpression); ok {
 		dpe = d
 	} else if concat, ok := cmd.Name.(*ast.ConcatenatedExpression); ok {
@@ -40,9 +41,9 @@ func checkZC1056(node ast.Node) []Violation {
 	// Our parser distinguishes:
 	// $(( ... )) -> Command is usually Infix/Prefix/Identifier/Integer/Grouped
 	// $( ... )   -> Command is usually SimpleCommand (via parseCommandList)
-	
+
 	isArithmetic := true
-	
+
 	switch dpe.Command.(type) {
 	case *ast.SimpleCommand:
 		// $(cmd)

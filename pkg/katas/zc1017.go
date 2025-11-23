@@ -1,17 +1,16 @@
 package katas
 
 import (
-
 	"github.com/afadesigns/zshellcheck/pkg/ast"
 )
 
 func init() {
 	RegisterKata(ast.SimpleCommandNode, Kata{
-		ID:          "ZC1017",
-		Title:       "Use `print -r` to print strings literally",
+		ID:    "ZC1017",
+		Title: "Use `print -r` to print strings literally",
 		Description: "The `print` command interprets backslash escape sequences by default. " +
 			"To print a string literally, use the `-r` option.",
-		Check:       checkZC1017,
+		Check: checkZC1017,
 	})
 }
 

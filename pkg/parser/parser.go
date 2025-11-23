@@ -116,7 +116,7 @@ func (p *Parser) parseRedirection(left ast.Expression) ast.Expression {
 	}
 
 	p.nextToken()
-	expr.Right = p.parseExpression(LOWEST) 
+	expr.Right = p.parseExpression(LOWEST)
 
 	return expr
 }
@@ -196,9 +196,10 @@ func (p *Parser) parseStatement() ast.Statement {
 		}
 		if p.peekTokenIs(token.IDENT) || p.peekTokenIs(token.STRING) || p.peekTokenIs(token.INT) ||
 			p.peekTokenIs(token.MINUS) || p.peekTokenIs(token.DOT) || p.peekTokenIs(token.VARIABLE) ||
-			p.peekTokenIs(token.DOLLAR) || p.peekTokenIs(token.DollarLbrace) || p.peekTokenIs(token.DOLLAR_LPAREN) ||
-			p.peekTokenIs(token.SLASH) || p.peekTokenIs(token.TILDE) || p.peekTokenIs(token.ASTERISK) || p.peekTokenIs(token.BANG) ||
-			p.peekTokenIs(token.LPAREN) {
+			p.peekTokenIs(token.DOLLAR) || p.peekTokenIs(token.DollarLbrace) ||
+			p.peekTokenIs(token.DOLLAR_LPAREN) || p.peekTokenIs(token.SLASH) ||
+			p.peekTokenIs(token.TILDE) || p.peekTokenIs(token.ASTERISK) ||
+			p.peekTokenIs(token.BANG) || p.peekTokenIs(token.LPAREN) {
 			return p.parseSimpleCommandStatement()
 		}
 		return p.parseExpressionStatement()
@@ -249,16 +250,16 @@ func (p *Parser) parseCommandPipeline() ast.Expression {
 	left := p.parseSingleCommand()
 
 	// Parse redirections
-	for p.peekTokenIs(token.GT) || p.peekTokenIs(token.GTGT) || 
-		p.peekTokenIs(token.LT) || p.peekTokenIs(token.LTLT) || 
+	for p.peekTokenIs(token.GT) || p.peekTokenIs(token.GTGT) ||
+		p.peekTokenIs(token.LT) || p.peekTokenIs(token.LTLT) ||
 		p.peekTokenIs(token.GTAMP) || p.peekTokenIs(token.LTAMP) {
-		
+
 		p.nextToken()
 		op := p.curToken
 		p.nextToken() // consume op
 		// Redirection target is file/expression. Use parseCommandWord to handle paths/strings correctly.
 		right := p.parseCommandWord()
-		
+
 		left = &ast.Redirection{
 			Token:    op,
 			Left:     left,
@@ -291,7 +292,7 @@ func (p *Parser) isCommandDelimiter(t token.Token) bool {
 	if t.Type == token.BACKTICK && p.inBackticks == 0 {
 		return false
 	}
-	
+
 	return t.Type == token.EOF || t.Type == token.SEMICOLON || t.Type == token.PIPE ||
 		t.Type == token.AND || t.Type == token.OR ||
 		t.Type == token.RPAREN || t.Type == token.RBRACE ||
@@ -575,7 +576,7 @@ func (p *Parser) parseArrayAccess() ast.Expression {
 		return nil
 	}
 	exp.Left = p.parseIdentifier()
-	
+
 	// check for optional index
 	if p.peekTokenIs(token.LBRACKET) {
 		p.nextToken() // consume [
@@ -585,7 +586,7 @@ func (p *Parser) parseArrayAccess() ast.Expression {
 			return nil
 		}
 	}
-	
+
 	if !p.expectPeek(token.RBRACE) {
 		return nil
 	}
@@ -697,11 +698,11 @@ func (p *Parser) parseFunctionLiteral() ast.Expression {
 func (p *Parser) parseCommandSubstitution() ast.Expression {
 	exp := &ast.CommandSubstitution{Token: p.curToken}
 	p.nextToken()
-	
+
 	p.inBackticks++
 	exp.Command = p.parseCommandList()
 	p.inBackticks--
-	
+
 	if !p.expectPeek(token.BACKTICK) {
 		return nil
 	}
@@ -710,12 +711,12 @@ func (p *Parser) parseCommandSubstitution() ast.Expression {
 
 func (p *Parser) parseDollarParenExpression() ast.Expression {
 	exp := &ast.DollarParenExpression{Token: p.curToken}
-	
+
 	if p.peekTokenIs(token.LPAREN) {
 		p.nextToken()
 		p.nextToken() // consume `(`
 		cmd := p.parseExpression(LOWEST)
-		
+
 		if p.peekTokenIs(token.DoubleRparen) {
 			p.nextToken() // consume ))
 			exp.Command = cmd

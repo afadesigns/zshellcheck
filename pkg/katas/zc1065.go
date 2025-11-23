@@ -8,8 +8,9 @@ func init() {
 	RegisterKata(ast.SimpleCommandNode, Kata{
 		ID:          "ZC1065",
 		Title:       "Ensure spaces around `[` and `[[`",
-		Description: "`[condition]` is parsed as a command named `[condition]`, which likely doesn't exist. Add spaces: `[ condition ]`.",
-		Check:       checkZC1065,
+		Description: "`[condition]` is parsed as a command named `[condition]`, which likely doesn't exist. " +
+			"Add spaces: `[ condition ]`.",
+		Check: checkZC1065,
 	})
 	// Register for DoubleBracketExpression to check `[[foo]]`
 	RegisterKata(ast.DoubleBracketExpressionNode, Kata{

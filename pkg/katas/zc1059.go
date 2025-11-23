@@ -27,7 +27,7 @@ func checkZC1059(node ast.Node) []Violation {
 
 	for _, arg := range cmd.Arguments {
 		isUnsafeVar := false
-		
+
 		switch n := arg.(type) {
 		case *ast.PrefixExpression:
 			if n.Operator == "$" {
@@ -46,7 +46,7 @@ func checkZC1059(node ast.Node) []Violation {
 			// Assuming parser parses simple ${VAR}, we flag it.
 			isUnsafeVar = true
 		case *ast.StringLiteral:
-			// "$VAR". 
+			// "$VAR".
 			// If value is exactly "$VAR" or "${VAR}".
 			// If value contains other things, it's safer (e.g. "$VAR/foo").
 			// But "$VAR/" is dangerous too if VAR is empty.

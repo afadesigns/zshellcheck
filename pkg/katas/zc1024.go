@@ -1,17 +1,16 @@
 package katas
 
 import (
-
 	"github.com/afadesigns/zshellcheck/pkg/ast"
 )
 
 func init() {
 	RegisterKata(ast.LetStatementNode, Kata{
-		ID:          "ZC1024",
-		Title:       "Use `$((...))` for arithmetic expansion",
+		ID:    "ZC1024",
+		Title: "Use `$((...))` for arithmetic expansion",
 		Description: "The `$((...))` syntax is the modern, recommended way to perform arithmetic expansion. " +
 			"It is more readable and can be nested easily, unlike `let`.",
-		Check:       checkZC1024,
+		Check: checkZC1024,
 	})
 }
 

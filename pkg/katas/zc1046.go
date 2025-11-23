@@ -8,8 +8,9 @@ func init() {
 	RegisterKata(ast.SimpleCommandNode, Kata{
 		ID:          "ZC1046",
 		Title:       "Avoid `eval`",
-		Description: "`eval` is dangerous as it executes arbitrary code. Use arrays, parameter expansion, or other constructs instead.",
-		Check:       checkZC1046,
+		Description: "`eval` is dangerous as it executes arbitrary code. " +
+			"Use arrays, parameter expansion, or other constructs instead.",
+		Check: checkZC1046,
 	})
 }
 
@@ -20,7 +21,7 @@ func checkZC1046(node ast.Node) []Violation {
 	}
 
 	name := cmd.Name.String()
-	
+
 	// Check for direct 'eval'
 	if name == "eval" {
 		return []Violation{{

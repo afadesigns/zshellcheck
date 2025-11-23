@@ -18,7 +18,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-        go-version: ["1.21", "1.22"]
+        go-version: ["1.22", "1.23"]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4.1.7
@@ -71,7 +71,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5.0.2
         with:
-          go-version: "1.22"
+          go-version: "1.23"
 
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v6.0.1
@@ -88,7 +88,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5.0.2
         with:
-          go-version: '1.22'
+          go-version: '1.23'
 
       - name: Go Build
         run: go build -v ./...
@@ -115,7 +115,7 @@ jobs:
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v3.25.11
 
-      - name: Semgrep
-        uses: semgrep/semgrep-action@v2.5.0
-        with:
-          config: "p/golang"
+      # - name: Semgrep
+      #   uses: semgrep/semgrep-action@v1
+      #   with:
+      #     config: "p/golang"

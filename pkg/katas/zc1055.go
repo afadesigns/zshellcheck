@@ -8,8 +8,9 @@ func init() {
 	RegisterKata(ast.InfixExpressionNode, Kata{
 		ID:          "ZC1055",
 		Title:       "Use `[[ -n/-z ]]` for empty string checks",
-		Description: "Comparing with empty string is less idiomatic than using `[[ -z $var ]]` (is empty) or `[[ -n $var ]]` (is not empty).",
-		Check:       checkZC1055,
+		Description: "Comparing with empty string is less idiomatic than using `[[ -z $var ]]` (is empty) " +
+			"or `[[ -n $var ]]` (is not empty).",
+		Check: checkZC1055,
 	})
 }
 
@@ -39,7 +40,7 @@ func checkZC1055(node ast.Node) []Violation {
 		if expr.Operator == "!=" {
 			opSuggestion = "-n"
 		}
-		
+
 		return []Violation{{
 			KataID:  "ZC1055",
 			Message: "Use `[[ " + opSuggestion + " ... ]]` instead of comparing with empty string.",

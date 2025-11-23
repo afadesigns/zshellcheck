@@ -24,26 +24,28 @@ func TestZC1068(t *testing.T) {
 			expected: []katas.Violation{},
 		},
 		{
-			name:     "invalid precmd definition",
-			input:    `precmd() { echo "prompt"; }`,
+			name:  "invalid precmd definition",
+			input: `precmd() { echo "prompt"; }`,
 			expected: []katas.Violation{
 				{
 					KataID:  "ZC1068",
-					Message: "Defining `precmd` directly overwrites existing hooks. Use `autoload -Uz add-zsh-hook; add-zsh-hook precmd my_func` instead.",
-					Line:    1,
-					Column:  1,
+					Message: "Defining `precmd` directly overwrites existing hooks. " +
+						"Use `autoload -Uz add-zsh-hook; add-zsh-hook precmd my_func` instead.",
+					Line:   1,
+					Column: 1,
 				},
 			},
 		},
 		{
-			name:     "invalid chpwd definition",
-			input:    `function chpwd() { ls; }`,
+			name:  "invalid chpwd definition",
+			input: `function chpwd() { ls; }`,
 			expected: []katas.Violation{
 				{
 					KataID:  "ZC1068",
-					Message: "Defining `chpwd` directly overwrites existing hooks. Use `autoload -Uz add-zsh-hook; add-zsh-hook chpwd my_func` instead.",
-					Line:    1,
-					Column:  1, // Start of "function" keyword usually, or name depending on parser. FunctionDefinition uses first token.
+					Message: "Defining `chpwd` directly overwrites existing hooks. " +
+						"Use `autoload -Uz add-zsh-hook; add-zsh-hook chpwd my_func` instead.",
+					Line:   1,
+					Column: 1, // Start of "function" keyword usually, or name depending on parser.
 				},
 			},
 		},
