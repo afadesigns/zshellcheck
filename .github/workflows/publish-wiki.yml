@@ -1,0 +1,41 @@
+name: Publish Docs to Wiki
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'docs/**'
+
+jobs:
+  publish-wiki:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Prepare Wiki Content
+        run: |
+          mkdir wiki_staging
+          # Copy files, ignoring the structure for now as Wiki is flat by default
+          # But we want to maintain structure if possible?
+          # GitHub Wiki supports folders but sidebar is flat.
+          # Let's just copy the markdown files.
+          cp -r docs/src/content/docs/* wiki_staging/
+          
+          # Rename index.mdx to Home.md for Wiki homepage
+          if [ -f wiki_staging/index.mdx ]; then
+            mv wiki_staging/index.mdx wiki_staging/Home.md
+          fi
+          
+          # Rename all .mdx to .md for Wiki compatibility
+          find wiki_staging -name "*.mdx" -exec sh -c 'mv "$1" "${1%.mdx}.md"' _ {} \;
+          
+          # Strip frontmatter (Wiki doesn't use it like Starlight)
+          # A simple sed to remove content between --- and --- at start of file
+          find wiki_staging -name "*.md" -exec sed -i '1 { /^---/ { :a N; /\n---/! ba; d} }' {} + 
+
+      - name: Upload to Wiki
+        uses: spenserblack/actions-wiki-sync@v0.1.0
+        with:
+          wiki_root: wiki_staging
