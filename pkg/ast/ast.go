@@ -40,7 +40,21 @@ const (
 	RedirectionNode
 	FunctionDefinitionNode
 	GroupedExpressionNode
+	ArithmeticCommandNode
 )
+
+type ArithmeticCommand struct {
+	Token      token.Token // The '((' token
+	Expression Expression
+}
+
+func (ac *ArithmeticCommand) Type() NodeType                { return ArithmeticCommandNode }
+func (ac *ArithmeticCommand) statementNode()                {}
+func (ac *ArithmeticCommand) TokenLiteral() string          { return ac.Token.Literal }
+func (ac *ArithmeticCommand) TokenLiteralNode() token.Token { return ac.Token }
+func (ac *ArithmeticCommand) String() string {
+	return "((" + ac.Expression.String() + "))"
+}
 
 type GroupedExpression struct {
 	Token token.Token // The '(' token
@@ -827,6 +841,8 @@ func Walk(node Node, f WalkFn) {
 		Walk(n.Body, f)
 	case *GroupedExpression:
 		Walk(n.Exp, f)
+	case *ArithmeticCommand:
+		Walk(n.Expression, f)
 	}
 }
 
