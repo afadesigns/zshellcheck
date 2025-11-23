@@ -34,15 +34,12 @@ func checkZC1071(node ast.Node) []Violation {
 	varName := cmd.Name.String()
 	found := false
 
-	fmt.Printf("DEBUG: Checking %s against RHS type %T\n", varName, rhs)
-
 	// We only check if RHS is `GroupedExpression`.
 	// If parser fails on `arr=($arr 4)`, we miss it.
 	// But `arr=($arr)` works.
 	// If parser supports `( ... )` as argument list in future, this will work.
 	if grouped, ok := rhs.(*ast.GroupedExpression); ok {
 		ast.Walk(grouped.Exp, func(n ast.Node) bool {
-			fmt.Printf("DEBUG: Walking node %T: %+v\n", n, n)
 			// Check ArrayAccess (for ${var})
 			if aa, ok := n.(*ast.ArrayAccess); ok {
 				if ident, ok := aa.Left.(*ast.Identifier); ok && ident.Value == varName {
