@@ -6,11 +6,11 @@
 ![Release](https://img.shields.io/github/v/release/afadesigns/zshellcheck)
 
 ```
-      __________ __  __   ____   __              __  
-     /_  /  ___/ /_  /  / __/  / /  ___   _____/ /__ 
-      / /____ \ / __ \ / _ \ / /  / _ \ / ___/ //_/  
-     / /____/ / / / //  __// /__/  __// /__/ ,<      
-    /_______/_/_/ /_/\___//____/\___/ \___/_/|_|     
+   ____   _____ __         ____   ______ __                  __  
+  /_  /  / ___// /_  ___  / / /  / ____// /_   ___   _____  / /__
+   / /   \__ \/ __ \/ _ \/ / /  / /    / __ \ / _ \ / ___/ / //_/
+  / /___ ___/ / / / /  __/ / /  / /___ / / / //  __// /__  / ,<   
+ /_____//____/_/ /_/\___/_/_/   \____//_/ /_/ \___/ \___/ /_/|_|  
 ```
 
 **ZShellCheck** is the definitive static analysis and comprehensive development suite for the entire Zsh ecosystem, meticulously engineered as the full Zsh equivalent of ShellCheck for Bash. It offers intelligent automatic fixes (planned), advanced formatting capabilities, and deep code analysis to deliver unparalleled quality, performance, and reliability for Zsh scripts, functions, and configurations.
@@ -21,27 +21,27 @@ ZShellCheck draws significant inspiration from the esteemed `ShellCheck` project
 
 ## Comparison
 
-Why use ZShellCheck over ShellCheck? See our **[Detailed Comparison](COMPARISON.md)**.
+Why use ZShellCheck over ShellCheck? See our **[Detailed Comparison](docs/REFERENCE.md#comparison-vs-shellcheck)**.
 
 **TL;DR**: Use **ShellCheck** for portable scripts (`sh`/`bash`). Use **ZShellCheck** for native **Zsh** scripts, plugins, and configuration.
 
 ## Table of Contents
 
 - [Inspiration](#inspiration)
-- [Comparison](#comparison)
+- [Comparison](docs/REFERENCE.md#comparison-vs-shellcheck)
 - [Features](#features)
 - [Installation](#installation)
 - [Usage](#usage)
-- [Configuration](#configuration)
-- [Integrations](#integrations)
+- [Configuration](docs/USER_GUIDE.md#configuration)
+- [Integrations](docs/USER_GUIDE.md#integrations)
 - [Shell Completions](#shell-completions)
-- [Architecture](#architecture)
-- [Troubleshooting](#troubleshooting)
-- [Developer Guide](#developer-guide)
+- [Architecture](docs/DEVELOPER.md#architecture-overview)
+- [Troubleshooting](docs/USER_GUIDE.md#troubleshooting)
+- [Developer Guide](docs/DEVELOPER.md)
 - [Documentation](#documentation)
 - [Changelog](#changelog)
 - [Contributing](#contributing)
-- [Governance](#governance)
+- [Governance](docs/REFERENCE.md#governance)
 - [License](#license)
 
 ## Features
@@ -148,7 +148,7 @@ To integrate ZShellCheck seamlessly into your development workflow and ensure co
 
 ## Configuration
 
-Tailor ZShellCheck to your project by creating a `.zshellcheckrc` file. For detailed instructions, see the **[Configuration Guide](CONFIGURATION.md)**.
+Tailor ZShellCheck to your project by creating a `.zshellcheckrc` file. For detailed instructions, see the **[Configuration Guide](docs/USER_GUIDE.md#configuration)**.
 
 **Example `.zshellcheckrc`**:
 
@@ -160,7 +160,7 @@ disabled_katas:
 
 ## Integrations
 
-Want to use ZShellCheck in VS Code, Vim, or Neovim? Check out our **[Integrations Guide](INTEGRATIONS.md)**.
+Want to use ZShellCheck in VS Code, Vim, or Neovim? Check out our **[Integrations Guide](docs/USER_GUIDE.md#integrations)**.
 
 ## Shell Completions
 
@@ -181,15 +181,15 @@ source /path/to/zshellcheck/completions/bash/zshellcheck-completion.bash
 
 ## Architecture
 
-Curious about how ZShellCheck works under the hood? Check out our [Architecture Guide](ARCHITECTURE.md) to learn about the Lexer, Parser, AST, and Kata Registry.
+Curious about how ZShellCheck works under the hood? Check out our [Architecture Guide](docs/DEVELOPER.md#architecture-overview) to learn about the Lexer, Parser, AST, and Kata Registry.
 
 ## Troubleshooting
 
-Encountering issues? Check our **[Troubleshooting Guide](TROUBLESHOOTING.md)** for solutions to common problems like "command not found" or parser errors.
+Encountering issues? Check our **[Troubleshooting Guide](docs/USER_GUIDE.md#troubleshooting)** for solutions to common problems like "command not found" or parser errors.
 
 ## Developer Guide
 
-Want to contribute code? Read our [Developer Guide](DEVELOPMENT.md) and [AST Reference](AST.md) to get started with building, testing, and understanding the codebase.
+Want to contribute code? Read our [Developer Guide](docs/DEVELOPER.md) and [AST Reference](docs/DEVELOPER.md#ast-reference) to get started with building, testing, and understanding the codebase.
 
 ## Documentation
 
@@ -197,7 +197,7 @@ For a comprehensive list of all implemented Katas (checks), including detailed d
 
 👉 **[KATAS.md](KATAS.md)**
 
-Unsure about a term? Check the **[Glossary](GLOSSARY.md)**.
+Unsure about a term? Check the **[Glossary](docs/REFERENCE.md#glossary)**.
 
 ## Changelog
 
@@ -205,13 +205,13 @@ See [CHANGELOG.md](CHANGELOG.md) for a history of changes and releases.
 
 ## Support
 
-Need help? Have a question? Check out our [Support Guide](SUPPORT.md).
+Need help? Have a question? Check out our [Support Guide](docs/USER_GUIDE.md#support).
 
 ## Contributing
 
 We welcome contributions! Whether it's adding new Katas, improving the parser, or fixing bugs, your help is appreciated. For detailed instructions, please see [CONTRIBUTING.md](CONTRIBUTING.md).
 
-See our [Governance Model](GOVERNANCE.md) for information on how this project is managed.
+See our [Governance Model](docs/REFERENCE.md#governance) for information on how this project is managed.
 
 ## License
 

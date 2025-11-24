@@ -43,12 +43,11 @@ We follow a strict Pull Request (PR) workflow to ensure code quality and maintai
     For comprehensive documentation, including detailed usage, configuration, and a full list of implemented Katas, please refer to [KATAS.md](KATAS.md).
     
     For developers, please refer to:
-    *   [Developer Guide](DEVELOPMENT.md) - How to build, test, and debug.
-    *   [AST Reference](AST.md) - Detailed documentation of the Abstract Syntax Tree nodes.
-    *   [Architecture](ARCHITECTURE.md) - High-level overview of the system.
+    *   [Developer Guide](docs/DEVELOPER.md) - How to build, test, and debug.
+    *   [AST Reference](docs/DEVELOPER.md#ast-reference) - Detailed documentation of the Abstract Syntax Tree nodes.
+    *   [Architecture](docs/DEVELOPER.md#architecture-overview) - High-level overview of the system.
     
-    ## Coding Style
-        *   We use `gofmt` for Go code formatting.
+    ## Coding Style        *   We use `gofmt` for Go code formatting.
     *   We follow the standard Go coding conventions.
     *   Please ensure that your code is well-documented and easy to understand.
     
