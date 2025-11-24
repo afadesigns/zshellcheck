@@ -1,0 +1,12 @@
+#compdef zshellcheck
+
+_zshellcheck() {
+    local -a arguments
+    arguments=(
+        '-format[Specify output format]:format:(text json)'
+        '*:filename:_files -g "*.zsh *.zsh-theme *.sh"'
+    )
+    _arguments -s $arguments
+}
+
+_zshellcheck "$@"

@@ -27,6 +27,7 @@ ZShellCheck draws significant inspiration from the esteemed `ShellCheck` project
 - [Usage](#usage)
 - [Configuration](#configuration)
 - [Integrations](#integrations)
+- [Shell Completions](#shell-completions)
 - [Architecture](#architecture)
 - [Developer Guide](#developer-guide)
 - [Documentation](#documentation)
@@ -144,6 +145,23 @@ disabled_katas:
 ## Integrations
 
 Want to use ZShellCheck in VS Code, Vim, or Neovim? Check out our **[Integrations Guide](INTEGRATIONS.md)**.
+
+## Shell Completions
+
+ZShellCheck provides completion scripts for Zsh and Bash.
+
+### Zsh
+Copy `completions/zsh/_zshellcheck` to a directory in your `$fpath` (e.g., `~/.zfunc`).
+```zsh
+fpath+=~/.zfunc
+autoload -Uz compinit && compinit
+```
+
+### Bash
+Source the completion script in your `.bashrc`.
+```bash
+source /path/to/zshellcheck/completions/bash/zshellcheck-completion.bash
+```
 
 ## Architecture
 
