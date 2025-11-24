@@ -77,6 +77,7 @@ Comprehensive list of all 70 implemented checks, migrated from the Wiki.
 - [ZC1073: Unnecessary use of `$` in arithmetic expressions](#zc1073)
 - [ZC1074: Prefer modifiers :h/:t over dirname/basename](#zc1074)
 - [ZC1075: Quote variable expansions to prevent globbing](#zc1075)
+- [ZC1076: Use `autoload -Uz` for lazy loading](#zc1076)
 
 ---
 
@@ -2753,4 +2754,39 @@ To disable this Kata, add `ZC1075` to the `disabled_katas` list in your `.zshell
 
 [⬆ Back to Top](#table-of-contents)
 </details>
+
+
+<div id="zc1076"></div>
+
+<details>
+<summary><strong>ZC1076</strong>: Use `autoload -Uz` for lazy loading <img src="https://img.shields.io/badge/Status-Active-brightgreen?style=flat-square" height="15"/></summary>
+
+### Description
+
+When using `autoload` to lazy-load functions, it is best practice to use the `-Uz` flags.
+*   `-U`: Marks the function as "undefined" and prevents alias expansion during definition.
+*   `-z`: Ensures Zsh style autoloading (as opposed to ksh style).
+
+### Bad Example
+
+```zsh
+autoload my_func
+autoload -U my_func
+```
+
+### Good Example
+
+```zsh
+autoload -Uz my_func
+```
+
+### Configuration
+
+To disable this Kata, add `ZC1076` to the `disabled_katas` list in your `.zshellcheckrc` file.
+
+---
+
+[⬆ Back to Top](#table-of-contents)
+</details>
+
 
