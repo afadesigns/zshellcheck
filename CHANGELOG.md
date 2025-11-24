@@ -5,12 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.0.99] - 2025-11-24
+## [0.0.74] - 2025-11-24
 
 ### Added
 - **Kata ZC1004**: Use `return` instead of `exit` in functions.
 - **Kata ZC1016**: Use `read -s` when reading sensitive information.
 - **Kata ZC1074**: Prefer modifiers `:h`/:`t` over `dirname`/`basename`.
+- **Kata ZC1075**: Quote variable expansions to prevent globbing.
 - **Documentation**: Added `TROUBLESHOOTING.md`, `GOVERNANCE.md`, `COMPARISON.md`, `GLOSSARY.md`, `CITATION.cff`.
 - **Documentation**: Expanded `KATAS.md` with new Katas.
 
