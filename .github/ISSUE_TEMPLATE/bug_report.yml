@@ -1,0 +1,70 @@
+name: Bug Report
+description: Create a report to help us improve ZShellCheck
+title: "[BUG] "
+labels: ["fix", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to fill out this bug report!
+  
+  - type: textarea
+    id: description
+    attributes:
+      label: Describe the bug
+      description: A clear and concise description of what the bug is.
+      placeholder: "I ran zshellcheck on this file and it crashed/gave wrong output..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction Code
+      description: Please provide a minimal Zsh script snippet that reproduces the issue.
+      placeholder: |
+        #!/bin/zsh
+        # Code that causes the issue
+        my_var="test"
+      render: zsh
+    validations:
+      required: true
+
+  - type: textarea
+    id: output
+    attributes:
+      label: Actual Output
+      description: What did zshellcheck output?
+      placeholder: |
+        Violations in script.zsh:
+           1:1  ZC1001  Use ${} for array element access
+      render: text
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Output
+      description: What did you expect to see instead?
+
+  - type: input
+    id: version
+    attributes:
+      label: ZShellCheck Version
+      description: Run `zshellcheck --version` (or `git rev-parse HEAD` if built from source).
+      placeholder: v0.0.72
+
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating System
+      options:
+        - Linux
+        - macOS
+        - Windows
+        - Other
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional Context
+      description: Add any other context about the problem here.

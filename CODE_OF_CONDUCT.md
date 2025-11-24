@@ -57,11 +57,10 @@ Examples of representing our community include using an official e-mail address,
 posting via an official social media account, or acting as an appointed
 representative at an online or offline event.
 
-## Enforcement
+## Reporting Guidelines
 
 Instances of abusive, harassing, or otherwise unacceptable behavior may be
-reported to the community leaders responsible for enforcement at
-[INSERT CONTACT METHOD].
+reported to the community leaders responsible for enforcement by contacting **@afadesigns** on GitHub.
 All complaints will be reviewed and investigated promptly and fairly.
 
 All community leaders are obligated to respect the privacy and security of the
@@ -112,19 +111,6 @@ individual, or aggression toward or disparagement of classes of individuals.
 
 **Consequence**: A permanent ban from any sort of public interaction within
 the community.
-
-## Enforcement
-
-Instances of abusive, harassing, or otherwise unacceptable behavior may be
-reported by contacting the project team at [INSERT CONTACT METHOD]. All
-complaints will be reviewed and investigated and will result in a response that
-is deemed necessary and appropriate to the circumstances. The project team is
-obligated to maintain confidentiality with regard to the reporter of an incident.
-Further details of specific enforcement policies may be posted separately.
-
-Project maintainers who do not follow or enforce the Code of Conduct in good
-faith may face temporary or permanent repercussions as determined by other
-members of the project's leadership.
 
 ## Community Guidelines for Discussions
 

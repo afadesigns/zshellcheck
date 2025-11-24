@@ -1,17 +1,52 @@
 # ZShellCheck
 
-`zshellcheck` is a static analysis tool (linter) specifically designed for Zsh scripts. Unlike `shellcheck`, which focuses on POSIX sh/bash compatibility, `zshellcheck` understands Zsh syntax, best practices, and common pitfalls.
+![CI](https://github.com/afadesigns/zshellcheck/actions/workflows/ci.yml/badge.svg)
+[![Go Report Card](https://goreportcard.com/badge/github.com/afadesigns/zshellcheck)](https://goreportcard.com/report/github.com/afadesigns/zshellcheck)
+![License](https://img.shields.io/github/license/afadesigns/zshellcheck)
+![Release](https://img.shields.io/github/v/release/afadesigns/zshellcheck)
 
-It parses Zsh scripts into an Abstract Syntax Tree (AST) and runs a series of checks ("Katas") to identify issues.
+```
+      __________ __  __   ____   __              __  
+     /_  /  ___/ /_  /  / __/  / /  ___   _____/ /__ 
+      / /____ \ / __ \ / _ \ / /  / _ \ / ___/ //_/  
+     / /____/ / / / //  __// /__/  __// /__/ ,<      
+    /_______/_/_/ /_/\___//____/\___/ \___/_/|_|     
+```
+
+**ZShellCheck** is the definitive static analysis and comprehensive development suite for the entire Zsh ecosystem, meticulously engineered as the full Zsh equivalent of ShellCheck for Bash. It offers intelligent automatic fixes (planned), advanced formatting capabilities, and deep code analysis to deliver unparalleled quality, performance, and reliability for Zsh scripts, functions, and configurations.
+
+## Inspiration
+
+ZShellCheck draws significant inspiration from the esteemed `ShellCheck` project, a powerful static analysis tool for `sh`/`bash` scripts. While `ZShellCheck` is an independent development with a native focus on Zsh's unique syntax and semantics, `ShellCheck`'s commitment to improving shell script quality served as a guiding principle in our mission to provide an equally robust and tailored solution for the Zsh community.
+
+## Table of Contents
+
+- [Inspiration](#inspiration)
+- [Features](#features)
+- [Installation](#installation)
+- [Usage](#usage)
+- [Configuration](#configuration)
+- [Integrations](#integrations)
+- [Architecture](#architecture)
+- [Developer Guide](#developer-guide)
+- [Documentation](#documentation)
+- [Changelog](#changelog)
+- [Support](#support)
+- [Contributing](#contributing)
+- [License](#license)
 
 ## Features
 
-*   **Zsh-Specific Parsing:** Handles Zsh constructs like `[[ ... ]]`, `(( ... ))`, arrays, associative arrays, and modifiers.
-*   **Extensible Katas:** Rules are implemented as independent "Katas" that can be easily added or disabled.
-*   **Configurable:** Disable specific checks via `.zshellcheckrc` configuration file.
-*   **Integration Ready:** Designed to work with `pre-commit` and CI pipelines.
+*   **Zsh-Native Parsing:** Full understanding and handling of Zsh's unique constructs, including `[[ ... ]]`, `(( ... ))`, advanced arrays, associative arrays, and parameter expansion modifiers, applicable across scripts, functions, and configuration files.
+*   **Extensible Katas:** A modular system where rules are implemented as independent "Katas," allowing for easy expansion, customization, and precise control over checks.
+*   **Highly Configurable:** Tailor ZShellCheck's behavior to your project's needs by enabling or disabling specific checks via a flexible `.zshellcheckrc` configuration file.
+*   **Seamless Integration:** Designed for effortless integration into modern development workflows, supporting `pre-commit` hooks and continuous integration (CI) pipelines to enforce quality at every stage.
 
 ## Installation
+
+ZShellCheck is written in Go and can be easily installed from source if you have a Go development environment configured.
+
+### From Go Modules
 
 To install `zshellcheck`, ensure you have Go (version 1.18 or higher) installed, then run:
 
@@ -21,40 +56,121 @@ go install github.com/afadesigns/zshellcheck/cmd/zshellcheck@latest
 
 This will install the `zshellcheck` executable into your `$GOPATH/bin` directory. Make sure `$GOPATH/bin` is in your system's `PATH`.
 
+### Building from Source
+
+For developers who want to build `zshellcheck` from its source code:
+
+1.  Clone the repository:
+    ```bash
+    git clone https://github.com/afadesigns/zshellcheck.git
+    cd zshellcheck
+    ```
+2.  Build the executable:
+    ```bash
+    go build -o zshellcheck cmd/zshellcheck/main.go
+    ```
+    This will create an executable named `zshellcheck` in your current directory.
+
 ## Usage
 
-To run `zshellcheck` on a file:
+After installation, you can run ZShellCheck against your Zsh code files from your terminal. You can specify one or more files, or a directory to check recursively.
+
+### Analyzing Files
 
 ```bash
-zshellcheck myscript.zsh
-```
+# Analyze a single file
+zshellcheck my_script.zsh
 
-To run on multiple files or a directory recursively:
+# Analyze multiple files
+zshellcheck script1.zsh another_script.zsh
 
-```bash
+# Analyze a directory recursively
 zshellcheck ./path/to/my/scripts
 ```
 
+ZShellCheck will output any identified violations directly to your terminal.
+
+### Output Formats
+
+You can control the output format using the `-format` flag:
+
+*   **Text (default)**: Human-readable output.
+    ```bash
+    zshellcheck -format text my_script.zsh
+    ```
+
+*   **JSON**: Machine-readable JSON output, useful for integration with other tools or CI systems.
+    ```bash
+    zshellcheck -format json my_script.zsh
+    ```
+
+### Pre-commit Hook (Recommended)
+
+To integrate ZShellCheck seamlessly into your development workflow and ensure code quality before commits, you can use it as a `pre-commit` hook.
+
+1.  **Install `pre-commit`**:
+    ```bash
+    pip install pre-commit
+    # Or brew install pre-commit on macOS
+    ```
+
+2.  **Configure `.pre-commit-config.yaml`**: Add the following configuration to a file named `.pre-commit-config.yaml` in the root of your Zsh project:
+
+    ```yaml
+    # .pre-commit-config.yaml
+    -   repo: https://github.com/afadesigns/zshellcheck
+        rev: v0.0.93 # Check releases for the latest version
+        hooks:
+        -   id: zshellcheck
+    ```
+
+3.  **Install the Hook**:
+    ```bash
+    pre-commit install
+    ```
+
 ## Configuration
 
-`zshellcheck` can be configured using a `.zshellcheckrc` file in YAML format. This file allows you to enable or disable specific Katas (checks).
+Tailor ZShellCheck to your project by creating a `.zshellcheckrc` file. For detailed instructions, see the **[Configuration Guide](CONFIGURATION.md)**.
 
-Example `.zshellcheckrc`:
+**Example `.zshellcheckrc`**:
 
 ```yaml
-disabled-katas:
-  - ZC1001 # Disable the 'Prefer local over typeset' check
+disabled_katas:
+  - ZC1005 # Example: Disable "Use whence instead of which"
+  - ZC1011 # Example: Disable "Use git porcelain commands instead of plumbing commands"
 ```
 
-## Contributing Katas
+## Integrations
 
-The core of `zshellcheck`'s linting logic resides in its "Katas." A Kata is an independent Go file in the `pkg/katas/` directory that defines a specific check for a Zsh anti-pattern or style issue.
+Want to use ZShellCheck in VS Code, Vim, or Neovim? Check out our **[Integrations Guide](INTEGRATIONS.md)**.
 
-To contribute a new Kata:
+## Architecture
 
-1.  Create a new file `pkg/katas/zcXXXX.go` (where `XXXX` is a unique number)
-2.  Implement the `Kata` interface.
-3.  Register your Kata in `pkg/katas/katas.go`.
+Curious about how ZShellCheck works under the hood? Check out our [Architecture Guide](ARCHITECTURE.md) to learn about the Lexer, Parser, AST, and Kata Registry.
 
-For more detailed information on contributing, please see `CONTRIBUTING.md`.
+## Developer Guide
 
+Want to contribute code? Read our [Developer Guide](DEVELOPMENT.md) and [AST Reference](AST.md) to get started with building, testing, and understanding the codebase.
+
+## Documentation
+
+For a comprehensive list of all implemented Katas (checks), including detailed descriptions, **good/bad code examples**, and configuration options, please refer to:
+
+👉 **[KATAS.md](KATAS.md)**
+
+## Changelog
+
+See [CHANGELOG.md](CHANGELOG.md) for a history of changes and releases.
+
+## Support
+
+Need help? Have a question? Check out our [Support Guide](SUPPORT.md).
+
+## Contributing
+
+We welcome contributions! Whether it's adding new Katas, improving the parser, or fixing bugs, your help is appreciated. For detailed instructions, please see [CONTRIBUTING.md](CONTRIBUTING.md).
+
+## License
+
+Distributed under the MIT License. See `LICENSE` for more information.

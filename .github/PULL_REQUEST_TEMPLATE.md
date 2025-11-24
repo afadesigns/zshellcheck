@@ -1,43 +1,33 @@
----
-name: Pull Request
-about: Propose a change to the project.
----
-
-### Description
+## Description
 
 <!--
 Please include a summary of the change and which issue is fixed.
-Please also include relevant motivation and context.
-List any dependencies that are required for this change.
+If this PR adds a new Kata, please describe the check briefly.
 -->
 
 Fixes # (issue)
 
-### Type of change
+## Type of change
 
-- [ ] Bug fix (non-breaking change which fixes an issue)
-- [ ] New feature (non-breaking change which adds functionality)
-- [ ] Breaking change (fix or feature that would cause existing functionality to not work as expected)
-- [ ] This change requires a documentation update
+- [ ] `feat`: New feature (non-breaking change which adds functionality)
+- [ ] `fix`: Bug fix (non-breaking change which fixes an issue)
+- [ ] `docs`: Documentation update
+- [ ] `chore`: Maintenance (deps, build, etc.)
+- [ ] `refactor`: Code restructuring
+- [ ] `test`: Adding missing tests
 
-### How Has This Been Tested?
+## Checklist
 
-<!--
-Please describe the tests that you ran to verify your changes.
-Provide instructions so we can reproduce.
-Please also list any relevant details for your test configuration.
--->
+- [ ] I have read the [CONTRIBUTING.md](CONTRIBUTING.md) guide.
+- [ ] I have read the [DEVELOPMENT.md](DEVELOPMENT.md) guide.
+- [ ] **Linting**: My code passes `go fmt` and `go vet`.
+- [ ] **Tests**: I have added tests for my changes (especially for new Katas).
+- [ ] **Integration**: I have run `./tests/integration_test.zsh` and it passes.
+- [ ] **Documentation**: I have updated relevant documentation (if applicable).
 
-- [ ] Test A
-- [ ] Test B
+## For New Katas (If Applicable)
 
-### Checklist
-
-- [ ] My code follows the style guidelines of this project
-- [ ] I have performed a self-review of my own code
-- [ ] I have commented my code, particularly in hard-to-understand areas
-- [ ] I have made corresponding changes to the documentation
-- [ ] My changes generate no new warnings
-- [ ] I have added tests that prove my fix is effective or that my feature works
-- [ ] New and existing unit tests pass locally with my changes
-- [ ] Any dependent changes have been merged and published in downstream modules
+- [ ] Added `pkg/katas/zcXXXX.go`
+- [ ] Registered in `pkg/katas/katas.go`
+- [ ] Added tests in `pkg/katas/katatests/zcXXXX_test.go`
+- [ ] Verified that the ID (`ZCXXXX`) is unique and sequential.

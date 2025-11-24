@@ -29,41 +29,79 @@ We follow a strict Pull Request (PR) workflow to ensure code quality and maintai
     ```bash
     git push origin your-branch-name
     ```
-6.  **Create Pull Request**: Go to GitHub to create a Pull Request from your branch to `main`.
+6.  **Create Pull Request**: Use the GitHub CLI to create a Pull Request from your branch to `main`.
+    ```bash
+    gh pr create --title "feat: Your feature title" --body "A detailed description of your changes." --base main
+    ```
     *   Provide a clear title and body explaining the *why* and *what* of your changes.
     *   Link any relevant issues (e.g., `Closes #123`, `Fixes #45`).
-    *   **Labels**: Apply [appropriate labels](https://github.com/afadesigns/zshellcheck/wiki/Labels) to your PR.
-7.  **Review & Merge**: Address any review comments. Once approved and all CI checks pass, an administrator will merge the PR. We use squash merges to maintain a clean Git history.
-
-## Documentation
-
-For comprehensive documentation, including detailed usage, configuration, and a full list of implemented Katas, please visit the [GitHub Wiki](https://github.com/afadesigns/zshellcheck/wiki).
-
-## Coding Style
-
-*   We use `gofmt` for Go code formatting.
-*   We follow the standard Go coding conventions.
-*   Please ensure that your code is well-documented and easy to understand.
-
-
-## Adding a New Kata
-
-Katas are the core rules of `zshellcheck`. To add one:
-
-1.  **Define the Kata:** Create a new file `pkg/katas/zcXXXX.go`.
-2.  **Register:** In the `init()` function, register the Kata with the `RegisterKata` function, specifying the AST node type it targets.
-3.  **Implement Logic:** Write the check function that inspects the node and returns a list of `Violation`s.
-4.  **Add Tests:** Create `pkg/katas/katatests/zcXXXX_test.go` with test cases covering valid and invalid Zsh code.
-
-### Example Kata
-
-```go
-func init() {
-    RegisterKata(ast.SimpleCommandNode, Kata{
-        ID: "ZC1099",
-        Title: "Avoid foo command",
-        Description: "The foo command is deprecated.",
-        Check: checkZC1099,
-    })
-}
-```
+        *   **Labels**: Apply [appropriate labels](#project-labels) to your PR.
+    7.  **Review & Merge**: Address any review comments. Once approved and all CI checks pass, an administrator will merge the PR. We use squash merges to maintain a clean Git history.
+    
+    ## Documentation
+    
+    For comprehensive documentation, including detailed usage, configuration, and a full list of implemented Katas, please refer to [KATAS.md](KATAS.md).
+    
+    For developers, please refer to:
+    *   [Developer Guide](DEVELOPMENT.md) - How to build, test, and debug.
+    *   [AST Reference](AST.md) - Detailed documentation of the Abstract Syntax Tree nodes.
+    *   [Architecture](ARCHITECTURE.md) - High-level overview of the system.
+    
+    ## Coding Style
+        *   We use `gofmt` for Go code formatting.
+    *   We follow the standard Go coding conventions.
+    *   Please ensure that your code is well-documented and easy to understand.
+    
+    ### Running Linters and Formatters
+    
+    Before submitting a Pull Request, please ensure your code passes all linting and formatting checks:
+    
+    ```bash
+    go fmt ./...       # Format Go code
+    go vet ./...       # Run Go vet (static analysis)
+    golangci-lint run  # Run golangci-lint (if installed)
+    ```
+    
+    ## Adding a New Kata
+    
+    Katas are the core rules of `zshellcheck`. To add one:
+    
+    1.  **Define the Kata:** Create a new file `pkg/katas/zcXXXX.go`.
+    2.  **Register:** In the `init()` function, register the Kata with the `RegisterKata` function, specifying the AST node type it targets.
+    3.  **Implement Logic:** Write the check function that inspects the node and returns a list of `Violation`s.
+    4.  **Add Tests:** Create `pkg/katas/katatests/zcXXXX_test.go` with test cases covering valid and invalid Zsh code.
+    
+    ### Example Kata
+    
+    ```go
+    func init() {
+        RegisterKata(ast.SimpleCommandNode, Kata{
+            ID: "ZC1099",
+            Title: "Avoid foo command",
+            Description: "The foo command is deprecated.",
+            Check: checkZC1099,
+        })
+    }
+    ```
+    
+    ## Project Labels
+    
+    We use a specific set of labels to categorize issues and pull requests, helping us organize and prioritize work effectively. Please use them appropriately.
+    
+    | Label | Description |
+    | :--- | :--- |
+    | **`feat`** | New features or significant enhancements. |
+    | **`fix`** | Bug fixes. |
+    | **`docs`** | Documentation changes or improvements. |
+    | **`ci`** | Updates to CI/CD configurations or workflows. |
+    | **`deps`** | Dependency updates. |
+    | **`refactor`** | Code restructuring without behavior changes. |
+    | **`test`** | Additions or corrections to tests. |
+    | **`chore`** | Routine maintenance tasks (e.g., updating build scripts, `.gitignore`). |
+    | **`starter`** | Good entry-level tasks for new contributors. |
+    | **`help`** | Requires extra attention or assistance. |
+    | **`question`** | Seeking further information or clarification. |
+    | **`nofix`** | The issue or request will not be addressed. |
+    | **`duplicate`** | This issue or PR is a duplicate. |
+    | **`invalid`** | The issue or PR is invalid or not applicable. |
+    

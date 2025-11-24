@@ -1,0 +1,74 @@
+.TH ZSHELLCHECK 1 "November 2025" "v0.0.72" "ZShellCheck Manual"
+.SH NAME
+zshellcheck \- Static analysis tool for Zsh scripts
+.SH SYNOPSIS
+.B zshellcheck
+[\fIoptions\fR] \fIfile\fR...
+.br
+.B zshellcheck
+[\fIoptions\fR] \fIdirectory\fR...
+.SH DESCRIPTION
+.B zshellcheck
+is a static analysis tool designed specifically for Zsh scripts. It identifies syntax errors, portability issues, and common anti-patterns that standard shell linters might miss or incorrectly flag.
+
+It parses Zsh scripts into an Abstract Syntax Tree (AST) and runs a series of checks (called "Katas") to ensure code quality.
+
+.SH OPTIONS
+.TP
+.BR \-format \ \fIformat\fR
+Specify the output format.
+.RS
+.TP
+.B text
+(Default) Human-readable text output with colors.
+.TP
+.B json
+Machine-readable JSON output.
+.RE
+.TP
+.BR \-help
+Display help message and exit.
+
+.SH CONFIGURATION
+ZShellCheck looks for a configuration file named
+.B .zshellcheckrc
+in the current directory. The file format is YAML.
+
+.SS Example .zshellcheckrc
+.nf
+disabled_katas:
+  - ZC1001
+  - ZC1005
+.fi
+
+.SH EXAMPLES
+.TP
+Check a single file:
+.B zshellcheck script.zsh
+.TP
+Check multiple files:
+.B zshellcheck src/lib.zsh src/main.zsh
+.TP
+Check a directory recursively:
+.B zshellcheck ./src
+.TP
+Output in JSON format:
+.B zshellcheck -format json script.zsh
+
+.SH EXIT STATUS
+.TP
+.B 0
+No violations found.
+.TP
+.B 1
+Violations found or error occurred.
+
+.SH SEE ALSO
+.BR zsh (1)
+.br
+Project Homepage: <https://github.com/afadesigns/zshellcheck>
+.br
+Full Documentation: <https://github.com/afadesigns/zshellcheck/blob/main/KATAS.md>
+
+.SH AUTHOR
+Maintained by the ZShellCheck Community.
