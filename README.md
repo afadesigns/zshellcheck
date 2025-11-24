@@ -29,6 +29,7 @@ ZShellCheck draws significant inspiration from the esteemed `ShellCheck` project
 - [Integrations](#integrations)
 - [Shell Completions](#shell-completions)
 - [Architecture](#architecture)
+- [Troubleshooting](#troubleshooting)
 - [Developer Guide](#developer-guide)
 - [Documentation](#documentation)
 - [Changelog](#changelog)
@@ -174,6 +175,10 @@ source /path/to/zshellcheck/completions/bash/zshellcheck-completion.bash
 ## Architecture
 
 Curious about how ZShellCheck works under the hood? Check out our [Architecture Guide](ARCHITECTURE.md) to learn about the Lexer, Parser, AST, and Kata Registry.
+
+## Troubleshooting
+
+Encountering issues? Check our **[Troubleshooting Guide](TROUBLESHOOTING.md)** for solutions to common problems like "command not found" or parser errors.
 
 ## Developer Guide
 

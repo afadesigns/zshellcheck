@@ -1,0 +1,19 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+authors:
+- family-names: "Designs"
+  given-names: "Afa"
+  alias: "afadesigns"
+title: "ZShellCheck"
+version: 0.0.72
+date-released: 2024-05-20
+url: "https://github.com/afadesigns/zshellcheck"
+repository-code: "https://github.com/afadesigns/zshellcheck"
+license: "MIT"
+abstract: "The definitive static analysis and comprehensive development suite for the entire Zsh ecosystem, meticulously engineered as the full Zsh equivalent of ShellCheck for Bash."
+keywords:
+  - zsh
+  - shell
+  - linter
+  - static-analysis
+  - devtools
