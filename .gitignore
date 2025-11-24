@@ -33,3 +33,4 @@ go.work
 .codex/
 bin/
 zshellcheck
+.genkit/traces_idx
