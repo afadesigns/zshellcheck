@@ -751,6 +751,40 @@ To disable this Kata, add `ZC1014` to the `disabled_katas` list in your `.zshell
 [⬆ Back to Top](#table-of-contents)
 </details>
 
+
+<div id="zc1016"></div>
+
+<details>
+<summary><strong>ZC1016</strong>: Use `read -s` when reading sensitive information <img src="https://img.shields.io/badge/Status-Active-brightgreen?style=flat-square" height="15"/></summary>
+
+### Description
+
+When asking for passwords or secrets, use `read -s` to prevent the input from being echoed to the terminal.
+
+### Bad Example
+
+```zsh
+read password
+read "token?Enter API Token: "
+```
+
+### Good Example
+
+```zsh
+read -s password
+read -s "token?Enter API Token: "
+```
+
+### Configuration
+
+To disable this Kata, add `ZC1016` to the `disabled_katas` list in your `.zshellcheckrc` file.
+
+---
+
+[⬆ Back to Top](#table-of-contents)
+</details>
+
+
 <div id="zc1017"></div>
 
 <details>
