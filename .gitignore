@@ -1,36 +1,29 @@
-# Binaries for programs and plugins
-*.exe
-*.exe~
-*.dll
-*.so
-*.dylib
+# Binaries for various operating systems
+zshellcheck-linux-amd64
+zshellcheck-darwin-amd64
+zshellcheck-windows-amd64.exe
 
-# Test binary, generated with `go test -c`
+# Build directory for Go modules
+/build/
+
+# Go module cache
+/go.mod
+/go.sum
+
+# Test binaries and caches
 *.test
-
-# Output of the go coverage tool, created with `go test -coverprofile`
 *.out
+/tests/.tmp/
 
-# Dependency directories
-vendor/
-
-# Go workspace file
-go.work
-
-# Environment variables
-.env
-
-# IDE settings
+# Editor specific files
 .vscode/
 .idea/
 
-# Mac files
+# macOS specific files
 .DS_Store
 
-# Build cache
-/build/
-\n# Codex\n.codex\ncodex
-.codex/
-bin/
-zshellcheck
-.genkit/traces_idx
+# IDE and OS generated files
+*~
+.#*
+.#*#
+.genkit/traces_idx/
