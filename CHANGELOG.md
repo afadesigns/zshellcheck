@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Kata ZC1016**: Use `read -s` when reading sensitive information.
 - **Kata ZC1074**: Prefer modifiers `:h`/:`t` over `dirname`/`basename`.
 - **Kata ZC1075**: Quote variable expansions to prevent globbing.
+- **Kata ZC1076**: Use `autoload -Uz` for lazy loading.
 - **Documentation**: Added `TROUBLESHOOTING.md`, `GOVERNANCE.md`, `COMPARISON.md`, `GLOSSARY.md`, `CITATION.cff`.
 - **Documentation**: Expanded `KATAS.md` with new Katas.
 
