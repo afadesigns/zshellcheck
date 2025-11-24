@@ -7,6 +7,7 @@ Comprehensive list of all 70 implemented checks, migrated from the Wiki.
 - [ZC1001: Use ${} for array element access](#zc1001)
 - [ZC1002: Use $(...) instead of backticks](#zc1002)
 - [ZC1003: Use `((...))` for arithmetic comparisons instead of `[` or `test`](#zc1003)
+- [ZC1004: Use `return` instead of `exit` in functions](#zc1004)
 - [ZC1005: Use `whence` instead of `which`](#zc1005)
 - [ZC1006: Prefer `[[` over `test` for tests](#zc1006)
 - [ZC1007: Avoid using `chmod 777`](#zc1007)
@@ -198,6 +199,46 @@ To disable this Kata, add `ZC1003` to the `disabled_katas` list in your `.zshell
 
 [⬆ Back to Top](#table-of-contents)
 </details>
+
+
+<div id="zc1004"></div>
+
+<details>
+<summary><strong>ZC1004</strong>: Use `return` instead of `exit` in functions <img src="https://img.shields.io/badge/Status-Active-brightgreen?style=flat-square" height="15"/></summary>
+
+### Description
+
+Using `exit` in a function terminates the entire shell, which is often unintended in interactive sessions or sourced scripts. Use `return` to exit the function.
+
+### Bad Example
+
+```zsh
+my_func() {
+  if [[ -z $1 ]]: then
+    exit 1 # Kills the shell!
+  fi
+}
+```
+
+### Good Example
+
+```zsh
+my_func() {
+  if [[ -z $1 ]]: then
+    return 1
+  fi
+}
+```
+
+### Configuration
+
+To disable this Kata, add `ZC1004` to the `disabled_katas` list in your `.zshellcheckrc` file.
+
+---
+
+[⬆ Back to Top](#table-of-contents)
+</details>
+
 
 <div id="zc1005"></div>
 
