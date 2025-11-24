@@ -74,6 +74,7 @@ Comprehensive list of all 70 implemented checks, migrated from the Wiki.
 - [ZC1071: Use `+=` for appending to arrays](#zc1071)
 - [ZC1072: Use `awk` instead of `grep | awk`](#zc1072)
 - [ZC1073: Unnecessary use of `$` in arithmetic expressions](#zc1073)
+- [ZC1074: Prefer modifiers :h/:t over dirname/basename](#zc1074)
 
 ---
 
@@ -2611,3 +2612,35 @@ To disable this Kata, add `ZC1073` to the `disabled_katas` list in your `.zshell
 [⬆ Back to Top](#table-of-contents)
 </details>
 
+
+<div id="zc1074"></div>
+
+<details>
+<summary><strong>ZC1074</strong>: Prefer modifiers :h/:t over dirname/basename <img src="https://img.shields.io/badge/Status-Active-brightgreen?style=flat-square" height="15"/></summary>
+
+### Description
+
+Zsh provides modifiers like `:h` (head/dirname) and `:t` (tail/basename) that are faster and more idiomatic than spawning external commands.
+
+### Bad Example
+
+```zsh
+dir=$(dirname $path)
+file=$(basename $path)
+```
+
+### Good Example
+
+```zsh
+dir=${path:h}
+file=${path:t}
+```
+
+### Configuration
+
+To disable this Kata, add `ZC1074` to the `disabled_katas` list in your `.zshellcheckrc` file.
+
+---
+
+[⬆ Back to Top](#table-of-contents)
+</details>
