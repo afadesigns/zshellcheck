@@ -28,6 +28,6 @@ ZShellCheck is an evolving static analysis tool for Zsh. Our mission is to provi
 
 ## 📈 Progress Tracking
 
-**Current Progress:** Version 0.0.72 (72/1000 Katas).
+**Current Progress:** Version 0.0.74 (74/1000 Katas).
 
 For the list of currently implemented Katas, please refer to [KATAS.md](KATAS.md).
