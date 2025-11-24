@@ -89,6 +89,14 @@ zshellcheck script1.zsh another_script.zsh
 zshellcheck ./path/to/my/scripts
 ```
 
+### Try it out
+
+We provide a demo file with intentional violations so you can see ZShellCheck in action immediately.
+
+```bash
+zshellcheck examples/demo.zsh
+```
+
 ZShellCheck will output any identified violations directly to your terminal.
 
 ### Output Formats
