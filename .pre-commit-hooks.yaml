@@ -1,0 +1,6 @@
+-   id: zshellcheck
+    name: ZShellCheck
+    description: Static analysis tool for Zsh scripts.
+    entry: zshellcheck
+    language: go
+    files: \.zsh$

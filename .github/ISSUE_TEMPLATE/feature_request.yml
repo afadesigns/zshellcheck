@@ -1,0 +1,61 @@
+name: Feature Request
+description: Suggest a new idea or a new Kata (check) for ZShellCheck
+title: "[FEAT] "
+labels: ["feat", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for suggesting a new feature! If this is a request for a new **Kata** (linting rule), please provide code examples.
+
+  - type: dropdown
+    id: type
+    attributes:
+      label: Request Type
+      options:
+        - New Kata (New Check)
+        - CLI Enhancement
+        - CI/CD Integration
+        - Documentation
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: A clear and concise description of the feature or check you want.
+      placeholder: "I would like a check that warns when using 'rm -rf /'..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: bad_example
+    attributes:
+      label: Bad Code Example (for Katas)
+      description: If requesting a new check, show the code that should trigger a violation.
+      placeholder: |
+        rm -rf /
+      render: zsh
+
+  - type: textarea
+    id: good_example
+    attributes:
+      label: Good Code Example (for Katas)
+      description: Show how the code *should* look to avoid the violation.
+      placeholder: |
+        rm -rf "${path:?}/"
+      render: zsh
+
+  - type: textarea
+    id: rationale
+    attributes:
+      label: Rationale
+      description: Why is this feature needed? (e.g., prevents bugs, improves readability)
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional Context
+      description: Add any other context or screenshots here.
