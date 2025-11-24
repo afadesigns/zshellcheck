@@ -76,6 +76,7 @@ Comprehensive list of all 70 implemented checks, migrated from the Wiki.
 - [ZC1072: Use `awk` instead of `grep | awk`](#zc1072)
 - [ZC1073: Unnecessary use of `$` in arithmetic expressions](#zc1073)
 - [ZC1074: Prefer modifiers :h/:t over dirname/basename](#zc1074)
+- [ZC1075: Quote variable expansions to prevent globbing](#zc1075)
 
 ---
 
@@ -2719,3 +2720,37 @@ To disable this Kata, add `ZC1074` to the `disabled_katas` list in your `.zshell
 
 [⬆ Back to Top](#table-of-contents)
 </details>
+
+
+<div id="zc1075"></div>
+
+<details>
+<summary><strong>ZC1075</strong>: Quote variable expansions to prevent globbing <img src="https://img.shields.io/badge/Status-Active-brightgreen?style=flat-square" height="15"/></summary>
+
+### Description
+
+Unquoted variable expansions in Zsh are subject to globbing (filename generation). If the variable contains characters like `*` or `?`, it might match files unexpectedly. Use quotes `"$var"` to prevent this.
+
+### Bad Example
+
+```zsh
+rm $file
+ls ${files[1]}
+```
+
+### Good Example
+
+```zsh
+rm "$file"
+ls "${files[1]}"
+```
+
+### Configuration
+
+To disable this Kata, add `ZC1075` to the `disabled_katas` list in your `.zshellcheckrc` file.
+
+---
+
+[⬆ Back to Top](#table-of-contents)
+</details>
+
