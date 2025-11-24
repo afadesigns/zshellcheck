@@ -295,9 +295,9 @@ func TestIfStatement(t *testing.T) {
 			len(stmt.Condition.Statements))
 	}
 
-	condStmt, ok := stmt.Condition.Statements[0].(*ast.ExpressionStatement)
+	condStmt, ok := stmt.Condition.Statements[0].(*ast.ArithmeticCommand)
 	if !ok {
-		t.Fatalf("stmt.Condition.Statements[0] is not ast.ExpressionStatement. got=%T",
+		t.Fatalf("stmt.Condition.Statements[0] is not ast.ArithmeticCommand. got=%T",
 			stmt.Condition.Statements[0])
 	}
 
@@ -344,9 +344,9 @@ func TestIfElseStatement(t *testing.T) {
 			len(stmt.Condition.Statements))
 	}
 
-	condStmt, ok := stmt.Condition.Statements[0].(*ast.ExpressionStatement)
+	condStmt, ok := stmt.Condition.Statements[0].(*ast.ArithmeticCommand)
 	if !ok {
-		t.Fatalf("stmt.Condition.Statements[0] is not ast.ExpressionStatement. got=%T",
+		t.Fatalf("stmt.Condition.Statements[0] is not ast.ArithmeticCommand. got=%T",
 			stmt.Condition.Statements[0])
 	}
 
