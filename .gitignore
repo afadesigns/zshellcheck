@@ -34,3 +34,4 @@ go.work
 bin/
 zshellcheck
 .genkit/traces_idx
+.genkit/traces_idx
