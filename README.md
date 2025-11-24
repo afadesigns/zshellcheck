@@ -19,9 +19,16 @@
 
 ZShellCheck draws significant inspiration from the esteemed `ShellCheck` project, a powerful static analysis tool for `sh`/`bash` scripts. While `ZShellCheck` is an independent development with a native focus on Zsh's unique syntax and semantics, `ShellCheck`'s commitment to improving shell script quality served as a guiding principle in our mission to provide an equally robust and tailored solution for the Zsh community.
 
+## Comparison
+
+Why use ZShellCheck over ShellCheck? See our **[Detailed Comparison](COMPARISON.md)**.
+
+**TL;DR**: Use **ShellCheck** for portable scripts (`sh`/`bash`). Use **ZShellCheck** for native **Zsh** scripts, plugins, and configuration.
+
 ## Table of Contents
 
 - [Inspiration](#inspiration)
+- [Comparison](#comparison)
 - [Features](#features)
 - [Installation](#installation)
 - [Usage](#usage)
@@ -33,8 +40,8 @@ ZShellCheck draws significant inspiration from the esteemed `ShellCheck` project
 - [Developer Guide](#developer-guide)
 - [Documentation](#documentation)
 - [Changelog](#changelog)
-- [Support](#support)
 - [Contributing](#contributing)
+- [Governance](#governance)
 - [License](#license)
 
 ## Features
@@ -190,6 +197,8 @@ For a comprehensive list of all implemented Katas (checks), including detailed d
 
 👉 **[KATAS.md](KATAS.md)**
 
+Unsure about a term? Check the **[Glossary](GLOSSARY.md)**.
+
 ## Changelog
 
 See [CHANGELOG.md](CHANGELOG.md) for a history of changes and releases.
@@ -201,6 +210,8 @@ Need help? Have a question? Check out our [Support Guide](SUPPORT.md).
 ## Contributing
 
 We welcome contributions! Whether it's adding new Katas, improving the parser, or fixing bugs, your help is appreciated. For detailed instructions, please see [CONTRIBUTING.md](CONTRIBUTING.md).
+
+See our [Governance Model](GOVERNANCE.md) for information on how this project is managed.
 
 ## License
 
