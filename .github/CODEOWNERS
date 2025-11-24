@@ -1,0 +1,17 @@
+# This file is used to define code owners for specific files/paths in the repository.
+# GitHub will automatically request reviews from these owners when a PR touches these files.
+
+# Default owner for everything
+*       @afadesigns
+
+# Documentation
+/docs/       @afadesigns
+/*.md        @afadesigns
+/wiki/       @afadesigns
+
+# Core Logic
+/pkg/        @afadesigns
+/cmd/        @afadesigns
+
+# CI/CD
+/.github/    @afadesigns
