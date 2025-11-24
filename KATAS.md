@@ -78,6 +78,7 @@ Comprehensive list of all 70 implemented checks, migrated from the Wiki.
 - [ZC1074: Prefer modifiers :h/:t over dirname/basename](#zc1074)
 - [ZC1075: Quote variable expansions to prevent globbing](#zc1075)
 - [ZC1076: Use `autoload -Uz` for lazy loading](#zc1076)
+- [ZC1077: Prefer `${var:u/l}` over `tr` for case conversion](#zc1077)
 
 ---
 
@@ -2788,5 +2789,39 @@ To disable this Kata, add `ZC1076` to the `disabled_katas` list in your `.zshell
 
 [⬆ Back to Top](#table-of-contents)
 </details>
+
+
+<div id="zc1077"></div>
+
+<details>
+<summary><strong>ZC1077</strong>: Prefer `${var:u/l}` over `tr` for case conversion <img src="https://img.shields.io/badge/Status-Active-brightgreen?style=flat-square" height="15"/></summary>
+
+### Description
+
+Using `tr` in a pipeline for simple case conversion is slower than using Zsh's built-in parameter expansion flags `:u` (upper) and `:l` (lower).
+
+### Bad Example
+
+```zsh
+upper=$(echo $var | tr 'a-z' 'A-Z')
+lower=$(echo $var | tr '[:upper:]' '[:lower:]')
+```
+
+### Good Example
+
+```zsh
+upper=${var:u}
+lower=${var:l}
+```
+
+### Configuration
+
+To disable this Kata, add `ZC1077` to the `disabled_katas` list in your `.zshellcheckrc` file.
+
+---
+
+[⬆ Back to Top](#table-of-contents)
+</details>
+
 
 
