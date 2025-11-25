@@ -79,6 +79,7 @@ Comprehensive list of all 70 implemented checks, migrated from the Wiki.
 - [ZC1075: Quote variable expansions to prevent globbing](#zc1075)
 - [ZC1076: Use `autoload -Uz` for lazy loading](#zc1076)
 - [ZC1077: Prefer `${var:u/l}` over `tr` for case conversion](#zc1077)
+- [ZC1078: Quote `$@` and `$*` when passing arguments](#zc1078)
 
 ---
 
@@ -2822,6 +2823,40 @@ To disable this Kata, add `ZC1077` to the `disabled_katas` list in your `.zshell
 
 [⬆ Back to Top](#table-of-contents)
 </details>
+
+
+<div id="zc1078"></div>
+
+<details>
+<summary><strong>ZC1078</strong>: Quote `$@` and `$*` when passing arguments <img src="https://img.shields.io/badge/Status-Active-brightgreen?style=flat-square" height="15"/></summary>
+
+### Description
+
+Using unquoted `$@` or `$*` splits arguments by IFS (usually space). Use `"$@"` to preserve the original argument grouping, or `"$*"` to join them into a single string.
+
+### Bad Example
+
+```zsh
+my_cmd $@
+my_cmd $*
+```
+
+### Good Example
+
+```zsh
+my_cmd "$@"
+my_cmd "$*"
+```
+
+### Configuration
+
+To disable this Kata, add `ZC1078` to the `disabled_katas` list in your `.zshellcheckrc` file.
+
+---
+
+[⬆ Back to Top](#table-of-contents)
+</details>
+
 
 
 
