@@ -730,10 +730,15 @@ func (p *Parser) parseFunctionLiteral() ast.Expression {
 		p.nextToken()
 		lit.Name = p.curToken.Literal
 	}
-	if !p.expectPeek(token.LPAREN) {
-		return nil
+	
+	// Zsh/Bash allows `function name { ... }` without parens.
+	if p.peekTokenIs(token.LPAREN) {
+		p.nextToken()
+		lit.Parameters = p.parseFunctionParameters()
+	} else {
+		lit.Parameters = []*ast.Identifier{}
 	}
-	lit.Parameters = p.parseFunctionParameters()
+
 	if !p.expectPeek(token.LBRACE) {
 		return nil
 	}
