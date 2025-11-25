@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Kata ZC1077**: Prefer `${var:u/l}` over `tr` for case conversion.
 - **Kata ZC1078**: Quote `$@` and `$*` when passing arguments.
 - **Kata ZC1079**: Quote RHS of `==` in `[[ ... ]]` to prevent pattern matching.
+- **Kata ZC1080**: Use `(N)` nullglob qualifier for globs in loops.
 - **Documentation**: Added `TROUBLESHOOTING.md`, `GOVERNANCE.md`, `COMPARISON.md`, `GLOSSARY.md`, `CITATION.cff`.
 - **Documentation**: Expanded `KATAS.md` with new Katas.
 
