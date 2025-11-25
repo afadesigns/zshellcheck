@@ -92,7 +92,7 @@ run_test 'printf "$var"' "ZC1041" "ZC1041: Variable format string"
 run_test 'printf "Hello %s" "$var"' "" "ZC1041: Static format string"
 run_test 'printf $fmt "arg"' "ZC1041" "ZC1041: Identifier format string"
 
-# --- ZC1042: "$@" over "$*" ---
+# --- ZC1042: "$"@ over "$*" ---
 run_test 'for arg in "$*"; do printf "%s\n" "$arg"; done' "ZC1042" "ZC1042: Quoted dollar star"
 # run_test 'for arg in $*; do printf "%s\n" "$arg"; done' "ZC1042" "ZC1042: Unquoted dollar star"
 run_test 'for arg in "$@"; do printf "%s\n" "$arg"; done' "" "ZC1042: Quoted dollar at (Valid)"
@@ -116,7 +116,7 @@ run_test 'cd /tmp || printf "fail\n"' "" "ZC1044: cd || echo (Checked)"
 # --- ZC1045: Masked return values ---
 run_test 'local x=$(cmd)' "ZC1045" "ZC1045: local x=\$(cmd)"
 run_test 'typeset y=$(cmd)' "ZC1045" "ZC1045: typeset y=\$(cmd)"
-run_test 'local x="foo $(cmd)"' "ZC1045" "ZC1045: local x=\"... \$(cmd)\""
+run_test 'local x="foo $(cmd)"' "ZC1045" "ZC1045: local x=\"... \\$(cmd)\""
 run_test 'fn() { local x; x=$(cmd); }' "" "ZC1045: Split declaration (Valid)"
 run_test 'export x=$(cmd)' "ZC1067" "ZC1045: export (Caught by ZC1067)" 
 
@@ -201,7 +201,7 @@ run_test 'sudo ls < /input' "ZC1047" "ZC1058: sudo < input (Valid - ZC1047 expec
 # --- ZC1059: Unsafe rm variable ---
 # run_test 'rm $VAR' "ZC1059" "ZC1059: rm \$VAR (Unsafe)"
 run_test 'rm "$VAR"' "ZC1059" "ZC1059: rm \"\$VAR\" (Unsafe)"
-run_test 'rm ${VAR}' "ZC1059" "ZC1059: rm \\${VAR}\\ (Unsafe)"
+run_test 'rm ${VAR}' "ZC1059" "ZC1059: rm \\${VAR}\\\ (Unsafe)"
 run_test 'rm "${VAR}"' "ZC1059" "ZC1059: rm \"\\${VAR}\" (Unsafe)"
 # run_test 'rm /tmp/$VAR' "" "ZC1059: rm path (Valid)"
 
@@ -292,7 +292,7 @@ run_test 'find . -name \*.txt' "" "ZC1084: \\*.txt (Valid)"
 run_test 'for i in $items; do :; done' "ZC1085" "ZC1085: \$items"
 run_test 'for i in "$items"; do :; done' "" "ZC1085: \"\$items\" (Valid)"
 run_test 'for i in ${arr[@]}; do :; done' "ZC1085" "ZC1085: \${arr[@]}"
-run_test 'for i in "${arr[@]}"; do :; done' "" "ZC1085: \"\${arr[@]}\" (Valid)"
+run_test 'for i in "${arr[@]}"; do :; done' "" "ZC1085: \"\\${arr[@]}\" (Valid)"
 run_test 'for i in *.txt; do :; done' "" "ZC1085: glob (Valid)"
 
 # --- ZC1086: function keyword ---
@@ -306,6 +306,12 @@ run_test 'cat file.txt | grep foo > file.txt' "ZC1087" "ZC1087: pipeline clobber
 run_test 'grep foo < file.txt > file.txt' "ZC1087" "ZC1087: input redirection clobbering"
 run_test 'sed "s/a/b/" input > output' "" "ZC1087: valid redirection"
 run_test 'cat file.txt >> file.txt' "" "ZC1087: valid append"
+
+# --- ZC1088: Subshell state changes ---
+run_test '( cd /tmp )' "ZC1088" "ZC1088: ( cd /tmp )"
+run_test 'if ( cd /tmp ); then :; fi' "" "ZC1088: if ( cd /tmp ) (Valid)"
+run_test '( var=1 )' "ZC1088" "ZC1088: ( var=1 )"
+run_test '( var=1; echo $var )' "" "ZC1088: ( var=1; echo ) (Valid)"
 
 # --- Summary ---
 echo "------------------------------------------------"

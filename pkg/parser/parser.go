@@ -676,8 +676,8 @@ func (p *Parser) parseSubshellStatement() ast.Statement {
 		return nil
 	}
 	p.nextToken()
-	block.Token = subshellToken
-	return block
+	// Return a Subshell node instead of BlockStatement
+	return &ast.Subshell{Token: subshellToken, Block: block}
 }
 
 func (p *Parser) parseCaseStatement() *ast.CaseStatement {

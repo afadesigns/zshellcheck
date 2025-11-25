@@ -41,7 +41,20 @@ const (
 	FunctionDefinitionNode
 	GroupedExpressionNode
 	ArithmeticCommandNode
+	SubshellNode
 )
+
+type Subshell struct {
+	Token token.Token // The '(' token
+	Block *BlockStatement
+}
+
+func (s *Subshell) Type() NodeType       { return SubshellNode }
+func (s *Subshell) statementNode()       {}
+func (s *Subshell) TokenLiteral() string { return s.Token.Literal }
+func (s *Subshell) String() string {
+	return "( " + s.Block.String() + " )"
+}
 
 type ArithmeticCommand struct {
 	Token      token.Token // The '((' token
@@ -848,9 +861,12 @@ func Walk(node Node, f WalkFn) {
 		Walk(n.Exp, f)
 	case *ArithmeticCommand:
 		Walk(n.Expression, f)
+	case *Subshell:
+		Walk(n.Block, f)
 	}
 }
 
+func (n *Subshell) TokenLiteralNode() token.Token                { return n.Token }
 func (n *FunctionDefinition) TokenLiteralNode() token.Token      { return n.Token }
 func (n *Redirection) TokenLiteralNode() token.Token             { return n.Token }
 func (n *LetStatement) TokenLiteralNode() token.Token            { return n.Token }
