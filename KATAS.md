@@ -80,6 +80,7 @@ Comprehensive list of all 70 implemented checks, migrated from the Wiki.
 - [ZC1076: Use `autoload -Uz` for lazy loading](#zc1076)
 - [ZC1077: Prefer `${var:u/l}` over `tr` for case conversion](#zc1077)
 - [ZC1078: Quote `$@` and `$*` when passing arguments](#zc1078)
+- [ZC1079: Quote RHS of `==` in `[[ ... ]]` to prevent pattern matching](#zc1079)
 
 ---
 
@@ -2856,6 +2857,40 @@ To disable this Kata, add `ZC1078` to the `disabled_katas` list in your `.zshell
 
 [⬆ Back to Top](#table-of-contents)
 </details>
+
+
+<div id="zc1079"></div>
+
+<details>
+<summary><strong>ZC1079</strong>: Quote RHS of `==` in `[[ ... ]]` to prevent pattern matching <img src="https://img.shields.io/badge/Status-Active-brightgreen?style=flat-square" height="15"/></summary>
+
+### Description
+
+In `[[ ... ]]`, unquoted variable expansions on the right-hand side of `==` or `!=` are treated as patterns (globbing). If you intend to compare strings literally, quote the variable.
+
+### Bad Example
+
+```zsh
+[[ $var == $other ]]  # Matches if $other contains wildcards
+[[ $var != $other ]]
+```
+
+### Good Example
+
+```zsh
+[[ $var == "$other" ]] # Literal string comparison
+[[ $var == pattern* ]] # Unquoted literals are fine for patterns
+```
+
+### Configuration
+
+To disable this Kata, add `ZC1079` to the `disabled_katas` list in your `.zshellcheckrc` file.
+
+---
+
+[⬆ Back to Top](#table-of-contents)
+</details>
+
 
 
 
