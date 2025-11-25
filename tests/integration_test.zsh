@@ -199,9 +199,9 @@ run_test 'printf "foo\n" | sudo tee /etc/file' "ZC1047" "ZC1058: sudo tee (Valid
 run_test 'sudo ls < /input' "ZC1047" "ZC1058: sudo < input (Valid - ZC1047 expected)"
 
 # --- ZC1059: Unsafe rm variable ---
-# run_test 'rm $VAR' "ZC1059" "ZC1059: rm \$VAR (Unsafe)"
+# run_test 'rm $VAR' "ZC1059" "ZC1059: rm \\$VAR (Unsafe)"
 run_test 'rm "$VAR"' "ZC1059" "ZC1059: rm \"\$VAR\" (Unsafe)"
-run_test 'rm ${VAR}' "ZC1059" "ZC1059: rm \\${VAR}\\\ (Unsafe)"
+run_test 'rm ${VAR}' "ZC1059" "ZC1059: rm \\${VAR}\\" 
 run_test 'rm "${VAR}"' "ZC1059" "ZC1059: rm \"\\${VAR}\" (Unsafe)"
 # run_test 'rm /tmp/$VAR' "" "ZC1059: rm path (Valid)"
 
@@ -234,7 +234,7 @@ run_test '[[foo]]' "ZC1065" "ZC1065: [[foo]]"
 run_test '[[ foo ]]' "" "ZC1065: [[ foo ]] (Valid)"
 
 # --- ZC1066: cat iteration ---
-run_test 'for l in $(cat file); do :; done' "ZC1066" "ZC1066: for in \$(cat)"
+run_test 'for l in $(cat file); do :; done' "ZC1066" "ZC1066: for in \\\$(cat)"
 run_test 'for l in `cat file`; do :; done' "ZC1066" "ZC1066: for in \`cat\`"
 # run_test 'while IFS= read -r l; do :; done < file' "" "ZC1066: while read (Valid)"
 
@@ -270,9 +270,9 @@ run_test 'grep -r pattern . | awk "{print}"' "" "ZC1072: grep -r | awk (Valid)"
 run_test 'awk "/pattern/ {print}" file' "" "ZC1072: awk only (Valid)"
 
 # --- ZC1073: Unnecessary $ in arithmetic ---
-run_test '(( $x > 5 ))' "ZC1073" "ZC1073: (( \$x ))"
+run_test '(( $x > 5 ))' "ZC1073" "ZC1073: (( \\$x ))"
 run_test '(( x > 5 ))' "" "ZC1073: (( x )) (Valid)"
-run_test '(( $# > 0 ))' "" "ZC1073: (( \$# )) (Valid)"
+run_test '(( $# > 0 ))' "" "ZC1073: (( \\$# )) (Valid)"
 
 # --- ZC1083: Brace expansion variables ---
 run_test 'echo {1..$n}' "ZC1083" "ZC1083: variable range end"
@@ -289,9 +289,9 @@ run_test 'find . -name "[a-z]"' "" "ZC1084: \"[a-z]\" (Valid)"
 run_test 'find . -name \*.txt' "" "ZC1084: \\*.txt (Valid)"
 
 # --- ZC1085: for loop variable expansion ---
-run_test 'for i in $items; do :; done' "ZC1085" "ZC1085: \$items"
+run_test 'for i in $items; do :; done' "ZC1085" "ZC1085: \\$items"
 run_test 'for i in "$items"; do :; done' "" "ZC1085: \"\$items\" (Valid)"
-run_test 'for i in ${arr[@]}; do :; done' "ZC1085" "ZC1085: \${arr[@]}"
+run_test 'for i in ${arr[@]}; do :; done' "ZC1085" "ZC1085: \\${arr[@]}"
 run_test 'for i in "${arr[@]}"; do :; done' "" "ZC1085: \"\\${arr[@]}\" (Valid)"
 run_test 'for i in *.txt; do :; done' "" "ZC1085: glob (Valid)"
 
@@ -321,6 +321,12 @@ run_test 'cmd &> file' "" "ZC1089: &> file (Valid)"
 # --- ZC1090: Quoted regex ---
 run_test '[[ $v =~ ^foo ]]' "" "ZC1090: ^foo (Valid)"
 run_test '[[ $v =~ "^foo" ]]' "ZC1090" "ZC1090: \"^foo\" (Invalid)"
+
+# --- ZC1091: Arithmetic in [[ ]] ---
+run_test '[[ $a -eq 1 ]]' "ZC1091" "ZC1091: -eq"
+run_test '[[ $a -lt 5 ]]' "ZC1091" "ZC1091: -lt"
+run_test '(( a < 5 ))' "" "ZC1091: (( ... )) (Valid)"
+run_test '[[ $a == $b ]]' "" "ZC1091: == (Valid)"
 
 # --- Summary ---
 echo "------------------------------------------------"
