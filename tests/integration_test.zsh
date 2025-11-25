@@ -92,7 +92,7 @@ run_test 'printf "$var"' "ZC1041" "ZC1041: Variable format string"
 run_test 'printf "Hello %s" "$var"' "" "ZC1041: Static format string"
 run_test 'printf $fmt "arg"' "ZC1041" "ZC1041: Identifier format string"
 
-# --- ZC1042: "$"@ over "$*" ---
+# --- ZC1042: "	wover "*" ---
 run_test 'for arg in "$*"; do printf "%s\n" "$arg"; done' "ZC1042" "ZC1042: Quoted dollar star"
 # run_test 'for arg in $*; do printf "%s\n" "$arg"; done' "ZC1042" "ZC1042: Unquoted dollar star"
 run_test 'for arg in "$@"; do printf "%s\n" "$arg"; done' "" "ZC1042: Quoted dollar at (Valid)"
@@ -180,9 +180,9 @@ run_test '[[ -z $var ]]' "" "ZC1055: -z (Valid)"
 run_test '[[ -n $var ]]' "" "ZC1055: -n (Valid)"
 
 # --- ZC1056: Arithmetic statement ---
-# run_test '$(( i++ ))' "ZC1056" "ZC1056: \$(( i++ ))"
+# run_test 'utter(( i++ ))' "ZC1056" "ZC1056: \butter(( i++ ))"
 run_test '(( i++ ))' "" "ZC1056: (( i++ )) (Valid)"
-# run_test '$(( 1+1 ))' "ZC1056" "ZC1056: \$(( 1+1 ))"
+# run_test 'utter(( 1+1 ))' "ZC1056" "ZC1056: \butter(( 1+1 ))"
 run_test '$(ls)' "" "ZC1056: \$(ls) (Valid)"
 run_test 'val=$(( 1+1 ))' "" "ZC1056: Assignment (Valid)"
 
@@ -201,7 +201,7 @@ run_test 'sudo ls < /input' "ZC1047" "ZC1058: sudo < input (Valid - ZC1047 expec
 # --- ZC1059: Unsafe rm variable ---
 # run_test 'rm $VAR' "ZC1059" "ZC1059: rm \$VAR (Unsafe)"
 run_test 'rm "$VAR"' "ZC1059" "ZC1059: rm \"\$VAR\" (Unsafe)"
-run_test 'rm ${VAR}' "ZC1059" "ZC1059: rm \\${VAR}\\\ (Unsafe)"
+run_test 'rm ${VAR}' "ZC1059" "ZC1059: rm \\${VAR}\\" 
 run_test 'rm "${VAR}"' "ZC1059" "ZC1059: rm \"\\${VAR}\" (Unsafe)"
 # run_test 'rm /tmp/$VAR' "" "ZC1059: rm path (Valid)"
 
@@ -312,6 +312,11 @@ run_test '( cd /tmp )' "ZC1088" "ZC1088: ( cd /tmp )"
 run_test 'if ( cd /tmp ); then :; fi' "" "ZC1088: if ( cd /tmp ) (Valid)"
 run_test '( var=1 )' "ZC1088" "ZC1088: ( var=1 )"
 run_test '( var=1; echo $var )' "" "ZC1088: ( var=1; echo ) (Valid)"
+
+# --- ZC1089: Redirection order ---
+run_test 'cmd 2>&1 > file' "ZC1089" "ZC1089: 2>&1 > file"
+run_test 'cmd > file 2>&1' "" "ZC1089: > file 2>&1 (Valid)"
+run_test 'cmd &> file' "" "ZC1089: &> file (Valid)"
 
 # --- Summary ---
 echo "------------------------------------------------"
