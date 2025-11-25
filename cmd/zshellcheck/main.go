@@ -50,7 +50,10 @@ func main() {
 	}
 
 	// Print banner on successful run too, as per original request
-	fmt.Fprint(os.Stderr, banner)
+	// But suppress it for JSON output to keep it clean for parsing
+	if *format != "json" {
+		fmt.Fprint(os.Stderr, banner)
+	}
 
 	config, err := loadConfig(".zshellcheckrc")
 	if err != nil {

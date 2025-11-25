@@ -37,6 +37,8 @@ const (
 	LTAMP = "<&"
 	EQ    = "=="
 	NotEq = "!="
+	EQTILDE = "=~"
+	QUESTION = "?"
 
 	// Delimiters
 	COMMA        = ","
