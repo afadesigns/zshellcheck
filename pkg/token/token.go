@@ -40,6 +40,14 @@ const (
 	EQTILDE = "=~"
 	QUESTION = "?"
 
+	// Arithmetic comparison operators (Zsh/Bash [[ ... ]])
+	EQ_NUM = "-eq"
+	NE_NUM = "-ne"
+	LT_NUM = "-lt"
+	LE_NUM = "-le"
+	GT_NUM = "-gt"
+	GE_NUM = "-ge"
+
 	// Delimiters
 	COMMA        = ","
 	SEMICOLON    = ";"
@@ -117,6 +125,12 @@ var keywords = map[string]Type{
 	"case":     CASE,
 	"esac":     ESAC,
 	"elif":     ELIF,
+	"-eq":      EQ_NUM,
+	"-ne":      NE_NUM,
+	"-lt":      LT_NUM,
+	"-le":      LE_NUM,
+	"-gt":      GT_NUM,
+	"-ge":      GE_NUM,
 }
 
 func LookupIdent(ident string) Type {

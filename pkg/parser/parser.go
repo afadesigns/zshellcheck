@@ -38,6 +38,12 @@ var precedences = map[token.Type]int{
 	token.DoubleLparen:  CALL,
 	token.ASSIGN:        EQUALS,
 	token.EQTILDE:       EQUALS,
+	token.EQ_NUM:        EQUALS,
+	token.NE_NUM:        EQUALS,
+	token.LT_NUM:        LESSGREATER,
+	token.LE_NUM:        LESSGREATER,
+	token.GT_NUM:        LESSGREATER,
+	token.GE_NUM:        LESSGREATER,
 	token.INC:           POSTFIX,
 	token.DEC:           POSTFIX,
 }
@@ -104,6 +110,12 @@ func New(l *lexer.Lexer) *Parser {
 	p.registerInfix(token.LBRACKET, p.parseIndexExpression)
 	p.registerInfix(token.ASSIGN, p.parseInfixExpression)
 	p.registerInfix(token.EQTILDE, p.parseInfixExpression)
+	p.registerInfix(token.EQ_NUM, p.parseInfixExpression)
+	p.registerInfix(token.NE_NUM, p.parseInfixExpression)
+	p.registerInfix(token.LT_NUM, p.parseInfixExpression)
+	p.registerInfix(token.LE_NUM, p.parseInfixExpression)
+	p.registerInfix(token.GT_NUM, p.parseInfixExpression)
+	p.registerInfix(token.GE_NUM, p.parseInfixExpression)
 	p.registerInfix(token.INC, p.parsePostfixExpression)
 	p.registerInfix(token.DEC, p.parsePostfixExpression)
 	p.registerInfix(token.GTGT, p.parseRedirection)
