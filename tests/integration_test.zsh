@@ -92,7 +92,7 @@ run_test 'printf "$var"' "ZC1041" "ZC1041: Variable format string"
 run_test 'printf "Hello %s" "$var"' "" "ZC1041: Static format string"
 run_test 'printf $fmt "arg"' "ZC1041" "ZC1041: Identifier format string"
 
-# --- ZC1042: "	@" over "$*" ---
+# --- ZC1042: "$@" over "$*" ---
 run_test 'for arg in "$*"; do printf "%s\n" "$arg"; done' "ZC1042" "ZC1042: Quoted dollar star"
 # run_test 'for arg in $*; do printf "%s\n" "$arg"; done' "ZC1042" "ZC1042: Unquoted dollar star"
 run_test 'for arg in "$@"; do printf "%s\n" "$arg"; done' "" "ZC1042: Quoted dollar at (Valid)"
@@ -118,7 +118,7 @@ run_test 'local x=$(cmd)' "ZC1045" "ZC1045: local x=\$(cmd)"
 run_test 'typeset y=$(cmd)' "ZC1045" "ZC1045: typeset y=\$(cmd)"
 run_test 'local x="foo $(cmd)"' "ZC1045" "ZC1045: local x=\"... \$(cmd)\""
 run_test 'fn() { local x; x=$(cmd); }' "" "ZC1045: Split declaration (Valid)"
-run_test 'export x=$(cmd)' "ZC1067" "ZC1045: export (Caught by ZC1067)" 
+run_test 'export x=$(cmd)' "ZC1067" "ZC1045: export (Caught by ZC1067)"
 
 # --- ZC1046: Avoid eval ---
 run_test 'eval "ls -l"' "ZC1046" "ZC1046: eval"
@@ -180,9 +180,9 @@ run_test '[[ -z $var ]]' "" "ZC1055: -z (Valid)"
 run_test '[[ -n $var ]]' "" "ZC1055: -n (Valid)"
 
 # --- ZC1056: Arithmetic statement ---
-# run_test '$(( i++ ))' "ZC1056" "ZC1056: \$\( i++ ))"
+# run_test '$(( i++ ))' "ZC1056" "ZC1056: \$\(\( i++ \)\)"
 run_test '(( i++ ))' "" "ZC1056: (( i++ )) (Valid)"
-# run_test '$(( 1+1 ))' "ZC1056" "ZC1056: \$\( 1+1 ))"
+# run_test '$(( 1+1 ))' "ZC1056" "ZC1056: \$\(\( 1+1 \)\)"
 run_test '$(ls)' "" "ZC1056: \$(ls) (Valid)"
 run_test 'val=$(( 1+1 ))' "" "ZC1056: Assignment (Valid)"
 
@@ -201,8 +201,8 @@ run_test 'sudo ls < /input' "ZC1047" "ZC1058: sudo < input (Valid - ZC1047 expec
 # --- ZC1059: Unsafe rm variable ---
 # run_test 'rm $VAR' "ZC1059" "ZC1059: rm \$VAR (Unsafe)"
 run_test 'rm "$VAR"' "ZC1059" "ZC1059: rm \"\$VAR\" (Unsafe)"
-run_test 'rm ${VAR}' "ZC1059" "ZC1059: rm \${VAR}\ (Unsafe)"
-run_test 'rm "${VAR}"' "ZC1059" "ZC1059: rm \"\${VAR}\" (Unsafe)"
+run_test 'rm ${VAR}' "ZC1059" "ZC1059: rm \\${VAR}\\ (Unsafe)"
+run_test 'rm "${VAR}"' "ZC1059" "ZC1059: rm \"\\${VAR}\" (Unsafe)"
 # run_test 'rm /tmp/$VAR' "" "ZC1059: rm path (Valid)"
 
 # --- ZC1060: ps | grep ---
@@ -275,15 +275,10 @@ run_test '(( x > 5 ))' "" "ZC1073: (( x )) (Valid)"
 run_test '(( $# > 0 ))' "" "ZC1073: (( \$# )) (Valid)"
 
 # --- ZC1083: Brace expansion variables ---
-
 run_test 'echo {1..$n}' "ZC1083" "ZC1083: variable range end"
-
 run_test 'echo {$n..10}' "ZC1083" "ZC1083: variable range start"
-
 run_test 'printf "%s\n" {1..10}' "" "ZC1083: valid range"
-
 run_test 'printf "%s\n" {a,b,$c}' "" "ZC1083: valid list expansion"
-
 run_test 'echo "{1..$n}"' "ZC1083" "ZC1083: quoted variable range"
 
 # --- ZC1084: find unquoted glob ---
@@ -292,6 +287,13 @@ run_test 'find . -name "*.txt"' "" "ZC1084: \"*.txt\" (Valid)"
 run_test 'find . -name [a-z]' "ZC1084" "ZC1084: [a-z]"
 run_test 'find . -name "[a-z]"' "" "ZC1084: \"[a-z]\" (Valid)"
 run_test 'find . -name \*.txt' "" "ZC1084: \\*.txt (Valid)"
+
+# --- ZC1085: for loop variable expansion ---
+run_test 'for i in $items; do :; done' "ZC1085" "ZC1085: \$items"
+run_test 'for i in "$items"; do :; done' "" "ZC1085: \"\$items\" (Valid)"
+run_test 'for i in ${arr[@]}; do :; done' "ZC1085" "ZC1085: \${arr[@]}"
+run_test 'for i in "${arr[@]}"; do :; done' "" "ZC1085: \"\${arr[@]}\" (Valid)"
+run_test 'for i in *.txt; do :; done' "" "ZC1085: glob (Valid)"
 
 # --- Summary ---
 echo "------------------------------------------------"
