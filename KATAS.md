@@ -83,6 +83,7 @@ Comprehensive list of all 70 implemented checks, migrated from the Wiki.
 - [ZC1079: Quote RHS of `==` in `[[ ... ]]` to prevent pattern matching](#zc1079)
 - [ZC1080: Use `(N)` nullglob qualifier for globs in loops](#zc1080)
 - [ZC1081: Use `${#var}` to get string length instead of `wc -c`](#zc1081)
+- [ZC1082: Prefer `${var//old/new}` over `sed` for simple replacements](#zc1082)
 
 ---
 
@@ -2959,6 +2960,38 @@ To disable this Kata, add `ZC1081` to the `disabled_katas` list in your `.zshell
 
 [⬆ Back to Top](#table-of-contents)
 </details>
+
+
+<div id="zc1082"></div>
+
+<details>
+<summary><strong>ZC1082</strong>: Prefer `${var//old/new}` over `sed` for simple replacements <img src="https://img.shields.io/badge/Status-Active-brightgreen?style=flat-square" height="15"/></summary>
+
+### Description
+
+Using `sed` for simple string replacement is slower than Zsh's built-in parameter expansion. Use `${var/old/new}` (replace first) or `${var//old/new}` (replace all).
+
+### Bad Example
+
+```zsh
+new=$(echo $var | sed 's/foo/bar/g')
+```
+
+### Good Example
+
+```zsh
+new=${var//foo/bar}
+```
+
+### Configuration
+
+To disable this Kata, add `ZC1082` to the `disabled_katas` list in your `.zshellcheckrc` file.
+
+---
+
+[⬆ Back to Top](#table-of-contents)
+</details>
+
 
 
 

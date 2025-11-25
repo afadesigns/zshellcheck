@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Kata ZC1079**: Quote RHS of `==` in `[[ ... ]]` to prevent pattern matching.
 - **Kata ZC1080**: Use `(N)` nullglob qualifier for globs in loops.
 - **Kata ZC1081**: Use `${#var}` to get string length instead of `wc -c`.
+- **Kata ZC1082**: Prefer `${var//old/new}` over `sed` for simple replacements.
 - **Documentation**: Added `TROUBLESHOOTING.md`, `GOVERNANCE.md`, `COMPARISON.md`, `GLOSSARY.md`, `CITATION.cff`.
 - **Documentation**: Expanded `KATAS.md` with new Katas.
 
