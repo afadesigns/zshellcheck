@@ -81,6 +81,7 @@ Comprehensive list of all 70 implemented checks, migrated from the Wiki.
 - [ZC1077: Prefer `${var:u/l}` over `tr` for case conversion](#zc1077)
 - [ZC1078: Quote `$@` and `$*` when passing arguments](#zc1078)
 - [ZC1079: Quote RHS of `==` in `[[ ... ]]` to prevent pattern matching](#zc1079)
+- [ZC1080: Use `(N)` nullglob qualifier for globs in loops](#zc1080)
 
 ---
 
@@ -2890,6 +2891,42 @@ To disable this Kata, add `ZC1079` to the `disabled_katas` list in your `.zshell
 
 [⬆ Back to Top](#table-of-contents)
 </details>
+
+
+<div id="zc1080"></div>
+
+<details>
+<summary><strong>ZC1080</strong>: Use `(N)` nullglob qualifier for globs in loops <img src="https://img.shields.io/badge/Status-Active-brightgreen?style=flat-square" height="15"/></summary>
+
+### Description
+
+In Zsh, if a glob matches no files, it throws an error by default (`zsh: no matches found: ...`). When iterating over a glob in a `for` loop, use the `(N)` glob qualifier to allow it to match nothing (nullglob). This prevents the script from crashing or printing an error if the directory is empty.
+
+### Bad Example
+
+```zsh
+for f in *.txt; do
+  echo "Found $f"
+done
+```
+
+### Good Example
+
+```zsh
+for f in *.txt(N); do
+  echo "Found $f"
+done
+```
+
+### Configuration
+
+To disable this Kata, add `ZC1080` to the `disabled_katas` list in your `.zshellcheckrc` file.
+
+---
+
+[⬆ Back to Top](#table-of-contents)
+</details>
+
 
 
 
