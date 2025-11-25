@@ -543,9 +543,12 @@ func (aa *ArrayAccess) String() string {
 	var out []byte
 	out = append(out, []byte("${")...)
 	out = append(out, []byte(aa.Left.String())...)
-	out = append(out, []byte("[")...)
-	out = append(out, []byte(aa.Index.String())...)
-	out = append(out, []byte("]}")...)
+	if aa.Index != nil {
+		out = append(out, []byte("[")...)
+		out = append(out, []byte(aa.Index.String())...)
+		out = append(out, []byte("]")...)
+	}
+	out = append(out, []byte("}")...)
 	return string(out)
 }
 

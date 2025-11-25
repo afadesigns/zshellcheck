@@ -72,6 +72,8 @@ func New(l *lexer.Lexer) *Parser {
 	p.registerPrefix(token.LPAREN, p.parseGroupedExpression)
 	p.registerPrefix(token.FUNCTION, p.parseFunctionLiteral)
 	p.registerPrefix(token.STRING, p.parseStringLiteral)
+	p.registerPrefix(token.LBRACE, p.parseStringLiteral)
+	p.registerPrefix(token.RBRACE, p.parseStringLiteral)
 	p.registerPrefix(token.LBRACKET, p.parseSingleCommand)
 	p.registerPrefix(token.LDBRACKET, p.parseDoubleBracketExpression)
 	p.registerPrefix(token.DollarLbrace, p.parseArrayAccess)
@@ -205,7 +207,7 @@ func (p *Parser) parseStatement() ast.Statement {
 			p.peekTokenIs(token.DOLLAR) || p.peekTokenIs(token.DollarLbrace) ||
 			p.peekTokenIs(token.DOLLAR_LPAREN) || p.peekTokenIs(token.SLASH) ||
 			p.peekTokenIs(token.TILDE) || p.peekTokenIs(token.ASTERISK) ||
-			p.peekTokenIs(token.BANG) {
+			p.peekTokenIs(token.BANG) || p.peekTokenIs(token.LBRACE) {
 			return p.parseSimpleCommandStatement()
 		}
 		return p.parseExpressionOrFunctionDefinition()
