@@ -542,7 +542,9 @@ func (aa *ArrayAccess) TokenLiteral() string { return aa.Token.Literal }
 func (aa *ArrayAccess) String() string {
 	var out []byte
 	out = append(out, []byte("${")...)
-	out = append(out, []byte(aa.Left.String())...)
+	if aa.Left != nil {
+		out = append(out, []byte(aa.Left.String())...)
+	}
 	if aa.Index != nil {
 		out = append(out, []byte("[")...)
 		out = append(out, []byte(aa.Index.String())...)
