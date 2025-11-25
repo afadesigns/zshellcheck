@@ -82,6 +82,7 @@ Comprehensive list of all 70 implemented checks, migrated from the Wiki.
 - [ZC1078: Quote `$@` and `$*` when passing arguments](#zc1078)
 - [ZC1079: Quote RHS of `==` in `[[ ... ]]` to prevent pattern matching](#zc1079)
 - [ZC1080: Use `(N)` nullglob qualifier for globs in loops](#zc1080)
+- [ZC1081: Use `${#var}` to get string length instead of `wc -c`](#zc1081)
 
 ---
 
@@ -2926,6 +2927,39 @@ To disable this Kata, add `ZC1080` to the `disabled_katas` list in your `.zshell
 
 [⬆ Back to Top](#table-of-contents)
 </details>
+
+
+<div id="zc1081"></div>
+
+<details>
+<summary><strong>ZC1081</strong>: Use `${#var}` to get string length instead of `wc -c` <img src="https://img.shields.io/badge/Status-Active-brightgreen?style=flat-square" height="15"/></summary>
+
+### Description
+
+Using `echo $var | wc -c` involves a subshell and external command overhead. Zsh has a built-in operator `${#var}` to get the length of a string instantly.
+
+### Bad Example
+
+```zsh
+len=$(echo $var | wc -c)
+len=$(print -r $var | wc -m)
+```
+
+### Good Example
+
+```zsh
+len=${#var}
+```
+
+### Configuration
+
+To disable this Kata, add `ZC1081` to the `disabled_katas` list in your `.zshellcheckrc` file.
+
+---
+
+[⬆ Back to Top](#table-of-contents)
+</details>
+
 
 
 
