@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Kata ZC1075**: Quote variable expansions to prevent globbing.
 - **Kata ZC1076**: Use `autoload -Uz` for lazy loading.
 - **Kata ZC1077**: Prefer `${var:u/l}` over `tr` for case conversion.
+- **Kata ZC1078**: Quote `$@` and `$*` when passing arguments.
 - **Documentation**: Added `TROUBLESHOOTING.md`, `GOVERNANCE.md`, `COMPARISON.md`, `GLOSSARY.md`, `CITATION.cff`.
 - **Documentation**: Expanded `KATAS.md` with new Katas.
 
