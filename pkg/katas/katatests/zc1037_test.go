@@ -7,20 +7,32 @@ import (
 	"github.com/afadesigns/zshellcheck/pkg/testutil"
 )
 
-func TestCheckZC1037(t *testing.T) {
+func TestZC1037(t *testing.T) {
 	tests := []struct {
 		name     string
 		input    string
 		expected []katas.Violation
 	}{
 		{
-			name:     "echo with a simple string should not trigger",
-			input:    `echo "hello"`,
+			name:     "valid print",
+			input:    `print -r -- "$var"`,
 			expected: []katas.Violation{},
 		},
 		{
-			name:  "echo with an unquoted variable should trigger",
-			input: `echo $foo`,
+			name:  "invalid echo with variable",
+			input: `echo $var`,
+			expected: []katas.Violation{
+				{
+					KataID:  "ZC1037",
+					Message: "Use 'print -r --' instead of 'echo' to reliably print variable expansions.",
+					Line:    1,
+					Column:  1,
+				},
+			},
+		},
+		{
+			name:  "invalid echo with quoted variable",
+			input: `echo "$var"`,
 			expected: []katas.Violation{
 				{
 					KataID:  "ZC1037",

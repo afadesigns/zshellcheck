@@ -1,6 +1,8 @@
 package katas
 
 import (
+	"strings"
+
 	"github.com/afadesigns/zshellcheck/pkg/ast"
 	"github.com/afadesigns/zshellcheck/pkg/token"
 )
@@ -28,6 +30,16 @@ func checkZC1037(node ast.Node) []Violation {
 
 	for _, arg := range cmd.Arguments {
 		if ident, ok := arg.(*ast.Identifier); ok && ident.Token.Type == token.VARIABLE {
+			return []Violation{
+				{
+					KataID:  "ZC1037",
+					Message: "Use 'print -r --' instead of 'echo' to reliably print variable expansions.",
+					Line:    cmd.Token.Line,
+					Column:  cmd.Token.Column,
+				},
+			}
+		}
+		if str, ok := arg.(*ast.StringLiteral); ok && strings.Contains(str.Value, "$") {
 			return []Violation{
 				{
 					KataID:  "ZC1037",

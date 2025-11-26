@@ -33,6 +33,7 @@ const (
 	LT    = "<"
 	GTGT  = ">>"
 	LTLT  = "<<"
+	LTLTLT = "<<<"
 	GTAMP = ">&"
 	LTAMP = "<&"
 	EQ    = "=="
@@ -81,6 +82,8 @@ const (
 	CASE     = "CASE"
 	ESAC     = "ESAC"
 	ELIF     = "ELIF"
+	SELECT   = "SELECT"
+	COPROC   = "COPROC"
 
 	// Zsh-specific tokens
 	DOLLAR        = "$"
@@ -125,6 +128,8 @@ var keywords = map[string]Type{
 	"case":     CASE,
 	"esac":     ESAC,
 	"elif":     ELIF,
+	"select":   SELECT,
+	"coproc":   COPROC,
 	"-eq":      EQ_NUM,
 	"-ne":      NE_NUM,
 	"-lt":      LT_NUM,

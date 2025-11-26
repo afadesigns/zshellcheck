@@ -43,7 +43,7 @@ func TestZC1087(t *testing.T) {
 					KataID:  "ZC1087",
 					Message: "Output redirection overwrites input file `file.txt`. The file is truncated before reading.",
 					Line:    1,
-					Column:  25, // Points to >
+					Column:  14, // Points to |
 				},
 			},
 		},

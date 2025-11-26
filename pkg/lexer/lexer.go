@@ -127,16 +127,20 @@ func (l *Lexer) NextToken() token.Token {
 		}
 	case '-':
 		if isLetter(l.peekChar()) {
-			// It looks like a flag (-f) or operator (-eq) or ident (-var)
-			// Consume '-' and following letters as an identifier
-			line, col := l.line, l.column
-			tok.Literal = l.readIdentifier()
-			tok.Type = token.LookupIdent(tok.Literal)
-			tok.Line = line
-			tok.Column = col
-			tok.HasPrecedingSpace = hasSpace
-			return tok
+			savedLexer := *l
+			literal := l.readIdentifier()
+			tokType := token.LookupIdent(literal)
+			if tokType != token.IDENT {
+				tok.Type = tokType
+				tok.Literal = literal
+				tok.Line = savedLexer.line
+				tok.Column = savedLexer.column
+				tok.HasPrecedingSpace = hasSpace
+				return tok
+			}
+			*l = savedLexer
 		}
+
 		if l.peekChar() == '-' {
 			ch := l.ch
 			l.readChar()

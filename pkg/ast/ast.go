@@ -42,7 +42,32 @@ const (
 	GroupedExpressionNode
 	ArithmeticCommandNode
 	SubshellNode
+	BraceExpansionNode
+	SelectStatementNode
+	CoprocStatementNode
 )
+
+type BraceExpansion struct {	Token    token.Token // The '{' token
+	Elements []Expression
+}
+
+func (be *BraceExpansion) Type() NodeType                { return BraceExpansionNode }
+func (be *BraceExpansion) statementNode()                {}
+func (be *BraceExpansion) expressionNode()               {}
+func (be *BraceExpansion) TokenLiteral() string          { return be.Token.Literal }
+func (be *BraceExpansion) TokenLiteralNode() token.Token { return be.Token }
+func (be *BraceExpansion) String() string {
+	var out []byte
+	out = append(out, []byte("{")...)
+	elems := []string{}
+	for _, e := range be.Elements {
+		elems = append(elems, e.String())
+	}
+	out = append(out, []byte(strings.Join(elems, ", "))...)
+	out = append(out, []byte("}")...)
+	return string(out)
+}
+
 
 type Subshell struct {
 	Token token.Token // The '(' token
@@ -650,9 +675,10 @@ func (dpe *DollarParenExpression) String() string {
 }
 
 type SimpleCommand struct {
-	Token     token.Token // The first token of the command
-	Name      Expression
-	Arguments []Expression
+	Token       token.Token // The first token of the command
+	Name        Expression
+	Arguments   []Expression
+	Redirections []Expression // New field for redirections associated with the command
 }
 
 func (sc *SimpleCommand) Type() NodeType       { return SimpleCommandNode }
@@ -660,14 +686,31 @@ func (sc *SimpleCommand) expressionNode()      {}
 func (sc *SimpleCommand) TokenLiteral() string { return sc.Token.Literal }
 func (sc *SimpleCommand) String() string {
 	var out []byte
+	// Print redirections first if they are leading
+	for _, r := range sc.Redirections {
+		if r != nil && r.(*Redirection).Left == nil { // Assuming Left == nil means leading/implicit FD 0/1
+			out = append(out, []byte(r.String())...)
+			out = append(out, []byte(" ")...)
+		}
+	}
+
+	out = append(out, []byte(sc.Name.String())...)
+	out = append(out, []byte(" ")...)
 	args := []string{}
 	for _, a := range sc.Arguments {
 		args = append(args, a.String())
 	}
-	out = append(out, []byte(sc.Name.String())...)
-	out = append(out, []byte(" ")...)
 	out = append(out, []byte(strings.Join(args, " "))...)
-	return string(out)
+	
+	// Print trailing redirections
+	for _, r := range sc.Redirections {
+		if r != nil && r.(*Redirection).Left != nil { // Assuming Left != nil means trailing
+			out = append(out, []byte(" ")...)
+			out = append(out, []byte(r.String())...)
+		}
+	}
+
+	return strings.TrimSpace(string(out))
 }
 
 type ConcatenatedExpression struct {
@@ -857,12 +900,24 @@ func Walk(node Node, f WalkFn) {
 	case *FunctionDefinition:
 		Walk(n.Name, f)
 		Walk(n.Body, f)
+	case *Subshell:
+		Walk(n.Block, f)
 	case *GroupedExpression:
 		Walk(n.Exp, f)
 	case *ArithmeticCommand:
 		Walk(n.Expression, f)
-	case *Subshell:
-		Walk(n.Block, f)
+	case *BraceExpansion:
+		for _, elem := range n.Elements {
+			Walk(elem, f)
+		}
+	case *SelectStatement:
+		Walk(n.Name, f)
+		for _, item := range n.Items {
+			Walk(item, f)
+		}
+		Walk(n.Body, f)
+	case *CoprocStatement:
+		Walk(n.Command, f)
 	}
 }
 
@@ -896,4 +951,60 @@ func (n *DollarParenExpression) TokenLiteralNode() token.Token   { return n.Toke
 func (n *SimpleCommand) TokenLiteralNode() token.Token           { return n.Token }
 func (n *ConcatenatedExpression) TokenLiteralNode() token.Token  { return n.Token }
 func (n *CaseStatement) TokenLiteralNode() token.Token           { return n.Token }
-func (n *CaseClause) TokenLiteralNode() token.Token              { return n.Token }
+func (cc *CaseClause) TokenLiteralNode() token.Token              { return cc.Token }
+
+type SelectStatement struct {
+	Token token.Token // The 'select' token
+	Name  *Identifier
+	Items []Expression
+	Body  *BlockStatement
+}
+
+func (ss *SelectStatement) Type() NodeType       { return SelectStatementNode }
+func (ss *SelectStatement) statementNode()       {}
+func (ss *SelectStatement) TokenLiteral() string { return ss.Token.Literal }
+func (ss *SelectStatement) TokenLiteralNode() token.Token { return ss.Token }
+func (ss *SelectStatement) String() string {
+	var out []byte
+	out = append(out, []byte("select ")...)
+	out = append(out, []byte(ss.Name.String())...)
+	if ss.Items != nil {
+		out = append(out, []byte(" in ")...)
+		for _, item := range ss.Items {
+			out = append(out, []byte(item.String())...)
+			out = append(out, []byte(" ")...)
+		}
+	}
+	out = append(out, []byte("; do ")...)
+	if ss.Body != nil {
+		out = append(out, []byte(ss.Body.String())...)
+	}
+	out = append(out, []byte("done")...)
+	return string(out)
+}
+
+type CoprocStatement struct {
+	Token   token.Token // The 'coproc' token
+	Name    string      // Optional name (Bash/Zsh difference? Zsh `coproc cmd`, Bash `coproc [NAME] command`)
+	// Zsh `coproc` is simple. `coproc command`.
+	// Bash `coproc name { cmd; }`.
+	// Let's support generic Command.
+	Command Node // Expression (SimpleCommand) or Statement (BlockStatement)
+}
+
+func (cs *CoprocStatement) Type() NodeType       { return CoprocStatementNode }
+func (cs *CoprocStatement) statementNode()       {}
+func (cs *CoprocStatement) TokenLiteral() string { return cs.Token.Literal }
+func (cs *CoprocStatement) TokenLiteralNode() token.Token { return cs.Token }
+func (cs *CoprocStatement) String() string {
+	var out []byte
+	out = append(out, []byte("coproc ")...)
+	if cs.Name != "" {
+		out = append(out, []byte(cs.Name+" ")...)
+	}
+	if cs.Command != nil {
+		out = append(out, []byte(cs.Command.String())...)
+	}
+	return string(out)
+}
+

@@ -36,6 +36,8 @@ func checkZC1004(node ast.Node) []Violation {
 		switch t := n.(type) {
 		case *ast.GroupedExpression: // ( ... )
 			return false
+		case *ast.Subshell: // ( ... ) as subshell
+			return false
 		case *ast.CommandSubstitution: // ` ... `
 			return false
 		case *ast.DollarParenExpression: // $( ... )
