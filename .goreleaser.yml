@@ -11,6 +11,7 @@ builds:
       - -s -w -X main.version={{.Version}}
     flags:
       - -trimpath
+      - -pgo=pgo/default.pgo
 
 slsa:
   enabled: true
@@ -32,6 +33,10 @@ archives:
     files:
       - LICENSE
       - README.md
+
+sboms:
+  - artifacts: archive
+
 checksum:
   name_template: 'checksums.txt'
 snapshot:

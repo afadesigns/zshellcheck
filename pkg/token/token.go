@@ -50,6 +50,11 @@ const (
 	GT_NUM = "-gt"
 	GE_NUM = "-ge"
 
+	// Process Substitution / Array Assignment
+	LT_LPAREN = "<("
+	GT_LPAREN = ">("
+	EQ_LPAREN = "=("
+
 	// Delimiters
 	COMMA        = ","
 	SEMICOLON    = ";"

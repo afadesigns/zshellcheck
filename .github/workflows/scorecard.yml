@@ -17,12 +17,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4.1.7
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.1.7
         with:
           persist-credentials: false
 
       - name: Run Scorecard analysis
-        uses: ossf/scorecard-action@v2.3.1
+        uses: ossf/scorecard-action@62b2cac125953053d36090a0bf5661f4a9214275 # v2.4.0 (using a known stable version SHA)
         with:
           results_file: results.sarif
           results_format: sarif

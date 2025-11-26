@@ -6,9 +6,11 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"runtime/pprof"
 	"strings"
 
 	"github.com/afadesigns/zshellcheck/pkg/ast"
+
 	"github.com/afadesigns/zshellcheck/pkg/katas"
 	"github.com/afadesigns/zshellcheck/pkg/lexer"
 	"github.com/afadesigns/zshellcheck/pkg/parser"
@@ -42,7 +44,22 @@ func main() {
 	}
 
 	format := flag.String("format", "text", "The output format (text, json, or sarif)")
+	cpuprofile := flag.String("cpuprofile", "", "Write CPU profile to file")
 	flag.Parse()
+
+	if *cpuprofile != "" {
+		f, err := os.Create(*cpuprofile)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Could not create CPU profile: %s\n", err)
+			os.Exit(1)
+		}
+		defer f.Close()
+		if err := pprof.StartCPUProfile(f); err != nil {
+			fmt.Fprintf(os.Stderr, "Could not start CPU profile: %s\n", err)
+			os.Exit(1)
+		}
+		defer pprof.StopCPUProfile()
+	}
 
 	if len(flag.Args()) < 1 {
 		fmt.Fprint(os.Stderr, banner)

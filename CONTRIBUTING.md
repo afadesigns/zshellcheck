@@ -1,8 +1,18 @@
-# Contributing to zshellcheck
+## Fuzz Testing
 
-We welcome contributions! Whether it's adding new Katas, improving the parser, or fixing bugs, your help is appreciated.
+We use native Go fuzzing to ensure the stability of our lexer and parser.
+To run the fuzz tests locally:
 
-## Pull Request Workflow
+```bash
+go test -fuzz=FuzzLexer -fuzztime=10s ./pkg/lexer
+go test -fuzz=FuzzParser -fuzztime=10s ./pkg/parser
+```
+
+## Security Reporting
+
+Please refer to [SECURITY.md](SECURITY.md) for our security policy and how to report vulnerabilities.
+
+
 
 We follow a strict Pull Request (PR) workflow to ensure code quality and maintain a clear history. This workflow is designed to facilitate smooth collaboration and maintain an organized project.
 
