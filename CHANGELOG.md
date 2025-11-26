@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Kata ZC1076**: Use `autoload -Uz` for lazy loading.
 - **Kata ZC1077**: Prefer `${var:u/l}` over `tr` for case conversion.
 - **Kata ZC1078**: Quote `$@` and `$*` when passing arguments.
+- **Kata ZC1097**: Declare loop variables as `local` in functions.
 - **Kata ZC1079**: Quote RHS of `==` in `[[ ... ]]` to prevent pattern matching.
 - **Kata ZC1080**: Use `(N)` nullglob qualifier for globs in loops.
 - **Kata ZC1081**: Use `${#var}` to get string length instead of `wc -c`.
