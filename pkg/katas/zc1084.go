@@ -153,9 +153,24 @@ func isUnquotedGlob(node ast.Expression) bool {
 				if sc.Name.String() == "[" {
 					return true
 				}
+			} else if prefix, ok := part.(*ast.PrefixExpression); ok {
+				if escaped {
+					escaped = false
+					continue
+				}
+				if prefix.Operator == "*" || prefix.Operator == "?" {
+					return true
+				}
 			} else {
 				escaped = false
 			}
+		}
+	}
+
+	// Check PrefixExpression (e.g. *.txt, ?foo)
+	if prefix, ok := node.(*ast.PrefixExpression); ok {
+		if prefix.Operator == "*" || prefix.Operator == "?" {
+			return true
 		}
 	}
 
@@ -166,7 +181,7 @@ func isGlobToken(tok token.Token) bool {
 	if tok.Type == token.ASTERISK { // *
 		return true
 	}
-	if tok.Type == token.ILLEGAL && tok.Literal == "?" { // ?
+	if (tok.Type == token.ILLEGAL && tok.Literal == "?") || tok.Type == token.QUESTION { // ?
 		return true
 	}
 	if tok.Type == token.LBRACKET { // [

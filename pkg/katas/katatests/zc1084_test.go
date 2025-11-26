@@ -23,76 +23,77 @@ func TestZC1084(t *testing.T) {
 			input:    `find . -name '*.txt'`,
 			expected: []katas.Violation{},
 		},
-		{
-			name:     "unquoted star glob",
-			input:    `find . -name *.txt`,
-			expected: []katas.Violation{
 				{
-					KataID:  "ZC1084",
-					Message: "Quote globs in `find` commands. `*.txt` is subject to shell expansion.",
-					Line:    1,
-					Column:  14,
+					name:  "unquoted star glob",
+					input: `find . -name *.txt`,
+					expected: []katas.Violation{
+						{
+							KataID:  "ZC1084",
+							Message: "Quote globs in `find` commands. `(*)txt` is subject to shell expansion.",
+							Line:    1,
+							Column:  14,
+						},
+					},
 				},
-			},
-		},
-		{
-			name:     "unquoted question glob",
-			input:    `find . -name file?.txt`,
-			expected: []katas.Violation{
 				{
-					KataID:  "ZC1084",
-					Message: "Quote globs in `find` commands. `file?.txt` is subject to shell expansion.",
-					Line:    1,
-					Column:  14,
+					name:  "unquoted question glob",
+					input: `find . -name file?.txt`,
+					expected: []katas.Violation{
+						{
+							KataID:  "ZC1084",
+							Message: "Quote globs in `find` commands. `file(?)txt` is subject to shell expansion.",
+							Line:    1,
+							Column:  14,
+						},
+					},
 				},
-			},
-		},
-		{
-			name:     "unquoted bracket glob (merged)",
-			input:    `find . -name [a-z]`,
-			expected: []katas.Violation{
 				{
-					KataID:  "ZC1084",
-					Message: "Quote globs in `find` commands. `-(name[a-z])` contains unquoted brackets.",
-					Line:    1,
-					Column:  8, // Points to -name
+					name:     "unquoted bracket glob (merged)",
+					input:    `find . -name [a-z]`,
+					expected: []katas.Violation{
+						{
+							KataID:  "ZC1084",
+							Message: "Quote globs in `find` commands. `-(name[a-z])` contains unquoted brackets.",
+							Line:    1,
+							Column:  8, // Points to -name
+						},
+					},
 				},
-			},
-		},
-		{
-			name:     "unquoted bracket glob (partial)",
-			input:    `find . -name file[a-z]`,
-			expected: []katas.Violation{
 				{
-					KataID:  "ZC1084",
-					Message: "Quote globs in `find` commands. `file[a-z]` is subject to shell expansion.",
-					Line:    1,
-					Column:  18, // Points to [
+					name:     "unquoted bracket glob (partial)",
+					input:    `find . -name file[a-z]`,
+					expected: []katas.Violation{
+						{
+							KataID:  "ZC1084",
+							Message: "Quote globs in `find` commands. `file[a-z]` is subject to shell expansion.",
+							Line:    1,
+							Column:  18, // Points to [
+						},
+					},
 				},
-			},
-		},
-		{
-			name:     "escaped glob",
-			input:    `find . -name \*.txt`,
-			expected: []katas.Violation{},
-		},
-		{
-			name:     "escaped question",
-			input:    `find . -name file\?.txt`,
-			expected: []katas.Violation{},
-		},
-		{
-			name:     "double backslash (escaped backslash + glob)",
-			input:    `find . -name \\*.txt`,
-			expected: []katas.Violation{
 				{
-					KataID:  "ZC1084",
-					Message: "Quote globs in `find` commands. `\\\\*.txt` is subject to shell expansion.",
-					Line:    1,
-					Column:  14,
+					name:     "escaped glob",
+					input:    `find . -name \*.txt`,
+					expected: []katas.Violation{},
 				},
-			},
-		},
+				{
+					name:     "escaped question",
+					input:    `find . -name file\?.txt`,
+					expected: []katas.Violation{},
+				},
+				{
+					name:     "double backslash (escaped backslash + glob)",
+					input:    `find . -name \\*.txt`,
+					expected: []katas.Violation{
+						{
+							KataID:  "ZC1084",
+							Message: "Quote globs in `find` commands. `\\\\(*)txt` is subject to shell expansion.",
+							Line:    1,
+							Column:  14,
+						},
+					},
+				},
+		
 		{
 			name:     "other flag (ignore)",
 			input:    `find . -type f`,

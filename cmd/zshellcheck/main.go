@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
+	"strings"
 
 	"github.com/afadesigns/zshellcheck/pkg/ast"
 	"github.com/afadesigns/zshellcheck/pkg/katas"
@@ -39,7 +41,7 @@ func main() {
 		fmt.Fprintf(os.Stderr, "  zshellcheck ./scripts/\n")
 	}
 
-	format := flag.String("format", "text", "The output format (text or json)")
+	format := flag.String("format", "text", "The output format (text, json, or sarif)")
 	flag.Parse()
 
 	if len(flag.Args()) < 1 {
@@ -50,8 +52,8 @@ func main() {
 	}
 
 	// Print banner on successful run too, as per original request
-	// But suppress it for JSON output to keep it clean for parsing
-	if *format != "json" {
+	// But suppress it for JSON/SARIF output to keep it clean for parsing
+	if *format != "json" && *format != "sarif" {
 		fmt.Fprint(os.Stderr, banner)
 	}
 
@@ -64,7 +66,7 @@ func main() {
 	kataRegistry := &katas.Registry
 
 	for _, filename := range flag.Args() {
-		processFile(filename, os.Stdout, os.Stderr, config, kataRegistry, *format)
+		processPath(filename, os.Stdout, os.Stderr, config, kataRegistry, *format)
 	}
 }
 
@@ -85,6 +87,46 @@ func loadConfig(path string) (Config, error) {
 	}
 
 	return config, nil
+}
+
+func processPath(path string, out, errOut io.Writer, config Config, registry *katas.KatasRegistry, format string) {
+	info, err := os.Stat(path)
+	if err != nil {
+		fmt.Fprintf(errOut, "Error stating path %s: %s\n", path, err)
+		return
+	}
+
+	if info.IsDir() {
+		err := filepath.WalkDir(path, func(p string, d os.DirEntry, err error) error {
+			if err != nil {
+				return err
+			}
+			if d.IsDir() {
+				if strings.HasPrefix(d.Name(), ".") && d.Name() != "." && d.Name() != ".." {
+					return filepath.SkipDir // Skip hidden directories like .git
+				}
+				return nil
+			}
+			
+			// Skip non-shell files to avoid parsing errors on Go source code etc.
+			ext := filepath.Ext(d.Name())
+			if ext == ".go" || ext == ".md" || ext == ".json" || ext == ".yml" || ext == ".yaml" || ext == ".txt" {
+				return nil
+			}
+
+			// Process only files that look like shell scripts?
+			// For now, let's try to parse everything, or maybe filter by extension/shebang if it gets too noisy.
+			// Shellcheck defaults to checking all files passed, but for recursive it might filter.
+			// Let's assume user wants to check all files in the dir if they passed the dir.
+			processFile(p, out, errOut, config, registry, format)
+			return nil
+		})
+		if err != nil {
+			fmt.Fprintf(errOut, "Error walking directory %s: %s\n", path, err)
+		}
+	} else {
+		processFile(path, out, errOut, config, registry, format)
+	}
 }
 
 func processFile(filename string, out, errOut io.Writer, config Config, registry *katas.KatasRegistry, format string) {
@@ -117,6 +159,8 @@ func processFile(filename string, out, errOut io.Writer, config Config, registry
 		switch format {
 		case "json":
 			r = reporter.NewJSONReporter(out)
+		case "sarif":
+			r = reporter.NewSarifReporter(out, filename)
 		default:
 			fmt.Fprintf(out, "Violations in %s:\n", filename)
 			r = reporter.NewTextReporter(out)

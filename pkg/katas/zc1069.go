@@ -135,6 +135,8 @@ func checkZC1069(node ast.Node) []Violation {
 			walk(t.Command, inFunction)
 		case *ast.DollarParenExpression:
 			walk(t.Command, inFunction)
+		case *ast.Subshell:
+			walk(t.Block, inFunction)
 		}
 	}
 

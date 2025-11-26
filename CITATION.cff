@@ -5,7 +5,7 @@ authors:
   given-names: "Afa"
   alias: "afadesigns"
 title: "ZShellCheck"
-version: 0.0.72
+version: 0.0.92
 date-released: 2024-05-20
 url: "https://github.com/afadesigns/zshellcheck"
 repository-code: "https://github.com/afadesigns/zshellcheck"

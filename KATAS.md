@@ -1,6 +1,6 @@
 # ZShellCheck Katas
 
-Comprehensive list of all 70 implemented checks, migrated from the Wiki.
+Comprehensive list of all 92 implemented checks, migrated from the Wiki.
 
 ## Table of Contents
 

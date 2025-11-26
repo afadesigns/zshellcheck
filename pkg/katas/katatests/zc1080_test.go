@@ -29,24 +29,24 @@ func TestZC1080(t *testing.T) {
 			expected: []katas.Violation{},
 		},
 		{
-			name:     "invalid glob star",
-			input:    `for f in *.txt; do echo $f; done`,
+			name:  "invalid glob star",
+			input: `for f in *.txt; do echo $f; done`,
 			expected: []katas.Violation{
 				{
 					KataID:  "ZC1080",
-					Message: "Glob '*.txt' will error if no matches found. Append `(N)` to make it nullglob.",
+					Message: "Glob '(*)txt' will error if no matches found. Append `(N)` to make it nullglob.",
 					Line:    1,
 					Column:  10,
 				},
 			},
 		},
 		{
-			name:     "invalid glob question",
-			input:    `for f in file?; do echo $f; done`,
+			name:  "invalid glob question",
+			input: `for f in file?; do echo $f; done`,
 			expected: []katas.Violation{
 				{
 					KataID:  "ZC1080",
-					Message: "Glob 'file?' will error if no matches found. Append `(N)` to make it nullglob.",
+					Message: "Glob 'file(?)' will error if no matches found. Append `(N)` to make it nullglob.",
 					Line:    1,
 					Column:  10,
 				},

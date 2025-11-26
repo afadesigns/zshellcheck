@@ -29,4 +29,4 @@ zshellcheck-windows-amd64.exe
 .genkit/traces_idx/
 
 # Gemini CLI specific private files
-GEMINI.md
+GEMINI.mdbin/

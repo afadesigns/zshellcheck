@@ -199,6 +199,10 @@ func (p *Parser) parseStatement() ast.Statement {
 		return p.parseForLoopStatement()
 	case token.WHILE:
 		return p.parseWhileLoopStatement()
+	case token.SELECT:
+		return p.parseSelectStatement()
+	case token.COPROC:
+		return p.parseCoprocStatement()
 	case token.LBRACE:
 		tok := p.curToken
 		p.nextToken()
@@ -818,14 +822,20 @@ func (p *Parser) parseFunctionParameters() []*ast.Identifier {
 		p.nextToken()
 		return identifiers
 	}
-	p.nextToken()
+	p.nextToken() // curToken is first IDENT
 	ident := &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
 	identifiers = append(identifiers, ident)
 	for p.peekTokenIs(token.COMMA) {
-		p.nextToken()
-		p.nextToken()
-		ident := &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
-		identifiers = append(identifiers, ident)
+		p.nextToken() // Consume COMMA
+		if p.peekTokenIs(token.IDENT) { // Expect IDENT after COMMA
+			p.nextToken() // Consume IDENT
+			ident := &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
+			identifiers = append(identifiers, ident)
+		} else {
+			// Expected an identifier, got something else. Report error and break.
+			p.peekError(token.IDENT) // Report expected IDENT
+			break
+		}
 	}
 	if !p.expectPeek(token.RPAREN) {
 		return nil
@@ -964,6 +974,53 @@ func (p *Parser) parseWhileLoopStatement() *ast.WhileLoopStatement {
 	}
 	p.nextToken()
 	stmt.Body = p.parseBlockStatement(token.DONE)
+	return stmt
+}
+
+func (p *Parser) parseSelectStatement() *ast.SelectStatement {
+	stmt := &ast.SelectStatement{Token: p.curToken}
+
+	if !p.expectPeek(token.IDENT) {
+		return nil
+	}
+	stmt.Name = &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
+
+	if p.peekTokenIs(token.IN) {
+		p.nextToken()
+		stmt.Items = []ast.Expression{}
+		for !p.peekTokenIs(token.SEMICOLON) && !p.peekTokenIs(token.DO) && !p.peekTokenIs(token.EOF) &&
+			p.peekToken.Line == p.curToken.Line {
+			p.nextToken()
+			arg := p.parseCommandWord()
+			stmt.Items = append(stmt.Items, arg)
+		}
+	}
+
+	if p.peekTokenIs(token.SEMICOLON) {
+		p.nextToken()
+	}
+
+	if !p.expectPeek(token.DO) {
+		return nil
+	}
+
+	p.nextToken()
+	stmt.Body = p.parseBlockStatement(token.DONE)
+	return stmt
+}
+
+func (p *Parser) parseCoprocStatement() *ast.CoprocStatement {
+	stmt := &ast.CoprocStatement{Token: p.curToken}
+	p.nextToken()
+	// Handle optional name (Bash style: coproc name { ... })
+	// If next is IDENT and next-next is LBRACE?
+	if p.curTokenIs(token.IDENT) && p.peekTokenIs(token.LBRACE) {
+		stmt.Name = p.curToken.Literal
+		p.nextToken()
+	}
+	
+	// Parse the command/statement
+	stmt.Command = p.parseStatement()
 	return stmt
 }
 
