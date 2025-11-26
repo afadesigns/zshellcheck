@@ -458,6 +458,7 @@ type WhileLoopStatement struct {
 
 func (wls *WhileLoopStatement) Type() NodeType       { return WhileLoopStatementNode }
 func (wls *WhileLoopStatement) statementNode()       {}
+func (wls *WhileLoopStatement) expressionNode()      {} // Allow while loop to be part of pipeline
 func (wls *WhileLoopStatement) TokenLiteral() string { return wls.Token.Literal }
 func (wls *WhileLoopStatement) String() string {
 	var out []byte
