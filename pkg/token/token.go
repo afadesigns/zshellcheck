@@ -28,6 +28,7 @@ const (
 	SLASH    = "/"
 	INC      = "++"
 	DEC      = "--"
+	PLUSEQ   = "+="
 
 	GT    = ">"
 	LT    = "<"
@@ -84,6 +85,8 @@ const (
 	ELIF     = "ELIF"
 	SELECT   = "SELECT"
 	COPROC   = "COPROC"
+	TYPESET  = "TYPESET"
+	DECLARE  = "DECLARE"
 
 	// Zsh-specific tokens
 	DOLLAR        = "$"
@@ -130,6 +133,8 @@ var keywords = map[string]Type{
 	"elif":     ELIF,
 	"select":   SELECT,
 	"coproc":   COPROC,
+	"typeset":  TYPESET,
+	"declare":  DECLARE,
 	"-eq":      EQ_NUM,
 	"-ne":      NE_NUM,
 	"-lt":      LT_NUM,

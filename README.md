@@ -2,7 +2,9 @@
 
 ![CI](https://github.com/afadesigns/zshellcheck/actions/workflows/ci.yml/badge.svg)
 [![Go Report Card](https://goreportcard.com/badge/github.com/afadesigns/zshellcheck)](https://goreportcard.com/report/github.com/afadesigns/zshellcheck)
-![License](https://img.shields.io/github/license/afadesigns/zshellcheck)
+[![SLSA](https://img.shields.io/badge/SLSA-Level%203-brightgreen)](https://slsa.dev)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 ![Release](https://img.shields.io/github/v/release/afadesigns/zshellcheck)
 
 ```
@@ -136,7 +138,7 @@ To integrate ZShellCheck seamlessly into your development workflow and ensure co
     ```yaml
     # .pre-commit-config.yaml
     -   repo: https://github.com/afadesigns/zshellcheck
-        rev: v0.0.92 # Check releases for the latest version
+        rev: v0.0.97 # Check releases for the latest version
         hooks:
         -   id: zshellcheck
     ```

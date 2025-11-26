@@ -203,6 +203,8 @@ func (p *Parser) parseStatement() ast.Statement {
 		return p.parseSelectStatement()
 	case token.COPROC:
 		return p.parseCoprocStatement()
+	case token.TYPESET, token.DECLARE:
+		return p.parseDeclarationStatement()
 	case token.LBRACE:
 		tok := p.curToken
 		p.nextToken()
@@ -1022,6 +1024,118 @@ func (p *Parser) parseCoprocStatement() *ast.CoprocStatement {
 	// Parse the command/statement
 	stmt.Command = p.parseStatement()
 	return stmt
+}
+
+func (p *Parser) parseDeclarationStatement() *ast.DeclarationStatement {
+	stmt := &ast.DeclarationStatement{Token: p.curToken, Command: p.curToken.Literal}
+	p.nextToken()
+
+	for !p.curTokenIs(token.SEMICOLON) && !p.curTokenIs(token.EOF) && p.curToken.Line == stmt.Token.Line {
+		// Check for flags
+		if p.curTokenIs(token.MINUS) || (p.curTokenIs(token.IDENT) && len(p.curToken.Literal) > 0 && p.curToken.Literal[0] == '-') {
+			// It's a flag (e.g., -A, -r, --)
+			// If it's MINUS, the next token might be the flag char if lexer separated them?
+			// Current lexer parses `-A` as IDENT if it starts with -.
+			stmt.Flags = append(stmt.Flags, p.curToken.Literal)
+			p.nextToken()
+			continue
+		} else if p.curTokenIs(token.MINUS) {
+			// Standalone minus?
+			stmt.Flags = append(stmt.Flags, "-")
+			p.nextToken()
+			continue
+		}
+
+		// Expect Identifier
+		if p.curTokenIs(token.IDENT) {
+			assign := &ast.DeclarationAssignment{
+				Name: &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal},
+			}
+			p.nextToken() // consume Name
+
+			// Check for = or +=
+			if p.curTokenIs(token.PLUSEQ) {
+				assign.IsAppend = true
+				p.nextToken() // consume +=
+				assign.Value = p.parseDeclarationValue()
+			} else if p.curTokenIs(token.ASSIGN) {
+				p.nextToken() // consume =
+				assign.Value = p.parseDeclarationValue()
+			}
+
+			stmt.Assignments = append(stmt.Assignments, assign)
+		} else {
+			// Unexpected token in declaration
+			// Consuming it as a flag or error?
+			// Let's assume it's a flag or ignored?
+			// `typeset` can take other things?
+			// For now, skip or break.
+			p.nextToken()
+		}
+	}
+	
+	if p.peekTokenIs(token.SEMICOLON) {
+		p.nextToken()
+	}
+
+	return stmt
+}
+
+func (p *Parser) parseDeclarationValue() ast.Expression {
+	// Check for Array literal `( ... )`
+	if p.curTokenIs(token.LPAREN) {
+		// Parse Array
+		// We can reuse parseCommandWord style or parse list of expressions?
+		// Array elements are space separated.
+		// `( a b "c d" )`
+		// We can use `parseGroupedExpression` logic but generalized for list?
+		// Let's implement a simple array parser here returning a ConcatenatedExpression or new ArrayLiteral node?
+		// Existing AST has no ArrayLiteral. 
+		// Let's return a generic Expression that represents the array string for now, 
+		// or reuse `ConcatenatedExpression` (not ideal).
+		// Or `BracketExpression`? No.
+		// Let's create a temporary `ArrayLiteral` AST node?
+		// Or just parse it as `GroupedExpression`? `GroupedExpression` has one `Exp`.
+		// Zsh array `(a b)` is a list.
+		// Let's use `p.parseExpression(LOWEST)`?
+		// `parseExpression` parses `( ... )` as `GroupedExpression`. 
+		// But `(a b)` -> `a` call `b`? 
+		// In expression context `(a b)` is subshell.
+		// But in assignment `var=(a b)`, it's array.
+		// Since we are in `parseDeclarationValue`, we know it's assignment.
+		// So `(` starts array.
+		
+		// Creating an ad-hoc string representation for now to support the feature without full Array AST support.
+		// Or treating it as `SimpleCommand` inside parens?
+		// Let's just parse it as a list of words until `)`.
+		
+		paren := p.curToken
+		p.nextToken() // consume (
+		
+		// We collect words.
+		// Using `ConcatenatedExpression` to hold parts? Or `BracketExpression` (using [ ] usually)?
+		// Let's misuse `BracketExpression` or just `StringLiteral` of the whole thing?
+		// "Better": Add `ArrayLiteral` node. But modifying `ast.go` again requires more steps.
+		// I'll stick to returning a `StringLiteral` representing the array for now, as `typeset -A` detection is the goal.
+		// Effectively treating it as opaque value.
+		
+		start := p.l.Position() // Need access to raw input? Parser doesn't have it easily.
+		// We can reconstruct string.
+		
+		val := "("
+		for !p.curTokenIs(token.RPAREN) && !p.curTokenIs(token.EOF) {
+			val += " " + p.curToken.Literal // Very rough
+			p.nextToken()
+		}
+		val += " )"
+		if p.curTokenIs(token.RPAREN) {
+			p.nextToken()
+		}
+		return &ast.StringLiteral{Token: paren, Value: val}
+	}
+	
+	// Normal expression
+	return p.parseExpression(LOWEST)
 }
 
 func (p *Parser) parseArithmeticCommand() *ast.ArithmeticCommand {

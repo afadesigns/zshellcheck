@@ -1,18 +1,22 @@
 # .goreleaser.yml
 version: 2
 builds:
-  - main: ./cmd/zshellcheck/
-    env:
+  - env:
       - CGO_ENABLED=0
     goos:
       - linux
       - windows
       - darwin
-    goarch:
-      - amd64
-      - arm64
+    ldflags:
+      - -s -w -X main.version={{.Version}}
+    flags:
+      - -trimpath
+
+slsa:
+  enabled: true
+
 archives:
-  - format: tar.gz
+  - replacements:
     # this name template makes the OS and Arch compatible with the results of uname.
     name_template: >-
       {{ .ProjectName }}_

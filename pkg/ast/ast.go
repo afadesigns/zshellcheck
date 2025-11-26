@@ -43,11 +43,12 @@ const (
 	ArithmeticCommandNode
 	SubshellNode
 	BraceExpansionNode
-	SelectStatementNode
-	CoprocStatementNode
-)
-
-type BraceExpansion struct {	Token    token.Token // The '{' token
+		SelectStatementNode
+		CoprocStatementNode
+		DeclarationStatementNode
+	)
+	
+	type BraceExpansion struct {	Token    token.Token // The '{' token
 	Elements []Expression
 }
 
@@ -918,6 +919,11 @@ func Walk(node Node, f WalkFn) {
 		Walk(n.Body, f)
 	case *CoprocStatement:
 		Walk(n.Command, f)
+	case *DeclarationStatement:
+		for _, assign := range n.Assignments {
+			Walk(assign.Name, f)
+			Walk(assign.Value, f)
+		}
 	}
 }
 
@@ -1004,6 +1010,44 @@ func (cs *CoprocStatement) String() string {
 	}
 	if cs.Command != nil {
 		out = append(out, []byte(cs.Command.String())...)
+	}
+	return string(out)
+}
+
+type DeclarationStatement struct {
+	Token       token.Token // typeset, declare, local
+	Command     string      // "typeset", "declare", "local"
+	Flags       []string    // e.g. ["-A", "-r"]
+	Assignments []*DeclarationAssignment
+}
+
+type DeclarationAssignment struct {
+	Name     Expression
+	Value    Expression // can be nil
+	IsAppend bool       // +=
+}
+
+func (ds *DeclarationStatement) Type() NodeType       { return DeclarationStatementNode }
+func (ds *DeclarationStatement) statementNode()       {}
+func (ds *DeclarationStatement) TokenLiteral() string { return ds.Token.Literal }
+func (ds *DeclarationStatement) TokenLiteralNode() token.Token { return ds.Token }
+func (ds *DeclarationStatement) String() string {
+	var out []byte
+	out = append(out, []byte(ds.Command)...)
+	for _, flag := range ds.Flags {
+		out = append(out, []byte(" "+flag)...)
+	}
+	for _, assign := range ds.Assignments {
+		out = append(out, []byte(" ")...)
+		out = append(out, []byte(assign.Name.String())...)
+		if assign.Value != nil {
+			if assign.IsAppend {
+				out = append(out, []byte("+=")...)
+			} else {
+				out = append(out, []byte("=")...)
+			}
+			out = append(out, []byte(assign.Value.String())...)
+		}
 	}
 	return string(out)
 }
