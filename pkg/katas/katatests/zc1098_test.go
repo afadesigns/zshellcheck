@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/afadesigns/zshellcheck/pkg/katas"
-	"github.com/afadesigns/zshellcheck/pkg/testutil"
 )
 
 func TestZC1098(t *testing.T) {
