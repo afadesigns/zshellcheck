@@ -3152,7 +3152,27 @@ To disable this Kata, add `ZC1096` to the `disabled_katas` list in your `.zshell
 [⬆ Back to Top](#table-of-contents)
 </details>
 
-<div id="zc1097"></div>
+### ZC1092
+
+**Prefer `print` or `printf` over `echo`**
+
+In Zsh, `echo` behavior can vary significantly based on options like `BSD_ECHO` or `POSIX_STRINGS`. `print` is a Zsh builtin with consistent behavior and features. For strictly formatted output, `printf` is preferred.
+
+**Bad:**
+```zsh
+echo "Hello World"
+echo -n "No newline"
+```
+
+**Good:**
+```zsh
+print "Hello World"
+print -n "No newline"
+# Or better:
+print -r -- "Raw string"
+```
+
+### ZC1097
 
 <details>
 <summary><strong>ZC1097</strong>: Declare loop variables as `local` in functions <img src="https://img.shields.io/badge/Status-Active-brightgreen?style=flat-square" height="15"/></summary>
