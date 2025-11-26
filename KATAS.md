@@ -84,6 +84,21 @@ Comprehensive list of all 70 implemented checks, migrated from the Wiki.
 - [ZC1080: Use `(N)` nullglob qualifier for globs in loops](#zc1080)
 - [ZC1081: Use `${#var}` to get string length instead of `wc -c`](#zc1081)
 - [ZC1082: Prefer `${var//old/new}` over `sed` for simple replacements](#zc1082)
+- [ZC1083: Brace expansion limits cannot be variables](#zc1083)
+- [ZC1084: Quote globs in `find` commands](#zc1084)
+- [ZC1085: Quote variable expansions in `for` loops](#zc1085)
+- [ZC1086: Prefer `func() { ... }` over `function func { ... }`](#zc1086)
+- [ZC1087: Output redirection overwrites input file](#zc1087)
+- [ZC1088: Subshell isolates state changes](#zc1088)
+- [ZC1089: Redirection order matters (`2>&1 > file`)](#zc1089)
+- [ZC1090: Quoted regex pattern in `=~`](#zc1090)
+- [ZC1091: Use `((...))` for arithmetic comparisons in `[[...]]`](#zc1091)
+- [ZC1092: Arrays cannot be exported](#zc1092)
+- [ZC1093: Use `IFS=` with `read` in loops](#zc1093)
+- [ZC1094: Consider `grep -P` for advanced regex](#zc1094)
+- [ZC1095: Quote here-string content](#zc1095)
+- [ZC1096: Avoid using `test -e` or `[ -e ... ]` for file existence checks](#zc1096)
+- [ZC1097: Declare loop variables as `local` in functions](#zc1097)
 
 ---
 
@@ -2999,3 +3014,180 @@ To disable this Kata, add `ZC1082` to the `disabled_katas` list in your `.zshell
 
 
 
+
+
+<div id="zc1093"></div>
+
+<details>
+<summary><strong>ZC1093</strong>: Use `IFS=` with `read` in loops <img src="https://img.shields.io/badge/Status-Active-brightgreen?style=flat-square" height="15"/></summary>
+
+### Description
+
+When reading lines in a loop using `while read ...`, the default behavior of `read` is to trim leading and trailing whitespace from the input line. To preserve the whitespace (read the line exactly as is), you should set `IFS` to an empty string for the `read` command.
+
+### Bad Example
+
+```zsh
+while read -r line; do
+  echo "$line"
+done < file.txt
+```
+
+### Good Example
+
+```zsh
+while IFS= read -r line; do
+  echo "$line"
+done < file.txt
+```
+
+### Configuration
+
+To disable this Kata, add `ZC1093` to the `disabled_katas` list in your `.zshellcheckrc` file.
+
+---
+
+[⬆ Back to Top](#table-of-contents)
+</details>
+
+
+<div id="zc1094"></div>
+
+<details>
+<summary><strong>ZC1094</strong>: Consider `grep -P` for advanced regex <img src="https://img.shields.io/badge/Status-Active-brightgreen?style=flat-square" height="15"/></summary>
+
+### Description
+
+While `grep -E` provides Extended Regular Expressions, there are situations where more advanced pattern matching capabilities are required. Perl Compatible Regular Expressions (PCRE), enabled by `grep -P`, offer features like lookarounds (positive/negative lookahead/lookbehind), backreferences within alternation, and non-greedy quantifiers. If your regex needs extend beyond what ERE offers, `grep -P` is a powerful alternative.
+
+### Bad Example
+
+```zsh
+grep -E '(a|b)c' file.txt
+```
+*(This example is not "bad" in functionality, but serves to illustrate a basic `-E` usage that *could* be enhanced if advanced PCRE features were desired. The Kata suggests `-P` as a potential improvement path.)*
+
+### Good Example
+
+```zsh
+grep -P '(?<=prefix)pattern' file.txt
+```
+*(This example shows a PCRE-specific feature (lookbehind) demonstrating the added capability of `grep -P`.)*
+
+### Configuration
+
+To disable this Kata, add `ZC1094` to the `disabled_katas` list in your `.zshellcheckrc` file.
+
+---
+
+[⬆ Back to Top](#table-of-contents)
+</details>
+
+
+<div id="zc1095"></div>
+
+<details>
+<summary><strong>ZC1095</strong>: Quote here-string content <img src="https://img.shields.io/badge/Status-Active-brightgreen?style=flat-square" height="15"/></summary>
+
+### Description
+
+When providing content to a here-string (`<<<`), it is generally best practice to quote the content. Unquoted strings can be subject to word splitting and globbing, leading to unexpected behavior if the string contains spaces, special characters, or patterns that could be expanded by the shell. Quoting ensures that the content is passed literally, preserving its exact form.
+
+Use single quotes (`'...'`) for literal strings, dollar-single quotes (`$'...'`) if you need escape sequence interpretation (e.g., `
+` for a newline), or double quotes (`"..."`) if you need variable expansion within the string.
+
+### Bad Example
+
+```zsh
+grep pattern <<< foo bar
+grep pattern <<< $my_var
+```
+
+### Good Example
+
+```zsh
+grep pattern <<< 'foo bar'
+grep pattern <<< "$my_var"
+grep pattern <<< $'	foo
+bar'
+```
+
+### Configuration
+
+To disable this Kata, add `ZC1095` to the `disabled_katas` list in your `.zshellcheckrc` file.
+
+---
+
+[⬆ Back to Top](#table-of-contents)
+</details>
+
+<div id="zc1096"></div>
+
+<details>
+<summary><strong>ZC1096</strong>: Avoid using `test -e` or `[ -e ... ]` for file existence checks <img src="https://img.shields.io/badge/Status-Active-brightgreen?style=flat-square" height="15"/></summary>
+
+### Description
+
+Prefer more specific checks like `[[ -f ... ]]` for regular files or `[[ -d ... ]]` for directories. `test -e` is less specific and can mask intentions.
+
+### Bad Example
+
+```zsh
+if [ -e "$file" ]; then ... fi
+```
+
+### Good Example
+
+```zsh
+if [[ -f "$file" ]]; then ... fi
+if [[ -d "$dir" ]]; then ... fi
+```
+
+### Configuration
+
+To disable this Kata, add `ZC1096` to the `disabled_katas` list in your `.zshellcheckrc` file.
+
+---
+
+[⬆ Back to Top](#table-of-contents)
+</details>
+
+<div id="zc1097"></div>
+
+<details>
+<summary><strong>ZC1097</strong>: Declare loop variables as `local` in functions <img src="https://img.shields.io/badge/Status-Active-brightgreen?style=flat-square" height="15"/></summary>
+
+### Description
+
+Loop variables in `for` loops are global by default in Zsh functions. Use `local` to scope them to the function before the loop.
+
+### Bad Example
+
+```zsh
+my_func() {
+    for i in {1..5}; do
+        echo $i
+    done
+}
+# 'i' leaks into global scope
+```
+
+### Good Example
+
+```zsh
+my_func() {
+    local i
+    for i in {1..5}; do
+        echo $i
+    done
+}
+```
+
+### Configuration
+
+To disable this Kata, add `ZC1097` to the `disabled_katas` list in your `.zshellcheckrc` file.
+
+---
+
+[⬆ Back to Top](#table-of-contents)
+</details>
