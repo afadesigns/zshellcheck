@@ -3172,6 +3172,86 @@ print -n "No newline"
 print -r -- "Raw string"
 ```
 
+### ZC1096
+
+**Warn on `bc` for simple arithmetic**
+
+Zsh has built-in support for floating point arithmetic using `(( ... ))` or `$(( ... ))`. Using `bc` is often unnecessary and slower.
+
+**Bad:**
+```zsh
+echo "1.5 + 2.5" | bc
+```
+
+**Good:**
+```zsh
+(( 1.5 + 2.5 ))
+```
+
+### ZC1098
+
+**Use `(q)` flag for quoting variables in eval**
+
+When constructing a command string for `eval`, use the `(q)` flag (or `(qq)`, `(q-)`) to safely quote variables and prevent command injection.
+
+**Bad:**
+```zsh
+eval "ls $dir"
+```
+
+**Good:**
+```zsh
+eval "ls ${(q)dir}"
+```
+
+### ZC1099
+
+**Use `(f)` flag to split lines instead of `while read`**
+
+Zsh provides the `(f)` parameter expansion flag to split a string into lines. Iterating over `${(f)variable}` is often cleaner and faster than piping to `while read`.
+
+**Bad:**
+```zsh
+cat file | while read line; do ...; done
+```
+
+**Good:**
+```zsh
+for line in ${(f)"$(<file)"}; do ...; done
+```
+
+### ZC1102
+
+**Redirecting output of `sudo` doesn't work as expected**
+
+Redirections are performed by the current shell before `sudo` is started. So `sudo echo > /root/file` will try to open `/root/file` as the current user, failing.
+
+**Bad:**
+```zsh
+sudo echo "content" > /root/file
+```
+
+**Good:**
+```zsh
+echo "content" | sudo tee /root/file > /dev/null
+```
+
+### ZC1103
+
+**Suggest `path` array instead of `$PATH` string manipulation**
+
+Zsh automatically maps the `$PATH` environment variable to the `$path` array. Modifying `$path` is cleaner and less error-prone than manipulating the colon-separated `$PATH` string.
+
+**Bad:**
+```zsh
+export PATH=$PATH:/usr/local/bin
+```
+
+**Good:**
+```zsh
+path+=('/usr/local/bin')
+```
+
 ### ZC1097
 
 <details>
