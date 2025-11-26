@@ -53,6 +53,18 @@ func checkZC1097(node ast.Node) []Violation {
 			}
 		}
 
+		// Track declaration statements (typeset, declare, integer, etc.)
+		if decl, ok := n.(*ast.DeclarationStatement); ok {
+			// DeclarationStatements are usually "typeset", "declare", "local", "integer", etc.
+			// We treat all variables declared here as local to the function/block.
+			// The parser ensures these are valid declaration commands.
+			for _, assign := range decl.Assignments {
+				if assign.Name != nil {
+					locals[assign.Name.String()] = true
+				}
+			}
+		}
+
 		// Check ForLoopStatement
 		if forLoop, ok := n.(*ast.ForLoopStatement); ok {
 			// Check if Init is an Identifier (loop variable)

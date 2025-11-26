@@ -11,7 +11,11 @@ linters:
     - staticcheck
     - unused
     - gofumpt
+    - gosec
     - gocritic
+    - revive
+    - gocognit
+    - funlen
     - lll
     - misspell
 

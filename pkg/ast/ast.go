@@ -44,11 +44,12 @@ const (
 	SubshellNode
 	BraceExpansionNode
 		SelectStatementNode
-		CoprocStatementNode
-		DeclarationStatementNode
-	)
-	
-	type BraceExpansion struct {	Token    token.Token // The '{' token
+			CoprocStatementNode
+			DeclarationStatementNode
+			ProcessSubstitutionNode
+		)
+		
+		type BraceExpansion struct {	Token    token.Token // The '{' token
 	Elements []Expression
 }
 
@@ -924,6 +925,8 @@ func Walk(node Node, f WalkFn) {
 			Walk(assign.Name, f)
 			Walk(assign.Value, f)
 		}
+	case *ProcessSubstitution:
+		Walk(n.Command, f)
 	}
 }
 
@@ -1050,5 +1053,18 @@ func (ds *DeclarationStatement) String() string {
 		}
 	}
 	return string(out)
+}
+
+type ProcessSubstitution struct {
+	Token   token.Token // <(, >(, =(
+	Command Expression
+}
+
+func (ps *ProcessSubstitution) Type() NodeType       { return ProcessSubstitutionNode }
+func (ps *ProcessSubstitution) expressionNode()      {}
+func (ps *ProcessSubstitution) TokenLiteral() string { return ps.Token.Literal }
+func (ps *ProcessSubstitution) TokenLiteralNode() token.Token { return ps.Token }
+func (ps *ProcessSubstitution) String() string {
+	return ps.Token.Literal + ps.Command.String() + ")"
 }
 

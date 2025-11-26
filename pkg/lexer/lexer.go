@@ -80,6 +80,11 @@ func (l *Lexer) NextToken() token.Token {
 			l.readChar()
 			literal := string(ch) + string(l.ch)
 			tok = token.Token{Type: token.EQTILDE, Literal: literal, Line: l.line, Column: l.column}
+		} else if l.peekChar() == '(' && hasSpace {
+			ch := l.ch
+			l.readChar()
+			literal := string(ch) + string(l.ch)
+			tok = token.Token{Type: token.EQ_LPAREN, Literal: literal, Line: l.line, Column: l.column}
 		} else {
 			tok = newToken(token.ASSIGN, l.ch, l.line, l.column)
 		}
@@ -179,6 +184,11 @@ func (l *Lexer) NextToken() token.Token {
 			l.readChar()
 			literal := string(ch) + string(l.ch)
 			tok = token.Token{Type: token.LTAMP, Literal: literal, Line: l.line, Column: l.column}
+		case '(':
+			ch := l.ch
+			l.readChar()
+			literal := string(ch) + string(l.ch)
+			tok = token.Token{Type: token.LT_LPAREN, Literal: literal, Line: l.line, Column: l.column}
 		default:
 			tok = newToken(token.LT, l.ch, l.line, l.column)
 		}
@@ -194,6 +204,11 @@ func (l *Lexer) NextToken() token.Token {
 			l.readChar()
 			literal := string(ch) + string(l.ch)
 			tok = token.Token{Type: token.GTAMP, Literal: literal, Line: l.line, Column: l.column}
+		case '(':
+			ch := l.ch
+			l.readChar()
+			literal := string(ch) + string(l.ch)
+			tok = token.Token{Type: token.GT_LPAREN, Literal: literal, Line: l.line, Column: l.column}
 		default:
 			tok = newToken(token.GT, l.ch, l.line, l.column)
 		}
