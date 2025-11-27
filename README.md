@@ -5,6 +5,7 @@
 [![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/afadesigns/zshellcheck/badge)](https://securityscorecards.dev/viewer/?uri=github.com/afadesigns/zshellcheck)
 [![codecov](https://codecov.io/gh/afadesigns/zshellcheck/graph/badge.svg?token=placeholder)](https://codecov.io/gh/afadesigns/zshellcheck)
 [![SLSA](https://img.shields.io/badge/SLSA-Level%203-brightgreen)](https://slsa.dev)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 ![Release](https://img.shields.io/github/v/release/afadesigns/zshellcheck)
 
 ```
