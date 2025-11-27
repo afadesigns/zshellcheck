@@ -1,13 +1,5 @@
 # ZShellCheck
 
-![CI](https://github.com/afadesigns/zshellcheck/actions/workflows/ci.yml/badge.svg)
-[![Go Report Card](https://goreportcard.com/badge/github.com/afadesigns/zshellcheck)](https://goreportcard.com/report/github.com/afadesigns/zshellcheck)
-[![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/afadesigns/zshellcheck/badge)](https://securityscorecards.dev/viewer/?uri=github.com/afadesigns/zshellcheck)
-[![codecov](https://codecov.io/gh/afadesigns/zshellcheck/graph/badge.svg?token=placeholder)](https://codecov.io/gh/afadesigns/zshellcheck)
-[![SLSA](https://img.shields.io/badge/SLSA-Level%203-brightgreen)](https://slsa.dev)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-![Release](https://img.shields.io/github/v/release/afadesigns/zshellcheck)
-
 ```
    ____   _____ __         ____   ______ __                  __  
   /_  /  / ___// /_  ___  / / /  / ____// /_   ___   _____  / /__
@@ -15,6 +7,14 @@
   / /___ ___/ / / / /  __/ / /  / /___ / / / //  __// /__  / ,<   
  /_____//____/_/ /_/\___/_/_/   \____//_/ /_/ \___/ \___/ /_/|_|  
 ```
+
+![CI](https://github.com/afadesigns/zshellcheck/actions/workflows/ci.yml/badge.svg)
+[![Go Report Card](https://goreportcard.com/badge/github.com/afadesigns/zshellcheck)](https://goreportcard.com/report/github.com/afadesigns/zshellcheck)
+[![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/afadesigns/zshellcheck/badge)](https://securityscorecards.dev/viewer/?uri=github.com/afadesigns/zshellcheck)
+[![codecov](https://codecov.io/gh/afadesigns/zshellcheck/graph/badge.svg?token=placeholder)](https://codecov.io/gh/afadesigns/zshellcheck)
+[![SLSA](https://img.shields.io/badge/SLSA-Level%203-brightgreen)](https://slsa.dev)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+![Release](https://img.shields.io/github/v/release/afadesigns/zshellcheck)
 
 **ZShellCheck** is the definitive static analysis and comprehensive development suite for the entire Zsh ecosystem, meticulously engineered as the full Zsh equivalent of ShellCheck for Bash. It offers intelligent automatic fixes (planned), advanced formatting capabilities, and deep code analysis to deliver unparalleled quality, performance, and reliability for Zsh scripts, functions, and configurations.
 
