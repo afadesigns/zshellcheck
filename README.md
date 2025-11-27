@@ -6,7 +6,6 @@
 [![codecov](https://codecov.io/gh/afadesigns/zshellcheck/graph/badge.svg?token=placeholder)](https://codecov.io/gh/afadesigns/zshellcheck)
 [![SLSA](https://img.shields.io/badge/SLSA-Level%203-brightgreen)](https://slsa.dev)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![GitHub Sponsors](https://img.shields.io/badge/Sponsor-GitHub-ea4aaa.svg)](https://github.com/sponsors/afadesigns)
 
 ![Release](https://img.shields.io/github/v/release/afadesigns/zshellcheck)
 
