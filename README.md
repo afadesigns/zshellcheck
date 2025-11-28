@@ -58,7 +58,7 @@ ZShellCheck is written in Go and can be easily installed from source if you have
 
 ### From Go Modules
 
-To install `zshellcheck`, ensure you have Go (version 1.18 or higher) installed, then run:
+To install `zshellcheck`, ensure you have Go (version 1.25 or higher) installed, then run:
 
 ```bash
 go install github.com/afadesigns/zshellcheck/cmd/zshellcheck@latest
