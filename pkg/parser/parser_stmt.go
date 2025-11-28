@@ -47,7 +47,7 @@ func (p *Parser) parseStatement() ast.Statement {
 		}
 		return cmd
 	case token.COLON, token.DOT, token.LBRACKET,
-		token.GT, token.LT, token.GTGT, token.LTLT, token.GTAMP, token.LTAMP, token.AMPERSAND:
+		token.GT, token.LT, token.GTGT, token.LTLT, token.GTAMP, token.LTAMP, token.AMPERSAND, token.SLASH:
 		return p.parseSimpleCommandStatement()
 	case token.CASE:
 		return p.parseCaseStatement()

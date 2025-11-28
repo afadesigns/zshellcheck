@@ -176,8 +176,6 @@ func (l *Lexer) NextToken() token.Token {
 		}
 	case '*':
 		tok = newToken(token.ASTERISK, l.ch, l.line, l.column)
-	case '/':
-		tok = newToken(token.SLASH, l.ch, l.line, l.column)
 	case '<':
 		switch l.peekChar() {
 		case '<':
