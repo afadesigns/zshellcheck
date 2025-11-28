@@ -55,7 +55,7 @@ func TestZC1084(t *testing.T) {
 					KataID:  "ZC1084",
 					Message: "Quote globs in `find` commands. `-(name[a-z])` contains unquoted brackets.",
 					Line:    1,
-					Column:  14, // Points to -name
+					Column:  13, // Points to [
 				},
 			},
 		},

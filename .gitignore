@@ -7,8 +7,6 @@ zshellcheck-windows-amd64.exe
 /build/
 
 # Go module cache
-/go.mod
-/go.sum
 
 # Test binaries and caches
 *.test
