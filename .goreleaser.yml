@@ -1,7 +1,7 @@
 # .goreleaser.yml
 version: 2
 builds:
-  - main: ./cmd/zshellcheck
+  - main: ./cmd/zshellcheck/main.go
     env:
       - CGO_ENABLED=0
     goos:
