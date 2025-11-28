@@ -45,11 +45,19 @@ func (r *TextReporter) Report(violations []katas.Violation) error {
 			return fmt.Errorf("kata with ID %s not found", v.KataID)
 		}
 
-		// Format: file:line:col: [ID] Title: Message
-		// Example: demo.zsh:10:5: [ZC1001] Array Access: Invalid array access...
+		// Format: file:line:col: [Level] [ID] Title: Message
+		// Example: demo.zsh:10:5: [Warning] [ZC1001] Array Access: Invalid array access...
 
-		fmt.Fprintf(r.writer, "%s%s:%d:%d:%s %s[%s]%s %s%s:%s %s\n",
+		levelColor := colorYellow
+		if v.Level == katas.Error {
+			levelColor = colorRed
+		} else if v.Level == katas.Info {
+			levelColor = colorCyan
+		}
+
+		fmt.Fprintf(r.writer, "%s%s:%d:%d:%s %s[%s]%s %s[%s]%s %s%s:%s %s\n",
 			colorBold, r.filename, v.Line, v.Column, colorReset,
+			levelColor, v.Level, colorReset,
 			colorRed, v.KataID, colorReset,
 			colorCyan, kata.Title, colorReset,
 			v.Message,

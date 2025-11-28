@@ -94,8 +94,16 @@ func run() int {
 
 	kataRegistry := katas.Registry
 
+	totalViolations := 0
 	for _, filename := range flag.Args() {
-		processPath(filename, os.Stdout, os.Stderr, config, kataRegistry, *format)
+		totalViolations += processPath(filename, os.Stdout, os.Stderr, config, kataRegistry, *format)
+	}
+
+	if totalViolations > 0 {
+		if *format == "text" {
+			fmt.Fprintf(os.Stderr, "\nFound %d violations.\n", totalViolations)
+		}
+		return 1
 	}
 	return 0
 }
@@ -119,13 +127,14 @@ func loadConfig(path string) (Config, error) {
 	return config, nil
 }
 
-func processPath(path string, out, errOut io.Writer, config Config, registry *katas.KatasRegistry, format string) {
+func processPath(path string, out, errOut io.Writer, config Config, registry *katas.KatasRegistry, format string) int {
 	info, err := os.Stat(path)
 	if err != nil {
 		fmt.Fprintf(errOut, "Error stating path %s: %s\n", path, err)
-		return
+		return 0
 	}
 
+	count := 0
 	if info.IsDir() {
 		err := filepath.WalkDir(path, func(p string, d os.DirEntry, err error) error {
 			if err != nil {
@@ -148,22 +157,23 @@ func processPath(path string, out, errOut io.Writer, config Config, registry *ka
 			// For now, let's try to parse everything, or maybe filter by extension/shebang if it gets too noisy.
 			// Shellcheck defaults to checking all files passed, but for recursive it might filter.
 			// Let's assume user wants to check all files in the dir if they passed the dir.
-			processFile(p, out, errOut, config, registry, format)
+			count += processFile(p, out, errOut, config, registry, format)
 			return nil
 		})
 		if err != nil {
 			fmt.Fprintf(errOut, "Error walking directory %s: %s\n", path, err)
 		}
 	} else {
-		processFile(path, out, errOut, config, registry, format)
+		count += processFile(path, out, errOut, config, registry, format)
 	}
+	return count
 }
 
-func processFile(filename string, out, errOut io.Writer, config Config, registry *katas.KatasRegistry, format string) {
+func processFile(filename string, out, errOut io.Writer, config Config, registry *katas.KatasRegistry, format string) int {
 	data, err := os.ReadFile(filename)
 	if err != nil {
 		fmt.Fprintf(errOut, "Error reading file %s: %s\n", filename, err)
-		return
+		return 0
 	}
 
 	l := lexer.New(string(data))
@@ -175,7 +185,10 @@ func processFile(filename string, out, errOut io.Writer, config Config, registry
 		for _, msg := range p.Errors() {
 			fmt.Fprintf(errOut, "Parser Error in %s: %s\n", filename, msg)
 		}
-		return
+		// Parser errors should technically count as failures too?
+		// But for now let's just count violations.
+		// Actually, if parser fails, we probably want to fail build.
+		return 1
 	}
 
 	violations := []katas.Violation{}
@@ -198,4 +211,5 @@ func processFile(filename string, out, errOut io.Writer, config Config, registry
 			fmt.Fprintf(errOut, "Error reporting violations: %s\n", err)
 		}
 	}
+	return len(violations)
 }

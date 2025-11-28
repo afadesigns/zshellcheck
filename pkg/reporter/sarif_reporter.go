@@ -52,9 +52,16 @@ func (r *SarifReporter) Report(violations []katas.Violation) error {
 			}
 		}
 
+		level := "warning"
+		if v.Level == katas.Error {
+			level = "error"
+		} else if v.Level == katas.Info {
+			level = "note"
+		}
+
 		result := SarifResult{
 			RuleID:  v.KataID,
-			Level:   "warning", // Default level
+			Level:   level,
 			Message: SarifMessage{Text: v.Message},
 			Locations: []SarifLocation{
 				{

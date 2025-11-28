@@ -22,7 +22,6 @@ func (r *JSONReporter) Report(violations []katas.Violation) error {
 	type jsonViolation struct {
 		katas.Violation
 		Title string `json:"Title"`
-		Level string `json:"Level"`
 	}
 
 	var output []jsonViolation
@@ -35,7 +34,6 @@ func (r *JSONReporter) Report(violations []katas.Violation) error {
 		output = append(output, jsonViolation{
 			Violation: v,
 			Title:     title,
-			Level:     "warning", // Default level for now
 		})
 	}
 

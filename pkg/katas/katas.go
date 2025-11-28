@@ -6,12 +6,22 @@ import (
 	"github.com/afadesigns/zshellcheck/pkg/ast"
 )
 
+// Severity defines the severity of a violation.
+type Severity string
+
+const (
+	Error   Severity = "Error"
+	Warning Severity = "Warning"
+	Info    Severity = "Info"
+)
+
 // Violation represents a found violation in the code.
 type Violation struct {
 	KataID  string
 	Message string
 	Line    int
 	Column  int
+	Level   Severity
 }
 
 // Kata represents a single linting rule.
@@ -19,6 +29,7 @@ type Kata struct {
 	ID          string
 	Title       string
 	Description string
+	Severity    Severity
 	Check       func(node ast.Node) []Violation
 }
 
@@ -38,6 +49,9 @@ func NewKatasRegistry() *KatasRegistry {
 
 // RegisterKata registers a new Kata.
 func (kr *KatasRegistry) RegisterKata(nodeType ast.Node, kata Kata) {
+	if kata.Severity == "" {
+		kata.Severity = Warning
+	}
 	key := fmt.Sprintf("%T", nodeType)
 	kr.KatasByType[key] = append(kr.KatasByType[key], kata)
 	kr.KatasByID[kata.ID] = kata
@@ -68,7 +82,13 @@ func (kr *KatasRegistry) Check(node ast.Node, disabledKatas []string) []Violatio
 				}
 			}
 			if !disabled {
-				violations = append(violations, kata.Check(node)...)
+				vs := kata.Check(node)
+				for i := range vs {
+					if vs[i].Level == "" {
+						vs[i].Level = kata.Severity
+					}
+				}
+				violations = append(violations, vs...)
 			}
 		}
 	}
