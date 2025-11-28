@@ -13,12 +13,9 @@ builds:
       - -trimpath
       - -pgo=pgo/default.pgo
 
-slsa:
-  enabled: true
 
 archives:
-  - replacements:
-    # this name template makes the OS and Arch compatible with the results of uname.
+  - # this name template makes the OS and Arch compatible with the results of uname.
     name_template: >-
       {{ .ProjectName }}_
       {{- title .Os }}_
