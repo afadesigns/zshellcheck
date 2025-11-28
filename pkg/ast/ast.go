@@ -447,7 +447,7 @@ func (aa *ArrayAccess) TokenLiteralNode() token.Token { return aa.Token }
 // String returns a string representation of the ArrayAccess.
 func (aa *ArrayAccess) String() string {
 	var sb strings.Builder
-	sb.WriteString("${")
+	sb.WriteString("${ ")
 	if aa.Left != nil {
 		sb.WriteString(aa.Left.String())
 	}
@@ -483,6 +483,28 @@ func (ia *InvalidArrayAccess) TokenLiteral() string          { return ia.Token.L
 func (ia *InvalidArrayAccess) TokenLiteralNode() token.Token { return ia.Token }
 func (ia *InvalidArrayAccess) String() string {
 	return ia.Left.String() + "[" + ia.Index.String() + "]"
+}
+
+// ArrayLiteral represents an array literal (e.g., (val1 val2)).
+type ArrayLiteral struct {
+	Token    token.Token // The '(' token
+	Elements []Expression
+}
+
+func (al *ArrayLiteral) expressionNode()               {}
+func (al *ArrayLiteral) TokenLiteral() string          { return al.Token.Literal }
+func (al *ArrayLiteral) TokenLiteralNode() token.Token { return al.Token }
+func (al *ArrayLiteral) String() string {
+	var sb strings.Builder
+	sb.WriteString("(")
+	for i, el := range al.Elements {
+		if i > 0 {
+			sb.WriteString(" ")
+		}
+		sb.WriteString(el.String())
+	}
+	sb.WriteString(")")
+	return sb.String()
 }
 
 // Shebang represents a shebang comment (e.g., #!/bin/zsh).
@@ -736,6 +758,10 @@ func Walk(node Node, f WalkFn) {
 		Walk(n.Right, f)
 	case *InvalidArrayAccess:
 		// No nested AST nodes for InvalidArrayAccess
+	case *ArrayLiteral:
+		for _, el := range n.Elements {
+			Walk(el, f)
+		}
 	}
 }
 
@@ -931,6 +957,7 @@ var (
 	SimpleCommandNode           = &SimpleCommand{}
 	ConcatenatedExpressionNode  = &ConcatenatedExpression{}
 	InvalidArrayAccessNode      = &InvalidArrayAccess{}
+	ArrayLiteralNode            = &ArrayLiteral{}
 	StringLiteralNode           = &StringLiteral{}
 	GroupedExpressionNode       = &GroupedExpression{}
 	SelectStatementNode         = &SelectStatement{}

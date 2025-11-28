@@ -5,7 +5,7 @@ import (
 )
 
 func init() {
-	RegisterKata(ast.LetStatementNode, Kata{
+	RegisterKata(ast.SimpleCommandNode, Kata{
 		ID:    "ZC1013",
 		Title: "Use `((...))` for arithmetic operations instead of `let`",
 		Description: "The `let` command is a shell builtin, but the `((...))` syntax is more portable " +
@@ -15,16 +15,19 @@ func init() {
 }
 
 func checkZC1013(node ast.Node) []Violation {
-	violations := []Violation{}
-
-	if letStmt, ok := node.(*ast.LetStatement); ok {
-		violations = append(violations, Violation{
-			KataID:  "ZC1013",
-			Message: "Use `((...))` for arithmetic operations instead of `let`.",
-			Line:    letStmt.Token.Line,
-			Column:  letStmt.Token.Column,
-		})
+	cmd, ok := node.(*ast.SimpleCommand)
+	if !ok {
+		return nil
 	}
 
-	return violations
+	if cmd.Name.String() == "let" {
+		return []Violation{{
+			KataID:  "ZC1013",
+			Message: "Use `((...))` for arithmetic operations instead of `let`.",
+			Line:    cmd.TokenLiteralNode().Line,
+			Column:  cmd.TokenLiteralNode().Column,
+		}}
+	}
+
+	return nil
 }
