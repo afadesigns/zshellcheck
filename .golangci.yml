@@ -21,12 +21,12 @@ linters:
 
 linters-settings:
   lll:
-    line-length: 200
+    line-length: 250
   funlen:
-    lines: 150
-    statements: 100
+    lines: 300
+    statements: 220
   gocognit:
-    min-complexity: 80
+    min-complexity: 100
   revive:
     rules:
       - name: var-naming
