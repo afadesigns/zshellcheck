@@ -1,8 +1,6 @@
 package katas
 
 import (
-	"strings"
-
 	"github.com/afadesigns/zshellcheck/pkg/ast"
 )
 
@@ -102,10 +100,6 @@ func containsRegexMeta(s string) bool {
 		}
 	}
 	// Check for $ at end? `foo$` -> regex end anchor.
-	if strings.HasSuffix(content, "$") {
-		// But `price$` might be text.
-		// `^` is stronger indicator.
-		// `.*` is strong.
-	}
+	// if strings.HasSuffix(content, "$") { ... } - Removed empty block
 	return false
 }

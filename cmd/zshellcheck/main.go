@@ -23,6 +23,10 @@ type Config struct {
 }
 
 func main() {
+	os.Exit(run())
+}
+
+func run() int {
 	banner := "\n" +
 		"\033[38;5;51m███████╗███████╗██╗  ██╗███████╗██╗     ██╗      ██████╗██╗  ██╗███████╗ ██████╗██╗  ██╗\033[0m\n" +
 		"\033[38;5;45m╚══███╔╝██╔════╝██║  ██║██╔════╝██║     ██║     ██╔════╝██║  ██║██╔════╝██╔════╝██║ ██╔╝\033[0m\n" +
@@ -78,7 +82,7 @@ func main() {
 	config, err := loadConfig(".zshellcheckrc")
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error loading config: %s\n", err)
-		os.Exit(1)
+		return 1
 	}
 
 	kataRegistry := katas.Registry
@@ -86,6 +90,7 @@ func main() {
 	for _, filename := range flag.Args() {
 		processPath(filename, os.Stdout, os.Stderr, config, kataRegistry, *format)
 	}
+	return 0
 }
 
 func loadConfig(path string) (Config, error) {

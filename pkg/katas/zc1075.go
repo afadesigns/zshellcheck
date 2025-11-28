@@ -48,6 +48,7 @@ func checkZC1075(node ast.Node) []Violation {
 				Column:  arg.TokenLiteralNode().Column,
 			})
 		} else if _, ok := arg.(*ast.InvalidArrayAccess); ok {
+			_ = ok
 			// $arr[idx] - ZC1001 flags this, but it's also unquoted.
 			// Let ZC1001 handle the syntax error, but ZC1075 could also flag globbing.
 			// We'll skip to reduce noise.
