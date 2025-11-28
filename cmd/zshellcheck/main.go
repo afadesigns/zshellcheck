@@ -53,6 +53,7 @@ func run() int {
 	cpuprofile := flag.String("cpuprofile", "", "Write CPU profile to file")
 	showVersion := flag.Bool("version", false, "Show version and exit")
 	verbose := flag.Bool("verbose", false, "Show detailed Kata descriptions in text output")
+	noColor := flag.Bool("no-color", false, "Disable colored output")
 	flag.Parse()
 
 	if *showVersion {
@@ -83,7 +84,7 @@ func run() int {
 
 	// Print banner on successful run too, as per original request
 	// But suppress it for JSON/SARIF output to keep it clean for parsing
-	if *format != "json" && *format != "sarif" {
+	if *format != "json" && *format != "sarif" && !*noColor {
 		fmt.Fprint(os.Stderr, banner)
 	}
 
@@ -97,7 +98,7 @@ func run() int {
 
 	totalViolations := 0
 	for _, filename := range flag.Args() {
-		totalViolations += processPath(filename, os.Stdout, os.Stderr, config, kataRegistry, *format, *verbose)
+		totalViolations += processPath(filename, os.Stdout, os.Stderr, config, kataRegistry, *format, *verbose, *noColor)
 	}
 
 	if totalViolations > 0 {
@@ -128,7 +129,7 @@ func loadConfig(path string) (Config, error) {
 	return config, nil
 }
 
-func processPath(path string, out, errOut io.Writer, config Config, registry *katas.KatasRegistry, format string, verbose bool) int {
+func processPath(path string, out, errOut io.Writer, config Config, registry *katas.KatasRegistry, format string, verbose bool, noColor bool) int {
 	info, err := os.Stat(path)
 	if err != nil {
 		fmt.Fprintf(errOut, "Error stating path %s: %s\n", path, err)
@@ -158,19 +159,19 @@ func processPath(path string, out, errOut io.Writer, config Config, registry *ka
 			// For now, let's try to parse everything, or maybe filter by extension/shebang if it gets too noisy.
 			// Shellcheck defaults to checking all files passed, but for recursive it might filter.
 			// Let's assume user wants to check all files in the dir if they passed the dir.
-			count += processFile(p, out, errOut, config, registry, format, verbose)
+			count += processFile(p, out, errOut, config, registry, format, verbose, noColor)
 			return nil
 		})
 		if err != nil {
 			fmt.Fprintf(errOut, "Error walking directory %s: %s\n", path, err)
 		}
 	} else {
-		count += processFile(path, out, errOut, config, registry, format, verbose)
+		count += processFile(path, out, errOut, config, registry, format, verbose, noColor)
 	}
 	return count
 }
 
-func processFile(filename string, out, errOut io.Writer, config Config, registry *katas.KatasRegistry, format string, verbose bool) int {
+func processFile(filename string, out, errOut io.Writer, config Config, registry *katas.KatasRegistry, format string, verbose bool, noColor bool) int {
 	data, err := os.ReadFile(filename)
 	if err != nil {
 		fmt.Fprintf(errOut, "Error reading file %s: %s\n", filename, err)
@@ -205,10 +206,10 @@ func processFile(filename string, out, errOut io.Writer, config Config, registry
 			r = reporter.NewJSONReporter(out)
 		case "sarif":
 			r = reporter.NewSarifReporter(out, filename)
-					default:
-						r = reporter.NewTextReporter(out, filename, string(data), verbose)
-				}
-				if err := r.Report(violations); err != nil {			fmt.Fprintf(errOut, "Error reporting violations: %s\n", err)
+								default:
+									r = reporter.NewTextReporter(out, filename, string(data), verbose, noColor)
+							}
+							if err := r.Report(violations); err != nil {			fmt.Fprintf(errOut, "Error reporting violations: %s\n", err)
 		}
 	}
 	return len(violations)

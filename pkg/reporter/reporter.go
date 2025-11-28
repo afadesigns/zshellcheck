@@ -19,15 +19,17 @@ type TextReporter struct {
 	filename string
 	lines    []string
 	verbose  bool
+	noColor  bool
 }
 
 // NewTextReporter creates a new TextReporter.
-func NewTextReporter(writer io.Writer, filename, source string, verbose bool) *TextReporter {
+func NewTextReporter(writer io.Writer, filename, source string, verbose bool, noColor bool) *TextReporter {
 	return &TextReporter{
 		writer:   writer,
 		filename: filename,
 		lines:    strings.Split(source, "\n"),
 		verbose:  verbose,
+		noColor:  noColor,
 	}
 }
 
@@ -38,6 +40,19 @@ const (
 	colorCyan   = "\033[36m"
 	colorBold   = "\033[1m"
 )
+
+func (r *TextReporter) cReset() string  { return r.getColor(colorReset) }
+func (r *TextReporter) cRed() string    { return r.getColor(colorRed) }
+func (r *TextReporter) cYellow() string { return r.getColor(colorYellow) }
+func (r *TextReporter) cCyan() string   { return r.getColor(colorCyan) }
+func (r *TextReporter) cBold() string   { return r.getColor(colorBold) }
+
+func (r *TextReporter) getColor(code string) string {
+	if r.noColor {
+		return ""
+	}
+	return code
+}
 
 // Report prints the violations to the writer.
 func (r *TextReporter) Report(violations []katas.Violation) error {
@@ -50,18 +65,18 @@ func (r *TextReporter) Report(violations []katas.Violation) error {
 		// Format: file:line:col: [Level] [ID] Title: Message
 		// Example: demo.zsh:10:5: [Warning] [ZC1001] Array Access: Invalid array access...
 
-		levelColor := colorYellow
+		levelColor := r.cYellow()
 		if v.Level == katas.Error {
-			levelColor = colorRed
+			levelColor = r.cRed()
 		} else if v.Level == katas.Info {
-			levelColor = colorCyan
+			levelColor = r.cCyan()
 		}
 
 		fmt.Fprintf(r.writer, "%s%s:%d:%d:%s %s[%s]%s %s[%s]%s %s%s:%s %s\n",
-			colorBold, r.filename, v.Line, v.Column, colorReset,
-			levelColor, v.Level, colorReset,
-			colorRed, v.KataID, colorReset,
-			colorCyan, kata.Title, colorReset,
+			r.cBold(), r.filename, v.Line, v.Column, r.cReset(),
+			levelColor, v.Level, r.cReset(),
+			r.cRed(), v.KataID, r.cReset(),
+			r.cCyan(), kata.Title, r.cReset(),
 			v.Message,
 		)
 
@@ -74,7 +89,7 @@ func (r *TextReporter) Report(violations []katas.Violation) error {
 			// For simple alignment, we can assume line numbers won't differ wildly in width for adjacent errors,
 			// but let's just print it directly.
 			
-			fmt.Fprintf(r.writer, "  %s%s |%s %s\n", colorCyan, lineNumStr, colorReset, line)
+			fmt.Fprintf(r.writer, "  %s%s |%s %s\n", r.cCyan(), lineNumStr, r.cReset(), line)
 			
 			// Calculate pointer padding
 			pad := ""
@@ -87,11 +102,11 @@ func (r *TextReporter) Report(violations []katas.Violation) error {
 			}
 			
 			gutterSpace := strings.Repeat(" ", len(lineNumStr))
-			fmt.Fprintf(r.writer, "  %s %s|%s %s%s^%s\n", gutterSpace, colorCyan, colorReset, pad, colorYellow, colorReset)
+			fmt.Fprintf(r.writer, "  %s %s|%s %s%s^%s\n", gutterSpace, r.cCyan(), r.cReset(), pad, r.cYellow(), r.cReset())
 		}
 
 		if r.verbose {
-			fmt.Fprintf(r.writer, "  %sDescription:%s %s\n", colorBold, colorReset, kata.Description)
+			fmt.Fprintf(r.writer, "  %sDescription:%s %s\n", r.cBold(), r.cReset(), kata.Description)
 		}
 		fmt.Fprintln(r.writer) // Add blank line between violations
 	}
