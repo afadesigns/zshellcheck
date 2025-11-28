@@ -27,7 +27,7 @@ func TestTextReporter_Report(t *testing.T) {
 
 	var buf bytes.Buffer
 	source := "first line\nsecond line\n"
-	reporter := NewTextReporter(&buf, "test.zsh", source)
+	reporter := NewTextReporter(&buf, "test.zsh", source, false)
 	// Update violations to include line/col
 	violations[0].Line = 1
 	violations[0].Column = 1

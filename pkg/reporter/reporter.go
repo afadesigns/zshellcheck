@@ -18,14 +18,16 @@ type TextReporter struct {
 	writer   io.Writer
 	filename string
 	lines    []string
+	verbose  bool
 }
 
 // NewTextReporter creates a new TextReporter.
-func NewTextReporter(writer io.Writer, filename, source string) *TextReporter {
+func NewTextReporter(writer io.Writer, filename, source string, verbose bool) *TextReporter {
 	return &TextReporter{
 		writer:   writer,
 		filename: filename,
 		lines:    strings.Split(source, "\n"),
+		verbose:  verbose,
 	}
 }
 
@@ -86,6 +88,10 @@ func (r *TextReporter) Report(violations []katas.Violation) error {
 			
 			gutterSpace := strings.Repeat(" ", len(lineNumStr))
 			fmt.Fprintf(r.writer, "  %s %s|%s %s%s^%s\n", gutterSpace, colorCyan, colorReset, pad, colorYellow, colorReset)
+		}
+
+		if r.verbose {
+			fmt.Fprintf(r.writer, "  %sDescription:%s %s\n", colorBold, colorReset, kata.Description)
 		}
 		fmt.Fprintln(r.writer) // Add blank line between violations
 	}
