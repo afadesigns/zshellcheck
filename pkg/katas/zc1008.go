@@ -5,7 +5,7 @@ import (
 )
 
 func init() {
-	RegisterKata(ast.LetStatementNode, Kata{
+	RegisterKata(ast.SimpleCommandNode, Kata{
 		ID:    "ZC1008",
 		Title: "Use `\\$(())` for arithmetic operations",
 		Description: "The `let` command is a shell builtin, but the `\\$(())` syntax is more portable " +
@@ -16,16 +16,22 @@ func init() {
 }
 
 func checkZC1008(node ast.Node) []Violation {
-	violations := []Violation{}
-
-	if letStmt, ok := node.(*ast.LetStatement); ok {
-		violations = append(violations, Violation{
-			KataID:  "ZC1008",
-			Message: "Use `\\$(())` for arithmetic operations instead of `let`.",
-			Line:    letStmt.Token.Line,
-			Column:  letStmt.Token.Column,
-		})
+	// Duplicate check for 'let' covered by ZC1013?
+	// ZC1008 title says \$(()) which is expansion.
+	// But check was for LetStatement.
+	// Let's keep it as 'let' check for now to match original intent, maybe redundant.
+	cmd, ok := node.(*ast.SimpleCommand)
+	if !ok {
+		return nil
 	}
 
-	return violations
+	if cmd.Name.String() == "let" {
+		return []Violation{{
+			KataID:  "ZC1008",
+			Message: "Use `\\$(())` for arithmetic operations instead of `let`.",
+			Line:    cmd.TokenLiteralNode().Line,
+			Column:  cmd.TokenLiteralNode().Column,
+		}}
+	}
+	return nil
 }

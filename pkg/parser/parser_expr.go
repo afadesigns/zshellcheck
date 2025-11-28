@@ -104,11 +104,24 @@ func (p *Parser) parseInfixExpression(left ast.Expression) ast.Expression {
 func (p *Parser) parseGroupedExpression() ast.Expression {
 	tok := p.curToken
 	p.nextToken()
-	exp := p.parseExpression(LOWEST)
-	if !p.expectPeek(token.RPAREN) {
-		return nil
+
+	if p.inArithmetic {
+		exp := p.parseExpression(LOWEST)
+		if !p.expectPeek(token.RPAREN) {
+			return nil
+		}
+		return &ast.GroupedExpression{Token: tok, Expression: exp}
 	}
-	return &ast.GroupedExpression{Token: tok, Expression: exp}
+
+	// Array Literal Mode (e.g., x=(a b c))
+	elements := []ast.Expression{}
+	for !p.curTokenIs(token.RPAREN) && !p.curTokenIs(token.EOF) {
+		elem := p.parseCommandWord()
+		elements = append(elements, elem)
+		p.nextToken()
+	}
+
+	return &ast.ArrayLiteral{Token: tok, Elements: elements}
 }
 
 func (p *Parser) parseArrayAccess() ast.Expression {

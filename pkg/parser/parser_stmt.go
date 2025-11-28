@@ -11,8 +11,6 @@ func (p *Parser) parseStatement() ast.Statement {
 		return nil
 	}
 	switch p.curToken.Type {
-	case token.LET:
-		return p.parseLetStatement()
 	case token.RETURN:
 		return p.parseReturnStatement()
 	case token.If:
@@ -270,23 +268,6 @@ func (p *Parser) parseCommandWord() ast.Expression {
 		Token: firstToken,
 		Parts: parts,
 	}
-}
-
-func (p *Parser) parseLetStatement() *ast.LetStatement {
-	stmt := &ast.LetStatement{Token: p.curToken}
-	if !p.expectPeek(token.IDENT) {
-		return nil
-	}
-	stmt.Name = &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
-	if !p.expectPeek(token.ASSIGN) {
-		return nil
-	}
-	p.nextToken()
-	stmt.Value = p.parseExpression(LOWEST)
-	if p.peekTokenIs(token.SEMICOLON) {
-		p.nextToken()
-	}
-	return stmt
 }
 
 func (p *Parser) parseReturnStatement() *ast.ReturnStatement {
