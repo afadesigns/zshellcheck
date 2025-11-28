@@ -50,10 +50,6 @@ func checkOperand(node ast.Expression, infix *ast.InfixExpression, violations *[
 				Line:    n.TokenLiteralNode().Line,
 				Column:  n.TokenLiteralNode().Column,
 			})
-		} else {
-			// If no metachars, it's a literal match. Recommend == if it looks like they wanted string match?
-			// But `=~ "foo"` works. Just weird.
-			// We focus on BROKEN regex.
 		}
 	case *ast.ConcatenatedExpression:
 		for _, part := range n.Parts {
