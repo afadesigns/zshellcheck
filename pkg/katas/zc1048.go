@@ -35,7 +35,7 @@ func checkZC1048(node ast.Node) []Violation {
 	arg := cmd.Arguments[0]
 
 	// Check if arg is a StringLiteral or ConcatenatedExpression starting with "./" or "../"
-	val := getStringValueZC1048(arg)
+	val := getStringValue(arg)
 
 	// Remove quoting for check manually to avoid tool call escaping issues
 	if len(val) > 0 && (val[0] == '"' || val[0] == '\'') {
@@ -55,18 +55,4 @@ func checkZC1048(node ast.Node) []Violation {
 	}
 
 	return nil
-}
-
-func getStringValueZC1048(node ast.Node) string {
-	switch n := node.(type) {
-	case *ast.StringLiteral:
-		return n.Value
-	case *ast.ConcatenatedExpression:
-		var sb strings.Builder
-		for _, p := range n.Parts {
-			sb.WriteString(getStringValueZC1048(p))
-		}
-		return sb.String()
-	}
-	return ""
 }

@@ -357,12 +357,18 @@ func (l *Lexer) readString(quote byte) string {
 	position := l.position // include opening quote
 	for {
 		l.readChar()
-		if l.ch == quote || l.ch == 0 {
+		if l.ch == 0 {
+			break
+		}
+		if l.ch == quote {
 			break
 		}
 		if l.ch == '\\' {
 			l.readChar() // skip escaped char
 		}
+	}
+	if l.ch == 0 {
+		return l.input[position:l.position]
 	}
 	return l.input[position : l.position+1] // include closing quote
 }
@@ -371,10 +377,6 @@ func (l *Lexer) skipWhitespace() bool {
 	skipped := false
 	for l.ch == ' ' || l.ch == '\t' || l.ch == '\n' || l.ch == '\r' {
 		skipped = true
-		if l.ch == 10 { // \n
-			l.line++
-			l.column = 0
-		}
 		l.readChar()
 	}
 	return skipped

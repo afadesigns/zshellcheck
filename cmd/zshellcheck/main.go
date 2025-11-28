@@ -15,6 +15,7 @@ import (
 	"github.com/afadesigns/zshellcheck/pkg/lexer"
 	"github.com/afadesigns/zshellcheck/pkg/parser"
 	"github.com/afadesigns/zshellcheck/pkg/reporter"
+	"github.com/afadesigns/zshellcheck/pkg/version"
 	"gopkg.in/yaml.v3"
 )
 
@@ -50,7 +51,13 @@ func run() int {
 
 	format := flag.String("format", "text", "The output format (text, json, or sarif)")
 	cpuprofile := flag.String("cpuprofile", "", "Write CPU profile to file")
+	showVersion := flag.Bool("version", false, "Show version and exit")
 	flag.Parse()
+
+	if *showVersion {
+		fmt.Printf("zshellcheck version %s\n", version.Version)
+		return 0
+	}
 
 	if *cpuprofile != "" {
 		f, err := os.Create(*cpuprofile)

@@ -41,7 +41,10 @@ func TestTextReporter_Report(t *testing.T) {
 	if !bytes.Contains(buf.Bytes(), []byte("This is a test violation.")) {
 		t.Errorf("Report() produced incorrect output.\nGot:\n%s", buf.String())
 	}
-	if !bytes.Contains(buf.Bytes(), []byte("first line")) {
-		t.Errorf("Report() output missing source line.\nGot:\n%s", buf.String())
+	// Check for gutter format
+	// "  " + colorCyan + "1" + " |" + colorReset + " first line"
+	expectedGutter := "  " + colorCyan + "1 |" + colorReset + " first line"
+	if !bytes.Contains(buf.Bytes(), []byte(expectedGutter)) {
+		t.Errorf("Report() output missing source line gutter.\nWant: %q\nGot:\n%q", expectedGutter, buf.String())
 	}
 }
