@@ -56,6 +56,14 @@ Why use ZShellCheck over ShellCheck? See our **[Detailed Comparison](docs/REFERE
 
 ZShellCheck is written in Go and can be easily installed from source if you have a Go development environment configured.
 
+### Helper Script
+
+For a quick installation, you can use the provided helper script:
+
+```bash
+./install.sh
+```
+
 ### From Go Modules
 
 To install `zshellcheck`, ensure you have Go (version 1.25 or higher) installed, then run:
