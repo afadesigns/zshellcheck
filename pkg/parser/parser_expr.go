@@ -209,7 +209,7 @@ func (p *Parser) parseDollarParenExpression() ast.Expression {
 	if p.peekTokenIs(token.LPAREN) {
 		p.nextToken()
 		p.nextToken() // consume `(`
-		
+
 		prevInArithmetic := p.inArithmetic
 		p.inArithmetic = true
 		cmd := p.parseExpression(LOWEST)
@@ -317,7 +317,7 @@ func (p *Parser) parseIndexExpression(left ast.Expression) ast.Expression {
 	exp := &ast.IndexExpression{Token: p.curToken, Left: left}
 
 	p.nextToken()
-	
+
 	prevInArithmetic := p.inArithmetic
 	p.inArithmetic = true
 	exp.Index = p.parseExpression(LOWEST)
