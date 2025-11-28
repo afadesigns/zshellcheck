@@ -33,24 +33,43 @@ func checkZC1084(node ast.Node) []Violation {
 	for i := 0; i < len(cmd.Arguments); i++ {
 		arg := cmd.Arguments[i]
 
-		// Handle merged -name[...] case (PrefixExpression with IndexExpression)
-		if prefix, ok := arg.(*ast.PrefixExpression); ok {
-			if prefix.Operator == "-" {
-				if idxExpr, ok := prefix.Right.(*ast.IndexExpression); ok {
-					// -name[...]
-					// idxExpr.Left should be the flag name (e.g. name)
-					flagName := "-" + idxExpr.Left.String()
-					if isFindGlobFlag(flagName) {
+		// Handle merged -name[...] case
+		if concat, ok := arg.(*ast.ConcatenatedExpression); ok {
+			var prefixStr string
+			foundMerged := false
+			for _, part := range concat.Parts {
+				if str, ok := part.(*ast.StringLiteral); ok {
+					if str.Value == "[" && str.Token.Type != token.STRING {
+						if isFindGlobFlag(prefixStr) {
+							violations = append(violations, Violation{
+								KataID:  "ZC1084",
+								Message: "Quote globs in `find` commands. `" + cleanString(arg.String()) + "` contains unquoted brackets.",
+								Line:    str.Token.Line,
+								Column:  str.Token.Column,
+							})
+							foundMerged = true
+							break
+						}
+					}
+				} else if idx, ok := part.(*ast.IndexExpression); ok {
+					// IndexExpression implies unquoted [
+					// Check if prefix + left part forms a flag
+					candidate := prefixStr + cleanString(idx.Left.String())
+					if isFindGlobFlag(candidate) {
 						violations = append(violations, Violation{
 							KataID:  "ZC1084",
 							Message: "Quote globs in `find` commands. `" + cleanString(arg.String()) + "` contains unquoted brackets.",
-							Line:    arg.TokenLiteralNode().Line,
-							Column:  arg.TokenLiteralNode().Column,
+							Line:    idx.Token.Line,
+							Column:  idx.Token.Column,
 						})
+						foundMerged = true
+						break
 					}
-					// It was consumed as merged arg, continue loop
-					continue
 				}
+				prefixStr += cleanString(part.String())
+			}
+			if foundMerged {
+				continue
 			}
 		}
 
