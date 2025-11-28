@@ -70,22 +70,27 @@ func (l *Lexer) NextToken() token.Token {
 	case '#':
 		tok = newToken(token.HASH, l.ch, l.line, l.column)
 	case '=':
-		if l.peekChar() == '=' {
+		switch l.peekChar() {
+		case '=':
 			ch := l.ch
 			l.readChar()
 			literal := string(ch) + string(l.ch)
 			tok = token.Token{Type: token.EQ, Literal: literal, Line: l.line, Column: l.column}
-		} else if l.peekChar() == '~' {
+		case '~':
 			ch := l.ch
 			l.readChar()
 			literal := string(ch) + string(l.ch)
 			tok = token.Token{Type: token.EQTILDE, Literal: literal, Line: l.line, Column: l.column}
-		} else if l.peekChar() == '(' && hasSpace {
-			ch := l.ch
-			l.readChar()
-			literal := string(ch) + string(l.ch)
-			tok = token.Token{Type: token.EQ_LPAREN, Literal: literal, Line: l.line, Column: l.column}
-		} else {
+		case '(':
+			if hasSpace {
+				ch := l.ch
+				l.readChar()
+				literal := string(ch) + string(l.ch)
+				tok = token.Token{Type: token.EQ_LPAREN, Literal: literal, Line: l.line, Column: l.column}
+			} else {
+				tok = newToken(token.ASSIGN, l.ch, l.line, l.column)
+			}
+		default:
 			tok = newToken(token.ASSIGN, l.ch, l.line, l.column)
 		}
 	case ';':

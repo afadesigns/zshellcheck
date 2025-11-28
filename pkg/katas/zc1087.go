@@ -87,19 +87,20 @@ func collectInputs(node ast.Node) []string {
 		if cmd, ok := n.(*ast.SimpleCommand); ok {
 			for i := 0; i < len(cmd.Arguments); i++ {
 				arg := cmd.Arguments[i].String()
-				if arg == "<" {
+				switch arg {
+				case "<":
 					if i+1 < len(cmd.Arguments) {
 						inputs = append(inputs, cmd.Arguments[i+1].String())
 						i++
 					}
-				} else if arg != ">" && arg != ">>" && arg != ">|" && arg != "&>" {
+				case ">", ">>", ">|", "&>":
+					// Skip output redirection
+					i++
+				default:
 					// Assume args are inputs unless they are flags
 					if len(arg) > 0 && arg[0] != '-' {
 						inputs = append(inputs, arg)
 					}
-				} else {
-					// Skip next (output file)
-					i++
 				}
 			}
 		}

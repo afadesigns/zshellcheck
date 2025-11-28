@@ -58,17 +58,18 @@ func checkZC1083(node ast.Node) []Violation {
 				}
 			}
 
-			if strings.Contains(val, "..") {
+			switch {
+			case strings.Contains(val, ".."):
 				dotDotIndices = append(dotDotIndices, i)
 				lastPartWasDot = false
-			} else if val == "." {
+			case val == ".":
 				if lastPartWasDot {
 					dotDotIndices = append(dotDotIndices, i-1) // Mark previous index as start of ..
 					lastPartWasDot = false                     // Consumed
 				} else {
 					lastPartWasDot = true
 				}
-			} else {
+			default:
 				lastPartWasDot = false
 			}
 		} else {
