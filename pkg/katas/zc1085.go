@@ -71,12 +71,7 @@ func isUnquotedExpansion(expr ast.Expression) bool {
 					inQuotes = !inQuotes
 					continue
 				}
-				if str.Value == "'" {
-					// Single quotes technically shouldn't appear here if parsed as StringLiteral?
-					// Parser consumes single quoted strings as single token usually.
-					// But if we have mixed quoting...
-					// For now, assume double quotes toggle.
-				}
+				// Single quotes technically shouldn't appear here if parsed as StringLiteral?
 			}
 
 			if !inQuotes {

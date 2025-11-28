@@ -162,10 +162,9 @@ func (v *zc1088Visitor) isStateChangeOnly(node ast.Node) bool {
 		} else if infix, ok := n.(*ast.InfixExpression); ok {
 			if infix.Operator == "=" {
 				hasStateChange = true
-			} else {
-				// e.g. a && b. If a is state change, b might be side effect.
-				// We just traverse.
 			}
+			// e.g. a && b. If a is state change, b might be side effect.
+			// We just traverse.
 		} else if _, ok := n.(*ast.IfStatement); ok {
 			hasSideEffect = true
 		} else if _, ok := n.(*ast.ForLoopStatement); ok {

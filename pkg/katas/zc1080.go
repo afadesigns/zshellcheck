@@ -82,11 +82,6 @@ func hasGlobChars(node ast.Node) bool {
 		// [ char range ] is parsed as SimpleCommand sometimes?
 		// No, usually Concatenated or StringLiteral if [ is treated as literal.
 		// If [ is SimpleCommand name (e.g. `[` test command), it's not a glob.
-		if n.Name.String() == "[" {
-			// This is test command or char range start?
-			// parseCommandWord treats [ as literal string if in exception list.
-			// So it won't be SimpleCommand here.
-		}
 	}
 	return false
 }
