@@ -81,7 +81,7 @@ func (l *Lexer) NextToken() token.Token {
 			l.readChar()
 			literal := string(ch) + string(l.ch)
 			tok = token.Token{Type: token.EQTILDE, Literal: literal, Line: l.line, Column: l.column}
-		case '(': 
+		case '(':
 			if hasSpace {
 				ch := l.ch
 				l.readChar()
@@ -190,7 +190,7 @@ func (l *Lexer) NextToken() token.Token {
 			l.readChar()
 			literal := string(ch) + string(l.ch)
 			tok = token.Token{Type: token.LTAMP, Literal: literal, Line: l.line, Column: l.column}
-		case '(': 
+		case '(':
 			ch := l.ch
 			l.readChar()
 			literal := string(ch) + string(l.ch)
@@ -210,7 +210,7 @@ func (l *Lexer) NextToken() token.Token {
 			l.readChar()
 			literal := string(ch) + string(l.ch)
 			tok = token.Token{Type: token.GTAMP, Literal: literal, Line: l.line, Column: l.column}
-		case '(': 
+		case '(':
 			ch := l.ch
 			l.readChar()
 			literal := string(ch) + string(l.ch)
@@ -248,7 +248,7 @@ func (l *Lexer) NextToken() token.Token {
 			tok.Line = l.line
 			tok.Column = l.column
 			l.readChar()
-		case '(': 
+		case '(':
 			tok.Type = token.DOLLAR_LPAREN
 			tok.Literal = "$("
 			tok.Line = l.line
