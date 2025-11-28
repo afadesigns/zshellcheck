@@ -2,6 +2,7 @@ package katas
 
 import (
 	"fmt"
+
 	"github.com/afadesigns/zshellcheck/pkg/ast"
 )
 

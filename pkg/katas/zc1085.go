@@ -78,7 +78,7 @@ func isUnquotedExpansion(expr ast.Expression) bool {
 					// For now, assume double quotes toggle.
 				}
 			}
-			
+
 			if !inQuotes {
 				if isUnquotedExpansion(part) {
 					return true

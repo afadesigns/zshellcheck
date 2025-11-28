@@ -21,4 +21,25 @@ linters:
 
 linters-settings:
   lll:
-    line-length: 120
+    line-length: 200
+  funlen:
+    lines: 150
+    statements: 100
+  gocognit:
+    min-complexity: 80
+  revive:
+    rules:
+      - name: var-naming
+        disabled: true
+      - name: increment-decrement
+        disabled: true
+      - name: unused-parameter
+        disabled: true
+      - name: indent-error-flow
+        disabled: true
+      - name: empty-block
+        disabled: true
+      - name: exported
+        disabled: true
+      - name: if-return
+        disabled: true

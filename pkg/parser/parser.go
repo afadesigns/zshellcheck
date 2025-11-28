@@ -63,7 +63,7 @@ type Parser struct {
 	prefixParseFns map[token.Type]prefixParseFn
 	infixParseFns  map[token.Type]infixParseFn
 
-	inBackticks int
+	inBackticks  int
 	inArithmetic bool
 }
 
