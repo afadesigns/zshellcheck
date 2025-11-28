@@ -5,6 +5,7 @@ import (
 	"io"
 
 	"github.com/afadesigns/zshellcheck/pkg/katas"
+	"github.com/afadesigns/zshellcheck/pkg/version"
 )
 
 // SarifReporter reports violations in SARIF format.
@@ -25,7 +26,7 @@ func (r *SarifReporter) Report(violations []katas.Violation) error {
 			Driver: SarifDriver{
 				Name:            "ZShellCheck",
 				InformationURI:  "https://github.com/afadesigns/zshellcheck",
-				SemanticVersion: "0.0.92", // TODO: Use version variable
+				SemanticVersion: version.Version,
 				Rules:           make([]SarifRule, 0),
 			},
 		},

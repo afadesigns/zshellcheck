@@ -120,6 +120,7 @@ const (
 
 var keywords = map[string]Type{
 	"function": FUNCTION,
+	"let":      LET,
 	"true":     TRUE,
 	"false":    FALSE,
 	"if":       If,

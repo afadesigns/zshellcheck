@@ -33,7 +33,9 @@ func checkZC1051(node ast.Node) []Violation {
 		switch n := arg.(type) {
 		case *ast.Identifier:
 			// $VAR
-			isUnquoted = true
+			if len(n.Value) > 0 && n.Value[0] == '$' {
+				isUnquoted = true
+			}
 		case *ast.PrefixExpression:
 			// $var (if parsed as prefix)
 			if n.Operator == "$" {

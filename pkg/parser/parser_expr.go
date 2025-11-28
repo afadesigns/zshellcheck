@@ -126,18 +126,41 @@ func (p *Parser) parseGroupedExpression() ast.Expression {
 
 func (p *Parser) parseArrayAccess() ast.Expression {
 	exp := &ast.ArrayAccess{Token: p.curToken}
-	if !p.expectPeek(token.IDENT) {
-		return nil
-	}
-	exp.Left = p.parseIdentifier()
 
-	// check for optional index
-	if p.peekTokenIs(token.LBRACKET) {
-		p.nextToken() // consume [
-		p.nextToken() // move to start of index expression
-		exp.Index = p.parseExpression(LOWEST)
-		if !p.expectPeek(token.RBRACKET) {
-			return nil
+	// Handle Zsh flags: ${(flags)...}
+	if p.peekTokenIs(token.LPAREN) {
+		p.nextToken() // consume (
+		// consume until )
+		for !p.peekTokenIs(token.RPAREN) && !p.peekTokenIs(token.EOF) {
+			p.nextToken()
+		}
+		if p.peekTokenIs(token.RPAREN) {
+			p.nextToken() // consume )
+		}
+	}
+
+	// Handle length operator #
+	hasLengthOp := false
+	if p.peekTokenIs(token.HASH) {
+		p.nextToken() // consume #
+		hasLengthOp = true
+	}
+
+	p.nextToken() // move to subject
+
+	expr := p.parseExpression(LOWEST)
+	if idxExpr, ok := expr.(*ast.IndexExpression); ok {
+		exp.Left = idxExpr.Left
+		exp.Index = idxExpr.Index
+	} else {
+		exp.Left = expr
+	}
+
+	if hasLengthOp && exp.Left != nil {
+		exp.Left = &ast.PrefixExpression{
+			Token:    token.Token{Type: token.HASH, Literal: "#"},
+			Operator: "#",
+			Right:    exp.Left,
 		}
 	}
 

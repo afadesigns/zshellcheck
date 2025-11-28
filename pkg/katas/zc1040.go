@@ -68,6 +68,17 @@ func getStringValue(node ast.Node) string {
 		return n.Value
 	case *ast.GroupedExpression:
 		return "(" + getStringValue(n.Expression) + ")"
+	case *ast.ArrayLiteral:
+		var sb strings.Builder
+		sb.WriteString("(")
+		for i, el := range n.Elements {
+			if i > 0 {
+				sb.WriteString(" ")
+			}
+			sb.WriteString(getStringValue(el))
+		}
+		sb.WriteString(")")
+		return sb.String()
 	default:
 		// Fallback for operators treated as literals (like *)
 		return n.TokenLiteral()
