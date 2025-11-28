@@ -5,7 +5,7 @@ import (
 )
 
 func init() {
-	RegisterKata(ast.RedirectionNode, Kata{
+	RegisterKata(ast.SimpleCommandNode, Kata{
 		ID:    "ZC1102",
 		Title: "Redirecting output of `sudo` doesn't work as expected",
 		Description: "Redirections are performed by the current shell before `sudo` is started. " +
@@ -16,22 +16,22 @@ func init() {
 }
 
 func checkZC1102(node ast.Node) []Violation {
-	redir, ok := node.(*ast.Redirection)
+	cmd, ok := node.(*ast.SimpleCommand)
 	if !ok {
 		return nil
 	}
 
-	// Check if the left-hand side of the redirection is a SimpleCommand
-	if cmd, ok := redir.Left.(*ast.SimpleCommand); ok {
-		// Check if the command name is 'sudo'
-		if cmd.Name != nil && cmd.Name.String() == "sudo" {
-			// Check if it's an output redirection
-			if redir.Operator == ">" || redir.Operator == ">>" {
+	// Check if the command name is 'sudo'
+	if cmd.Name != nil && cmd.Name.String() == "sudo" {
+		// Scan arguments for output redirection operators
+		for _, arg := range cmd.Arguments {
+			argStr := arg.String()
+			if argStr == ">" || argStr == ">>" {
 				return []Violation{{
 					KataID:  "ZC1102",
 					Message: "Redirection happens before `sudo`. This will likely fail permission checks. Use `| sudo tee`.",
-					Line:    redir.Token.Line,
-					Column:  redir.Token.Column,
+					Line:    cmd.TokenLiteralNode().Line,
+					Column:  cmd.TokenLiteralNode().Column,
 				}}
 			}
 		}
