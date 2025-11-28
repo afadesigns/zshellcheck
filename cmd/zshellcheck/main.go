@@ -56,12 +56,12 @@ func run() int {
 		f, err := os.Create(*cpuprofile)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Could not create CPU profile: %s\n", err)
-			os.Exit(1)
+			return 1
 		}
 		defer f.Close()
 		if err := pprof.StartCPUProfile(f); err != nil {
 			fmt.Fprintf(os.Stderr, "Could not start CPU profile: %s\n", err)
-			os.Exit(1)
+			return 1
 		}
 		defer pprof.StopCPUProfile()
 	}
@@ -70,7 +70,7 @@ func run() int {
 		fmt.Fprint(os.Stderr, banner)
 		fmt.Println("Usage: zshellcheck [flags] <file1.zsh> [file2.zsh]...")
 		fmt.Println("Try 'zshellcheck --help' for more information.")
-		os.Exit(1)
+		return 1
 	}
 
 	// Print banner on successful run too, as per original request
