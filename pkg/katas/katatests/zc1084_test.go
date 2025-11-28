@@ -49,13 +49,25 @@ func TestZC1084(t *testing.T) {
 		},
 		{
 			name:  "unquoted bracket glob (merged)",
-			input: `find . -name [a-z]`,
+			input: `find . -name[a-z]`,
 			expected: []katas.Violation{
 				{
 					KataID:  "ZC1084",
 					Message: "Quote globs in `find` commands. `-(name[a-z])` contains unquoted brackets.",
 					Line:    1,
 					Column:  14, // Points to -name
+				},
+			},
+		},
+		{
+			name:  "unquoted bracket glob (space)",
+			input: `find . -name [a-z]`,
+			expected: []katas.Violation{
+				{
+					KataID:  "ZC1084",
+					Message: "Quote globs in `find` commands. `[a-z]` is subject to shell expansion.",
+					Line:    1,
+					Column:  14, // Points to [
 				},
 			},
 		},

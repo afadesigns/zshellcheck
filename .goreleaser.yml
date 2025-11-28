@@ -32,8 +32,7 @@ archives:
       - LICENSE
       - README.md
 
-sboms:
-  - artifacts: archive
+
 
 checksum:
   name_template: 'checksums.txt'
