@@ -146,6 +146,7 @@ var keywords = map[string]Type{
 	"-le":      LE_NUM,
 	"-gt":      GT_NUM,
 	"-ge":      GE_NUM,
+	"/":        SLASH,
 }
 
 func LookupIdent(ident string) Type {
