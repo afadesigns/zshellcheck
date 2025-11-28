@@ -629,7 +629,11 @@ func (p *Parser) parseDeclarationStatement() *ast.DeclarationStatement {
 func (p *Parser) parseArithmeticCommand() *ast.ArithmeticCommand {
 	cmd := &ast.ArithmeticCommand{Token: p.curToken}
 	p.nextToken()
+
+	prevInArithmetic := p.inArithmetic
+	p.inArithmetic = true
 	cmd.Expression = p.parseExpression(LOWEST)
+	p.inArithmetic = prevInArithmetic
 
 	if !p.expectPeek(token.DoubleRparen) {
 		return nil

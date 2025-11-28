@@ -64,6 +64,7 @@ type Parser struct {
 	infixParseFns  map[token.Type]infixParseFn
 
 	inBackticks int
+	inArithmetic bool
 }
 
 func New(l *lexer.Lexer) *Parser {

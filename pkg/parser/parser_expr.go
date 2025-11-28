@@ -17,6 +17,10 @@ func (p *Parser) parseExpression(precedence int) ast.Expression {
 	leftExp := prefix()
 
 	for !p.peekTokenIs(token.SEMICOLON) && precedence < p.peekPrecedence() {
+		if !p.inArithmetic && p.peekTokenIs(token.LBRACKET) && p.peekToken.HasPrecedingSpace {
+			break
+		}
+
 		infix := p.infixParseFns[p.peekToken.Type]
 		if infix == nil {
 			return leftExp
@@ -205,7 +209,11 @@ func (p *Parser) parseDollarParenExpression() ast.Expression {
 	if p.peekTokenIs(token.LPAREN) {
 		p.nextToken()
 		p.nextToken() // consume `(`
+		
+		prevInArithmetic := p.inArithmetic
+		p.inArithmetic = true
 		cmd := p.parseExpression(LOWEST)
+		p.inArithmetic = prevInArithmetic
 
 		if p.peekTokenIs(token.DoubleRparen) {
 			p.nextToken() // consume ))
@@ -309,7 +317,11 @@ func (p *Parser) parseIndexExpression(left ast.Expression) ast.Expression {
 	exp := &ast.IndexExpression{Token: p.curToken, Left: left}
 
 	p.nextToken()
+	
+	prevInArithmetic := p.inArithmetic
+	p.inArithmetic = true
 	exp.Index = p.parseExpression(LOWEST)
+	p.inArithmetic = prevInArithmetic
 
 	if !p.expectPeek(token.RBRACKET) {
 		return nil
