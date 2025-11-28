@@ -50,6 +50,12 @@ func getStringValueZC1054(node ast.Node) string {
 	switch n := node.(type) {
 	case *ast.StringLiteral:
 		return n.Value
+	case *ast.Identifier:
+		return n.Value
+	case *ast.PrefixExpression:
+		// Reconstruct -z, !foo, etc.
+		// Right is Expression.
+		return n.Operator + getStringValueZC1054(n.Right)
 	case *ast.ConcatenatedExpression:
 		var sb strings.Builder
 		for _, p := range n.Parts {
@@ -57,5 +63,5 @@ func getStringValueZC1054(node ast.Node) string {
 		}
 		return sb.String()
 	}
-	return ""
+	return node.String() // Fallback to String() for other types
 }

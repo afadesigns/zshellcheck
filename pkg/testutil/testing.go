@@ -1,6 +1,7 @@
 package testutil
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/afadesigns/zshellcheck/pkg/ast"
@@ -19,7 +20,7 @@ func Check(code string, kataID string) []katas.Violation {
 		if node == nil {
 			return true
 		}
-		if katasForNode, ok := katas.Registry.KatasByNodeType[node.Type()]; ok {
+		if katasForNode, ok := katas.Registry.KatasByNodeType()[fmt.Sprintf("%T", node)]; ok {
 			for _, kata := range katasForNode {
 				if kata.ID == kataID {
 					violations = append(violations, kata.Check(node)...)

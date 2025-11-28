@@ -76,7 +76,7 @@ func isLsSubstitution(node ast.Node) bool {
 	// ZC1050 `getCommandFromSubstitution` returns the command.
 	// We check if command is `ls`.
 
-	var cmd ast.Expression
+	var cmd ast.Node
 
 	switch n := node.(type) {
 	case *ast.CommandSubstitution:

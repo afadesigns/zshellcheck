@@ -24,7 +24,7 @@ func (r *SarifReporter) Report(violations []katas.Violation) error {
 		Tool: SarifTool{
 			Driver: SarifDriver{
 				Name:            "ZShellCheck",
-				InformationUri:  "https://github.com/afadesigns/zshellcheck",
+				InformationURI:  "https://github.com/afadesigns/zshellcheck",
 				SemanticVersion: "0.0.92", // TODO: Use version variable
 				Rules:           make([]SarifRule, 0),
 			},
@@ -43,23 +43,23 @@ func (r *SarifReporter) Report(violations []katas.Violation) error {
 
 		if _, exists := rulesMap[v.KataID]; !exists {
 			rulesMap[v.KataID] = SarifRule{
-				Id:               v.KataID,
+				ID:               v.KataID,
 				Name:             v.KataID,
 				ShortDescription: SarifMessage{Text: kata.Title},
 				FullDescription:  SarifMessage{Text: kata.Description},
-				HelpUri:          "https://github.com/afadesigns/zshellcheck/blob/main/KATAS.md#" + v.KataID,
+				HelpURI:          "https://github.com/afadesigns/zshellcheck/blob/main/KATAS.md#" + v.KataID,
 			}
 		}
 
 		result := SarifResult{
-			RuleId:  v.KataID,
+			RuleID:  v.KataID,
 			Level:   "warning", // Default level
 			Message: SarifMessage{Text: v.Message},
 			Locations: []SarifLocation{
 				{
 					PhysicalLocation: SarifPhysicalLocation{
 						ArtifactLocation: SarifArtifactLocation{
-							Uri: r.filename,
+							URI: r.filename,
 						},
 						Region: SarifRegion{
 							StartLine:   v.Line,
@@ -104,21 +104,21 @@ type SarifTool struct {
 
 type SarifDriver struct {
 	Name            string      `json:"name"`
-	InformationUri  string      `json:"informationUri"`
+	InformationURI  string      `json:"informationUri"`
 	SemanticVersion string      `json:"semanticVersion"`
 	Rules           []SarifRule `json:"rules"`
 }
 
 type SarifRule struct {
-	Id               string       `json:"id"`
+	ID               string       `json:"id"`
 	Name             string       `json:"name"`
 	ShortDescription SarifMessage `json:"shortDescription"`
 	FullDescription  SarifMessage `json:"fullDescription"`
-	HelpUri          string       `json:"helpUri"`
+	HelpURI          string       `json:"helpUri"`
 }
 
 type SarifResult struct {
-	RuleId    string          `json:"ruleId"`
+	RuleID    string          `json:"ruleId"`
 	Level     string          `json:"level"` // error, warning, note
 	Message   SarifMessage    `json:"message"`
 	Locations []SarifLocation `json:"locations"`
@@ -138,7 +138,7 @@ type SarifPhysicalLocation struct {
 }
 
 type SarifArtifactLocation struct {
-	Uri string `json:"uri"`
+	URI string `json:"uri"`
 }
 
 type SarifRegion struct {

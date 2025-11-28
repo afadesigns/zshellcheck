@@ -32,7 +32,7 @@ func checkZC1084(node ast.Node) []Violation {
 
 	for i := 0; i < len(cmd.Arguments); i++ {
 		arg := cmd.Arguments[i]
-		
+
 		// Handle merged -name[...] case (PrefixExpression with IndexExpression)
 		if prefix, ok := arg.(*ast.PrefixExpression); ok {
 			if prefix.Operator == "-" {

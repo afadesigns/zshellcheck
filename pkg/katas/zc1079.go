@@ -22,7 +22,7 @@ func checkZC1079(node ast.Node) []Violation {
 
 	violations := []Violation{}
 
-	for _, expr := range dbe.Expressions {
+	for _, expr := range dbe.Elements {
 		infix, ok := expr.(*ast.InfixExpression)
 		if !ok {
 			continue
@@ -36,10 +36,10 @@ func checkZC1079(node ast.Node) []Violation {
 		// Check Right side
 		// If it is an Identifier (variable), ArrayAccess, or Concatenated containing variable,
 		// AND it is NOT quoted (not StringLiteral).
-		
+
 		// Note: Parser handles quoted strings as StringLiteral.
 		// Unquoted $var is Identifier.
-		
+
 		isSuspicious := false
 		var tokenNode ast.Node
 

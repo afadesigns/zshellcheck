@@ -91,7 +91,7 @@ func walkZC1053(node ast.Node, isSilenced bool, violations *[]Violation) {
 	case *ast.SimpleCommand:
 		checkCommandZC1053(n, isSilenced, violations)
 	case *ast.GroupedExpression:
-		walkZC1053(n.Exp, isSilenced, violations)
+		walkZC1053(n.Expression, isSilenced, violations)
 		// case *ast.Subshell:
 		// Handled by BlockStatement
 	}
@@ -107,17 +107,17 @@ func checkCommandZC1053(cmd *ast.SimpleCommand, isSilenced bool, violations *[]V
 			// Check args for -q, --quiet, --silent
 			hasQuiet := false
 			for _, arg := range cmd.Arguments {
-				if str, ok := arg.(*ast.StringLiteral); ok {
-					if str.Value == "-q" || str.Value == "--quiet" || str.Value == "--silent" {
+				argStr := arg.String()
+				argStr = strings.Trim(argStr, "\"'")
+				if strings.HasPrefix(argStr, "-") {
+					if argStr == "-q" || argStr == "--quiet" || argStr == "--silent" {
 						hasQuiet = true
 						break
 					}
-				} else if prefix, ok := arg.(*ast.PrefixExpression); ok && prefix.Operator == "-" {
-					if ident, ok := prefix.Right.(*ast.Identifier); ok {
-						if strings.Contains(ident.Value, "q") { // e.g. -rq
-							hasQuiet = true
-							break
-						}
+					// Check for combined flags e.g. -rq
+					if !strings.HasPrefix(argStr, "--") && strings.Contains(argStr, "q") {
+						hasQuiet = true
+						break
 					}
 				}
 			}

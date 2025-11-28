@@ -29,10 +29,10 @@ func checkZC1092(node ast.Node) []Violation {
 		// Check if it's just a simple echo or if flags are involved
 		// If flags are used (like -n, -e), print is definitely better.
 		// Even without flags, print is idiomatic Zsh.
-		
+
 		// We can be slightly lenient and only warn if flags are present OR if it contains backslashes?
 		// The prompt suggests "Prefer 'print' over 'echo'". Let's be strict for now as it's "Platinum Standard".
-		
+
 		msg := "Prefer `print` over `echo`. `echo` behavior varies. `print` is the Zsh builtin. Especially with flags, `print -n` or `print -r` is more reliable."
 
 		return []Violation{{

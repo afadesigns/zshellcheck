@@ -24,8 +24,8 @@ func TestZC1089(t *testing.T) {
 			expected: []katas.Violation{},
 		},
 		{
-			name:     "invalid redirection order",
-			input:    `cmd 2>&1 > file`,
+			name:  "invalid redirection order",
+			input: `cmd 2>&1 > file`,
 			expected: []katas.Violation{
 				{
 					KataID:  "ZC1089",
@@ -36,8 +36,8 @@ func TestZC1089(t *testing.T) {
 			},
 		},
 		{
-			name:     "invalid redirection order append",
-			input:    `cmd 2>&1 >> file`,
+			name:  "invalid redirection order append",
+			input: `cmd 2>&1 >> file`,
 			expected: []katas.Violation{
 				{
 					KataID:  "ZC1089",
@@ -53,8 +53,8 @@ func TestZC1089(t *testing.T) {
 			expected: []katas.Violation{},
 		},
 		{
-			name:     "redirection to file named 1",
-			input:    `cmd >& 1 > file`, // >& 1 means to file named 1 if 1 is IDENT? But lexer makes 1 INT.
+			name:  "redirection to file named 1",
+			input: `cmd >& 1 > file`, // >& 1 means to file named 1 if 1 is IDENT? But lexer makes 1 INT.
 			// In zsh `cmd >& 1` is same as `cmd &> 1`?
 			// `2>&1` is explicit.
 			// If I write `cmd >&1`, it is `cmd` `>&` `1`.

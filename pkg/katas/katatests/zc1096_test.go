@@ -26,8 +26,8 @@ func TestZC1096(t *testing.T) {
 			},
 		},
 		{
-			name:  "valid arithmetic",
-			input: `(( 1.5 + 2.5 ))`,
+			name:     "valid arithmetic",
+			input:    `(( 1.5 + 2.5 ))`,
 			expected: []katas.Violation{},
 		},
 	}

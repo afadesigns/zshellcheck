@@ -19,8 +19,8 @@ func TestZC1077(t *testing.T) {
 			expected: []katas.Violation{},
 		},
 		{
-			name:     "invalid tr upper",
-			input:    `upper=$(echo $var | tr 'a-z' 'A-Z')`,
+			name:  "invalid tr upper",
+			input: `upper=$(echo $var | tr 'a-z' 'A-Z')`,
 			expected: []katas.Violation{
 				{
 					KataID:  "ZC1077",
@@ -31,8 +31,8 @@ func TestZC1077(t *testing.T) {
 			},
 		},
 		{
-			name:     "invalid tr lower",
-			input:    `lower=$(echo $var | tr 'A-Z' 'a-z')`,
+			name:  "invalid tr lower",
+			input: `lower=$(echo $var | tr 'A-Z' 'a-z')`,
 			expected: []katas.Violation{
 				{
 					KataID:  "ZC1077",
@@ -43,8 +43,8 @@ func TestZC1077(t *testing.T) {
 			},
 		},
 		{
-			name:     "invalid tr upper posix",
-			input:    `upper=$(echo $var | tr '[:lower:]' '[:upper:]')`,
+			name:  "invalid tr upper posix",
+			input: `upper=$(echo $var | tr '[:lower:]' '[:upper:]')`,
 			expected: []katas.Violation{
 				{
 					KataID:  "ZC1077",

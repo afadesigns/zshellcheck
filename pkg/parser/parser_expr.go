@@ -82,7 +82,7 @@ func (p *Parser) parseDoubleBracketExpression() ast.Expression {
 		p.peekError(token.RDBRACKET)
 		return nil
 	}
-	return &ast.DoubleBracketExpression{Token: bracketToken, Expressions: expressions}
+	return &ast.DoubleBracketExpression{Token: bracketToken, Elements: expressions}
 }
 
 func (p *Parser) parseInfixExpression(left ast.Expression) ast.Expression {
@@ -104,7 +104,7 @@ func (p *Parser) parseGroupedExpression() ast.Expression {
 	if !p.expectPeek(token.RPAREN) {
 		return nil
 	}
-	return &ast.GroupedExpression{Token: tok, Exp: exp}
+	return &ast.GroupedExpression{Token: tok, Expression: exp}
 }
 
 func (p *Parser) parseArrayAccess() ast.Expression {
@@ -132,16 +132,16 @@ func (p *Parser) parseArrayAccess() ast.Expression {
 }
 
 func (p *Parser) parseInvalidArrayAccessPrefix() ast.Expression {
-	    dollarToken := p.curToken
-	    if p.peekTokenIs(token.HASH) || p.peekTokenIs(token.INT) || p.peekTokenIs(token.ASTERISK) || p.peekTokenIs(token.BANG) || p.peekTokenIs(token.MINUS) {
-	        p.nextToken()
-	        ident := &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
-	        return &ast.PrefixExpression{Token: dollarToken, Operator: "$", Right: ident}
-	    }
-	
-	    if !p.expectPeek(token.IDENT) {
-	        return nil
-	    }
+	dollarToken := p.curToken
+	if p.peekTokenIs(token.HASH) || p.peekTokenIs(token.INT) || p.peekTokenIs(token.ASTERISK) || p.peekTokenIs(token.BANG) || p.peekTokenIs(token.MINUS) {
+		p.nextToken()
+		ident := &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
+		return &ast.PrefixExpression{Token: dollarToken, Operator: "$", Right: ident}
+	}
+
+	if !p.expectPeek(token.IDENT) {
+		return nil
+	}
 	ident := &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
 
 	if !p.peekTokenIs(token.LBRACKET) {
@@ -166,15 +166,15 @@ func (p *Parser) parseFunctionLiteral() ast.Expression {
 	lit := &ast.FunctionLiteral{Token: p.curToken}
 	if p.peekTokenIs(token.IDENT) {
 		p.nextToken()
-		lit.Name = p.curToken.Literal
+		lit.Name = &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
 	}
-	
+
 	// Zsh/Bash allows `function name { ... }` without parens.
 	if p.peekTokenIs(token.LPAREN) {
 		p.nextToken()
-		lit.Parameters = p.parseFunctionParameters()
+		lit.Params = p.parseFunctionParameters()
 	} else {
-		lit.Parameters = []*ast.Identifier{}
+		lit.Params = []*ast.Identifier{}
 	}
 
 	if !p.expectPeek(token.LBRACE) {
@@ -241,7 +241,7 @@ func (p *Parser) parseFunctionParameters() []*ast.Identifier {
 	ident := &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
 	identifiers = append(identifiers, ident)
 	for p.peekTokenIs(token.COMMA) {
-		p.nextToken() // Consume COMMA
+		p.nextToken()                   // Consume COMMA
 		if p.peekTokenIs(token.IDENT) { // Expect IDENT after COMMA
 			p.nextToken() // Consume IDENT
 			ident := &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}

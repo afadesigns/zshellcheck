@@ -44,13 +44,6 @@ func checkZC1085(node ast.Node) []Violation {
 func isUnquotedExpansion(expr ast.Expression) bool {
 	// Check for Identifier (e.g. $var)
 	if id, ok := expr.(*ast.Identifier); ok {
-		// Only warn if it looks like a variable (starts with $)
-		// But Parser currently produces Identifier for $var in some contexts?
-		// Actually, simple $var is parsed as Identifier with token.VARIABLE?
-		// Or token.IDENT?
-		// Let's check token type or if it starts with $
-		// Based on AST, Identifier value might include $.
-		// If it's a bare word (e.g. "start" in `for i in start ...`), it's Identifier but valid.
 		return id.TokenLiteralNode().Type == "VARIABLE"
 	}
 
@@ -69,13 +62,27 @@ func isUnquotedExpansion(expr ast.Expression) bool {
 		return true
 	}
 
-	// Check for ConcatenatedExpression containing any of the above
-	// e.g. foo$var or $var$bar
-	// If it contains any unquoted expansion part, it's risky.
+	// Check for ConcatenatedExpression
 	if concat, ok := expr.(*ast.ConcatenatedExpression); ok {
+		inQuotes := false
 		for _, part := range concat.Parts {
-			if isUnquotedExpansion(part) {
-				return true
+			if str, ok := part.(*ast.StringLiteral); ok {
+				if str.Value == "\"" {
+					inQuotes = !inQuotes
+					continue
+				}
+				if str.Value == "'" {
+					// Single quotes technically shouldn't appear here if parsed as StringLiteral?
+					// Parser consumes single quoted strings as single token usually.
+					// But if we have mixed quoting...
+					// For now, assume double quotes toggle.
+				}
+			}
+			
+			if !inQuotes {
+				if isUnquotedExpansion(part) {
+					return true
+				}
 			}
 		}
 	}

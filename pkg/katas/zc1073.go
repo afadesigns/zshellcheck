@@ -66,7 +66,7 @@ func isUserVariable(name string) bool {
 	if len(name) == 0 {
 		return false
 	}
-	
+
 	first := name[0]
 	if !isAlpha(first) && first != '_' {
 		return false

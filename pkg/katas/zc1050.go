@@ -48,7 +48,7 @@ func checkZC1050(node ast.Node) []Violation {
 	return violations
 }
 
-func getCommandFromSubstitution(node ast.Node) ast.Expression {
+func getCommandFromSubstitution(node ast.Node) ast.Node {
 	switch n := node.(type) {
 	case *ast.CommandSubstitution:
 		return n.Command

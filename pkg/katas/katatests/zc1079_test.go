@@ -29,8 +29,8 @@ func TestZC1079(t *testing.T) {
 			expected: []katas.Violation{},
 		},
 		{
-			name:     "invalid unquoted variable == ",
-			input:    `[[ $var == $other ]]`,
+			name:  "invalid unquoted variable == ",
+			input: `[[ $var == $other ]]`,
 			expected: []katas.Violation{
 				{
 					KataID:  "ZC1079",
@@ -41,8 +41,8 @@ func TestZC1079(t *testing.T) {
 			},
 		},
 		{
-			name:     "invalid unquoted variable !=",
-			input:    `[[ $var != $other ]]`,
+			name:  "invalid unquoted variable !=",
+			input: `[[ $var != $other ]]`,
 			expected: []katas.Violation{
 				{
 					KataID:  "ZC1079",
@@ -53,8 +53,8 @@ func TestZC1079(t *testing.T) {
 			},
 		},
 		{
-			name:     "invalid array access",
-			input:    `[[ $var = ${arr[1]} ]]`,
+			name:  "invalid array access",
+			input: `[[ $var = ${arr[1]} ]]`,
 			expected: []katas.Violation{
 				{
 					KataID:  "ZC1079",

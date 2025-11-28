@@ -67,15 +67,15 @@ func checkZC1097(node ast.Node) []Violation {
 
 		// Check ForLoopStatement
 		if forLoop, ok := n.(*ast.ForLoopStatement); ok {
-			// Check if Init is an Identifier (loop variable)
-			if ident, ok := forLoop.Init.(*ast.Identifier); ok {
-				if !locals[ident.Value] {
+			// Check if Name is set (for-each loop: `for i in ...`)
+			if forLoop.Name != nil {
+				if !locals[forLoop.Name.Value] {
 					violations = append(violations, Violation{
 						KataID: "ZC1097",
-						Message: "Loop variable '" + ident.Value + "' is used without 'local'. It will be global. " +
-							"Use `local " + ident.Value + "` before the loop.",
-						Line:   ident.Token.Line,
-						Column: ident.Token.Column,
+						Message: "Loop variable '" + forLoop.Name.Value + "' is used without 'local'. It will be global. " +
+							"Use `local " + forLoop.Name.Value + "` before the loop.",
+						Line:   forLoop.Name.Token.Line,
+						Column: forLoop.Name.Token.Column,
 					})
 				}
 			}

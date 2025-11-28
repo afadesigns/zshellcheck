@@ -30,17 +30,35 @@ func (v *zc1088Visitor) traverse(node ast.Node, expectsStatus bool) {
 	if node == nil {
 		return
 	}
-	
+
 	// Handle typed nil interfaces
-	if t, ok := node.(*ast.BlockStatement); ok && t == nil { return }
-	if t, ok := node.(*ast.IfStatement); ok && t == nil { return }
-	if t, ok := node.(*ast.WhileLoopStatement); ok && t == nil { return }
-	if t, ok := node.(*ast.ExpressionStatement); ok && t == nil { return }
-	if t, ok := node.(*ast.InfixExpression); ok && t == nil { return }
-	if t, ok := node.(*ast.PrefixExpression); ok && t == nil { return }
-	if t, ok := node.(*ast.GroupedExpression); ok && t == nil { return }
-	if t, ok := node.(*ast.Program); ok && t == nil { return }
-	if t, ok := node.(*ast.Subshell); ok && t == nil { return }
+	if t, ok := node.(*ast.BlockStatement); ok && t == nil {
+		return
+	}
+	if t, ok := node.(*ast.IfStatement); ok && t == nil {
+		return
+	}
+	if t, ok := node.(*ast.WhileLoopStatement); ok && t == nil {
+		return
+	}
+	if t, ok := node.(*ast.ExpressionStatement); ok && t == nil {
+		return
+	}
+	if t, ok := node.(*ast.InfixExpression); ok && t == nil {
+		return
+	}
+	if t, ok := node.(*ast.PrefixExpression); ok && t == nil {
+		return
+	}
+	if t, ok := node.(*ast.GroupedExpression); ok && t == nil {
+		return
+	}
+	if t, ok := node.(*ast.Program); ok && t == nil {
+		return
+	}
+	if t, ok := node.(*ast.Subshell); ok && t == nil {
+		return
+	}
 
 	switch n := node.(type) {
 	case *ast.Program:
@@ -53,7 +71,7 @@ func (v *zc1088Visitor) traverse(node ast.Node, expectsStatus bool) {
 			v.checkSubshell(n)
 		}
 		// Traverse content (BlockStatement) with expectsStatus=false for children
-		v.traverse(n.Block, false)
+		v.traverse(n.Command, false)
 
 	case *ast.BlockStatement:
 		// Normal block { ... } or implicit (e.g. If Condition)
@@ -90,14 +108,14 @@ func (v *zc1088Visitor) traverse(node ast.Node, expectsStatus bool) {
 		if !expectsStatus {
 			v.checkGroupedExpression(n)
 		}
-		v.traverse(n.Exp, false)
+		v.traverse(n.Expression, false)
 	default:
 		// Do nothing for other nodes
 	}
 }
 
 func (v *zc1088Visitor) checkSubshell(sub *ast.Subshell) {
-	if v.isStateChangeOnly(sub.Block) {
+	if v.isStateChangeOnly(sub.Command) {
 		v.violations = append(v.violations, Violation{
 			KataID:  "ZC1088",
 			Message: "Subshell `( ... )` isolates state changes. The changes (e.g. `cd`, variable assignment) will be lost. Use `{ ... }` to preserve them, or add commands that use the changed state.",
@@ -111,7 +129,7 @@ func (v *zc1088Visitor) checkGroupedExpression(group *ast.GroupedExpression) {
 	// Similar logic for GroupedExpression if it wraps state changes
 	// But GroupedExpression wraps Expression.
 	// SimpleCommand is Expression.
-	if v.isStateChangeOnly(group.Exp) {
+	if v.isStateChangeOnly(group.Expression) {
 		v.violations = append(v.violations, Violation{
 			KataID:  "ZC1088",
 			Message: "Subshell `( ... )` isolates state changes. The changes (e.g. `cd`, variable assignment) will be lost. Use `{ ... }` to preserve them, or add commands that use the changed state.",
@@ -124,11 +142,15 @@ func (v *zc1088Visitor) checkGroupedExpression(group *ast.GroupedExpression) {
 func (v *zc1088Visitor) isStateChangeOnly(node ast.Node) bool {
 	hasStateChange := false
 	hasSideEffect := false
-	
+
 	ast.Walk(node, func(n ast.Node) bool {
-		if n == nil || n == node { return true }
-		
-		if hasSideEffect { return false } // Optimization
+		if n == nil || n == node {
+			return true
+		}
+
+		if hasSideEffect {
+			return false
+		} // Optimization
 
 		if cmd, ok := n.(*ast.SimpleCommand); ok {
 			name := cmd.Name.String()
@@ -153,7 +175,7 @@ func (v *zc1088Visitor) isStateChangeOnly(node ast.Node) bool {
 		}
 		return true
 	})
-	
+
 	return hasStateChange && !hasSideEffect
 }
 

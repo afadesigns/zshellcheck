@@ -19,8 +19,8 @@ func TestZC1075(t *testing.T) {
 			expected: []katas.Violation{},
 		},
 		{
-			name:     "unquoted variable",
-			input:    `rm $var`,
+			name:  "unquoted variable",
+			input: `rm $var`,
 			expected: []katas.Violation{
 				{
 					KataID:  "ZC1075",
@@ -31,8 +31,8 @@ func TestZC1075(t *testing.T) {
 			},
 		},
 		{
-			name:     "unquoted array access",
-			input:    `ls ${files[1]}`,
+			name:  "unquoted array access",
+			input: `ls ${files[1]}`,
 			expected: []katas.Violation{
 				{
 					KataID:  "ZC1075",
@@ -48,8 +48,8 @@ func TestZC1075(t *testing.T) {
 			expected: []katas.Violation{},
 		},
 		{
-			name:     "unquoted concatenated",
-			input:    `cp $src/file dest`,
+			name:  "unquoted concatenated",
+			input: `cp $src/file dest`,
 			expected: []katas.Violation{
 				{
 					KataID:  "ZC1075",

@@ -46,7 +46,8 @@ func (p *Parser) parseStatement() ast.Statement {
 			return nil
 		}
 		return cmd
-	case token.COLON, token.DOT, token.LBRACKET:
+	case token.COLON, token.DOT, token.LBRACKET,
+		token.GT, token.LT, token.GTGT, token.LTLT, token.GTAMP, token.LTAMP, token.AMPERSAND:
 		return p.parseSimpleCommandStatement()
 	case token.CASE:
 		return p.parseCaseStatement()
@@ -141,7 +142,13 @@ func (p *Parser) parseCommandPipeline() ast.Expression {
 		return &ast.PrefixExpression{Token: tok, Operator: "!", Right: right}
 	}
 
-	left := p.parseSingleCommand()
+	var left ast.Expression
+	switch p.curToken.Type {
+	case token.WHILE:
+		left = p.parseWhileLoopStatement()
+	default:
+		left = p.parseSingleCommand()
+	}
 
 	// Parse redirections
 	for p.peekTokenIs(token.GT) || p.peekTokenIs(token.GTGT) ||
@@ -162,7 +169,7 @@ func (p *Parser) parseCommandPipeline() ast.Expression {
 		}
 	}
 
-	if p.peekTokenIs(token.PIPE) {
+	if p.peekTokenIs(token.PIPE) && p.peekPrecedence() == LOWEST+1 {
 		p.nextToken() // consume '|'
 		op := p.curToken
 		p.nextToken() // move to the start of the next command
@@ -221,8 +228,21 @@ func (p *Parser) parseCommandWord() ast.Expression {
 	firstToken := p.curToken
 	parts := []ast.Expression{}
 
+	// Helper to determine if we should parse as expression
+	isExpression := func(t token.Type) bool {
+		// Treat these as literals in command args, even if they have prefix fns
+		if t == token.ASTERISK || t == token.QUESTION || t == token.PLUS ||
+			t == token.MINUS || t == token.CARET || t == token.TILDE || t == token.DOT ||
+			t == token.GT || t == token.LT || t == token.AMPERSAND || t == token.LBRACKET ||
+			t == token.COMMA || t == token.COLON || t == token.GTGT || t == token.LTLT ||
+			t == token.GTAMP || t == token.LTAMP {
+			return false
+		}
+		return p.prefixParseFns[t] != nil
+	}
+
 	// Parse the first part
-	if p.prefixParseFns[p.curToken.Type] == nil {
+	if !isExpression(p.curToken.Type) {
 		parts = append(parts, &ast.StringLiteral{Token: p.curToken, Value: p.curToken.Literal})
 	} else {
 		parts = append(parts, p.parseExpression(CALL))
@@ -234,7 +254,7 @@ func (p *Parser) parseCommandWord() ast.Expression {
 
 		p.nextToken()
 
-		if p.prefixParseFns[p.curToken.Type] == nil {
+		if !isExpression(p.curToken.Type) {
 			// Treat as literal string part
 			parts = append(parts, &ast.StringLiteral{Token: p.curToken, Value: p.curToken.Literal})
 		} else {
@@ -354,7 +374,7 @@ func (p *Parser) parseSubshellStatement() ast.Statement {
 	}
 	p.nextToken()
 	// Return a Subshell node instead of BlockStatement
-	return &ast.Subshell{Token: subshellToken, Block: block}
+	return &ast.Subshell{Token: subshellToken, Command: block}
 }
 
 func (p *Parser) parseCaseStatement() *ast.CaseStatement {
@@ -472,7 +492,7 @@ func (p *Parser) parseForLoopStatement() *ast.ForLoopStatement {
 	if !p.expectPeek(token.IDENT) {
 		return nil
 	}
-	stmt.Init = &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
+	stmt.Name = &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
 
 	if p.peekTokenIs(token.IN) {
 		p.nextToken()
@@ -551,7 +571,7 @@ func (p *Parser) parseCoprocStatement() *ast.CoprocStatement {
 		stmt.Name = p.curToken.Literal
 		p.nextToken()
 	}
-	
+
 	// Parse the command/statement
 	stmt.Command = p.parseStatement()
 	return stmt
@@ -598,7 +618,7 @@ func (p *Parser) parseDeclarationStatement() *ast.DeclarationStatement {
 			p.nextToken()
 		}
 	}
-	
+
 	if p.peekTokenIs(token.SEMICOLON) {
 		p.nextToken()
 	}
@@ -622,7 +642,7 @@ func (p *Parser) parseDeclarationValue() ast.Expression {
 	if p.curTokenIs(token.LPAREN) {
 		paren := p.curToken
 		p.nextToken() // consume (
-		
+
 		val := "("
 		for !p.curTokenIs(token.RPAREN) && !p.curTokenIs(token.EOF) {
 			val += " " + p.curToken.Literal // Very rough
@@ -634,7 +654,7 @@ func (p *Parser) parseDeclarationValue() ast.Expression {
 		}
 		return &ast.StringLiteral{Token: paren, Value: val}
 	}
-	
+
 	// Normal expression
 	return p.parseExpression(LOWEST)
 }

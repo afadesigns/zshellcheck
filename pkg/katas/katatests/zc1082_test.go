@@ -19,8 +19,8 @@ func TestZC1082(t *testing.T) {
 			expected: []katas.Violation{},
 		},
 		{
-			name:     "invalid sed s///",
-			input:    `new=$(echo $var | sed 's/foo/bar/')`,
+			name:  "invalid sed s///",
+			input: `new=$(echo $var | sed 's/foo/bar/')`,
 			expected: []katas.Violation{
 				{
 					KataID:  "ZC1082",
@@ -31,8 +31,8 @@ func TestZC1082(t *testing.T) {
 			},
 		},
 		{
-			name:     "invalid sed s///g",
-			input:    `new=$(echo $var | sed "s/foo/bar/g")`,
+			name:  "invalid sed s///g",
+			input: `new=$(echo $var | sed "s/foo/bar/g")`,
 			expected: []katas.Violation{
 				{
 					KataID:  "ZC1082",
@@ -43,8 +43,8 @@ func TestZC1082(t *testing.T) {
 			},
 		},
 		{
-			name:     "invalid sed different separator",
-			input:    `new=$(print $var | sed 's|foo|bar|')`,
+			name:  "invalid sed different separator",
+			input: `new=$(print $var | sed 's|foo|bar|')`,
 			expected: []katas.Violation{
 				{
 					KataID:  "ZC1082",

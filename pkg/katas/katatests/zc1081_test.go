@@ -19,8 +19,8 @@ func TestZC1081(t *testing.T) {
 			expected: []katas.Violation{},
 		},
 		{
-			name:     "invalid echo pipe wc -c",
-			input:    `len=$(echo $var | wc -c)`,
+			name:  "invalid echo pipe wc -c",
+			input: `len=$(echo $var | wc -c)`,
 			expected: []katas.Violation{
 				{
 					KataID:  "ZC1081",
@@ -31,8 +31,8 @@ func TestZC1081(t *testing.T) {
 			},
 		},
 		{
-			name:     "invalid print pipe wc -m",
-			input:    `len=$(print -r $var | wc -m)`,
+			name:  "invalid print pipe wc -m",
+			input: `len=$(print -r $var | wc -m)`,
 			expected: []katas.Violation{
 				{
 					KataID:  "ZC1081",

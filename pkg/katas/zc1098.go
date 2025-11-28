@@ -27,12 +27,12 @@ func checkZC1098(node ast.Node) []Violation {
 			// Very rough heuristic. Real parsing inside the string would be better but complex.
 			// If arg contains '$' and not `(q)`, warn.
 			// Also skip if it contains `(qq)` or `(q-)`.
-			
+
 			// We need to handle the case where user wrote `${(q)var}`.
 			// arg.String() would be `${(q)var}`.
-			
+
 			// If we find `$` but no `(q`, warn.
-			
+
 			// Check for variable usage
 			hasVar := false
 			for i := 0; i < len(argStr); i++ {
@@ -41,7 +41,7 @@ func checkZC1098(node ast.Node) []Violation {
 					break
 				}
 			}
-			
+
 			if hasVar {
 				// Check for quoting flags
 				if !containsFlag(argStr) {
@@ -62,10 +62,10 @@ func checkZC1098(node ast.Node) []Violation {
 func containsFlag(s string) bool {
 	// Simple check for (q), (qq), (q-)
 	// This is not perfect (could be inside a string literal), but good enough for a linter warning.
-	// We look for `(q` pattern after `$`. 
+	// We look for `(q` pattern after `$`.
 	// e.g. `${(q)var}` or `$var[(q)...]`? No, flags are at start of expansion.
 	// `${(q)...}` or `$(...)` (command subst is also dangerous in eval without q).
-	
+
 	// Let's just check if the string contains "(q".
 	for i := 0; i < len(s)-1; i++ {
 		if s[i] == '(' && s[i+1] == 'q' {

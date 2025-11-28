@@ -24,8 +24,8 @@ func TestZC1087(t *testing.T) {
 			expected: []katas.Violation{},
 		},
 		{
-			name:     "invalid clobbering simple command",
-			input:    `sort file.txt > file.txt`,
+			name:  "invalid clobbering simple command",
+			input: `sort file.txt > file.txt`,
 			expected: []katas.Violation{
 				{
 					KataID:  "ZC1087",
@@ -36,8 +36,8 @@ func TestZC1087(t *testing.T) {
 			},
 		},
 		{
-			name:     "invalid clobbering pipeline",
-			input:    `cat file.txt | grep foo > file.txt`,
+			name:  "invalid clobbering pipeline",
+			input: `cat file.txt | grep foo > file.txt`,
 			expected: []katas.Violation{
 				{
 					KataID:  "ZC1087",
@@ -48,8 +48,8 @@ func TestZC1087(t *testing.T) {
 			},
 		},
 		{
-			name:     "invalid clobbering with input redirection",
-			input:    `grep foo < file.txt > file.txt`,
+			name:  "invalid clobbering with input redirection",
+			input: `grep foo < file.txt > file.txt`,
 			expected: []katas.Violation{
 				{
 					KataID:  "ZC1087",

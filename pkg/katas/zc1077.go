@@ -22,7 +22,7 @@ func init() {
 }
 
 func checkZC1077(node ast.Node) []Violation {
-	var command ast.Expression
+	var command ast.Node
 
 	switch n := node.(type) {
 	case *ast.CommandSubstitution:
@@ -57,13 +57,13 @@ func checkZC1077(node ast.Node) []Violation {
 	// We check both quoted and unquoted versions roughly
 	isUpper := checkTrPattern(arg1, "a-z") && checkTrPattern(arg2, "A-Z")
 	isLower := checkTrPattern(arg1, "A-Z") && checkTrPattern(arg2, "a-z")
-	
+
 	// Also check POSIX classes
 	isUpperPosix := checkTrPattern(arg1, "[:lower:]") && checkTrPattern(arg2, "[:upper:]")
 	isLowerPosix := checkTrPattern(arg1, "[:upper:]") && checkTrPattern(arg2, "[:lower:]")
 
 	if isUpper || isUpperPosix {
-		return []Violation{{ 
+		return []Violation{{
 			KataID:  "ZC1077",
 			Message: "Use `${var:u}` instead of `tr` for uppercase conversion. It is faster and built-in.",
 			Line:    node.TokenLiteralNode().Line,
@@ -72,7 +72,7 @@ func checkZC1077(node ast.Node) []Violation {
 	}
 
 	if isLower || isLowerPosix {
-		return []Violation{{ 
+		return []Violation{{
 			KataID:  "ZC1077",
 			Message: "Use `${var:l}` instead of `tr` for lowercase conversion. It is faster and built-in.",
 			Line:    node.TokenLiteralNode().Line,
@@ -89,11 +89,11 @@ func checkTrPattern(arg, pattern string) bool {
 	if len(arg) >= 2 && ((arg[0] == '"' && arg[len(arg)-1] == '"') || (arg[0] == '\'' && arg[len(arg)-1] == '\'')) {
 		stripped = arg[1 : len(arg)-1]
 	}
-	
+
 	// Simple containment check - robust enough for standard patterns
 	// We check if the core pattern exists
 	// e.g. 'a-z' matches "a-z", 'a-z', [a-z]
-	
+
 	// For strictness, let's just check substring
 	return stripped == pattern || stripped == "["+pattern+"]"
 }

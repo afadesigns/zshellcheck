@@ -24,8 +24,8 @@ func TestZC1090(t *testing.T) {
 			expected: []katas.Violation{},
 		},
 		{
-			name:     "invalid quoted start anchor",
-			input:    `[[ $v =~ "^foo" ]]`,
+			name:  "invalid quoted start anchor",
+			input: `[[ $v =~ "^foo" ]]`,
 			expected: []katas.Violation{
 				{
 					KataID:  "ZC1090",
@@ -36,8 +36,8 @@ func TestZC1090(t *testing.T) {
 			},
 		},
 		{
-			name:     "invalid quoted wildcard",
-			input:    `[[ $v =~ "foo.*" ]]`,
+			name:  "invalid quoted wildcard",
+			input: `[[ $v =~ "foo.*" ]]`,
 			expected: []katas.Violation{
 				{
 					KataID:  "ZC1090",
@@ -48,8 +48,8 @@ func TestZC1090(t *testing.T) {
 			},
 		},
 		{
-			name:     "invalid quoted alternation",
-			input:    `[[ $v =~ "a|b" ]]`,
+			name:  "invalid quoted alternation",
+			input: `[[ $v =~ "a|b" ]]`,
 			expected: []katas.Violation{
 				{
 					KataID:  "ZC1090",
@@ -65,16 +65,16 @@ func TestZC1090(t *testing.T) {
 			expected: []katas.Violation{},
 		},
 		{
-			name:     "valid quoted variable",
-			input:    `[[ $v =~ "$pat" ]]`, // Treating $pat content literally.
+			name:  "valid quoted variable",
+			input: `[[ $v =~ "$pat" ]]`, // Treating $pat content literally.
 			// If $pat contains regex, it WON'T work.
 			// But strictly "$pat" contains `$` which I excluded from check.
 			// So this should PASS (silently allowed or handled as literal).
 			expected: []katas.Violation{},
 		},
 		{
-			name:     "invalid quoted variable with meta",
-			input:    `[[ $v =~ "^$pat" ]]`,
+			name:  "invalid quoted variable with meta",
+			input: `[[ $v =~ "^$pat" ]]`,
 			expected: []katas.Violation{
 				{
 					KataID:  "ZC1090",

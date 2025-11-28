@@ -25,8 +25,8 @@ func TestZC1098(t *testing.T) {
 			},
 		},
 		{
-			name:  "eval with quoted variable",
-			input: `eval "ls ${(q)dir}"`,
+			name:     "eval with quoted variable",
+			input:    `eval "ls ${(q)dir}"`,
 			expected: []katas.Violation{},
 		},
 	}

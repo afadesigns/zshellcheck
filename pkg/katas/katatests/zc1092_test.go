@@ -38,13 +38,13 @@ func TestZC1092(t *testing.T) {
 			},
 		},
 		{
-			name:  "valid print",
-			input: `print "hello world"`,
+			name:     "valid print",
+			input:    `print "hello world"`,
 			expected: []katas.Violation{},
 		},
 		{
-			name:  "valid printf",
-			input: `printf "%s\n" "hello"`,
+			name:     "valid printf",
+			input:    `printf "%s\n" "hello"`,
 			expected: []katas.Violation{},
 		},
 	}
