@@ -39,8 +39,8 @@ func TestZC1083(t *testing.T) {
 			expected: []katas.Violation{},
 		},
 		{
-			name:     "invalid variable as range end",
-			input:    `echo {1..$n}`,
+			name:  "invalid variable as range end",
+			input: `echo {1..$n}`,
 			expected: []katas.Violation{
 				{
 					KataID:  "ZC1083",
@@ -51,8 +51,8 @@ func TestZC1083(t *testing.T) {
 			},
 		},
 		{
-			name:     "invalid variable as range start",
-			input:    `echo {$n..10}`,
+			name:  "invalid variable as range start",
+			input: `echo {$n..10}`,
 			expected: []katas.Violation{
 				{
 					KataID:  "ZC1083",
@@ -63,8 +63,8 @@ func TestZC1083(t *testing.T) {
 			},
 		},
 		{
-			name:     "invalid variable as range start and end",
-			input:    `echo {$min..$max}`,
+			name:  "invalid variable as range start and end",
+			input: `echo {$min..$max}`,
 			expected: []katas.Violation{
 				{
 					KataID:  "ZC1083",
@@ -75,8 +75,8 @@ func TestZC1083(t *testing.T) {
 			},
 		},
 		{
-			name:     "invalid command substitution in range",
-			input:    `echo {1..$(echo 10)}`,
+			name:  "invalid command substitution in range",
+			input: `echo {1..$(echo 10)}`,
 			expected: []katas.Violation{
 				{
 					KataID:  "ZC1083",
@@ -87,8 +87,8 @@ func TestZC1083(t *testing.T) {
 			},
 		},
 		{
-			name:     "invalid quoted brace expansion with variable",
-			input:    `echo "{1..$n}"`,
+			name:  "invalid quoted brace expansion with variable",
+			input: `echo "{1..$n}"`,
 			expected: []katas.Violation{
 				{
 					KataID:  "ZC1083",

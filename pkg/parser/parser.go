@@ -45,6 +45,7 @@ var precedences = map[token.Type]int{
 	token.GE_NUM:        LESSGREATER,
 	token.INC:           POSTFIX,
 	token.DEC:           POSTFIX,
+	token.PIPE:          LOWEST + 1,
 }
 
 type (
@@ -169,10 +170,7 @@ func (p *Parser) isCommandDelimiter(t token.Token) bool {
 		t.Type == token.HASH ||
 		t.Type == token.THEN || t.Type == token.ELSE || t.Type == token.ELIF || t.Type == token.Fi ||
 		t.Type == token.DO || t.Type == token.DONE ||
-		t.Type == token.ESAC || t.Type == token.DSEMI ||
-		t.Type == token.GT || t.Type == token.LT ||
-		t.Type == token.GTGT || t.Type == token.LTLT ||
-		t.Type == token.GTAMP || t.Type == token.LTAMP
+		t.Type == token.ESAC || t.Type == token.DSEMI
 }
 
 func (p *Parser) curTokenIs(t token.Type) bool {

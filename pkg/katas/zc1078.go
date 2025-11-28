@@ -27,9 +27,9 @@ func checkZC1078(node ast.Node) []Violation {
 		// unquoted $@ might be parsed as Identifier "$@" -> String() == "$@"
 		// unquoted $* might be parsed as GroupedExpression -> String() == "($*)"
 		// or other variations depending on parser state (e.g. PrefixExpression)
-		
+
 		s := arg.String()
-		
+
 		// Removing parens from GroupedExpression string representation for checking
 		// (Note: String() adds parens for GroupedExpression)
 		if len(s) >= 2 && s[0] == '(' && s[len(s)-1] == ')' {

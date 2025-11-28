@@ -53,8 +53,8 @@ func checkZC1004(node ast.Node) []Violation {
 				violations = append(violations, Violation{
 					KataID:  "ZC1004",
 					Message: "Use `return` instead of `exit` in functions to avoid killing the shell.",
-					Line:    cmd.TokenLiteralNode().Line,
-					Column:  cmd.TokenLiteralNode().Column,
+					Line:    cmd.Token.Line,
+					Column:  cmd.Token.Column,
 				})
 			}
 		}

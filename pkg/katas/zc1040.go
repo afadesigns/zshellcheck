@@ -67,7 +67,7 @@ func getStringValue(node ast.Node) string {
 	case *ast.Identifier:
 		return n.Value
 	case *ast.GroupedExpression:
-		return "(" + getStringValue(n.Exp) + ")"
+		return "(" + getStringValue(n.Expression) + ")"
 	default:
 		// Fallback for operators treated as literals (like *)
 		return n.TokenLiteral()

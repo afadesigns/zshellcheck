@@ -31,11 +31,12 @@ func checkZC1016(node ast.Node) []Violation {
 
 	// Check flags
 	for _, arg := range cmd.Arguments {
-		if pe, ok := arg.(*ast.PrefixExpression); ok && pe.Operator == "-" {
-			if ident, ok := pe.Right.(*ast.Identifier); ok {
-				if strings.Contains(ident.Value, "s") {
-					hasS = true
-				}
+		argStr := arg.String()
+		// Remove quotes if present
+		argStr = strings.Trim(argStr, "\"'")
+		if strings.HasPrefix(argStr, "-") {
+			if strings.Contains(argStr, "s") {
+				hasS = true
 			}
 		}
 	}
@@ -48,11 +49,11 @@ func checkZC1016(node ast.Node) []Violation {
 
 	for _, arg := range cmd.Arguments {
 		// Skip flags
-		if pe, ok := arg.(*ast.PrefixExpression); ok && pe.Operator == "-" {
+		argStr := arg.String()
+		argStrClean := strings.Trim(argStr, "\"'")
+		if strings.HasPrefix(argStrClean, "-") {
 			continue
 		}
-
-		argStr := arg.String()
 
 		// Handle Zsh read syntax: variable?prompt
 		parts := strings.Split(argStr, "?")
@@ -69,7 +70,8 @@ func checkZC1016(node ast.Node) []Violation {
 		}
 
 		if isSensitive {
-			            violations = append(violations, Violation{				KataID:  "ZC1016",
+			violations = append(violations, Violation{
+				KataID:  "ZC1016",
 				Message: "Use `read -s` to hide input when reading sensitive variable '" + varName + "'.",
 				Line:    cmd.TokenLiteralNode().Line,
 				Column:  cmd.TokenLiteralNode().Column,

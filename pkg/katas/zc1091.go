@@ -38,7 +38,7 @@ func checkZC1091(node ast.Node) []Violation {
 		return true
 	}
 
-	for _, expr := range dbe.Expressions {
+	for _, expr := range dbe.Elements {
 		ast.Walk(expr, visitor)
 	}
 

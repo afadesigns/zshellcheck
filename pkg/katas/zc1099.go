@@ -21,17 +21,25 @@ func checkZC1099(node ast.Node) []Violation {
 	}
 
 	if infix.Operator == "|" {
-		if _, ok := infix.Right.(*ast.WhileLoopStatement); ok {
-			// Check if the while loop condition is `read ...`
-			// while loop struct has `Condition *BlockStatement`
-			// `read` is a SimpleCommand.
-			// We need to peek into the condition block.
-			return []Violation{{
-				KataID:  "ZC1099",
-				Message: "Consider using `for line in ${(f)variable}` instead of `... | while read line`. It's faster and cleaner in Zsh.",
-				Line:    infix.Token.Line,
-				Column:  infix.Token.Column,
-			}}
+		if whileLoop, ok := infix.Right.(*ast.WhileLoopStatement); ok {
+			foundRead := false
+			for _, stmt := range whileLoop.Condition.(*ast.BlockStatement).Statements {
+				if exprStmt, ok := stmt.(*ast.ExpressionStatement); ok {
+					if simpleCmd, ok := exprStmt.Expression.(*ast.SimpleCommand); ok && simpleCmd.Name != nil && simpleCmd.Name.String() == "read" {
+						foundRead = true
+						break
+					}
+				}
+			}
+
+			if foundRead {
+				return []Violation{{
+					KataID:  "ZC1099",
+					Message: "Consider using `for line in ${(f)variable}` instead of `... | while read line`. It's faster and cleaner in Zsh.",
+					Line:    infix.Token.Line,
+					Column:  infix.Token.Column,
+				}}
+			}
 		}
 	}
 	return nil

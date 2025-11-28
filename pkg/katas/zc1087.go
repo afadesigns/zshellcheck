@@ -5,8 +5,8 @@ import (
 )
 
 func init() {
-	// Register for Redirection (> file)
-	RegisterKata(ast.RedirectionNode, Kata{
+	// Register for SimpleCommand (to check args)
+	RegisterKata(ast.SimpleCommandNode, Kata{
 		ID:    "ZC1087",
 		Title: "Output redirection overwrites input file",
 		Description: "Redirecting output to a file that is also being read as input causes the file to be truncated before it is read. " +
@@ -24,25 +24,22 @@ func init() {
 }
 
 func checkZC1087(node ast.Node) []Violation {
-	// Case 1: Redirection (> file)
-	if redir, ok := node.(*ast.Redirection); ok {
-		// Only care about output truncation: > (and maybe >| in Zsh)
-		if redir.Operator != ">" && redir.Operator != ">|" {
-			return nil
-		}
+	// Case 1: SimpleCommand (checking args for > file)
+	if cmd, ok := node.(*ast.SimpleCommand); ok {
+		inputs := collectInputs(cmd)
+		outputs := collectOutputs(cmd)
 
-		outputFile := redir.Right.String()
-		inputs := collectInputs(redir.Left)
-		
-		for _, input := range inputs {
-			if input == outputFile {
-				return []Violation{
-					{
-						KataID:  "ZC1087",
-						Message: "Output redirection overwrites input file `" + outputFile + "`. The file is truncated before reading.",
-						Line:    redir.TokenLiteralNode().Line,
-						Column:  redir.TokenLiteralNode().Column,
-					},
+		for _, output := range outputs {
+			for _, input := range inputs {
+				if input == output {
+					return []Violation{
+						{
+							KataID:  "ZC1087",
+							Message: "Output redirection overwrites input file `" + output + "`. The file is truncated before reading.",
+							Line:    cmd.TokenLiteralNode().Line,
+							Column:  cmd.TokenLiteralNode().Column,
+						},
+					}
 				}
 			}
 		}
@@ -54,12 +51,12 @@ func checkZC1087(node ast.Node) []Violation {
 		if infix.Operator != "|" {
 			return nil
 		}
-		
+
 		// Left side inputs
 		inputs := collectInputs(infix.Left)
 		// Right side outputs
 		outputs := collectOutputs(infix.Right)
-		
+
 		for _, output := range outputs {
 			for _, input := range inputs {
 				if input == output {
@@ -81,53 +78,58 @@ func checkZC1087(node ast.Node) []Violation {
 
 func collectInputs(node ast.Node) []string {
 	var inputs []string
-	
+
 	ast.Walk(node, func(n ast.Node) bool {
 		if n == nil {
 			return true
 		}
-		
-		// 1. SimpleCommand arguments
-		if cmd, ok := n.(*ast.SimpleCommand); ok {
-			for _, arg := range cmd.Arguments {
-				inputs = append(inputs, arg.String())
-			}
-		}
-		
-		// 2. Input Redirection (<)
-		// It seems < might be parsed as Redirection or InfixExpression depending on version/flags?
-		// Debug showed *ast.Redirection for <.
-		if redir, ok := n.(*ast.Redirection); ok {
-			if redir.Operator == "<" {
-				inputs = append(inputs, redir.Right.String())
-			}
-		}
 
-		if infix, ok := n.(*ast.InfixExpression); ok {
-			if infix.Operator == "<" {
-				inputs = append(inputs, infix.Right.String())
+		if cmd, ok := n.(*ast.SimpleCommand); ok {
+			for i := 0; i < len(cmd.Arguments); i++ {
+				arg := cmd.Arguments[i].String()
+				if arg == "<" {
+					if i+1 < len(cmd.Arguments) {
+						inputs = append(inputs, cmd.Arguments[i+1].String())
+						i++
+					}
+				} else if arg != ">" && arg != ">>" && arg != ">|" && arg != "&>" {
+					// Assume args are inputs unless they are flags
+					if len(arg) > 0 && arg[0] != '-' {
+						inputs = append(inputs, arg)
+					}
+				} else {
+					// Skip next (output file)
+					i++
+				}
 			}
 		}
-		
 		return true
 	})
-	
+
 	return inputs
 }
 
 func collectOutputs(node ast.Node) []string {
 	var outputs []string
 	ast.Walk(node, func(n ast.Node) bool {
-		if n == nil { return true }
-		if redir, ok := n.(*ast.Redirection); ok {
-			if redir.Operator == ">" || redir.Operator == ">|" {
-				outputs = append(outputs, redir.Right.String())
-			}
+		if n == nil {
+			return true
 		}
-		// Also check if > is Infix?
-		if infix, ok := n.(*ast.InfixExpression); ok {
-			if infix.Operator == ">" || infix.Operator == ">|" {
-				outputs = append(outputs, infix.Right.String())
+		if cmd, ok := n.(*ast.SimpleCommand); ok {
+			for i := 0; i < len(cmd.Arguments); i++ {
+				arg := cmd.Arguments[i].String()
+				// Only output redirection that truncates: > or >|
+				// Ignore append >>, &>>, etc. unless we want to catch clobbering there too?
+				// Kata description says "truncated". >> does not truncate.
+				if arg == ">" || arg == ">|" {
+					if i+1 < len(cmd.Arguments) {
+						outputs = append(outputs, cmd.Arguments[i+1].String())
+						i++
+					}
+				} else if arg == ">>" || arg == "&>" || arg == "&>>" {
+					// Skip operator and file
+					i++
+				}
 			}
 		}
 		return true

@@ -34,8 +34,8 @@ func TestZC1073(t *testing.T) {
 			expected: []katas.Violation{},
 		},
 		{
-			name:     "invalid simple variable",
-			input:    `(( $i > 5 ))`,
+			name:  "invalid simple variable",
+			input: `(( $i > 5 ))`,
 			expected: []katas.Violation{
 				{
 					KataID:  "ZC1073",
@@ -46,8 +46,8 @@ func TestZC1073(t *testing.T) {
 			},
 		},
 		{
-			name:     "invalid multiple",
-			input:    `(( $x + $y ))`,
+			name:  "invalid multiple",
+			input: `(( $x + $y ))`,
 			expected: []katas.Violation{
 				{
 					KataID:  "ZC1073",

@@ -5,39 +5,52 @@ import (
 )
 
 func init() {
-	RegisterKata(ast.SimpleCommandNode, Kata{
+	kata := Kata{
 		ID:    "ZC1045",
 		Title: "Declare and assign separately to avoid masking return values",
 		Description: "Declaring a variable with `local var=$(cmd)` masks the return value of `cmd`. " +
 			"The `local` command returns 0 (success) even if `cmd` fails. " +
 			"Declare the variable first (`local var`), then assign it (`var=$(cmd)`).",
 		Check: checkZC1045,
-	})
+	}
+	RegisterKata(ast.SimpleCommandNode, kata)
+	RegisterKata(ast.DeclarationStatementNode, kata)
 }
 
 func checkZC1045(node ast.Node) []Violation {
-	cmd, ok := node.(*ast.SimpleCommand)
-	if !ok {
-		return nil
-	}
-
-	name := cmd.Name.String()
-	if name != "local" && name != "typeset" && name != "declare" && name != "readonly" {
-		return nil
-	}
-
 	violations := []Violation{}
 
-	for _, arg := range cmd.Arguments {
-		// Check if arg is an assignment containing a command substitution
-		if hasCommandSubstitutionAssignment(arg) {
-			violations = append(violations, Violation{
-				KataID: "ZC1045",
-				Message: "Declare and assign separately to avoid masking return values. " +
-					"`local var=$(cmd)` masks the exit code of `cmd`.",
-				Line:   arg.TokenLiteralNode().Line,
-				Column: arg.TokenLiteralNode().Column,
-			})
+	// Check SimpleCommand (local, readonly)
+	if cmd, ok := node.(*ast.SimpleCommand); ok {
+		name := cmd.Name.String()
+		if name == "local" || name == "readonly" {
+			for _, arg := range cmd.Arguments {
+				if hasCommandSubstitutionAssignment(arg) {
+					violations = append(violations, Violation{
+						KataID: "ZC1045",
+						Message: "Declare and assign separately to avoid masking return values. " +
+							"`" + name + " var=$(cmd)` masks the exit code of `cmd`.",
+						Line:   arg.TokenLiteralNode().Line,
+						Column: arg.TokenLiteralNode().Column,
+					})
+				}
+			}
+		}
+	}
+
+	// Check DeclarationStatement (typeset, declare)
+	if decl, ok := node.(*ast.DeclarationStatement); ok {
+		// Command is "typeset" or "declare"
+		for _, assign := range decl.Assignments {
+			if assign.Value != nil && isCommandSubstitution(assign.Value) {
+				violations = append(violations, Violation{
+					KataID: "ZC1045",
+					Message: "Declare and assign separately to avoid masking return values. " +
+						"`" + decl.Command + " var=$(cmd)` masks the exit code of `cmd`.",
+					Line:   decl.Token.Line,
+					Column: decl.Token.Column,
+				})
+			}
 		}
 	}
 

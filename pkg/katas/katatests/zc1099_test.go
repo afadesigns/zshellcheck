@@ -26,8 +26,8 @@ func TestZC1099(t *testing.T) {
 			},
 		},
 		{
-			name:  "while loop without pipe",
-			input: `while read line; do echo $line; done < file`,
+			name:     "while loop without pipe",
+			input:    `while read line; do echo $line; done < file`,
 			expected: []katas.Violation{},
 		},
 	}

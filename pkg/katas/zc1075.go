@@ -27,14 +27,14 @@ func checkZC1075(node ast.Node) []Violation {
 		// Check if argument is a simple identifier starting with $
 		// or a braced expression ${...} that is NOT inside a string literal.
 		// The parser might wrap these in different ways.
-		
+
 		// If it's a bare IdentifierNode (variable expansion), it's unquoted.
 		if ident, ok := arg.(*ast.Identifier); ok {
 			// Identifiers that start with $ are variable expansions
 			if len(ident.Value) > 0 && ident.Value[0] == '$' {
 				violations = append(violations, Violation{
 					KataID:  "ZC1075",
-					Message: "Unquoted variable expansion '" + ident.Value + "' is subject to globbing. Quote it: \""+ ident.Value + "\".",
+					Message: "Unquoted variable expansion '" + ident.Value + "' is subject to globbing. Quote it: \"" + ident.Value + "\".",
 					Line:    ident.Token.Line,
 					Column:  ident.Token.Column,
 				})
@@ -48,11 +48,11 @@ func checkZC1075(node ast.Node) []Violation {
 				Column:  arg.TokenLiteralNode().Column,
 			})
 		} else if _, ok := arg.(*ast.InvalidArrayAccess); ok {
-			// $arr[idx] - ZC1001 flags this, but it's also unquoted. 
+			// $arr[idx] - ZC1001 flags this, but it's also unquoted.
 			// Let ZC1001 handle the syntax error, but ZC1075 could also flag globbing.
 			// We'll skip to reduce noise.
 		}
-		
+
 		// Note: StringLiteral arguments are quoted, so we don't check them.
 		// But ConcatenatedExpression might contain unquoted parts.
 		// e.g. $var/foo

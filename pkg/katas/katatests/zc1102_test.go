@@ -33,13 +33,13 @@ func TestZC1102(t *testing.T) {
 					KataID:  "ZC1102",
 					Message: "Redirection happens before `sudo`. This will likely fail permission checks. Use `| sudo tee`.",
 					Line:    1,
-					Column:  17,
+					Column:  18,
 				},
 			},
 		},
 		{
-			name:  "valid sudo usage",
-			input: `echo "foo" | sudo tee /etc/bar`,
+			name:     "valid sudo usage",
+			input:    `echo "foo" | sudo tee /etc/bar`,
 			expected: []katas.Violation{},
 		},
 	}

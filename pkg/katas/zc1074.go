@@ -17,7 +17,7 @@ func init() {
 }
 
 func checkZC1074(node ast.Node) []Violation {
-	var command ast.Expression
+	var command ast.Node
 
 	switch n := node.(type) {
 	case *ast.CommandSubstitution:

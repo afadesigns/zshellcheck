@@ -1,790 +1,622 @@
 package ast
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/afadesigns/zshellcheck/pkg/token"
 )
 
-type NodeType int
-
-const (
-	ProgramNode NodeType = iota
-	LetStatementNode
-	ReturnStatementNode
-	ExpressionStatementNode
-	IdentifierNode
-	IntegerLiteralNode
-	BooleanNode
-	PrefixExpressionNode
-	PostfixExpressionNode
-	InfixExpressionNode
-	BlockStatementNode
-	IfStatementNode
-	ForLoopStatementNode
-	WhileLoopStatementNode
-	FunctionLiteralNode
-	CallExpressionNode
-	StringLiteralNode
-	BracketExpressionNode
-	DoubleBracketExpressionNode
-	ArrayAccessNode
-	InvalidArrayAccessNode
-	CommandSubstitutionNode
-	ShebangNode
-	DollarParenExpressionNode
-	SimpleCommandNode
-	IndexExpressionNode
-	ConcatenatedExpressionNode
-	CaseStatementNode
-	RedirectionNode
-	FunctionDefinitionNode
-	GroupedExpressionNode
-	ArithmeticCommandNode
-	SubshellNode
-	BraceExpansionNode
-		SelectStatementNode
-			CoprocStatementNode
-			DeclarationStatementNode
-			ProcessSubstitutionNode
-		)
-		
-		type BraceExpansion struct {	Token    token.Token // The '{' token
-	Elements []Expression
-}
-
-func (be *BraceExpansion) Type() NodeType                { return BraceExpansionNode }
-func (be *BraceExpansion) statementNode()                {}
-func (be *BraceExpansion) expressionNode()               {}
-func (be *BraceExpansion) TokenLiteral() string          { return be.Token.Literal }
-func (be *BraceExpansion) TokenLiteralNode() token.Token { return be.Token }
-func (be *BraceExpansion) String() string {
-	var out []byte
-	out = append(out, []byte("{")...)
-	elems := []string{}
-	for _, e := range be.Elements {
-		elems = append(elems, e.String())
-	}
-	out = append(out, []byte(strings.Join(elems, ", "))...)
-	out = append(out, []byte("}")...)
-	return string(out)
-}
-
-
-type Subshell struct {
-	Token token.Token // The '(' token
-	Block *BlockStatement
-}
-
-func (s *Subshell) Type() NodeType       { return SubshellNode }
-func (s *Subshell) statementNode()       {}
-func (s *Subshell) TokenLiteral() string { return s.Token.Literal }
-func (s *Subshell) String() string {
-	return "( " + s.Block.String() + " )"
-}
-
-type ArithmeticCommand struct {
-	Token      token.Token // The '((' token
-	Expression Expression
-}
-
-func (ac *ArithmeticCommand) Type() NodeType                { return ArithmeticCommandNode }
-func (ac *ArithmeticCommand) statementNode()                {}
-func (ac *ArithmeticCommand) TokenLiteral() string          { return ac.Token.Literal }
-func (ac *ArithmeticCommand) TokenLiteralNode() token.Token { return ac.Token }
-func (ac *ArithmeticCommand) String() string {
-	return "((" + ac.Expression.String() + "))"
-}
-
-type GroupedExpression struct {
-	Token token.Token // The '(' token
-	Exp   Expression
-}
-
-func (ge *GroupedExpression) Type() NodeType                { return GroupedExpressionNode }
-func (ge *GroupedExpression) expressionNode()               {}
-func (ge *GroupedExpression) TokenLiteral() string          { return ge.Token.Literal }
-func (ge *GroupedExpression) TokenLiteralNode() token.Token { return ge.Token }
-func (ge *GroupedExpression) String() string {
-	return "(" + ge.Exp.String() + ")"
-}
-
-type FunctionDefinition struct {
-	Token token.Token // The name token
-	Name  *Identifier
-	Body  Statement // The function body (usually BlockStatement)
-}
-
-func (fd *FunctionDefinition) Type() NodeType       { return FunctionDefinitionNode }
-func (fd *FunctionDefinition) expressionNode()      {}
-func (fd *FunctionDefinition) statementNode()       {}
-func (fd *FunctionDefinition) TokenLiteral() string { return fd.Token.Literal }
-func (fd *FunctionDefinition) String() string {
-	var out []byte
-	if fd.Name != nil {
-		out = append(out, []byte(fd.Name.String())...)
-	}
-	out = append(out, []byte("() ")...)
-	if fd.Body != nil {
-		out = append(out, []byte(fd.Body.String())...)
-	}
-	return string(out)
-}
-
-type Redirection struct {
-	Token    token.Token
-	Left     Expression
-	Operator string
-	Right    Expression
-}
-
-func (r *Redirection) Type() NodeType       { return RedirectionNode }
-func (r *Redirection) expressionNode()      {}
-func (r *Redirection) TokenLiteral() string { return r.Token.Literal }
-func (r *Redirection) String() string {
-	var out []byte
-	if r.Left != nil {
-		out = append(out, []byte(r.Left.String())...)
-	}
-	out = append(out, []byte(" ")...)
-	out = append(out, []byte(r.Operator)...)
-	out = append(out, []byte(" ")...)
-	if r.Right != nil {
-		out = append(out, []byte(r.Right.String())...)
-	}
-	return string(out)
-}
-
+// Node represents a node in the AST.
 type Node interface {
-	TokenLiteral() string
-	String() string
-	Type() NodeType
+	TokenLiteral() string // literal value of the node
 	TokenLiteralNode() token.Token
+	String() string       // string representation of the node
 }
 
+// Statement represents a statement in the AST.
 type Statement interface {
 	Node
 	statementNode()
 }
 
+// Expression represents an expression in the AST.
 type Expression interface {
 	Node
 	expressionNode()
 }
 
+// Program represents the root of the AST.
 type Program struct {
 	Statements []Statement
 }
 
-func (p *Program) Type() NodeType { return ProgramNode }
-func (p *Program) TokenLiteral() string {
-	if len(p.Statements) > 0 {
-		return p.Statements[0].TokenLiteral()
-	}
-	return ""
-}
+func (p *Program) TokenLiteral() string { return "" }
+func (p *Program) TokenLiteralNode() token.Token { return token.Token{} }
 
-func (p *Program) TokenLiteralNode() token.Token {
-	if len(p.Statements) > 0 {
-		return p.Statements[0].TokenLiteralNode()
-	}
-	return token.Token{}
-}
-
+// String returns a string representation of the Program.
 func (p *Program) String() string {
-	var out []byte
+	var sb strings.Builder
 	for _, s := range p.Statements {
-		out = append(out, []byte(s.String())...)
+		sb.WriteString(s.String())
 	}
-	return string(out)
+	return sb.String()
 }
 
+// LetStatement represents a let statement.
 type LetStatement struct {
-	Token token.Token // the token.LET token
-	Name  *Identifier
-	Value Expression
+	Token token.Token // the 'let' token
+	Name  *Identifier // identifier node
+	Value Expression  // expression node
 }
 
-func (ls *LetStatement) Type() NodeType       { return LetStatementNode }
-func (ls *LetStatement) statementNode()       {}
+func (ls *LetStatement) statementNode() {}
+func (ls *LetStatement) expressionNode() {}
 func (ls *LetStatement) TokenLiteral() string { return ls.Token.Literal }
+func (ls *LetStatement) TokenLiteralNode() token.Token { return ls.Token }
+
+// String returns a string representation of the LetStatement.
 func (ls *LetStatement) String() string {
-	var out []byte
-	out = append(out, []byte(ls.TokenLiteral())...)
-	out = append(out, []byte(" ")...)
-	out = append(out, []byte(ls.Name.String())...)
-	out = append(out, []byte(" = ")...)
-	if ls.Value != nil {
-		out = append(out, []byte(ls.Value.String())...)
-	}
-	out = append(out, []byte(";")...)
-	return string(out)
+	return ls.Token.Literal + " " + ls.Name.String() + " = " + ls.Value.String() + ";"
 }
 
+// ReturnStatement represents a return statement.
 type ReturnStatement struct {
-	Token       token.Token // the token.RETURN token
-	ReturnValue Expression
+	Token       token.Token // the 'return' token
+	ReturnValue Expression    // expression node
 }
 
-func (rs *ReturnStatement) Type() NodeType       { return ReturnStatementNode }
-func (rs *ReturnStatement) statementNode()       {}
+func (rs *ReturnStatement) statementNode() {}
+func (rs *ReturnStatement) expressionNode() {}
 func (rs *ReturnStatement) TokenLiteral() string { return rs.Token.Literal }
+func (rs *ReturnStatement) TokenLiteralNode() token.Token { return rs.Token }
+
+// String returns a string representation of the ReturnStatement.
 func (rs *ReturnStatement) String() string {
-	var out []byte
-	out = append(out, []byte(rs.TokenLiteral())...)
-	out = append(out, []byte(" ")...)
 	if rs.ReturnValue != nil {
-		out = append(out, []byte(rs.ReturnValue.String())...)
+		return rs.Token.Literal + " " + rs.ReturnValue.String()
 	}
-	out = append(out, []byte(";")...)
-	return string(out)
+	return rs.Token.Literal
 }
 
+// ExpressionStatement represents an expression statement.
 type ExpressionStatement struct {
 	Token      token.Token // the first token of the expression
-	Expression Expression
+	Expression Expression  // expression node
 }
 
-func (es *ExpressionStatement) Type() NodeType       { return ExpressionStatementNode }
-func (es *ExpressionStatement) statementNode()       {}
+func (es *ExpressionStatement) statementNode() {}
+func (es *ExpressionStatement) expressionNode() {}
 func (es *ExpressionStatement) TokenLiteral() string { return es.Token.Literal }
+func (es *ExpressionStatement) TokenLiteralNode() token.Token { return es.Token }
+
+// String returns a string representation of the ExpressionStatement.
 func (es *ExpressionStatement) String() string {
-	if es.Expression != nil {
-		return es.Expression.String()
-	}
-	return ""
+	return es.Expression.String()
 }
 
+// Identifier represents an identifier.
 type Identifier struct {
-	Token token.Token // the token.IDENT token
-	Value string
+	Token token.Token // the IDENT token
+	Value string      // identifier name
 }
 
-func (i *Identifier) Type() NodeType       { return IdentifierNode }
-func (i *Identifier) expressionNode()      {}
+func (i *Identifier) expressionNode() {}
 func (i *Identifier) TokenLiteral() string { return i.Token.Literal }
-func (i *Identifier) String() string       { return i.Value }
+func (i *Identifier) TokenLiteralNode() token.Token { return i.Token }
 
+// String returns a string representation of the Identifier.
+func (i *Identifier) String() string { return i.Value }
+
+// IntegerLiteral represents an integer literal.
 type IntegerLiteral struct {
-	Token token.Token // the token.INT token
-	Value int64
+	Token token.Token // the INT token
+	Value int64     // integer value
 }
 
-func (il *IntegerLiteral) Type() NodeType       { return IntegerLiteralNode }
-func (il *IntegerLiteral) expressionNode()      {}
+func (il *IntegerLiteral) expressionNode() {}
 func (il *IntegerLiteral) TokenLiteral() string { return il.Token.Literal }
-func (il *IntegerLiteral) String() string       { return il.Token.Literal }
+func (il *IntegerLiteral) TokenLiteralNode() token.Token { return il.Token }
 
+// String returns a string representation of the IntegerLiteral.
+func (il *IntegerLiteral) String() string { return fmt.Sprintf("%d", il.Value) }
+
+// Boolean represents a boolean literal.
 type Boolean struct {
-	Token token.Token // the token.TRUE or token.FALSE token
-	Value bool
+	Token token.Token // the TRUE or FALSE token
+	Value bool      // boolean value
 }
 
-func (b *Boolean) Type() NodeType       { return BooleanNode }
-func (b *Boolean) expressionNode()      {}
+func (b *Boolean) expressionNode() {}
 func (b *Boolean) TokenLiteral() string { return b.Token.Literal }
-func (b *Boolean) String() string       { return b.Token.Literal }
+func (b *Boolean) TokenLiteralNode() token.Token { return b.Token }
 
+// String returns a string representation of the Boolean.
+func (b *Boolean) String() string { return fmt.Sprintf("%t", b.Value) }
+
+// PrefixExpression represents a prefix expression (e.g., -5, !true).
 type PrefixExpression struct {
-	Token    token.Token // The operator token, e.g. !
-	Operator string
-	Right    Expression
+	Token    token.Token // The prefix operator token (! or -)
+	Operator string      // Prefix operator
+	Right    Expression  // Right operand
 }
 
-func (pe *PrefixExpression) Type() NodeType       { return PrefixExpressionNode }
-func (pe *PrefixExpression) expressionNode()      {}
+func (pe *PrefixExpression) expressionNode() {}
 func (pe *PrefixExpression) TokenLiteral() string { return pe.Token.Literal }
+func (pe *PrefixExpression) TokenLiteralNode() token.Token { return pe.Token }
+
+// String returns a string representation of the PrefixExpression.
 func (pe *PrefixExpression) String() string {
-	var out []byte
-	out = append(out, []byte("(")...)
-	out = append(out, []byte(pe.Operator)...)
+	var right string
 	if pe.Right != nil {
-		out = append(out, []byte(pe.Right.String())...)
+		right = pe.Right.String()
 	}
-	out = append(out, []byte(")")...)
-	return string(out)
+	return "(" + pe.Operator + right + ")"
 }
 
+// PostfixExpression represents a postfix expression (e.g. --i, ++i).
 type PostfixExpression struct {
-	Token    token.Token // The operator token, e.g. ++
-	Left     Expression
-	Operator string
+	Token    token.Token // The postfix operator token (-- or ++)
+	Operator string      // Postfix operator
+	Left     Expression  // Left operand
 }
 
-func (pe *PostfixExpression) Type() NodeType       { return PostfixExpressionNode }
-func (pe *PostfixExpression) expressionNode()      {}
+func (pe *PostfixExpression) expressionNode() {}
 func (pe *PostfixExpression) TokenLiteral() string { return pe.Token.Literal }
+func (pe *PostfixExpression) TokenLiteralNode() token.Token { return pe.Token }
+
+// String returns a string representation of the PostfixExpression.
 func (pe *PostfixExpression) String() string {
-	var out []byte
-	out = append(out, []byte("(")...)
-	if pe.Left != nil {
-		out = append(out, []byte(pe.Left.String())...)
-	}
-	out = append(out, []byte(pe.Operator)...)
-	out = append(out, []byte(")")...)
-	return string(out)
+	return "(" + pe.Left.String() + pe.Operator + ")"
 }
 
+// InfixExpression represents an infix expression (e.g. 5 + 5).
 type InfixExpression struct {
-	Token    token.Token // The operator token, e.g. +
-	Left     Expression
-	Operator string
-	Right    Expression
+	Token    token.Token // The operator token
+	Left     Expression  // Left operand
+	Operator string      // Infix operator
+	Right    Expression  // Right operand
 }
 
-func (ie *InfixExpression) Type() NodeType       { return InfixExpressionNode }
-func (ie *InfixExpression) expressionNode()      {}
+func (ie *InfixExpression) expressionNode() {}
 func (ie *InfixExpression) TokenLiteral() string { return ie.Token.Literal }
+func (ie *InfixExpression) TokenLiteralNode() token.Token { return ie.Token }
+
+// String returns a string representation of the InfixExpression.
 func (ie *InfixExpression) String() string {
-	var out []byte
-	out = append(out, []byte("(")...)
-	if ie.Left != nil {
-		out = append(out, []byte(ie.Left.String())...)
-	}
-	out = append(out, []byte(" ")...)
-	out = append(out, []byte(ie.Operator)...)
-	out = append(out, []byte(" ")...)
-	if ie.Right != nil {
-		out = append(out, []byte(ie.Right.String())...)
-	}
-	out = append(out, []byte(")")...)
-	return string(out)
+	return "(" + ie.Left.String() + " " + ie.Operator + " " + ie.Right.String() + ")"
 }
 
+// BlockStatement represents a block of statements (e.g., in if or function bodies).
 type BlockStatement struct {
-	Token      token.Token // the { token or then token
+	Token      token.Token // the '{' token
 	Statements []Statement
 }
 
-func (bs *BlockStatement) Type() NodeType       { return BlockStatementNode }
-func (bs *BlockStatement) statementNode()       {}
+func (bs *BlockStatement) statementNode() {}
+func (bs *BlockStatement) expressionNode() {}
 func (bs *BlockStatement) TokenLiteral() string { return bs.Token.Literal }
+func (bs *BlockStatement) TokenLiteralNode() token.Token { return bs.Token }
+
+// String returns a string representation of the BlockStatement.
 func (bs *BlockStatement) String() string {
-	var out []byte
+	var sb strings.Builder
 	for _, s := range bs.Statements {
-		out = append(out, []byte(s.String())...)
+		sb.WriteString(s.String())
 	}
-	return string(out)
+	return sb.String()
 }
 
+// IfStatement represents an if statement.
 type IfStatement struct {
 	Token       token.Token // The 'if' token
-	Condition   *BlockStatement
+	Condition   Expression
 	Consequence *BlockStatement
-	Alternative *BlockStatement
+	Alternative Statement   // Statement, could be *BlockStatement or *ExpressionStatement
 }
 
-func (is *IfStatement) Type() NodeType       { return IfStatementNode }
-func (is *IfStatement) statementNode()       {}
+func (is *IfStatement) statementNode() {}
+func (is *IfStatement) expressionNode() {}
 func (is *IfStatement) TokenLiteral() string { return is.Token.Literal }
+func (is *IfStatement) TokenLiteralNode() token.Token { return is.Token }
+
+// String returns a string representation of the IfStatement.
 func (is *IfStatement) String() string {
-	var out []byte
-	out = append(out, []byte("if ")...)
-	if is.Condition != nil {
-		out = append(out, []byte(is.Condition.String())...)
-	}
-	out = append(out, []byte(" then ")...)
-	if is.Consequence != nil {
-		out = append(out, []byte(is.Consequence.String())...)
-	}
+	var sb strings.Builder
+	sb.WriteString(is.Token.Literal + "(" + is.Condition.String() + ") " + is.Consequence.String())
 	if is.Alternative != nil {
-		out = append(out, []byte(" else ")...)
-		out = append(out, []byte(is.Alternative.String())...)
+		sb.WriteString("else " + is.Alternative.String())
 	}
-	out = append(out, []byte(" fi")...)
-	return string(out)
+	return sb.String()
 }
 
+// ForLoopStatement represents a for loop statement.
 type ForLoopStatement struct {
-	Token     token.Token  // The 'for' token
-	Init      Expression   // Variable name (for-each) or Init expr (arithmetic)
-	Condition Expression   // Arithmetic condition
-	Post      Expression   // Arithmetic post
-	Items     []Expression // Items to iterate over (for-each)
-	Body      *BlockStatement
-}
-
-func (fls *ForLoopStatement) Type() NodeType       { return ForLoopStatementNode }
-func (fls *ForLoopStatement) statementNode()       {}
-func (fls *ForLoopStatement) TokenLiteral() string { return fls.Token.Literal }
-func (fls *ForLoopStatement) String() string {
-	var out []byte
-	// Heuristic: if Condition or Post is present, or Items is nil (and not implicit?), it's arithmetic?
-	// Actually, explicit `Items` makes it for-each.
-	// But `for i` (implicit in) has Items=nil.
-	// Arithmetic `for ((...))` usually has params. `for ((;;))` is possible.
-	// I'll assume if Items is non-nil (even empty) it's for-each.
-	// Or if Init is Identifier and others are nil?
-
-	if fls.Items != nil {
-		out = append(out, []byte("for ")...)
-		if fls.Init != nil {
-			out = append(out, []byte(fls.Init.String())...)
-		}
-		out = append(out, []byte(" in ")...)
-		for _, item := range fls.Items {
-			out = append(out, []byte(item.String())...)
-			out = append(out, []byte(" ")...)
-		}
-		out = append(out, []byte("; do ")...)
-	} else {
-		out = append(out, []byte("for ((")...)
-		if fls.Init != nil {
-			out = append(out, []byte(fls.Init.String())...)
-		}
-		out = append(out, []byte("; ")...)
-		if fls.Condition != nil {
-			out = append(out, []byte(fls.Condition.String())...)
-		}
-		out = append(out, []byte("; ")...)
-		if fls.Post != nil {
-			out = append(out, []byte(fls.Post.String())...)
-		}
-		out = append(out, []byte(")); do ")...)
-	}
-
-	if fls.Body != nil {
-		out = append(out, []byte(fls.Body.String())...)
-	}
-	out = append(out, []byte("done")...)
-	return string(out)
-}
-
-type WhileLoopStatement struct {
-	Token     token.Token // The 'while' token
-	Condition *BlockStatement
-	Body      *BlockStatement
-}
-
-func (wls *WhileLoopStatement) Type() NodeType       { return WhileLoopStatementNode }
-func (wls *WhileLoopStatement) statementNode()       {}
-func (wls *WhileLoopStatement) expressionNode()      {} // Allow while loop to be part of pipeline
-func (wls *WhileLoopStatement) TokenLiteral() string { return wls.Token.Literal }
-func (wls *WhileLoopStatement) String() string {
-	var out []byte
-	out = append(out, []byte("while ")...)
-	if wls.Condition != nil {
-		out = append(out, []byte(wls.Condition.String())...)
-	}
-	out = append(out, []byte("; do ")...)
-	if wls.Body != nil {
-		out = append(out, []byte(wls.Body.String())...)
-	}
-	out = append(out, []byte("done")...)
-	return string(out)
-}
-
-type FunctionLiteral struct {
-	Token      token.Token // The 'fn' token
-	Name       string      // The function name (optional)
-	Parameters []*Identifier
+	Token      token.Token // The 'for' token
+	Init       Expression
+	Condition  Expression
+	Post       Expression
+	Name       *Identifier
+	Items      []Expression
 	Body       *BlockStatement
 }
 
-func (fl *FunctionLiteral) Type() NodeType       { return FunctionLiteralNode }
-func (fl *FunctionLiteral) expressionNode()      {}
-func (fl *FunctionLiteral) TokenLiteral() string { return fl.Token.Literal }
-func (fl *FunctionLiteral) String() string {
-	var out []byte
-	params := []string{}
-	for _, p := range fl.Parameters {
-		params = append(params, p.String())
+func (fls *ForLoopStatement) statementNode() {}
+func (fls *ForLoopStatement) expressionNode() {}
+func (fls *ForLoopStatement) TokenLiteral() string { return fls.Token.Literal }
+func (fls *ForLoopStatement) TokenLiteralNode() token.Token { return fls.Token }
+
+// String returns a string representation of the ForLoopStatement.
+func (fls *ForLoopStatement) String() string {
+	var sb strings.Builder
+	sb.WriteString(fls.Token.Literal + " ")
+	if fls.Name != nil {
+		sb.WriteString(fls.Name.String() + " in")
+		for _, item := range fls.Items {
+			sb.WriteString(" " + item.String())
+		}
+	} else {
+		sb.WriteString("(")
+		if fls.Init != nil {
+			sb.WriteString(fls.Init.String())
+		}
+		sb.WriteString("; ")
+		if fls.Condition != nil {
+			sb.WriteString(fls.Condition.String())
+		}
+		sb.WriteString("; ")
+		if fls.Post != nil {
+			sb.WriteString(fls.Post.String())
+		}
+		sb.WriteString(")")
 	}
-	out = append(out, []byte(fl.TokenLiteral())...)
-	out = append(out, []byte("(")...)
-	out = append(out, []byte(strings.Join(params, ", "))...)
-	out = append(out, []byte("){")...)
-	out = append(out, []byte(fl.Body.String())...)
-	out = append(out, []byte("}")...)
-	return string(out)
+	sb.WriteString(" ")
+	sb.WriteString(fls.Body.String())
+	return sb.String()
 }
 
+// WhileLoopStatement represents a while loop statement.
+type WhileLoopStatement struct {
+	Token      token.Token // The 'while' token
+	Condition  Expression
+	Body       *BlockStatement
+}
+
+func (wls *WhileLoopStatement) statementNode() {}
+func (wls *WhileLoopStatement) expressionNode() {}
+func (wls *WhileLoopStatement) TokenLiteral() string { return wls.Token.Literal }
+func (wls *WhileLoopStatement) TokenLiteralNode() token.Token { return wls.Token }
+
+// String returns a string representation of the WhileLoopStatement.
+func (wls *WhileLoopStatement) String() string {
+	var sb strings.Builder
+	sb.WriteString(wls.Token.Literal + "(" + wls.Condition.String() + ") ")
+	sb.WriteString(wls.Body.String())
+	return sb.String()
+}
+
+// FunctionLiteral represents a function literal.
+type FunctionLiteral struct {
+	Token  token.Token // The 'fn' token
+	Name   *Identifier
+	Params []*Identifier
+	Body   *BlockStatement
+}
+
+func (fl *FunctionLiteral) expressionNode() {}
+func (fl *FunctionLiteral) TokenLiteral() string { return fl.Token.Literal }
+func (fl *FunctionLiteral) TokenLiteralNode() token.Token { return fl.Token }
+
+// String returns a string representation of the FunctionLiteral.
+func (fl *FunctionLiteral) String() string {
+	var sb strings.Builder
+	sb.WriteString(fl.TokenLiteral())
+	sb.WriteString("(")
+	params := []string{}
+	for _, p := range fl.Params {
+		params = append(params, p.String())
+	}
+	sb.WriteString(strings.Join(params, ", "))
+	sb.WriteString(") ")
+	sb.WriteString(fl.Body.String())
+	return sb.String()
+}
+
+// CallExpression represents a function call expression.
 type CallExpression struct {
 	Token     token.Token // The '(' token
-	Function  Expression  // Identifier or FunctionLiteral
+	Function  Expression
 	Arguments []Expression
 }
 
-func (ce *CallExpression) Type() NodeType       { return CallExpressionNode }
-func (ce *CallExpression) expressionNode()      {}
+func (ce *CallExpression) expressionNode() {}
 func (ce *CallExpression) TokenLiteral() string { return ce.Token.Literal }
+func (ce *CallExpression) TokenLiteralNode() token.Token { return ce.Token }
+
+// String returns a string representation of the CallExpression.
 func (ce *CallExpression) String() string {
-	var out []byte
+	var sb strings.Builder
+	sb.WriteString(ce.Function.String())
+	sb.WriteString("(")
 	args := []string{}
 	for _, a := range ce.Arguments {
 		args = append(args, a.String())
 	}
-	out = append(out, []byte(ce.Function.String())...)
-	out = append(out, []byte("(")...)
-	out = append(out, []byte(strings.Join(args, ", "))...)
-	out = append(out, []byte(")")...)
-	return string(out)
+	sb.WriteString(strings.Join(args, ", "))
+	sb.WriteString(")")
+	return sb.String()
 }
 
+// IndexExpression represents an index expression (e.g., arr[0]).
+type IndexExpression struct {
+	Token     token.Token // The '[' token
+	Left      Expression
+	Index     Expression
+}
+
+func (ie *IndexExpression) expressionNode() {}
+func (ie *IndexExpression) TokenLiteral() string { return ie.Token.Literal }
+func (ie *IndexExpression) TokenLiteralNode() token.Token { return ie.Token }
+
+// String returns a string representation of the IndexExpression.
+func (ie *IndexExpression) String() string {
+	return "(" + ie.Left.String() + "[" + ie.Index.String() + "])"
+}
+
+// BracketExpression represents a bracket expression (e.g. {a, b, c}).
+type BracketExpression struct {
+	Token    token.Token // The '{' token
+	Elements []Expression
+}
+
+func (be *BracketExpression) expressionNode() {}
+func (be *BracketExpression) TokenLiteral() string { return be.Token.Literal }
+func (be *BracketExpression) TokenLiteralNode() token.Token { return be.Token }
+
+// String returns a string representation of the BracketExpression.
+func (be *BracketExpression) String() string {
+	var sb strings.Builder
+	sb.WriteString("{")
+	elements := []string{}
+	for _, el := range be.Elements {
+		elements = append(elements, el.String())
+	}
+	sb.WriteString(strings.Join(elements, ", "))
+	sb.WriteString("}")
+	return sb.String()
+}
+
+// DoubleBracketExpression represents a double bracket expression (e.g. [[ a ]]).
+type DoubleBracketExpression struct {
+	Token    token.Token // The '[[' token
+	Elements []Expression
+}
+
+func (dbe *DoubleBracketExpression) expressionNode() {}
+func (dbe *DoubleBracketExpression) TokenLiteral() string { return dbe.Token.Literal }
+func (dbe *DoubleBracketExpression) TokenLiteralNode() token.Token { return dbe.Token }
+
+// String returns a string representation of the DoubleBracketExpression.
+func (dbe *DoubleBracketExpression) String() string {
+	var sb strings.Builder
+	sb.WriteString("[[")
+	elements := []string{}
+	for _, el := range dbe.Elements {
+		elements = append(elements, el.String())
+	}
+	sb.WriteString(strings.Join(elements, ", "))
+	sb.WriteString("]]")
+	return sb.String()
+}
+
+// StringLiteral represents a string literal.
 type StringLiteral struct {
 	Token token.Token
 	Value string
 }
 
-func (sl *StringLiteral) Type() NodeType       { return StringLiteralNode }
-func (sl *StringLiteral) expressionNode()      {}
+func (sl *StringLiteral) expressionNode() {}
 func (sl *StringLiteral) TokenLiteral() string { return sl.Token.Literal }
+func (sl *StringLiteral) TokenLiteralNode() token.Token { return sl.Token }
 func (sl *StringLiteral) String() string       { return sl.Token.Literal }
 
-type BracketExpression struct {
-	Token       token.Token // The '[' token
-	Expressions []Expression
+// GroupedExpression represents a grouped expression (e.g. (1 + 2)).
+type GroupedExpression struct {
+	Token      token.Token // The '(' token
+	Expression Expression
 }
 
-func (be *BracketExpression) Type() NodeType       { return BracketExpressionNode }
-func (be *BracketExpression) expressionNode()      {}
-func (be *BracketExpression) TokenLiteral() string { return be.Token.Literal }
-func (be *BracketExpression) String() string {
-	var out []byte
-	out = append(out, []byte("[")...)
-	args := []string{}
-	for _, e := range be.Expressions {
-		args = append(args, e.String())
-	}
-	out = append(out, []byte(strings.Join(args, " "))...)
-	out = append(out, []byte("]")...)
-	return string(out)
+func (ge *GroupedExpression) expressionNode() {}
+func (ge *GroupedExpression) TokenLiteral() string { return ge.Token.Literal }
+func (ge *GroupedExpression) TokenLiteralNode() token.Token { return ge.Token }
+func (ge *GroupedExpression) String() string {
+	return "(" + ge.Expression.String() + ")"
 }
 
-type DoubleBracketExpression struct {
-	Token       token.Token // The '[[' token
-	Expressions []Expression
-}
-
-func (dbe *DoubleBracketExpression) Type() NodeType       { return DoubleBracketExpressionNode }
-func (dbe *DoubleBracketExpression) expressionNode()      {}
-func (dbe *DoubleBracketExpression) TokenLiteral() string { return dbe.Token.Literal }
-func (dbe *DoubleBracketExpression) String() string {
-	var out []byte
-	out = append(out, []byte("[[")...)
-	args := []string{}
-	for _, e := range dbe.Expressions {
-		args = append(args, e.String())
-	}
-	out = append(out, []byte(strings.Join(args, " "))...)
-	out = append(out, []byte("]]")...)
-	return string(out)
-}
-
+// ArrayAccess represents an array access expression (e.g. ${arr[0]}).
 type ArrayAccess struct {
-	Token token.Token // The '${' token
-	Left  Expression
-	Index Expression
-}
-
-func (aa *ArrayAccess) Type() NodeType       { return ArrayAccessNode }
-func (aa *ArrayAccess) expressionNode()      {}
-func (aa *ArrayAccess) TokenLiteral() string { return aa.Token.Literal }
-func (aa *ArrayAccess) String() string {
-	var out []byte
-	out = append(out, []byte("${")...)
-	if aa.Left != nil {
-		out = append(out, []byte(aa.Left.String())...)
-	}
-	if aa.Index != nil {
-		out = append(out, []byte("[")...)
-		out = append(out, []byte(aa.Index.String())...)
-		out = append(out, []byte("]")...)
-	}
-	out = append(out, []byte("}")...)
-	return string(out)
-}
-
-type IndexExpression struct {
-	Token token.Token // The [ token
-	Left  Expression
-	Index Expression
-}
-
-func (ie *IndexExpression) Type() NodeType       { return IndexExpressionNode }
-func (ie *IndexExpression) expressionNode()      {}
-func (ie *IndexExpression) TokenLiteral() string { return ie.Token.Literal }
-func (ie *IndexExpression) String() string {
-	var out []byte
-	out = append(out, []byte("(")...)
-	if ie.Left != nil {
-		out = append(out, []byte(ie.Left.String())...)
-	}
-	out = append(out, []byte("[")...)
-	if ie.Index != nil {
-		out = append(out, []byte(ie.Index.String())...)
-	}
-	out = append(out, []byte("])")...)
-	return string(out)
-}
-
-type InvalidArrayAccess struct {
 	Token token.Token // The '$' token
 	Left  Expression
 	Index Expression
 }
 
-func (iaa *InvalidArrayAccess) Type() NodeType       { return InvalidArrayAccessNode }
-func (iaa *InvalidArrayAccess) expressionNode()      {}
-func (iaa *InvalidArrayAccess) TokenLiteral() string { return iaa.Token.Literal }
-func (iaa *InvalidArrayAccess) String() string {
-	var out []byte
-	out = append(out, []byte("$")...)
-	out = append(out, []byte(iaa.Left.String())...)
-	out = append(out, []byte("[")...)
-	out = append(out, []byte(iaa.Index.String())...)
-	out = append(out, []byte("]")...)
-	return string(out)
+func (aa *ArrayAccess) expressionNode() {}
+func (aa *ArrayAccess) TokenLiteral() string { return aa.Token.Literal }
+func (aa *ArrayAccess) TokenLiteralNode() token.Token { return aa.Token }
+
+// String returns a string representation of the ArrayAccess.
+func (aa *ArrayAccess) String() string {
+	var sb strings.Builder
+	sb.WriteString("${")
+	if aa.Left != nil {
+		sb.WriteString(aa.Left.String())
+	}
+	if aa.Index != nil {
+		sb.WriteString("[" + aa.Index.String() + "]")
+	}
+	sb.WriteString("}")
+	return sb.String()
 }
 
+// CommandSubstitution represents a command substitution (e.g. $(...)).
 type CommandSubstitution struct {
-	Token   token.Token // The ` or $() token
-	Command Expression
+	Token   token.Token // The '$(' token
+	Command Node
 }
 
-func (cs *CommandSubstitution) Type() NodeType       { return CommandSubstitutionNode }
-func (cs *CommandSubstitution) expressionNode()      {}
+func (cs *CommandSubstitution) expressionNode() {}
 func (cs *CommandSubstitution) TokenLiteral() string { return cs.Token.Literal }
+func (cs *CommandSubstitution) TokenLiteralNode() token.Token { return cs.Token }
 func (cs *CommandSubstitution) String() string {
-	return "`" + cs.Command.String() + "`"
+	return "$(" + cs.Command.String() + ")"
 }
 
+// InvalidArrayAccess represents an invalid array access.
+type InvalidArrayAccess struct {
+	Token token.Token
+	Left  Expression
+	Index Expression
+}
+
+func (ia *InvalidArrayAccess) expressionNode() {}
+func (ia *InvalidArrayAccess) TokenLiteral() string { return ia.Token.Literal }
+func (ia *InvalidArrayAccess) TokenLiteralNode() token.Token { return ia.Token }
+func (ia *InvalidArrayAccess) String() string {
+	return ia.Left.String() + "[" + ia.Index.String() + "]"
+}
+
+
+// Shebang represents a shebang comment (e.g., #!/bin/zsh).
 type Shebang struct {
-	Token token.Token // The #! token
+	Token token.Token // The '#!' token
 	Path  string
 }
 
-func (s *Shebang) Type() NodeType       { return ShebangNode }
-func (s *Shebang) statementNode()       {}
+func (s *Shebang) statementNode() {}
+func (s *Shebang) expressionNode() {}
 func (s *Shebang) TokenLiteral() string { return s.Token.Literal }
-func (s *Shebang) String() string {
-	return s.Token.Literal
-}
+func (s *Shebang) TokenLiteralNode() token.Token { return s.Token }
 
+// String returns a string representation of the Shebang.
+func (s *Shebang) String() string { return s.Path }
+
+// DollarParenExpression represents a dollar paren expression (e.g., $(command)).
 type DollarParenExpression struct {
 	Token   token.Token // The '$(' token
-	Command Expression
+	Command Node
 }
 
-func (dpe *DollarParenExpression) Type() NodeType       { return DollarParenExpressionNode }
-func (dpe *DollarParenExpression) expressionNode()      {}
+func (dpe *DollarParenExpression) expressionNode() {}
 func (dpe *DollarParenExpression) TokenLiteral() string { return dpe.Token.Literal }
-func (dpe *DollarParenExpression) String() string {
-	var out []byte
-	out = append(out, []byte("$(")...)
-	out = append(out, []byte(dpe.Command.String())...)
-	out = append(out, []byte(")")...)
-	return string(out)
-}
+func (dpe *DollarParenExpression) TokenLiteralNode() token.Token { return dpe.Token }
 
+// String returns a string representation of the DollarParenExpression.
+func (dpe *DollarParenExpression) String() string { return "$(" + dpe.Command.String() + ")" }
+
+// SimpleCommand represents a simple command (e.g., ls -l).
 type SimpleCommand struct {
-	Token       token.Token // The first token of the command
-	Name        Expression
-	Arguments   []Expression
-	Redirections []Expression // New field for redirections associated with the command
+	Token     token.Token
+	Name      Expression
+	Arguments []Expression
 }
 
-func (sc *SimpleCommand) Type() NodeType       { return SimpleCommandNode }
-func (sc *SimpleCommand) expressionNode()      {}
+func (sc *SimpleCommand) statementNode() {}
+func (sc *SimpleCommand) expressionNode() {}
 func (sc *SimpleCommand) TokenLiteral() string { return sc.Token.Literal }
+func (sc *SimpleCommand) TokenLiteralNode() token.Token { return sc.Token }
+
+// String returns a string representation of the SimpleCommand.
 func (sc *SimpleCommand) String() string {
-	var out []byte
-	// Print redirections first if they are leading
-	for _, r := range sc.Redirections {
-		if r != nil && r.(*Redirection).Left == nil { // Assuming Left == nil means leading/implicit FD 0/1
-			out = append(out, []byte(r.String())...)
-			out = append(out, []byte(" ")...)
-		}
+	var sb strings.Builder
+	sb.WriteString(sc.Name.String())
+	for _, arg := range sc.Arguments {
+		sb.WriteString(" " + arg.String())
 	}
-
-	out = append(out, []byte(sc.Name.String())...)
-	out = append(out, []byte(" ")...)
-	args := []string{}
-	for _, a := range sc.Arguments {
-		args = append(args, a.String())
-	}
-	out = append(out, []byte(strings.Join(args, " "))...)
-	
-	// Print trailing redirections
-	for _, r := range sc.Redirections {
-		if r != nil && r.(*Redirection).Left != nil { // Assuming Left != nil means trailing
-			out = append(out, []byte(" ")...)
-			out = append(out, []byte(r.String())...)
-		}
-	}
-
-	return strings.TrimSpace(string(out))
+	return sb.String()
 }
 
+// ConcatenatedExpression represents a concatenated expression.
 type ConcatenatedExpression struct {
 	Token token.Token
 	Parts []Expression
 }
 
-func (ce *ConcatenatedExpression) Type() NodeType       { return ConcatenatedExpressionNode }
-func (ce *ConcatenatedExpression) expressionNode()      {}
+func (ce *ConcatenatedExpression) expressionNode() {}
 func (ce *ConcatenatedExpression) TokenLiteral() string { return ce.Token.Literal }
+func (ce *ConcatenatedExpression) TokenLiteralNode() token.Token { return ce.Token }
+
+// String returns a string representation of the ConcatenatedExpression.
 func (ce *ConcatenatedExpression) String() string {
-	var out []byte
-	for _, p := range ce.Parts {
-		if p != nil {
-			out = append(out, []byte(p.String())...)
-		}
+	var sb strings.Builder
+	for _, part := range ce.Parts {
+		sb.WriteString(part.String())
 	}
-	return string(out)
+	return sb.String()
 }
 
+// CaseStatement represents a case statement.
 type CaseStatement struct {
-	Token   token.Token // The 'case' token
-	Value   Expression
-	Clauses []*CaseClause
+	Token     token.Token
+	Value     Expression
+	Clauses   []*CaseClause
 }
 
-func (cs *CaseStatement) Type() NodeType       { return CaseStatementNode }
-func (cs *CaseStatement) statementNode()       {}
+func (cs *CaseStatement) statementNode() {}
+func (cs *CaseStatement) expressionNode() {}
 func (cs *CaseStatement) TokenLiteral() string { return cs.Token.Literal }
+func (cs *CaseStatement) TokenLiteralNode() token.Token { return cs.Token }
+
+// String returns a string representation of the CaseStatement.
 func (cs *CaseStatement) String() string {
-	var out []byte
-	out = append(out, []byte("case ")...)
-	if cs.Value != nil {
-		out = append(out, []byte(cs.Value.String())...)
+	var sb strings.Builder
+	sb.WriteString("case ")
+	sb.WriteString(cs.Value.String())
+	sb.WriteString(" in\n")
+	for _, clause := range cs.Clauses {
+		sb.WriteString(clause.String())
 	}
-	out = append(out, []byte(" in ")...)
-	for _, c := range cs.Clauses {
-		out = append(out, []byte(c.String())...)
-	}
-	out = append(out, []byte("esac")...)
-	return string(out)
+	sb.WriteString("esac")
+	return sb.String()
 }
 
+// CaseClause represents a branch in a case statement.
 type CaseClause struct {
-	Token    token.Token // The first token of pattern
+	Token    token.Token // The pattern token
 	Patterns []Expression
 	Body     *BlockStatement
 }
 
+func (cc *CaseClause) statementNode() {}
+func (cc *CaseClause) expressionNode() {}
+func (cc *CaseClause) TokenLiteral() string { return cc.Token.Literal }
+func (cc *CaseClause) TokenLiteralNode() token.Token { return cc.Token }
+
 func (cc *CaseClause) String() string {
-	var out []byte
+	var sb strings.Builder
+	sb.WriteString("  ")
 	for i, p := range cc.Patterns {
-		out = append(out, []byte(p.String())...)
-		if i < len(cc.Patterns)-1 {
-			out = append(out, []byte(" | ")...)
+		if i > 0 {
+			sb.WriteString(" | ")
 		}
+		sb.WriteString(p.String())
 	}
-	out = append(out, []byte(") ")...)
-	if cc.Body != nil {
-		out = append(out, []byte(cc.Body.String())...)
-	}
-	out = append(out, []byte(" ;; ")...)
-	return string(out)
+	sb.WriteString(") ")
+	sb.WriteString(cc.Body.String())
+	sb.WriteString("\n")
+	return sb.String()
 }
 
+// WalkFn is a function that will be called for each node in the AST.
+// It returns true if the children of the node should be visited.
 type WalkFn func(node Node) bool
 
+// Walk traverses the AST starting from the given node.
+// It calls the walkFn for each node.
 func Walk(node Node, f WalkFn) {
 	if node == nil {
 		return
 	}
+
 	if !f(node) {
 		return
 	}
@@ -805,34 +637,10 @@ func Walk(node Node, f WalkFn) {
 		for _, stmt := range n.Statements {
 			Walk(stmt, f)
 		}
-	case *Identifier:
-	case *IntegerLiteral:
-	case *Boolean:
-	case *PrefixExpression:
-		if n.Right != nil {
-			Walk(n.Right, f)
-		}
-	case *PostfixExpression:
-		if n.Left != nil {
-			Walk(n.Left, f)
-		}
-	case *InfixExpression:
-		if n.Left != nil {
-			Walk(n.Left, f)
-		}
-		if n.Right != nil {
-			Walk(n.Right, f)
-		}
 	case *IfStatement:
-		if n.Condition != nil {
-			Walk(n.Condition, f)
-		}
-		if n.Consequence != nil {
-			Walk(n.Consequence, f)
-		}
-		if n.Alternative != nil {
-			Walk(n.Alternative, f)
-		}
+		Walk(n.Condition, f)
+		Walk(n.Consequence, f)
+		Walk(n.Alternative, f)
 	case *ForLoopStatement:
 		Walk(n.Init, f)
 		Walk(n.Condition, f)
@@ -845,73 +653,43 @@ func Walk(node Node, f WalkFn) {
 		Walk(n.Condition, f)
 		Walk(n.Body, f)
 	case *FunctionLiteral:
-		for _, param := range n.Parameters {
-			Walk(param, f)
+		Walk(n.Name, f)
+		for _, p := range n.Params {
+			Walk(p, f)
 		}
-		if n.Body != nil {
-			Walk(n.Body, f)
-		}
+		Walk(n.Body, f)
 	case *CallExpression:
-		if n.Function != nil {
-			Walk(n.Function, f)
-		}
+		Walk(n.Function, f)
 		for _, arg := range n.Arguments {
 			Walk(arg, f)
 		}
-	case *StringLiteral:
-	case *BracketExpression:
-		for _, exp := range n.Expressions {
-			Walk(exp, f)
-		}
-	case *DoubleBracketExpression:
-		for _, exp := range n.Expressions {
-			Walk(exp, f)
-		}
-	case *ArrayAccess:
-		Walk(n.Left, f)
-		Walk(n.Index, f)
 	case *IndexExpression:
 		Walk(n.Left, f)
 		Walk(n.Index, f)
-	case *InvalidArrayAccess:
-		Walk(n.Left, f)
+	case *ArrayAccess:
 		Walk(n.Index, f)
+	case *BracketExpression:
+		for _, el := range n.Elements {
+			Walk(el, f)
+		}
+	case *DoubleBracketExpression:
+		for _, el := range n.Elements {
+			Walk(el, f)
+		}
 	case *CommandSubstitution:
 		Walk(n.Command, f)
+	case *Shebang:
+		// No nested AST nodes for Shebang
 	case *DollarParenExpression:
+		Walk(n.Command, f)
+	case *ProcessSubstitution:
+		Walk(n.Command, f)
+	case *Subshell:
 		Walk(n.Command, f)
 	case *SimpleCommand:
 		Walk(n.Name, f)
 		for _, arg := range n.Arguments {
 			Walk(arg, f)
-		}
-	case *ConcatenatedExpression:
-		for _, p := range n.Parts {
-			Walk(p, f)
-		}
-	case *CaseStatement:
-		Walk(n.Value, f)
-		for _, c := range n.Clauses {
-			for _, p := range c.Patterns {
-				Walk(p, f)
-			}
-			Walk(c.Body, f)
-		}
-	case *Redirection:
-		Walk(n.Left, f)
-		Walk(n.Right, f)
-	case *FunctionDefinition:
-		Walk(n.Name, f)
-		Walk(n.Body, f)
-	case *Subshell:
-		Walk(n.Block, f)
-	case *GroupedExpression:
-		Walk(n.Exp, f)
-	case *ArithmeticCommand:
-		Walk(n.Expression, f)
-	case *BraceExpansion:
-		for _, elem := range n.Elements {
-			Walk(elem, f)
 		}
 	case *SelectStatement:
 		Walk(n.Name, f)
@@ -924,148 +702,243 @@ func Walk(node Node, f WalkFn) {
 	case *DeclarationStatement:
 		for _, assign := range n.Assignments {
 			Walk(assign.Name, f)
-			Walk(assign.Value, f)
-		}
-	case *ProcessSubstitution:
-		Walk(n.Command, f)
-	}
-}
-
-func (n *Subshell) TokenLiteralNode() token.Token                { return n.Token }
-func (n *FunctionDefinition) TokenLiteralNode() token.Token      { return n.Token }
-func (n *Redirection) TokenLiteralNode() token.Token             { return n.Token }
-func (n *LetStatement) TokenLiteralNode() token.Token            { return n.Token }
-func (n *ReturnStatement) TokenLiteralNode() token.Token         { return n.Token }
-func (n *ExpressionStatement) TokenLiteralNode() token.Token     { return n.Token }
-func (n *Identifier) TokenLiteralNode() token.Token              { return n.Token }
-func (n *IntegerLiteral) TokenLiteralNode() token.Token          { return n.Token }
-func (n *Boolean) TokenLiteralNode() token.Token                 { return n.Token }
-func (n *PrefixExpression) TokenLiteralNode() token.Token        { return n.Token }
-func (n *PostfixExpression) TokenLiteralNode() token.Token       { return n.Token }
-func (n *InfixExpression) TokenLiteralNode() token.Token         { return n.Token }
-func (n *BlockStatement) TokenLiteralNode() token.Token          { return n.Token }
-func (n *IfStatement) TokenLiteralNode() token.Token             { return n.Token }
-func (n *ForLoopStatement) TokenLiteralNode() token.Token        { return n.Token }
-func (n *WhileLoopStatement) TokenLiteralNode() token.Token      { return n.Token }
-func (n *FunctionLiteral) TokenLiteralNode() token.Token         { return n.Token }
-func (n *CallExpression) TokenLiteralNode() token.Token          { return n.Token }
-func (n *StringLiteral) TokenLiteralNode() token.Token           { return n.Token }
-func (n *BracketExpression) TokenLiteralNode() token.Token       { return n.Token }
-func (n *DoubleBracketExpression) TokenLiteralNode() token.Token { return n.Token }
-func (n *ArrayAccess) TokenLiteralNode() token.Token             { return n.Token }
-func (n *IndexExpression) TokenLiteralNode() token.Token         { return n.Token }
-func (n *InvalidArrayAccess) TokenLiteralNode() token.Token      { return n.Token }
-func (n *CommandSubstitution) TokenLiteralNode() token.Token     { return n.Token }
-func (n *Shebang) TokenLiteralNode() token.Token                 { return n.Token }
-func (n *DollarParenExpression) TokenLiteralNode() token.Token   { return n.Token }
-func (n *SimpleCommand) TokenLiteralNode() token.Token           { return n.Token }
-func (n *ConcatenatedExpression) TokenLiteralNode() token.Token  { return n.Token }
-func (n *CaseStatement) TokenLiteralNode() token.Token           { return n.Token }
-func (cc *CaseClause) TokenLiteralNode() token.Token              { return cc.Token }
-
-type SelectStatement struct {
-	Token token.Token // The 'select' token
-	Name  *Identifier
-	Items []Expression
-	Body  *BlockStatement
-}
-
-func (ss *SelectStatement) Type() NodeType       { return SelectStatementNode }
-func (ss *SelectStatement) statementNode()       {}
-func (ss *SelectStatement) TokenLiteral() string { return ss.Token.Literal }
-func (ss *SelectStatement) TokenLiteralNode() token.Token { return ss.Token }
-func (ss *SelectStatement) String() string {
-	var out []byte
-	out = append(out, []byte("select ")...)
-	out = append(out, []byte(ss.Name.String())...)
-	if ss.Items != nil {
-		out = append(out, []byte(" in ")...)
-		for _, item := range ss.Items {
-			out = append(out, []byte(item.String())...)
-			out = append(out, []byte(" ")...)
-		}
-	}
-	out = append(out, []byte("; do ")...)
-	if ss.Body != nil {
-		out = append(out, []byte(ss.Body.String())...)
-	}
-	out = append(out, []byte("done")...)
-	return string(out)
-}
-
-type CoprocStatement struct {
-	Token   token.Token // The 'coproc' token
-	Name    string      // Optional name (Bash/Zsh difference? Zsh `coproc cmd`, Bash `coproc [NAME] command`)
-	// Zsh `coproc` is simple. `coproc command`.
-	// Bash `coproc name { cmd; }`.
-	// Let's support generic Command.
-	Command Node // Expression (SimpleCommand) or Statement (BlockStatement)
-}
-
-func (cs *CoprocStatement) Type() NodeType       { return CoprocStatementNode }
-func (cs *CoprocStatement) statementNode()       {}
-func (cs *CoprocStatement) TokenLiteral() string { return cs.Token.Literal }
-func (cs *CoprocStatement) TokenLiteralNode() token.Token { return cs.Token }
-func (cs *CoprocStatement) String() string {
-	var out []byte
-	out = append(out, []byte("coproc ")...)
-	if cs.Name != "" {
-		out = append(out, []byte(cs.Name+" ")...)
-	}
-	if cs.Command != nil {
-		out = append(out, []byte(cs.Command.String())...)
-	}
-	return string(out)
-}
-
-type DeclarationStatement struct {
-	Token       token.Token // typeset, declare, local
-	Command     string      // "typeset", "declare", "local"
-	Flags       []string    // e.g. ["-A", "-r"]
-	Assignments []*DeclarationAssignment
-}
-
-type DeclarationAssignment struct {
-	Name     Expression
-	Value    Expression // can be nil
-	IsAppend bool       // +=
-}
-
-func (ds *DeclarationStatement) Type() NodeType       { return DeclarationStatementNode }
-func (ds *DeclarationStatement) statementNode()       {}
-func (ds *DeclarationStatement) TokenLiteral() string { return ds.Token.Literal }
-func (ds *DeclarationStatement) TokenLiteralNode() token.Token { return ds.Token }
-func (ds *DeclarationStatement) String() string {
-	var out []byte
-	out = append(out, []byte(ds.Command)...)
-	for _, flag := range ds.Flags {
-		out = append(out, []byte(" "+flag)...)
-	}
-	for _, assign := range ds.Assignments {
-		out = append(out, []byte(" ")...)
-		out = append(out, []byte(assign.Name.String())...)
-		if assign.Value != nil {
-			if assign.IsAppend {
-				out = append(out, []byte("+=")...)
-			} else {
-				out = append(out, []byte("=")...)
+			if assign.Value != nil {
+				Walk(assign.Value, f)
 			}
-			out = append(out, []byte(assign.Value.String())...)
 		}
+	case *ArithmeticCommand:
+		Walk(n.Expression, f)
+	case *Redirection:
+		Walk(n.Left, f)
+		Walk(n.Right, f)
+	case *ConcatenatedExpression:
+		for _, part := range n.Parts {
+			Walk(part, f)
+		}
+	case *CaseStatement:
+		Walk(n.Value, f)
+		for _, clause := range n.Clauses {
+			Walk(clause, f)
+		}
+	case *CaseClause:
+		Walk(n.Body, f)
+	case *Identifier:
+		// No nested AST nodes for Identifier
+	case *IntegerLiteral:
+		// No nested AST nodes for IntegerLiteral
+	case *Boolean:
+		// No nested AST nodes for Boolean
+	case *PrefixExpression:
+		Walk(n.Right, f)
+	case *PostfixExpression:
+		Walk(n.Left, f)
+	case *InfixExpression:
+		Walk(n.Left, f)
+		Walk(n.Right, f)
+	case *InvalidArrayAccess:
+		// No nested AST nodes for InvalidArrayAccess
 	}
-	return string(out)
 }
 
+
+
+
+	
+	// SelectStatement represents a select loop.
+	type SelectStatement struct {
+		Token token.Token // The 'select' token
+		Name  *Identifier
+		Items []Expression
+		Body  *BlockStatement
+	}
+	
+	func (ss *SelectStatement) statementNode() {}
+func (ss *SelectStatement) expressionNode() {}
+	func (ss *SelectStatement) TokenLiteral() string { return ss.Token.Literal }
+func (ss *SelectStatement) TokenLiteralNode() token.Token { return ss.Token }
+	
+	func (ss *SelectStatement) String() string {
+		var sb strings.Builder
+		sb.WriteString("select ")
+		sb.WriteString(ss.Name.String())
+		if len(ss.Items) > 0 {
+			sb.WriteString(" in")
+			for _, item := range ss.Items {
+				sb.WriteString(" ")
+				sb.WriteString(item.String())
+			}
+		}
+		sb.WriteString("; do ")
+		sb.WriteString(ss.Body.String())
+		sb.WriteString("done")
+		return sb.String()
+	}
+	
+	// CoprocStatement represents a coproc statement.
+	type CoprocStatement struct {
+		Token   token.Token // The 'coproc' token
+		Name    string
+		Command Statement
+	}
+	
+	func (cs *CoprocStatement) statementNode() {}
+func (cs *CoprocStatement) expressionNode() {}
+	func (cs *CoprocStatement) TokenLiteral() string { return cs.Token.Literal }
+func (cs *CoprocStatement) TokenLiteralNode() token.Token { return cs.Token }
+	
+	func (cs *CoprocStatement) String() string {
+		var sb strings.Builder
+		sb.WriteString("coproc ")
+		if cs.Name != "" {
+			sb.WriteString(cs.Name + " ")
+		}
+		sb.WriteString(cs.Command.String())
+		return sb.String()
+	}
+	
+	// DeclarationAssignment represents an assignment in a declaration.
+	type DeclarationAssignment struct {
+		Name     *Identifier
+		IsAppend bool
+		Value    Expression
+	}
+	
+	func (da *DeclarationAssignment) String() string {
+		var sb strings.Builder
+		sb.WriteString(da.Name.String())
+		if da.Value != nil {
+			if da.IsAppend {
+				sb.WriteString("+=")
+			} else {
+				sb.WriteString("=")
+			}
+			sb.WriteString(da.Value.String())
+		}
+		return sb.String()
+	}
+	
+	// DeclarationStatement represents a typeset/declare statement.
+	type DeclarationStatement struct {
+		Token       token.Token // The 'typeset'/'declare' token
+		Command     string      // "typeset", "declare", "local", "export", "readonly"
+		Flags       []string
+		Assignments []*DeclarationAssignment
+	}
+	
+	func (ds *DeclarationStatement) statementNode() {}
+func (ds *DeclarationStatement) expressionNode() {}
+	func (ds *DeclarationStatement) TokenLiteral() string { return ds.Token.Literal }
+func (ds *DeclarationStatement) TokenLiteralNode() token.Token { return ds.Token }
+	
+	func (ds *DeclarationStatement) String() string {
+		var sb strings.Builder
+		sb.WriteString(ds.Command)
+		for _, flag := range ds.Flags {
+			sb.WriteString(" " + flag)
+		}
+		for _, assign := range ds.Assignments {
+			sb.WriteString(" ")
+			sb.WriteString(assign.String())
+		}
+		return sb.String()
+	}
+	
+	// ArithmeticCommand represents an arithmetic command (( ... )).
+	type ArithmeticCommand struct {
+		Token      token.Token // The '((' token
+		Expression Expression
+	}
+	
+	func (ac *ArithmeticCommand) statementNode() {}
+func (ac *ArithmeticCommand) expressionNode() {}
+	func (ac *ArithmeticCommand) TokenLiteral() string { return ac.Token.Literal }
+func (ac *ArithmeticCommand) TokenLiteralNode() token.Token { return ac.Token }
+	
+	func (ac *ArithmeticCommand) String() string {
+		return "((" + ac.Expression.String() + "))"
+	}
+
+// Redirection represents a redirection.
+type Redirection struct {
+	Token    token.Token
+	Operator string
+	Left     Expression
+	Right    Expression
+}
+func (r *Redirection) expressionNode() {}
+func (r *Redirection) TokenLiteral() string { return r.Token.Literal }
+func (r *Redirection) TokenLiteralNode() token.Token { return r.Token }
+func (r *Redirection) String() string { return r.Left.String() + " " + r.Operator + " " + r.Right.String() }
+
+// ProcessSubstitution represents <(...) or >(...).
 type ProcessSubstitution struct {
-	Token   token.Token // <(, >(, =(
-	Command Expression
+	Token   token.Token
+	Command Node
 }
-
-func (ps *ProcessSubstitution) Type() NodeType       { return ProcessSubstitutionNode }
-func (ps *ProcessSubstitution) expressionNode()      {}
+func (ps *ProcessSubstitution) expressionNode() {}
 func (ps *ProcessSubstitution) TokenLiteral() string { return ps.Token.Literal }
 func (ps *ProcessSubstitution) TokenLiteralNode() token.Token { return ps.Token }
-func (ps *ProcessSubstitution) String() string {
-	return ps.Token.Literal + ps.Command.String() + ")"
-}
+func (ps *ProcessSubstitution) String() string { return ps.Token.Literal + ps.Command.String() + ")" }
 
+// Subshell represents ( ... ).
+type Subshell struct {
+	Token   token.Token
+	Command Node
+}
+func (s *Subshell) statementNode() {}
+func (s *Subshell) expressionNode() {}
+func (s *Subshell) TokenLiteral() string { return s.Token.Literal }
+func (s *Subshell) TokenLiteralNode() token.Token { return s.Token }
+func (s *Subshell) String() string { return "(" + s.Command.String() + ")" }
+
+// FunctionDefinition represents a function definition statement.
+type FunctionDefinition struct {
+	Token token.Token
+	Name  *Identifier
+	Body  Statement
+}
+func (fd *FunctionDefinition) statementNode() {}
+func (fd *FunctionDefinition) expressionNode() {}
+func (fd *FunctionDefinition) TokenLiteral() string { return fd.Token.Literal }
+func (fd *FunctionDefinition) TokenLiteralNode() token.Token { return fd.Token }
+func (fd *FunctionDefinition) String() string { return "function " + fd.Name.String() + " " + fd.Body.String() }
+
+var (
+	ProgramNode                 = &Program{}
+	LetStatementNode            = &LetStatement{}
+	ReturnStatementNode         = &ReturnStatement{}
+	ExpressionStatementNode     = &ExpressionStatement{}
+	BlockStatementNode          = &BlockStatement{}
+	IfStatementNode             = &IfStatement{}
+	ForLoopStatementNode        = &ForLoopStatement{}
+	WhileLoopStatementNode      = &WhileLoopStatement{}
+	IdentifierNode              = &Identifier{}
+	IntegerLiteralNode          = &IntegerLiteral{}
+	BooleanNode                 = &Boolean{}
+	PrefixExpressionNode        = &PrefixExpression{}
+	PostfixExpressionNode       = &PostfixExpression{}
+	InfixExpressionNode         = &InfixExpression{}
+	CallExpressionNode          = &CallExpression{}
+	IndexExpressionNode         = &IndexExpression{}
+	ArrayAccessNode             = &ArrayAccess{}
+	BracketExpressionNode       = &BracketExpression{}
+	DoubleBracketExpressionNode = &DoubleBracketExpression{}
+	CommandSubstitutionNode     = &CommandSubstitution{}
+	DollarParenExpressionNode   = &DollarParenExpression{}
+	SimpleCommandNode           = &SimpleCommand{}
+	ConcatenatedExpressionNode  = &ConcatenatedExpression{}
+	InvalidArrayAccessNode      = &InvalidArrayAccess{}
+	StringLiteralNode           = &StringLiteral{}
+	GroupedExpressionNode       = &GroupedExpression{}
+	SelectStatementNode         = &SelectStatement{}
+	CoprocStatementNode         = &CoprocStatement{}
+	DeclarationStatementNode    = &DeclarationStatement{}
+	ArithmeticCommandNode       = &ArithmeticCommand{}
+	RedirectionNode             = &Redirection{}
+	ProcessSubstitutionNode     = &ProcessSubstitution{}
+	SubshellNode                = &Subshell{}
+	FunctionDefinitionNode      = &FunctionDefinition{}
+	FunctionLiteralNode         = &FunctionLiteral{}
+	CaseStatementNode           = &CaseStatement{}
+	ShebangNode                 = &Shebang{}
+)

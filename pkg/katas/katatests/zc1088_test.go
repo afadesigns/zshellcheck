@@ -29,11 +29,11 @@ func TestZC1088(t *testing.T) {
 			expected: []katas.Violation{},
 		},
 		/*
-		{
-			name:     "valid subshell checked exit status",
-			input:    `( cd /tmp ) || exit`,
-			expected: []katas.Violation{},
-		},
+			{
+				name:     "valid subshell checked exit status",
+				input:    `( cd /tmp ) || exit`,
+				expected: []katas.Violation{},
+			},
 		*/
 		{
 			name:     "valid subshell used in condition",
@@ -41,8 +41,8 @@ func TestZC1088(t *testing.T) {
 			expected: []katas.Violation{},
 		},
 		{
-			name:     "invalid subshell side effect",
-			input:    `( cd /tmp )`,
+			name:  "invalid subshell side effect",
+			input: `( cd /tmp )`,
 			expected: []katas.Violation{
 				{
 					KataID:  "ZC1088",
@@ -53,8 +53,8 @@ func TestZC1088(t *testing.T) {
 			},
 		},
 		{
-			name:     "invalid subshell variable assignment",
-			input:    `( var=1 )`,
+			name:  "invalid subshell variable assignment",
+			input: `( var=1 )`,
 			expected: []katas.Violation{
 				{
 					KataID:  "ZC1088",

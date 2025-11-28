@@ -39,7 +39,7 @@ func checkZC1071(node ast.Node) []Violation {
 	// But `arr=($arr)` works.
 	// If parser supports `( ... )` as argument list in future, this will work.
 	if grouped, ok := rhs.(*ast.GroupedExpression); ok {
-		ast.Walk(grouped.Exp, func(n ast.Node) bool {
+		ast.Walk(grouped.Expression, func(n ast.Node) bool {
 			// Check ArrayAccess (for ${var})
 			if aa, ok := n.(*ast.ArrayAccess); ok {
 				if ident, ok := aa.Left.(*ast.Identifier); ok && ident.Value == varName {

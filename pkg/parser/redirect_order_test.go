@@ -16,7 +16,7 @@ func TestRedirectOrder(t *testing.T) {
 
 	stmt := prog.Statements[0].(*ast.ExpressionStatement)
 	t.Logf("Root: %T %s", stmt.Expression, stmt.Expression.String())
-	
+
 	if infix, ok := stmt.Expression.(*ast.InfixExpression); ok {
 		t.Logf("Infix Op: %s", infix.Operator)
 		t.Logf("Left: %T", infix.Left)

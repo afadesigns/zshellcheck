@@ -42,8 +42,8 @@ func checkZC1065(node ast.Node) []Violation {
 		}
 	case *ast.DoubleBracketExpression:
 		// Check first expression
-		if len(n.Expressions) > 0 {
-			firstExp := n.Expressions[0]
+		if len(n.Elements) > 0 {
+			firstExp := n.Elements[0]
 			if !firstExp.TokenLiteralNode().HasPrecedingSpace {
 				violations = append(violations, Violation{
 					KataID:  "ZC1065",

@@ -43,7 +43,7 @@ func checkZC1082(node ast.Node) []Violation {
 		argStr := arg.String()
 		// Remove quotes
 		argStr = strings.Trim(argStr, "\"'")
-		
+
 		// Look for s/old/new/ or s/old/new/g
 		// Basic check: starts with s/
 		if strings.HasPrefix(argStr, "s/") || strings.HasPrefix(argStr, "s|") || strings.HasPrefix(argStr, "s@") {

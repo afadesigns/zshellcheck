@@ -24,8 +24,8 @@ func TestZC1078(t *testing.T) {
 			expected: []katas.Violation{},
 		},
 		{
-			name:     "unquoted arguments",
-			input:    `cmd $@`,
+			name:  "unquoted arguments",
+			input: `cmd $@`,
 			expected: []katas.Violation{
 				{
 					KataID:  "ZC1078",
@@ -36,8 +36,8 @@ func TestZC1078(t *testing.T) {
 			},
 		},
 		{
-			name:     "unquoted star",
-			input:    `cmd $*`,
+			name:  "unquoted star",
+			input: `cmd $*`,
 			expected: []katas.Violation{
 				{
 					KataID:  "ZC1078",
@@ -48,8 +48,8 @@ func TestZC1078(t *testing.T) {
 			},
 		},
 		{
-			name:     "mixed",
-			input:    `cmd arg1 $@ arg2`,
+			name:  "mixed",
+			input: `cmd arg1 $@ arg2`,
 			expected: []katas.Violation{
 				{
 					KataID:  "ZC1078",

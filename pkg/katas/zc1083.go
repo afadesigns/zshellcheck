@@ -51,20 +51,20 @@ func checkZC1083(node ast.Node) []Violation {
 	for i, part := range concat.Parts {
 		if strNode, ok := part.(*ast.StringLiteral); ok {
 			val := strNode.Value
-			
+
 			if strings.Contains(val, "{") {
 				if startIdx == -1 {
 					startIdx = i
 				}
 			}
-			
+
 			if strings.Contains(val, "..") {
 				dotDotIndices = append(dotDotIndices, i)
 				lastPartWasDot = false
 			} else if val == "." {
 				if lastPartWasDot {
 					dotDotIndices = append(dotDotIndices, i-1) // Mark previous index as start of ..
-					lastPartWasDot = false // Consumed
+					lastPartWasDot = false                     // Consumed
 				} else {
 					lastPartWasDot = true
 				}
@@ -76,7 +76,7 @@ func checkZC1083(node ast.Node) []Violation {
 			if _, ok := part.(*ast.IntegerLiteral); ok {
 				continue
 			}
-			
+
 			if idNode, ok := part.(*ast.Identifier); ok {
 				if strings.Contains(idNode.Value, "..") {
 					dotDotIndices = append(dotDotIndices, i)

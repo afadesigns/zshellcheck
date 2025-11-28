@@ -34,16 +34,10 @@ func TestWalk(t *testing.T) {
 		{
 			"If Statement",
 			&IfStatement{
-				Condition: &BlockStatement{
-					Statements: []Statement{
-						&ExpressionStatement{
-							Expression: &InfixExpression{
-								Left:     &IntegerLiteral{Value: 1},
-								Operator: "<",
-								Right:    &IntegerLiteral{Value: 2},
-							},
-						},
-					},
+				Condition: &InfixExpression{
+					Left:     &IntegerLiteral{Value: 1},
+					Operator: "<",
+					Right:    &IntegerLiteral{Value: 2},
 				},
 				Consequence: &BlockStatement{
 					Statements: []Statement{
@@ -53,7 +47,7 @@ func TestWalk(t *testing.T) {
 					},
 				},
 			},
-			9, // If, Block, ExprStmt, Infix, Int, Int, Block, ExprStmt, Ident
+			7, // If, Infix, Int, Int, Block, ExprStmt, Ident
 		},
 	}
 

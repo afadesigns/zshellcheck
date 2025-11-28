@@ -24,8 +24,8 @@ func TestZC1091(t *testing.T) {
 			expected: []katas.Violation{},
 		},
 		{
-			name:     "invalid arithmetic -eq",
-			input:    `[[ $a -eq 1 ]]`,
+			name:  "invalid arithmetic -eq",
+			input: `[[ $a -eq 1 ]]`,
 			expected: []katas.Violation{
 				{
 					KataID:  "ZC1091",
@@ -36,8 +36,8 @@ func TestZC1091(t *testing.T) {
 			},
 		},
 		{
-			name:     "invalid arithmetic -lt",
-			input:    `[[ $a -lt 5 ]]`,
+			name:  "invalid arithmetic -lt",
+			input: `[[ $a -lt 5 ]]`,
 			expected: []katas.Violation{
 				{
 					KataID:  "ZC1091",
@@ -48,8 +48,8 @@ func TestZC1091(t *testing.T) {
 			},
 		},
 		{
-			name:     "invalid nested arithmetic",
-			input:    `[[ $a -gt 0 && $b -lt 10 ]]`,
+			name:  "invalid nested arithmetic",
+			input: `[[ $a -gt 0 && $b -lt 10 ]]`,
 			expected: []katas.Violation{
 				{
 					KataID:  "ZC1091",

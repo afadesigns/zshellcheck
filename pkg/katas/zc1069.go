@@ -97,7 +97,7 @@ func checkZC1069(node ast.Node) []Violation {
 				walk(t.Body, true)
 			}
 		case *ast.FunctionLiteral:
-			for _, p := range t.Parameters {
+			for _, p := range t.Params {
 				walk(p, inFunction)
 			}
 			if t.Body != nil {
@@ -118,7 +118,7 @@ func checkZC1069(node ast.Node) []Violation {
 		case *ast.PostfixExpression:
 			walk(t.Left, inFunction)
 		case *ast.GroupedExpression:
-			walk(t.Exp, inFunction)
+			walk(t.Expression, inFunction)
 		case *ast.CaseStatement:
 			walk(t.Value, inFunction)
 			for _, clause := range t.Clauses {
@@ -136,7 +136,7 @@ func checkZC1069(node ast.Node) []Violation {
 		case *ast.DollarParenExpression:
 			walk(t.Command, inFunction)
 		case *ast.Subshell:
-			walk(t.Block, inFunction)
+			walk(t.Command, inFunction)
 		}
 	}
 

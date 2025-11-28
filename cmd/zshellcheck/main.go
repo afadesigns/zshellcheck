@@ -81,7 +81,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	kataRegistry := &katas.Registry
+	kataRegistry := katas.Registry
 
 	for _, filename := range flag.Args() {
 		processPath(filename, os.Stdout, os.Stderr, config, kataRegistry, *format)
@@ -125,7 +125,7 @@ func processPath(path string, out, errOut io.Writer, config Config, registry *ka
 				}
 				return nil
 			}
-			
+
 			// Skip non-shell files to avoid parsing errors on Go source code etc.
 			ext := filepath.Ext(d.Name())
 			if ext == ".go" || ext == ".md" || ext == ".json" || ext == ".yml" || ext == ".yaml" || ext == ".txt" {

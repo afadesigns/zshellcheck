@@ -59,7 +59,7 @@ func walkZC1044(node ast.Node, isChecked bool, violations *[]Violation) {
 			walkZC1044(stmt, check, violations)
 		}
 	case *ast.GroupedExpression:
-		walkZC1044(n.Exp, isChecked, violations)
+		walkZC1044(n.Expression, isChecked, violations)
 	case *ast.IfStatement:
 		walkZC1044(n.Condition, true, violations) // Condition is checked
 		walkZC1044(n.Consequence, false, violations)

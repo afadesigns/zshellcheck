@@ -14,8 +14,8 @@ func TestZC1097(t *testing.T) {
 		expected []katas.Violation
 	}{
 		{
-			name:  "valid local loop variable",
-			input: `my_func() { local i; for i in 1 2; do echo $i; done; }`,
+			name:     "valid local loop variable",
+			input:    `my_func() { local i; for i in 1 2; do echo $i; done; }`,
 			expected: []katas.Violation{},
 		},
 		{
@@ -43,18 +43,18 @@ func TestZC1097(t *testing.T) {
 			},
 		},
 		{
-			name:  "valid typeset loop variable",
-			input: `my_func() { typeset i; for i in 1 2; do echo $i; done; }`,
+			name:     "valid typeset loop variable",
+			input:    `my_func() { typeset i; for i in 1 2; do echo $i; done; }`,
 			expected: []katas.Violation{},
 		},
 		{
-			name:  "valid integer loop variable",
-			input: `my_func() { integer i; for i in 1 2; do echo $i; done; }`,
+			name:     "valid integer loop variable",
+			input:    `my_func() { integer i; for i in 1 2; do echo $i; done; }`,
 			expected: []katas.Violation{},
 		},
 		{
-			name:  "valid local loop variable in nested block",
-			input: `my_func() { if true; then local i; for i in 1 2; do echo $i; done; fi; }`,
+			name:     "valid local loop variable in nested block",
+			input:    `my_func() { if true; then local i; for i in 1 2; do echo $i; done; fi; }`,
 			expected: []katas.Violation{},
 		},
 		{
@@ -70,9 +70,9 @@ func TestZC1097(t *testing.T) {
 			},
 		},
 		{
-			name:  "valid arithmetic for loop (C-style)",
-			input: `my_func() { for ((i=0; i<10; i++)); do echo $i; done; }`,
-			expected: []katas.Violation{}, 
+			name:     "valid arithmetic for loop (C-style)",
+			input:    `my_func() { for ((i=0; i<10; i++)); do echo $i; done; }`,
+			expected: []katas.Violation{},
 		},
 	}
 

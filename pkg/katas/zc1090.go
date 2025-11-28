@@ -25,7 +25,7 @@ func checkZC1090(node ast.Node) []Violation {
 
 	var violations []Violation
 
-	for _, e := range expr.Expressions {
+	for _, e := range expr.Elements {
 		infix, ok := e.(*ast.InfixExpression)
 		if !ok {
 			continue
@@ -84,21 +84,21 @@ func containsRegexMeta(s string) bool {
 	// Lexer `readString` returns content WITH quotes.
 	// So `s` includes quotes!
 	// `containsRegexMeta` should check INSIDE quotes.
-	
+
 	if len(s) < 2 {
 		return false
 	}
 	// Strip quotes
 	content := s[1 : len(s)-1]
-	
+
 	for _, char := range content {
 		switch char {
 		case '^', '*', '+', '?', '[', '(', '|':
 			return true
-		// case '$': 
-		// 	// $ might be variable. Don't flag.
-		// case '.':
-		//  // . is common. Don't flag "file.txt".
+			// case '$':
+			// 	// $ might be variable. Don't flag.
+			// case '.':
+			//  // . is common. Don't flag "file.txt".
 		}
 	}
 	// Check for $ at end? `foo$` -> regex end anchor.

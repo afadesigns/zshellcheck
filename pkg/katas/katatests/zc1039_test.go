@@ -24,8 +24,8 @@ func TestZC1039(t *testing.T) {
 			expected: []katas.Violation{},
 		},
 		{
-			name:     "invalid rm root",
-			input:    `rm /`,
+			name:  "invalid rm root",
+			input: `rm /`,
 			expected: []katas.Violation{
 				{
 					KataID:  "ZC1039",
@@ -36,8 +36,8 @@ func TestZC1039(t *testing.T) {
 			},
 		},
 		{
-			name:     "invalid rm root quoted",
-			input:    `rm "/"`,
+			name:  "invalid rm root quoted",
+			input: `rm "/"`,
 			expected: []katas.Violation{
 				{
 					KataID:  "ZC1039",
@@ -48,8 +48,8 @@ func TestZC1039(t *testing.T) {
 			},
 		},
 		{
-			name:     "invalid rm root single quoted",
-			input:    `rm '/'`,
+			name:  "invalid rm root single quoted",
+			input: `rm '/'`,
 			expected: []katas.Violation{
 				{
 					KataID:  "ZC1039",

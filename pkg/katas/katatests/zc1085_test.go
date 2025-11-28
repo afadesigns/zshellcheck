@@ -34,8 +34,8 @@ func TestZC1085(t *testing.T) {
 			expected: []katas.Violation{},
 		},
 		{
-			name:     "invalid unquoted variable expansion",
-			input:    `for i in $items; do echo $i; done`,
+			name:  "invalid unquoted variable expansion",
+			input: `for i in $items; do echo $i; done`,
 			expected: []katas.Violation{
 				{
 					KataID:  "ZC1085",
@@ -46,8 +46,8 @@ func TestZC1085(t *testing.T) {
 			},
 		},
 		{
-			name:     "invalid unquoted array expansion",
-			input:    `for i in ${items[@]}; do echo $i; done`,
+			name:  "invalid unquoted array expansion",
+			input: `for i in ${items[@]}; do echo $i; done`,
 			expected: []katas.Violation{
 				{
 					KataID:  "ZC1085",
@@ -58,8 +58,8 @@ func TestZC1085(t *testing.T) {
 			},
 		},
 		{
-			name:     "invalid unquoted command substitution",
-			input:    `for i in $(ls); do echo $i; done`,
+			name:  "invalid unquoted command substitution",
+			input: `for i in $(ls); do echo $i; done`,
 			expected: []katas.Violation{
 				{
 					KataID:  "ZC1085",
@@ -70,8 +70,8 @@ func TestZC1085(t *testing.T) {
 			},
 		},
 		{
-			name:     "invalid mixed unquoted",
-			input:    `for i in start $items end; do echo $i; done`,
+			name:  "invalid mixed unquoted",
+			input: `for i in start $items end; do echo $i; done`,
 			expected: []katas.Violation{
 				{
 					KataID:  "ZC1085",

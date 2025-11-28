@@ -19,8 +19,8 @@ func TestZC1086(t *testing.T) {
 			expected: []katas.Violation{},
 		},
 		{
-			name:     "invalid function definition with keyword",
-			input:    `function my_func { echo hello; }`,
+			name:  "invalid function definition with keyword",
+			input: `function my_func { echo hello; }`,
 			expected: []katas.Violation{
 				{
 					KataID:  "ZC1086",
@@ -31,8 +31,8 @@ func TestZC1086(t *testing.T) {
 			},
 		},
 		{
-			name:     "invalid function definition with keyword and parens",
-			input:    `function my_func() { echo hello; }`,
+			name:  "invalid function definition with keyword and parens",
+			input: `function my_func() { echo hello; }`,
 			expected: []katas.Violation{
 				{
 					KataID:  "ZC1086",

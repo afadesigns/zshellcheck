@@ -137,7 +137,7 @@ To integrate ZShellCheck seamlessly into your development workflow and ensure co
     ```yaml
     # .pre-commit-config.yaml
     -   repo: https://github.com/afadesigns/zshellcheck
-        rev: v0.0.92 # Check releases for the latest version
+        rev: v0.1.1 # Check releases for the latest version
         hooks:
         -   id: zshellcheck
     ```

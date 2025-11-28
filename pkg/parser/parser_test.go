@@ -290,15 +290,15 @@ func TestIfStatement(t *testing.T) {
 			program.Statements[0])
 	}
 
-	if len(stmt.Condition.Statements) != 1 {
-		t.Fatalf("stmt.Condition.Statements does not contain 1 statement. got=%d",
-			len(stmt.Condition.Statements))
+	if len(stmt.Condition.(*ast.BlockStatement).Statements) != 1 {
+		t.Fatalf("stmt.Condition.(*ast.BlockStatement).Statements does not contain 1 statement. got=%d",
+			len(stmt.Condition.(*ast.BlockStatement).Statements))
 	}
 
-	condStmt, ok := stmt.Condition.Statements[0].(*ast.ArithmeticCommand)
+	condStmt, ok := stmt.Condition.(*ast.BlockStatement).Statements[0].(*ast.ArithmeticCommand)
 	if !ok {
-		t.Fatalf("stmt.Condition.Statements[0] is not ast.ArithmeticCommand. got=%T",
-			stmt.Condition.Statements[0])
+		t.Fatalf("stmt.Condition.(*ast.BlockStatement).Statements[0] is not ast.ArithmeticCommand. got=%T",
+			stmt.Condition.(*ast.BlockStatement).Statements[0])
 	}
 
 	if !testInfixExpression(t, condStmt.Expression, 1, "<", 2) {
@@ -339,15 +339,15 @@ func TestIfElseStatement(t *testing.T) {
 			program.Statements[0])
 	}
 
-	if len(stmt.Condition.Statements) != 1 {
-		t.Fatalf("stmt.Condition.Statements does not contain 1 statement. got=%d",
-			len(stmt.Condition.Statements))
+	if len(stmt.Condition.(*ast.BlockStatement).Statements) != 1 {
+		t.Fatalf("stmt.Condition.(*ast.BlockStatement).Statements does not contain 1 statement. got=%d",
+			len(stmt.Condition.(*ast.BlockStatement).Statements))
 	}
 
-	condStmt, ok := stmt.Condition.Statements[0].(*ast.ArithmeticCommand)
+	condStmt, ok := stmt.Condition.(*ast.BlockStatement).Statements[0].(*ast.ArithmeticCommand)
 	if !ok {
-		t.Fatalf("stmt.Condition.Statements[0] is not ast.ArithmeticCommand. got=%T",
-			stmt.Condition.Statements[0])
+		t.Fatalf("stmt.Condition.(*ast.BlockStatement).Statements[0] is not ast.ArithmeticCommand. got=%T",
+			stmt.Condition.(*ast.BlockStatement).Statements[0])
 	}
 
 	if !testInfixExpression(t, condStmt.Expression, 1, ">", 2) {
@@ -366,13 +366,13 @@ func TestIfElseStatement(t *testing.T) {
 		return
 	}
 
-	if len(stmt.Alternative.Statements) != 1 {
-		t.Fatalf("alternative is not 1 statement. got=%d", len(stmt.Alternative.Statements))
+	if len(stmt.Alternative.(*ast.BlockStatement).Statements) != 1 {
+		t.Fatalf("alternative is not 1 statement. got=%d", len(stmt.Alternative.(*ast.BlockStatement).Statements))
 	}
 
-	alternative, ok := stmt.Alternative.Statements[0].(*ast.ReturnStatement)
+	alternative, ok := stmt.Alternative.(*ast.BlockStatement).Statements[0].(*ast.ReturnStatement)
 	if !ok {
-		t.Fatalf("Alternative.Statements[0] is not ast.ReturnStatement. got=%T", stmt.Alternative.Statements[0])
+		t.Fatalf("Alternative.Statements[0] is not ast.ReturnStatement. got=%T", stmt.Alternative.(*ast.BlockStatement).Statements[0])
 	}
 
 	if !testLiteralExpression(t, alternative.ReturnValue, false) {
@@ -404,13 +404,13 @@ func TestFunctionLiteralParsing(t *testing.T) {
 			stmt.Expression)
 	}
 
-	if len(function.Parameters) != 2 {
+	if len(function.Params) != 2 {
 		t.Fatalf("function literal parameters wrong. want 2, got=%d\n",
-			len(function.Parameters))
+			len(function.Params))
 	}
 
-	testLiteralExpression(t, function.Parameters[0], "x")
-	testLiteralExpression(t, function.Parameters[1], "y")
+	testLiteralExpression(t, function.Params[0], "x")
+	testLiteralExpression(t, function.Params[1], "y")
 
 	if len(function.Body.Statements) != 1 {
 		t.Fatalf("function.Body.Statements has not 1 statements. got=%d\n",
@@ -445,13 +445,13 @@ func TestFunctionParameterParsing(t *testing.T) {
 		stmt := program.Statements[0].(*ast.ExpressionStatement)
 		function := stmt.Expression.(*ast.FunctionLiteral)
 
-		if len(function.Parameters) != len(tt.expectedParams) {
+		if len(function.Params) != len(tt.expectedParams) {
 			t.Errorf("len parameters wrong. want %d, got=%d\n",
-				len(tt.expectedParams), len(function.Parameters))
+				len(tt.expectedParams), len(function.Params))
 		}
 
 		for i, ident := range tt.expectedParams {
-			testLiteralExpression(t, function.Parameters[i], ident)
+			testLiteralExpression(t, function.Params[i], ident)
 		}
 	}
 }

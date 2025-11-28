@@ -26,8 +26,8 @@ func TestZC1071(t *testing.T) {
 			expected: []katas.Violation{},
 		},
 		{
-			name:     "invalid append self reference single",
-			input:    `arr=($arr)`, // Works because ($arr) is single expression
+			name:  "invalid append self reference single",
+			input: `arr=($arr)`, // Works because ($arr) is single expression
 			expected: []katas.Violation{
 				{
 					KataID:  "ZC1071",
@@ -38,8 +38,8 @@ func TestZC1071(t *testing.T) {
 			},
 		},
 		{
-			name:     "invalid append self reference brace single",
-			input:    `arr=(${arr})`,
+			name:  "invalid append self reference brace single",
+			input: `arr=(${arr})`,
 			expected: []katas.Violation{
 				{
 					KataID:  "ZC1071",
