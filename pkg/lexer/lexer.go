@@ -94,7 +94,7 @@ func (l *Lexer) NextToken() token.Token {
 			tok = newToken(token.ASSIGN, l.ch, l.line, l.column)
 		}
 	case ';':
-		if l.peekChar() == '; {
+		if l.peekChar() == ';' {
 			ch := l.ch
 			l.readChar()
 			literal := string(ch) + string(l.ch)
@@ -106,7 +106,7 @@ func (l *Lexer) NextToken() token.Token {
 		tok = newToken(token.COLON, l.ch, l.line, l.column)
 	case '?':
 		tok = newToken(token.QUESTION, l.ch, l.line, l.column)
-	case '(': 
+	case '(':
 		if l.peekChar() == '(' {
 			ch := l.ch
 			l.readChar()
@@ -362,7 +362,7 @@ func (l *Lexer) readString(quote byte) string {
 		if l.ch == quote || l.ch == 0 {
 			break
 		}
-		if l.ch == '\' {
+		if l.ch == '\\' {
 			l.readChar() // skip escaped char
 		}
 	}
