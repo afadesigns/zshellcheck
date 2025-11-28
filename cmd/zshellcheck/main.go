@@ -54,6 +54,7 @@ func run() int {
 	showVersion := flag.Bool("version", false, "Show version and exit")
 	verbose := flag.Bool("verbose", false, "Show detailed Kata descriptions in text output")
 	noColor := flag.Bool("no-color", false, "Disable colored output")
+	severityFilter := flag.String("severity", "", "Comma-separated list of severities to show (Error,Warning,Info)")
 	flag.Parse()
 
 	if *showVersion {
@@ -94,11 +95,25 @@ func run() int {
 		return 1
 	}
 
+	var allowedSeverities []katas.Severity
+	if *severityFilter != "" {
+		for _, s := range strings.Split(*severityFilter, ",") {
+			sTrimmed := katas.Severity(strings.TrimSpace(s))
+			switch sTrimmed {
+			case katas.Error, katas.Warning, katas.Info:
+				allowedSeverities = append(allowedSeverities, sTrimmed)
+			default:
+				fmt.Fprintf(os.Stderr, "Invalid severity level: %s. Must be one of Error, Warning, Info.\n", s)
+				return 1
+			}
+		}
+	}
+
 	kataRegistry := katas.Registry
 
 	totalViolations := 0
 	for _, filename := range flag.Args() {
-		totalViolations += processPath(filename, os.Stdout, os.Stderr, config, kataRegistry, *format, *verbose, *noColor)
+		totalViolations += processPath(filename, os.Stdout, os.Stderr, config, kataRegistry, *format, *verbose, *noColor, allowedSeverities)
 	}
 
 	if totalViolations > 0 {
@@ -129,7 +144,7 @@ func loadConfig(path string) (Config, error) {
 	return config, nil
 }
 
-func processPath(path string, out, errOut io.Writer, config Config, registry *katas.KatasRegistry, format string, verbose bool, noColor bool) int {
+func processPath(path string, out, errOut io.Writer, config Config, registry *katas.KatasRegistry, format string, verbose bool, noColor bool, allowedSeverities []katas.Severity) int {
 	info, err := os.Stat(path)
 	if err != nil {
 		fmt.Fprintf(errOut, "Error stating path %s: %s\n", path, err)
@@ -159,19 +174,19 @@ func processPath(path string, out, errOut io.Writer, config Config, registry *ka
 			// For now, let's try to parse everything, or maybe filter by extension/shebang if it gets too noisy.
 			// Shellcheck defaults to checking all files passed, but for recursive it might filter.
 			// Let's assume user wants to check all files in the dir if they passed the dir.
-			count += processFile(p, out, errOut, config, registry, format, verbose, noColor)
+			count += processFile(p, out, errOut, config, registry, format, verbose, noColor, allowedSeverities)
 			return nil
 		})
 		if err != nil {
 			fmt.Fprintf(errOut, "Error walking directory %s: %s\n", path, err)
 		}
 	} else {
-		count += processFile(path, out, errOut, config, registry, format, verbose, noColor)
+		count += processFile(path, out, errOut, config, registry, format, verbose, noColor, allowedSeverities)
 	}
 	return count
 }
 
-func processFile(filename string, out, errOut io.Writer, config Config, registry *katas.KatasRegistry, format string, verbose bool, noColor bool) int {
+func processFile(filename string, out, errOut io.Writer, config Config, registry *katas.KatasRegistry, format string, verbose bool, noColor bool, allowedSeverities []katas.Severity) int {
 	data, err := os.ReadFile(filename)
 	if err != nil {
 		fmt.Fprintf(errOut, "Error reading file %s: %s\n", filename, err)
@@ -198,6 +213,20 @@ func processFile(filename string, out, errOut io.Writer, config Config, registry
 		violations = append(violations, registry.Check(node, config.DisabledKatas)...)
 		return true // Continue walking
 	})
+
+	// Filter violations by severity
+	var filteredViolations []katas.Violation
+	if len(allowedSeverities) > 0 {
+		for _, v := range violations {
+			for _, s := range allowedSeverities {
+				if v.Level == s {
+					filteredViolations = append(filteredViolations, v)
+					break
+				}
+			}
+		}
+		violations = filteredViolations
+	}
 
 	if len(violations) > 0 {
 		var r reporter.Reporter
