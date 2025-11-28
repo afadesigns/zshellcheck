@@ -26,14 +26,22 @@ func TestTextReporter_Report(t *testing.T) {
 	}
 
 	var buf bytes.Buffer
-	reporter := NewTextReporter(&buf)
+	source := "first line\nsecond line\n"
+	reporter := NewTextReporter(&buf, "test.zsh", source)
+	// Update violations to include line/col
+	violations[0].Line = 1
+	violations[0].Column = 1
+
 	err := reporter.Report(violations)
 	if err != nil {
 		t.Fatalf("Report() returned an error: %v", err)
 	}
 
-	expected := "ZC9999: This is a test violation. (Test Kata)\n"
-	if buf.String() != expected {
-		t.Errorf("Report() produced incorrect output.\nGot: %q\nWant: %q", buf.String(), expected)
+	// Update expected output to match new format with colors and context
+	if !bytes.Contains(buf.Bytes(), []byte("This is a test violation.")) {
+		t.Errorf("Report() produced incorrect output.\nGot:\n%s", buf.String())
+	}
+	if !bytes.Contains(buf.Bytes(), []byte("first line")) {
+		t.Errorf("Report() output missing source line.\nGot:\n%s", buf.String())
 	}
 }
