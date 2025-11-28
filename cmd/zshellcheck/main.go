@@ -185,8 +185,7 @@ func processFile(filename string, out, errOut io.Writer, config Config, registry
 		case "sarif":
 			r = reporter.NewSarifReporter(out, filename)
 		default:
-			fmt.Fprintf(out, "Violations in %s:\n", filename)
-			r = reporter.NewTextReporter(out)
+			r = reporter.NewTextReporter(out, filename)
 		}
 		if err := r.Report(violations); err != nil {
 			fmt.Fprintf(errOut, "Error reporting violations: %s\n", err)
