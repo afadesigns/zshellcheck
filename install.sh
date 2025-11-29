@@ -8,6 +8,31 @@ RED='\033[0;31m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
+# Detect Shell Config
+detect_shell_config() {
+    local shell_name
+    shell_name=$(basename "$SHELL")
+    case "$shell_name" in
+        zsh) echo "$HOME/.zshrc" ;;
+        bash) echo "$HOME/.bashrc" ;;
+        *) echo "" ;;
+    esac
+}
+
+# Ask for confirmation
+ask_yes_no() {
+    local prompt="$1"
+    if [ -t 0 ]; then # Only ask if interactive
+        read -p "$prompt [y/N] " -r
+        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+            return 1
+        fi
+        return 0
+    else
+        return 1
+    fi
+}
+
 echo -e "${GREEN}Installing zshellcheck...${NC}"
 
 # Check for Go
@@ -16,9 +41,16 @@ if ! command -v go &> /dev/null; then
     exit 1
 fi
 
+# Determine Version
+VERSION="dev"
+if command -v git &> /dev/null && [ -d .git ]; then
+    VERSION=$(git describe --tags --always --dirty 2>/dev/null || echo "dev")
+fi
+
 # Build
-echo "Building binary..."
-if ! go build -o zshellcheck cmd/zshellcheck/main.go; then
+echo -e "Building binary (Version: ${BLUE}${VERSION}${NC})..."
+# Inject version if possible. Assumes 'github.com/afadesigns/zshellcheck/pkg/version.Version' exists.
+if ! go build -ldflags "-X github.com/afadesigns/zshellcheck/pkg/version.Version=${VERSION}" -o zshellcheck cmd/zshellcheck/main.go; then
     echo -e "${RED}Build failed.${NC}"
     exit 1
 fi
@@ -78,27 +110,64 @@ else
     echo -e "${YELLOW}Bash completions not found, skipping.${NC}"
 fi
 
-# --- Final Checks ---
+# --- Final Checks & Auto-Config ---
 echo ""
 echo -e "${GREEN}Installation complete!${NC}"
 
+SHELL_CONFIG=$(detect_shell_config)
+
 # Path check
-if [[ ":$PATH:" != ":$BIN_DIR:"* ]]; then
+if [[ ":$PATH:" != ".*:*:*:$BIN_DIR:"* ]]; then
     echo ""
     echo -e "${YELLOW}WARNING: $BIN_DIR is not in your PATH.${NC}"
-    echo "Add this to your shell configuration (e.g., ~/.zshrc or ~/.bashrc):"
-    echo -e "  ${BLUE}export PATH=\"$PATH:$BIN_DIR\"${NC}"
+    
+    EXPORT_CMD="export PATH=\"
+$PATH:$BIN_DIR\""
+    
+    if [ -n "$SHELL_CONFIG" ]; then
+        echo -e "Detected shell config: ${BLUE}$SHELL_CONFIG${NC}"
+        if ask_yes_no "Would you like to append the PATH export to $SHELL_CONFIG?"; then
+            echo "" >> "$SHELL_CONFIG"
+            echo "# Added by zshellcheck installer" >> "$SHELL_CONFIG"
+            echo "$EXPORT_CMD" >> "$SHELL_CONFIG"
+            echo -e "${GREEN}✓ Added to $SHELL_CONFIG.${NC} Please restart your shell or run 'source $SHELL_CONFIG'."
+        else
+            echo "Please add the following line to your shell configuration manually:"
+            echo -e "  ${BLUE}$EXPORT_CMD${NC}"
+        fi
+    else
+        echo "Please add the following line to your shell configuration:"
+        echo -e "  ${BLUE}$EXPORT_CMD${NC}"
+    fi
 fi
 
 # Fpath check for Zsh user install
 if [ "$EUID" -ne 0 ] && [[ "$SHELL" == *"zsh"* ]]; then
-    # Ideally we'd check fpath but that requires running zsh.
-    # Just giving a friendly reminder is safer.
+    # We can't easily check internal fpath of the running shell, so we check if standard user dir is commonly set up
+    # or just advise.
+    
+    FPATH_CMD="fpath+=($ZSH_COMP_DIR)"
+    
     echo ""
-    echo -e "${BLUE}Note for Zsh users:${NC}"
-    echo "Ensure $ZSH_COMP_DIR is in your \$fpath to enable completions."
-    echo "Add this to ~/.zshrc before 'compinit':"
-    echo -e "  ${BLUE}fpath+=($ZSH_COMP_DIR)${NC}"
+    echo -e "${BLUE}Zsh Completions:${NC}"
+    if [ -n "$SHELL_CONFIG" ]; then
+         if ask_yes_no "Would you like to add the completion directory to your fpath in $SHELL_CONFIG?"; then
+            echo "" >> "$SHELL_CONFIG"
+            echo "# Added by zshellcheck installer" >> "$SHELL_CONFIG"
+            echo "$FPATH_CMD" >> "$SHELL_CONFIG"
+            # Note: This needs to be before compinit usually.
+            echo -e "${GREEN}✓ Added to $SHELL_CONFIG.${NC}"
+            echo -e "${YELLOW}Note: Ensure this line appears BEFORE 'autoload -Uz compinit && compinit' in your config.${NC}"
+        else
+            echo "Ensure $ZSH_COMP_DIR is in your \$fpath."
+            echo "Add this to ~/.zshrc before 'compinit':"
+            echo -e "  ${BLUE}$FPATH_CMD${NC}"
+        fi
+    else
+        echo "Ensure $ZSH_COMP_DIR is in your \$fpath."
+        echo "Add this to ~/.zshrc before 'compinit':"
+        echo -e "  ${BLUE}$FPATH_CMD${NC}"
+    fi
 fi
 
 echo ""
