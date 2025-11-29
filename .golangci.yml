@@ -1,8 +1,6 @@
 run:
   tests: true
 
-version: "1"
-
 linters:
   disable-all: true
   enable:
