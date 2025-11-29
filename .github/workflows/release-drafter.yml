@@ -13,7 +13,7 @@ jobs:
       pull-requests: read
     steps:
       - name: Draft next release
-        uses: release-drafter/release-drafter@v6.0.0
+        uses: release-drafter/release-drafter@3f0f87098bd6b5c5b947848f6e70e2586851638d # v6.0.0
         with:
           config-name: release-drafter.yml
         env:

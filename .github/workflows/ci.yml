@@ -20,7 +20,7 @@ jobs:
           go-version: 'stable'
           cache: true
       - name: golangci-lint
-        uses: golangci/golangci-lint-action@v6
+        uses: golangci/golangci-lint-action@971e284b6050e8a5805b1b15d3b97ce06ab88ea8 # v6.1.1
         with:
           version: latest
           args: --timeout=5m
@@ -45,7 +45,7 @@ jobs:
       - name: Test
         run: go test -v "-coverprofile=coverage.out" ./...
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@1e68e06f1dbfde0f2ce0c13999cd13d260d60d6e # v5.1.1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: ./coverage.out
