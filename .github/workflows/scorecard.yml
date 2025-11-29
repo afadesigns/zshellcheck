@@ -24,12 +24,12 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.1.7
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v4.1.7
         with:
           persist-credentials: false
 
       - name: Run Scorecard analysis
-        uses: ossf/scorecard-action@f49aabe0b5af0936a0987cfb85d86b75731b0186 # v2.4.1
+        uses: ossf/scorecard-action@4eaacf0543bb3f2c246792bd56e8cdeffafb205a # v2.4.3
         with:
           results_file: results.sarif
           results_format: sarif
