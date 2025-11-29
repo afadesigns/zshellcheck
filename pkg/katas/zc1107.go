@@ -8,7 +8,7 @@ func init() {
 	RegisterKata(ast.DoubleBracketExpressionNode, Kata{
 		ID:          "ZC1107",
 		Title:       "Use (( ... )) for arithmetic conditions",
-		Description: "In Zsh, arithmetic comparisons using `[[ ... -gt ... ]]` or `[ ... -eq ... ]` are valid but less idiomatic and slower than `(( ... ))`. The double parenthesis syntax supports standard math operators (`>`, `<`, `==`, `!=`) and is optimized.",
+		Description: "Use `(( ... ))` for arithmetic comparisons instead of `[[ ... -gt ... ]]`. The double parenthesis syntax supports standard math operators (`>`, `<`, `==`, `!=`) and is optimized.",
 		Severity:    Info,
 		Check:       checkZC1107DoubleBracket,
 	})
@@ -16,7 +16,7 @@ func init() {
 	RegisterKata(ast.SimpleCommandNode, Kata{
 		ID:          "ZC1107",
 		Title:       "Use (( ... )) for arithmetic conditions",
-		Description: "In Zsh, arithmetic comparisons using `[[ ... -gt ... ]]` or `[ ... -eq ... ]` are valid but less idiomatic and slower than `(( ... ))`. The double parenthesis syntax supports standard math operators (`>`, `<`, `==`, `!=`) and is optimized.",
+		Description: "Use `(( ... ))` for arithmetic comparisons instead of `[ ... -eq ... ]`. The double parenthesis syntax supports standard math operators (`>`, `<`, `==`, `!=`) and is optimized.",
 		Severity:    Info,
 		Check:       checkZC1107SimpleCommand,
 	})
@@ -27,8 +27,7 @@ func checkZC1107DoubleBracket(node ast.Node) []Violation {
 	var violations []Violation
 
 	// Helper to check infix expressions recursively
-	var check func(n ast.Node) bool
-	check = func(n ast.Node) bool {
+	check := func(n ast.Node) bool {
 		if infix, ok := n.(*ast.InfixExpression); ok {
 			switch infix.Operator {
 			case "-eq", "-ne", "-lt", "-le", "-gt", "-ge":

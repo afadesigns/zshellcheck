@@ -24,7 +24,6 @@ func main() {
 }
 
 func run() int {
-
 	flag.Usage = func() {
 		fmt.Fprint(os.Stderr, config.Banner)
 		fmt.Fprintf(os.Stderr, "ZShellCheck - The Zsh Static Analysis Tool\n\n")
