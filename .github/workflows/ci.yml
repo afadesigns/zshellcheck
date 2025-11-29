@@ -26,6 +26,18 @@ jobs:
           args: --timeout=5m
           # install-mode: goinstall # Let the action decide or use binary for speed
 
+  lint-shell:
+    name: Lint Shell Scripts
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.1.7
+      - name: Run ShellCheck
+        uses: ludeeus/action-shellcheck@00cae500b08a931fb5698e11e79bfbd38e612a38 # v2.0.0
+        with:
+          scandir: '.'
+          severity: warning
+          ignore_paths: 'tests/integration_test.zsh' # Ignore specific files if needed
+
   test:
     name: Tests
     strategy:
@@ -40,8 +52,13 @@ jobs:
           go-version: 'stable'
           cache: true
           cache-dependency-path: go.sum
-      - name: Test
+      - name: Test (Unit)
         run: go test -v -coverprofile=coverage.out -covermode=atomic ./...
+      - name: Test (Integration)
+        if: runner.os != 'Windows' # Skip shell script integration tests on Windows for now
+        run: |
+          chmod +x tests/integration_test.zsh
+          ./tests/integration_test.zsh
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@1e68e06f1dbfde0f2ce0c13999cd13d260d60d6e # v5.1.1
         with:
