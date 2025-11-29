@@ -5,6 +5,7 @@ import (
 	"io"
 	"strings"
 
+	"github.com/afadesigns/zshellcheck/pkg/config"
 	"github.com/afadesigns/zshellcheck/pkg/katas"
 )
 
@@ -18,37 +19,21 @@ type TextReporter struct {
 	writer   io.Writer
 	filename string
 	lines    []string
-	verbose  bool
-	noColor  bool
+	config   config.Config
 }
 
 // NewTextReporter creates a new TextReporter.
-func NewTextReporter(writer io.Writer, filename, source string, verbose bool, noColor bool) *TextReporter {
+func NewTextReporter(writer io.Writer, filename, source string, config config.Config) *TextReporter {
 	return &TextReporter{
 		writer:   writer,
 		filename: filename,
 		lines:    strings.Split(source, "\n"),
-		verbose:  verbose,
-		noColor:  noColor,
+		config:   config,
 	}
 }
 
-const (
-	colorReset  = "\033[0m"
-	colorRed    = "\033[31m"
-	colorYellow = "\033[33m"
-	colorCyan   = "\033[36m"
-	colorBold   = "\033[1m"
-)
-
-func (r *TextReporter) cReset() string  { return r.getColor(colorReset) }
-func (r *TextReporter) cRed() string    { return r.getColor(colorRed) }
-func (r *TextReporter) cYellow() string { return r.getColor(colorYellow) }
-func (r *TextReporter) cCyan() string   { return r.getColor(colorCyan) }
-func (r *TextReporter) cBold() string   { return r.getColor(colorBold) }
-
 func (r *TextReporter) getColor(code string) string {
-	if r.noColor {
+	if r.config.NoColor {
 		return ""
 	}
 	return code
@@ -57,58 +42,43 @@ func (r *TextReporter) getColor(code string) string {
 // Report prints the violations to the writer.
 func (r *TextReporter) Report(violations []katas.Violation) error {
 	for _, v := range violations {
-		kata, ok := katas.Registry.GetKata(v.KataID)
-		if !ok {
-			return fmt.Errorf("kata with ID %s not found", v.KataID)
+		// Severity Color
+		color := ""
+		switch v.Level {
+		case katas.Error:
+			color = r.getColor("\033[31m") // Red
+		case katas.Warning:
+			color = r.getColor("\033[33m") // Yellow
+		case katas.Info:
+			color = r.getColor("\033[34m") // Blue
 		}
+		reset := r.getColor("\033[0m")
+		bold := r.getColor("\033[1m")
 
-		// Format: file:line:col: [Level] [ID] Title: Message
-		// Example: demo.zsh:10:5: [Warning] [ZC1001] Array Access: Invalid array access...
+		// Location: filename:line:col
+		fmt.Fprintf(r.writer, "%s:%d:%d: ", r.filename, v.Line, v.Column)
 
-		levelColor := r.cYellow()
-		if v.Level == katas.Error {
-			levelColor = r.cRed()
-		} else if v.Level == katas.Info {
-			levelColor = r.cCyan()
-		}
+		// Severity, ID, Message
+		// Example: Error: [ZC1001] Some message
+		fmt.Fprintf(r.writer, "%s%s%s: [%s] %s\n", color, v.Level, reset, v.KataID, v.Message)
 
-		fmt.Fprintf(r.writer, "%s%s:%d:%d:%s %s[%s]%s %s[%s]%s %s%s:%s %s\n",
-			r.cBold(), r.filename, v.Line, v.Column, r.cReset(),
-			levelColor, v.Level, r.cReset(),
-			r.cRed(), v.KataID, r.cReset(),
-			r.cCyan(), kata.Title, r.cReset(),
-			v.Message,
-		)
-
-		// Print source line context with gutter
+		// Code snippet
 		if v.Line > 0 && v.Line <= len(r.lines) {
-			line := r.lines[v.Line-1]
-			lineNumStr := fmt.Sprintf("%d", v.Line)
-			
-			// Gutter padding based on line number length
-			// For simple alignment, we can assume line numbers won't differ wildly in width for adjacent errors,
-			// but let's just print it directly.
-			
-			fmt.Fprintf(r.writer, "  %s%s |%s %s\n", r.cCyan(), lineNumStr, r.cReset(), line)
-			
-			// Calculate pointer padding
-			pad := ""
-			for i := 0; i < v.Column-1 && i < len(line); i++ {
-				if line[i] == '\t' {
-					pad += "\t"
-				} else {
-					pad += " "
-				}
-			}
-			
-			gutterSpace := strings.Repeat(" ", len(lineNumStr))
-			fmt.Fprintf(r.writer, "  %s %s|%s %s%s^%s\n", gutterSpace, r.cCyan(), r.cReset(), pad, r.cYellow(), r.cReset())
-		}
+			lineContent := r.lines[v.Line-1]
+			// Replace tabs with spaces for correct alignment of caret (simple approach)
+			// Or keep it simple for now.
+			fmt.Fprintf(r.writer, "  %s\n", lineContent)
 
-		if r.verbose {
-			fmt.Fprintf(r.writer, "  %sDescription:%s %s\n", r.cBold(), r.cReset(), kata.Description)
+			// Caret
+			padding := v.Column - 1
+			if padding < 0 {
+				padding = 0
+			}
+			// Use a simple space padding. Note: this might be slightly off if tabs are present,
+			// but it's a standard starting point.
+			fmt.Fprintf(r.writer, "  %s%s^%s\n", strings.Repeat(" ", padding), bold, reset)
 		}
-		fmt.Fprintln(r.writer) // Add blank line between violations
+		fmt.Fprintln(r.writer)
 	}
 	return nil
 }

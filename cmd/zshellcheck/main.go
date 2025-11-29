@@ -10,7 +10,7 @@ import (
 	"strings"
 
 	"github.com/afadesigns/zshellcheck/pkg/ast"
-
+	"github.com/afadesigns/zshellcheck/pkg/config"
 	"github.com/afadesigns/zshellcheck/pkg/katas"
 	"github.com/afadesigns/zshellcheck/pkg/lexer"
 	"github.com/afadesigns/zshellcheck/pkg/parser"
@@ -19,26 +19,14 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-type Config struct {
-	DisabledKatas []string `yaml:"disabled_katas"`
-}
-
 func main() {
 	os.Exit(run())
 }
 
 func run() int {
-	banner := "\n" +
-		"\033[38;5;51m███████╗███████╗██╗  ██╗███████╗██╗     ██╗      ██████╗██╗  ██╗███████╗ ██████╗██╗  ██╗\033[0m\n" +
-		"\033[38;5;45m╚══███╔╝██╔════╝██║  ██║██╔════╝██║     ██║     ██╔════╝██║  ██║██╔════╝██╔════╝██║ ██╔╝\033[0m\n" +
-		"\033[38;5;39m  ███╔╝ ███████╗███████║█████╗  ██║     ██║     ██║     ███████║█████╗  ██║     █████╔╝\033[0m\n" +
-		"\033[38;5;33m ███╔╝  ╚════██║██╔══██║██╔══╝  ██║     ██║     ██║     ██╔══██║██╔══╝  ██║     ██╔═██╗\033[0m\n" +
-		"\033[38;5;27m███████╗███████║██║  ██║███████╗███████╗███████╗╚██████╗██║  ██║███████╗╚██████╗██║  ██╗\033[0m\n" +
-		"\033[38;5;21m╚══════╝╚══════╝╚═╝  ╚═╝╚══════╝╚══════╝╚══════╝ ╚═════╝╚═╝  ╚═╝╚══════╝ ╚═════╝╚═╝  ╚═╝\033[0m\n" +
-		"\n"
 
 	flag.Usage = func() {
-		fmt.Fprint(os.Stderr, banner)
+		fmt.Fprint(os.Stderr, config.Banner)
 		fmt.Fprintf(os.Stderr, "ZShellCheck - The Zsh Static Analysis Tool\n\n")
 		fmt.Fprintf(os.Stderr, "Usage: zshellcheck [flags] <file1.zsh> [file2.zsh]\n\n")
 		fmt.Fprintf(os.Stderr, "Flags:\n")
@@ -77,7 +65,7 @@ func run() int {
 	}
 
 	if len(flag.Args()) < 1 {
-		fmt.Fprint(os.Stderr, banner)
+		fmt.Fprint(os.Stderr, config.Banner)
 		fmt.Println("Usage: zshellcheck [flags] <file1.zsh> [file2.zsh]...")
 		fmt.Println("Try 'zshellcheck --help' for more information.")
 		return 1
@@ -86,13 +74,21 @@ func run() int {
 	// Print banner on successful run too, as per original request
 	// But suppress it for JSON/SARIF output to keep it clean for parsing
 	if *format != "json" && *format != "sarif" && !*noColor {
-		fmt.Fprint(os.Stderr, banner)
+		fmt.Fprint(os.Stderr, config.Banner)
 	}
 
 	config, err := loadConfig(".zshellcheckrc")
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error loading config: %s\n", err)
 		return 1
+	}
+
+	if *noColor {
+		config.NoColor = true
+	}
+
+	if *verbose {
+		config.Verbose = true
 	}
 
 	var allowedSeverities []katas.Severity
@@ -113,7 +109,7 @@ func run() int {
 
 	totalViolations := 0
 	for _, filename := range flag.Args() {
-		totalViolations += processPath(filename, os.Stdout, os.Stderr, config, kataRegistry, *format, *verbose, *noColor, allowedSeverities)
+		totalViolations += processPath(filename, os.Stdout, os.Stderr, config, kataRegistry, *format, allowedSeverities)
 	}
 
 	if totalViolations > 0 {
@@ -125,26 +121,28 @@ func run() int {
 	return 0
 }
 
-func loadConfig(path string) (Config, error) {
-	var config Config
+func loadConfig(path string) (config.Config, error) {
+	cfg := config.DefaultConfig()
+
 	if _, err := os.Stat(path); os.IsNotExist(err) {
-		return config, nil
+		return cfg, nil
 	}
 
 	data, err := os.ReadFile(path)
 	if err != nil {
-		return config, err
+		return cfg, err
 	}
 
-	err = yaml.Unmarshal(data, &config)
+	var fileConfig config.Config
+	err = yaml.Unmarshal(data, &fileConfig)
 	if err != nil {
-		return config, err
+		return cfg, err
 	}
 
-	return config, nil
+	return config.MergeConfig(cfg, fileConfig), nil
 }
 
-func processPath(path string, out, errOut io.Writer, config Config, registry *katas.KatasRegistry, format string, verbose bool, noColor bool, allowedSeverities []katas.Severity) int {
+func processPath(path string, out, errOut io.Writer, config config.Config, registry *katas.KatasRegistry, format string, allowedSeverities []katas.Severity) int {
 	info, err := os.Stat(path)
 	if err != nil {
 		fmt.Fprintf(errOut, "Error stating path %s: %s\n", path, err)
@@ -174,19 +172,19 @@ func processPath(path string, out, errOut io.Writer, config Config, registry *ka
 			// For now, let's try to parse everything, or maybe filter by extension/shebang if it gets too noisy.
 			// Shellcheck defaults to checking all files passed, but for recursive it might filter.
 			// Let's assume user wants to check all files in the dir if they passed the dir.
-			count += processFile(p, out, errOut, config, registry, format, verbose, noColor, allowedSeverities)
+			count += processFile(p, out, errOut, config, registry, format, allowedSeverities)
 			return nil
 		})
 		if err != nil {
 			fmt.Fprintf(errOut, "Error walking directory %s: %s\n", path, err)
 		}
 	} else {
-		count += processFile(path, out, errOut, config, registry, format, verbose, noColor, allowedSeverities)
+		count += processFile(path, out, errOut, config, registry, format, allowedSeverities)
 	}
 	return count
 }
 
-func processFile(filename string, out, errOut io.Writer, config Config, registry *katas.KatasRegistry, format string, verbose bool, noColor bool, allowedSeverities []katas.Severity) int {
+func processFile(filename string, out, errOut io.Writer, config config.Config, registry *katas.KatasRegistry, format string, allowedSeverities []katas.Severity) int {
 	data, err := os.ReadFile(filename)
 	if err != nil {
 		fmt.Fprintf(errOut, "Error reading file %s: %s\n", filename, err)
@@ -235,10 +233,10 @@ func processFile(filename string, out, errOut io.Writer, config Config, registry
 			r = reporter.NewJSONReporter(out)
 		case "sarif":
 			r = reporter.NewSarifReporter(out, filename)
-								default:
-									r = reporter.NewTextReporter(out, filename, string(data), verbose, noColor)
-							}
-							if err := r.Report(violations); err != nil {			fmt.Fprintf(errOut, "Error reporting violations: %s\n", err)
+											default:
+												r = reporter.NewTextReporter(out, filename, string(data), config)
+										}
+										if err := r.Report(violations); err != nil {			fmt.Fprintf(errOut, "Error reporting violations: %s\n", err)
 		}
 	}
 	return len(violations)
