@@ -32,7 +32,20 @@ archives:
       - LICENSE
       - README.md
 
+sboms:
+  - artifacts: archive
 
+signs:
+  - cmd: cosign
+    certificate: '${artifact}.pem'
+    args:
+      - sign-blob
+      - '--output-certificate=${certificate}'
+      - '--output-signature=${signature}'
+      - '${artifact}'
+      - "--yes" # needed on cosign 2.0.0+
+    artifacts: all
+    output: true
 
 checksum:
   name_template: 'checksums.txt'

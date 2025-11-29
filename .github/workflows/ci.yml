@@ -67,8 +67,19 @@ jobs:
           go-version: 'stable'
           cache: true
           cache-dependency-path: go.sum
+      - name: Build
+        run: go build -v -o zshellcheck ./cmd/zshellcheck
       - name: Test (Unit)
         run: go test -v -coverprofile=coverage.out -covermode=atomic ./...
+      - name: Verify go.mod is tidy
+        run: |
+          go mod tidy
+          git diff --exit-code
+      - name: Test install.sh
+        if: runner.os != 'Windows'
+        run: |
+          ./install.sh
+          ~/.local/bin/zshellcheck --version
       - name: Test (Integration)
         if: runner.os != 'Windows' # Skip shell script integration tests on Windows for now
         run: |
@@ -79,6 +90,12 @@ jobs:
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           fail_ci_if_error: true
+      - name: Upload Binary Artifact
+        uses: actions/upload-artifact@65c4c4a1ddee5b7c888b470a09886fa126ba21b8 # v4.6.0 (pinned)
+        with:
+          name: zshellcheck-${{ runner.os }}-${{ runner.arch }}
+          path: zshellcheck${{ runner.os == 'Windows' && '.exe' || '' }}
+          retention-days: 5
 
   fuzz:
     name: Fuzzing
