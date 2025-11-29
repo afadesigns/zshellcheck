@@ -40,11 +40,12 @@ We follow a strict Pull Request (PR) workflow to ensure code quality and maintai
     ```bash
     git checkout -b feat/your-feature-name
     ```
-3.  **Implement & Test**: Make your changes, adhering to coding style and conventions. Run local tests to verify functionality.
-    ```bash
-    go test ./...
-    ./tests/integration_test.zsh
-    ```
+3.  **Implement & Test**: Make your changes, adhering to coding style and conventions.
+    *   **Unit Tests:** `go test -v -coverprofile=coverage.out ./...`
+    *   **Integration Tests:** `./tests/integration_test.zsh`
+    *   **Linting:** `golangci-lint run ./...` (or use `pre-commit run --all-files`)
+    *   **Formatting:** `gofumpt -w .`
+    *   **Spell Check:** `typos` (if installed) or rely on CI.
 4.  **Commit**: Commit your changes using [Conventional Commits](https://www.conventionalcommits.org/) for clear history. Examples:
     *   `feat: Implement new Kata ZCXXXX (Short description)`
     *   `fix: Resolve parser bug in arithmetic expressions`
