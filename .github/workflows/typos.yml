@@ -1,0 +1,19 @@
+name: Spell Check
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+permissions:
+  contents: read
+
+jobs:
+  typos:
+    name: Check Spelling
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.1.7
+      - name: Check spelling
+        uses: crate-ci/typos@6572e928236239bc7a92024b37be486a247249b8 # v1.24.5
