@@ -8,20 +8,65 @@ RED='\033[0;31m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
+YES_TO_ALL=false
+
+# Usage
+usage() {
+    echo "Usage: $0 [OPTIONS]"
+    echo "Options:"
+    echo "  -y, --yes       Automatic yes to prompts (non-interactive mode)"
+    echo "  --uninstall     Uninstall zshellcheck"
+    echo "  -h, --help      Show this help message"
+}
+
+# Parse Arguments
+while [[ $# -gt 0 ]]; do
+    key="$1"
+    case $key in
+        -y|--yes) 
+            YES_TO_ALL=true
+            shift
+            ;; 
+        --uninstall) 
+            # Handled later, but consume it here to avoid errors if combined
+            shift
+            ;; 
+        -h|--help) 
+            usage
+            exit 0
+            ;; 
+        *) 
+            # Check if it's the uninstall flag passed as $1 in previous logic (legacy support)
+            if [[ "$1" == "--uninstall" ]]; then
+                shift
+            else
+                echo "Unknown option: $1"
+                usage
+                exit 1
+            fi
+            ;; 
+    esac
+done
+
 # Detect Shell Config
 detect_shell_config() {
     local shell_name
     shell_name=$(basename "$SHELL")
     case "$shell_name" in
-        zsh) echo "$HOME/.zshrc" ;;
-        bash) echo "$HOME/.bashrc" ;;
-        *) echo "" ;;
+        zsh) echo "$HOME/.zshrc" ;; 
+        bash) echo "$HOME/.bashrc" ;; 
+        *) echo "" ;; 
     esac
 }
 
 # Ask for confirmation
 ask_yes_no() {
     local prompt="$1"
+    
+    if [ "$YES_TO_ALL" = true ]; then
+        return 0
+    fi
+
     if [ -t 0 ]; then # Only ask if interactive
         read -p "$prompt [y/N] " -r
         if [[ ! $REPLY =~ ^[Yy]$ ]]; then
@@ -29,6 +74,7 @@ ask_yes_no() {
         fi
         return 0
     else
+        # Default to NO in non-interactive mode without -y
         return 1
     fi
 }
@@ -62,7 +108,8 @@ uninstall() {
     echo -e "${GREEN}Uninstallation complete.${NC}"
 }
 
-if [[ "${1:-}" == "--uninstall" ]]; then
+# Re-check uninstall arg logic just in case
+if [[ "${1:-}" == "--uninstall" ]] || [[ "${*:-}" == *"--uninstall"* ]]; then
     uninstall
     exit 0
 fi
@@ -72,6 +119,12 @@ echo -e "${GREEN}Installing zshellcheck...${NC}"
 # --- BUILD OR DOWNLOAD ---
 
 BUILD_SUCCESS=false
+
+# cleanup trap
+cleanup() {
+    rm -f zshellcheck zshellcheck.tar.gz checksums.txt
+}
+trap cleanup EXIT
 
 # Check for Go
 if command -v go &> /dev/null; then
@@ -108,16 +161,16 @@ if [ "$BUILD_SUCCESS" = false ]; then
     
     # Map to Goreleaser names
     case "$OS" in
-        Linux) GOOS="Linux" ;;
-        Darwin) GOOS="Darwin" ;;
-        *) echo -e "${RED}Unsupported OS: $OS${NC}"; exit 1 ;;
+        Linux) GOOS="Linux" ;; 
+        Darwin) GOOS="Darwin" ;; 
+        *) echo -e "${RED}Unsupported OS: $OS${NC}"; exit 1 ;; 
     esac
 
     case "$ARCH" in
-        x86_64) GOARCH="x86_64" ;;
-        aarch64|arm64) GOARCH="arm64" ;;
-        i386) GOARCH="i386" ;;
-        *) echo -e "${RED}Unsupported Arch: $ARCH${NC}"; exit 1 ;;
+        x86_64) GOARCH="x86_64" ;; 
+        aarch64|arm64) GOARCH="arm64" ;; 
+        i386) GOARCH="i386" ;; 
+        *) echo -e "${RED}Unsupported Arch: $ARCH${NC}"; exit 1 ;; 
     esac
 
     echo -e "Detected platform: ${BLUE}$GOOS $GOARCH${NC}"
@@ -131,18 +184,45 @@ if [ "$BUILD_SUCCESS" = false ]; then
     fi
 
     # Construct URL
-    # Convention: zshellcheck_Linux_x86_64.tar.gz
     FILENAME="zshellcheck_${GOOS}_${GOARCH}.tar.gz"
     URL="https://github.com/afadesigns/zshellcheck/releases/download/${LATEST_TAG}/${FILENAME}"
+    CHECKSUM_URL="https://github.com/afadesigns/zshellcheck/releases/download/${LATEST_TAG}/checksums.txt"
 
     echo -e "Downloading version ${BLUE}${LATEST_TAG}${NC}..."
-    echo "URL: $URL"
+    
+    # Download Checksums
+    if curl -sL -o "checksums.txt" "$CHECKSUM_URL"; then
+        echo -e "Verifying checksums..."
+    else 
+        echo -e "${YELLOW}Warning: Could not download checksums.txt. Skipping verification.${NC}"
+    fi
 
+    # Download Binary
     if curl -L -o "$FILENAME" "$URL"; then
-        echo -e "${GREEN}Download successful.${NC}"
+        # Verify Checksum if file exists
+        if [ -f "checksums.txt" ]; then
+            # Use sha256sum if available, else shasum
+            if command -v sha256sum &> /dev/null; then
+                if grep "$FILENAME" checksums.txt | sha256sum -c - --status; then
+                    echo -e "${GREEN}Checksum verified.${NC}"
+                else
+                    echo -e "${RED}Checksum verification failed! Aborting.${NC}"
+                    exit 1
+                fi
+            elif command -v shasum &> /dev/null; then
+                 if grep "$FILENAME" checksums.txt | shasum -a 256 -c - --status; then
+                    echo -e "${GREEN}Checksum verified.${NC}"
+                else
+                    echo -e "${RED}Checksum verification failed! Aborting.${NC}"
+                    exit 1
+                fi
+            else
+                echo -e "${YELLOW}sha256sum not found, skipping verification.${NC}"
+            fi
+        fi
+
         echo "Extracting..."
         tar -xzf "$FILENAME" zshellcheck
-        rm "$FILENAME"
         BUILD_SUCCESS=true
     else
         echo -e "${RED}Download failed.${NC}"
@@ -208,7 +288,7 @@ echo -e "${GREEN}Installation complete!${NC}"
 SHELL_CONFIG=$(detect_shell_config)
 
 # Path check
-if [[ ":$PATH:" != ".*:"$BIN_DIR:"*" ]]; then
+if [[ ":$PATH:" != ".*:${BIN_DIR}:"* ]]; then
     echo ""
     echo -e "${YELLOW}WARNING: $BIN_DIR is not in your PATH.${NC}"
     EXPORT_CMD="export PATH=\"
