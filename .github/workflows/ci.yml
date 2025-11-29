@@ -89,7 +89,7 @@ jobs:
       - name: Build
         run: go build -v -o zshellcheck ./cmd/zshellcheck
       - name: Test (Unit)
-        run: go test -v -coverprofile=coverage.out -covermode=atomic ./...
+        run: go test -v -coverprofile=coverage.txt -covermode=atomic ./...
       - name: Verify go.mod is tidy
         run: |
           go mod tidy
