@@ -54,136 +54,85 @@ Why use ZShellCheck over ShellCheck? See our **[Detailed Comparison](docs/REFERE
 
 ## Installation
 
-ZShellCheck is written in Go and can be easily installed from source if you have a Go development environment configured.
+The easiest way to install ZShellCheck is via the automated installer script. It supports **Linux** and **macOS**.
 
-### Helper Script
+### Automatic Install (Recommended)
 
-For a quick installation, you can use the provided helper script:
+This will install the binary, man pages, and shell completions. It detects if you have Go installed; if not, it downloads the latest pre-built binary.
 
 ```bash
+# Clone the repository or download the script
 ./install.sh
 ```
 
+**Features:**
+*   **Binary Fallback:** No Go environment required. Downloads binaries automatically.
+*   **Interactive:** GUIDes you through adding `zshellcheck` to your `PATH` and `fpath`.
+*   **Automated:** Use `./install.sh -y` for non-interactive/CI environments.
+*   **Version Control:** Install a specific version with `./install.sh -v v0.1.0`.
+*   **Uninstall:** Remove cleanly with `./install.sh --uninstall`.
+
 ### From Go Modules
 
-To install `zshellcheck`, ensure you have Go (version 1.25 or higher) installed, then run:
+If you prefer standard Go tools:
 
 ```bash
 go install github.com/afadesigns/zshellcheck/cmd/zshellcheck@latest
 ```
 
-This will install the `zshellcheck` executable into your `$GOPATH/bin` directory. Make sure `$GOPATH/bin` is in your system's `PATH`.
-
 ### Building from Source
 
-For developers who want to build `zshellcheck` from its source code:
+For contributors:
 
-1.  Clone the repository:
-    ```bash
-    git clone https://github.com/afadesigns/zshellcheck.git
-    cd zshellcheck
-    ```
-2.  Build the executable:
-    ```bash
-    go build -o zshellcheck cmd/zshellcheck/main.go
-    ```
-    This will create an executable named `zshellcheck` in your current directory.
+1.  Clone the repository.
+2.  Run `./install.sh` (it detects the source repo and builds locally).
 
 ## Usage
 
-After installation, you can run ZShellCheck against your Zsh code files from your terminal. You can specify one or more files, or a directory to check recursively.
-
-### Analyzing Files
+After installation, run ZShellCheck against your Zsh files:
 
 ```bash
-# Analyze a single file
 zshellcheck my_script.zsh
-
-# Analyze multiple files
-zshellcheck script1.zsh another_script.zsh
-
-# Analyze a directory recursively
-zshellcheck ./path/to/my/scripts
 ```
-
-### Try it out
-
-We provide a demo file with intentional violations so you can see ZShellCheck in action immediately.
-
-```bash
-zshellcheck examples/demo.zsh
-```
-
-ZShellCheck will output any identified violations directly to your terminal.
 
 ### Output Formats
 
-You can control the output format using the `-format` flag:
+*   **Text (default)**: Human-readable with ANSI colors.
+*   **JSON**: `zshellcheck -format json file.zsh`
+*   **SARIF**: `zshellcheck -format sarif file.zsh` (Github Security integration)
 
-*   **Text (default)**: Human-readable output.
-    ```bash
-    zshellcheck -format text my_script.zsh
-    ```
+### Pre-commit Hook
 
-*   **JSON**: Machine-readable JSON output, useful for integration with other tools or CI systems.
-    ```bash
-    zshellcheck -format json my_script.zsh
-    ```
+Add this to your `.pre-commit-config.yaml`:
 
-### Pre-commit Hook (Recommended)
-
-To integrate ZShellCheck seamlessly into your development workflow and ensure code quality before commits, you can use it as a `pre-commit` hook.
-
-1.  **Install `pre-commit`**:
-    ```bash
-    pip install pre-commit
-    # Or brew install pre-commit on macOS
-    ```
-
-2.  **Configure `.pre-commit-config.yaml`**: Add the following configuration to a file named `.pre-commit-config.yaml` in the root of your Zsh project:
-
-    ```yaml
-    # .pre-commit-config.yaml
-    -   repo: https://github.com/afadesigns/zshellcheck
-        rev: v0.1.1 # Check releases for the latest version
-        hooks:
-        -   id: zshellcheck
-    ```
-
-3.  **Install the Hook**:
-    ```bash
-    pre-commit install
-    ```
+```yaml
+-   repo: https://github.com/afadesigns/zshellcheck
+    rev: v0.1.1
+    hooks:
+    -   id: zshellcheck
+```
 
 ## Configuration
 
-Tailor ZShellCheck to your project by creating a `.zshellcheckrc` file. For detailed instructions, see the **[Configuration Guide](docs/USER_GUIDE.md#configuration)**.
-
-**Example `.zshellcheckrc`**:
-
-```yaml
-disabled_katas:
-  - ZC1005 # Example: Disable "Use whence instead of which"
-  - ZC1011 # Example: Disable "Use git porcelain commands instead of plumbing commands"
-```
+Customize checks via `.zshellcheckrc`. See the [Configuration Guide](docs/USER_GUIDE.md#configuration).
 
 ## Integrations
 
-Want to use ZShellCheck in VS Code, Vim, or Neovim? Check out our **[Integrations Guide](docs/USER_GUIDE.md#integrations)**.
+See our [Integrations Guide](docs/USER_GUIDE.md#integrations) for VS Code, Vim, and Neovim setup.
 
 ## Shell Completions
 
-ZShellCheck provides completion scripts for Zsh and Bash.
+The `./install.sh` script installs completions automatically for Zsh and Bash.
 
-### Zsh
-Copy `completions/zsh/_zshellcheck` to a directory in your `$fpath` (e.g., `~/.zfunc`).
+**Manual Setup (Zsh):**
+If you installed manually, add the `completions/zsh` directory to your `$fpath`:
 ```zsh
-fpath+=~/.zfunc
+fpath+=/path/to/zshellcheck/completions/zsh
 autoload -Uz compinit && compinit
 ```
 
-### Bash
-Source the completion script in your `.bashrc`.
+**Manual Setup (Bash):**
+Source the script in your `.bashrc`:
 ```bash
 source /path/to/zshellcheck/completions/bash/zshellcheck-completion.bash
 ```

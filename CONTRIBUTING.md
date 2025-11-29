@@ -1,3 +1,18 @@
+# Contributing to ZShellCheck
+
+We welcome contributions! Whether it's adding new Katas, improving the parser, or fixing bugs, your help is appreciated.
+
+## Quick Start
+
+To set up your development environment and install the binary locally:
+
+```bash
+# This will build from source and install to your local bin
+./install.sh
+```
+
+For detailed instructions, see the [Developer Guide](docs/DEVELOPER.md).
+
 ## Fuzz Testing
 
 We use native Go fuzzing to ensure the stability of our lexer and parser.

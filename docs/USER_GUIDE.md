@@ -87,7 +87,11 @@ Add to `.pre-commit-config.yaml`:
 
 ### Common Issues
 
-1.  **"command not found"**: Ensure `$GOPATH/bin` is in your `$PATH`.
+1.  **"command not found"**: 
+    - Ensure `zshellcheck` is in your `$PATH`. 
+    - If you installed as a user, add `$HOME/.local/bin`.
+    - If you installed as root, it should be in `/usr/local/bin`.
+    - **Fix:** Run `./install.sh` again; it will offer to automatically fix your `$PATH`.
 2.  **Parser Errors**: Use `zsh -n` to verify syntax first. Open an issue if valid code fails.
 3.  **False Positives**: Disable the Kata via `.zshellcheckrc`.
 

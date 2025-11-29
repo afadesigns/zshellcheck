@@ -38,8 +38,13 @@ This document serves as the comprehensive manual for contributing to the ZShellC
 
 ### Building
 
-To build the project from source:
+**Recommended:** Use the installer script to build and install locally (auto-detects source repo):
+```bash
+./install.sh
+```
 
+**Manual Build:**
+To build the binary directly:
 ```bash
 go build -o zshellcheck cmd/zshellcheck/main.go
 ```
