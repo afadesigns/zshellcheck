@@ -174,3 +174,9 @@ See our [Governance Model](docs/REFERENCE.md#governance) for information on how 
 ## License
 
 Distributed under the MIT License. See `LICENSE` for more information.
+
+## Contributors
+
+<a href="https://github.com/afadesigns/zshellcheck/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=afadesigns/zshellcheck" />
+</a>
