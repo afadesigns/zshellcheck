@@ -1,7 +1,7 @@
 run:
   tests: true
 
-version: 2
+version: "1"
 
 linters:
   disable-all: true
