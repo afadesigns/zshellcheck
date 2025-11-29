@@ -28,7 +28,6 @@ while [[ $# -gt 0 ]]; do
             shift
             ;; 
         --uninstall) 
-            # Handled later, but consume it here to avoid errors if combined
             shift
             ;; 
         -h|--help) 
@@ -48,6 +47,11 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
+# Check if running in CI
+if [[ "${CI:-}" == "true" ]] || [[ "${GITHUB_ACTIONS:-}" == "true" ]]; then
+    YES_TO_ALL=true
+fi
+
 # Detect Shell Config
 detect_shell_config() {
     local shell_name
@@ -59,7 +63,7 @@ detect_shell_config() {
     esac
 }
 
-# Ask for confirmation
+# Ask for confirmation (Works with pipes)
 ask_yes_no() {
     local prompt="$1"
     
@@ -67,7 +71,14 @@ ask_yes_no() {
         return 0
     fi
 
-    if [ -t 0 ]; then # Only ask if interactive
+    # Try to read from /dev/tty if available (for piped execution like curl | bash)
+    if [ -c /dev/tty ]; then
+        read -p "$prompt [y/N] " -r REPLY < /dev/tty
+        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+            return 1
+        fi
+        return 0
+    elif [ -t 0 ]; then # Fallback to standard stdin check
         read -p "$prompt [y/N] " -r
         if [[ ! $REPLY =~ ^[Yy]$ ]]; then
             return 1
@@ -250,9 +261,19 @@ mkdir -p "$BIN_DIR"
 if mv zshellcheck "$BIN_DIR/zshellcheck"; then
     echo -e "${GREEN}✓ Binary installed.${NC}"
 else
-    echo -e "${RED}Failed to install binary.${NC}"
-    rm -f zshellcheck
-    exit 1
+    echo -e "${RED}Failed to move binary.${NC}"
+    if [ -t 0 ] || [ "$YES_TO_ALL" = true ] && command -v sudo &> /dev/null; then
+        echo -e "${YELLOW}Attempting to install with sudo...${NC}"
+        if sudo mv zshellcheck "$BIN_DIR/zshellcheck"; then
+             echo -e "${GREEN}✓ Binary installed with sudo.${NC}"
+        else
+             echo -e "${RED}Failed to install binary even with sudo.${NC}"
+             exit 1
+        fi
+    else
+        rm -f zshellcheck
+        exit 1
+    fi
 fi
 
 # Install resources (Man page & Completions)
