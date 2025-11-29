@@ -1,0 +1,29 @@
+# .github/labeler.yml
+
+# Label CI/CD changes
+ci:
+  - changed-files:
+      - any-glob-to-any-file: '.github/**'
+      - any-glob-to-any-file: '.goreleaser.yml'
+      - any-glob-to-any-file: '.pre-commit-config.yaml'
+
+# Label Documentation changes
+docs:
+  - changed-files:
+      - any-glob-to-any-file: 'docs/**'
+      - any-glob-to-any-file: '*.md'
+      - any-glob-to-any-file: 'man/**'
+
+# Label Source Code changes
+pkg:
+  - changed-files:
+      - any-glob-to-any-file: 'pkg/**'
+      - any-glob-to-any-file: 'cmd/**'
+      - any-glob-to-any-file: 'go.mod'
+      - any-glob-to-any-file: 'go.sum'
+
+# Label Test changes
+test:
+  - changed-files:
+      - any-glob-to-any-file: 'tests/**'
+      - any-glob-to-any-file: '**/*_test.go'
