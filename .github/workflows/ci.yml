@@ -3,8 +3,20 @@ name: CI
 on:
   push:
     branches: [ main ]
+    paths:
+      - '**.go'
+      - '**.zsh'
+      - 'go.mod'
+      - 'go.sum'
+      - '.github/workflows/ci.yml'
   pull_request:
     branches: [ main ]
+    paths:
+      - '**.go'
+      - '**.zsh'
+      - 'go.mod'
+      - 'go.sum'
+      - '.github/workflows/ci.yml'
 
 permissions:
   contents: read
@@ -13,6 +25,7 @@ jobs:
   lint:
     name: Lint
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.1.7
       - uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # v5.0.1
@@ -29,6 +42,7 @@ jobs:
   lint-shell:
     name: Lint Shell Scripts
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.1.7
       - name: Run ShellCheck
@@ -44,6 +58,7 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.1.7
       - name: Set up Go
@@ -68,6 +83,7 @@ jobs:
   fuzz:
     name: Fuzzing
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.1.7
       - name: Set up Go
@@ -84,6 +100,7 @@ jobs:
   vulncheck:
     name: Security Scan
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.1.7
       - name: Set up Go
