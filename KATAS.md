@@ -99,6 +99,7 @@ Comprehensive list of all 92 implemented checks, migrated from the Wiki.
 - [ZC1095: Quote here-string content](#zc1095)
 - [ZC1096: Avoid using `test -e` or `[ -e ... ]` for file existence checks](#zc1096)
 - [ZC1097: Declare loop variables as `local` in functions](#zc1097)
+- [ZC1107: Use `(( ... ))` for arithmetic conditions](#zc1107)
 
 ---
 
@@ -3286,6 +3287,38 @@ my_func() {
 ### Configuration
 
 To disable this Kata, add `ZC1097` to the `disabled_katas` list in your `.zshellcheckrc` file.
+
+---
+
+[⬆ Back to Top](#table-of-contents)
+</details>
+
+<div id="zc1107"></div>
+
+<details>
+<summary><strong>ZC1107</strong>: Use `(( ... ))` for arithmetic conditions <img src="https://img.shields.io/badge/Status-Active-brightgreen?style=flat-square" height="15"/></summary>
+
+### Description
+
+In Zsh, arithmetic comparisons using `[[ ... -gt ... ]]` or `[ ... -eq ... ]` are valid but less idiomatic and slower than `(( ... ))`. The double parenthesis syntax supports standard math operators (`>`, `<`, `==`, `!=`) and is optimized.
+
+### Bad Example
+
+```zsh
+if [ "$a" -eq "$b" ]; then echo "Equal"; fi
+if [[ "$count" -gt 10 ]]; then echo "Greater"; fi
+```
+
+### Good Example
+
+```zsh
+if (( a == b )); then echo "Equal"; fi
+if (( count > 10 )); then echo "Greater"; fi
+```
+
+### Configuration
+
+To disable this Kata, add `ZC1107` to the `disabled_katas` list in your `.zshellcheckrc` file.
 
 ---
 

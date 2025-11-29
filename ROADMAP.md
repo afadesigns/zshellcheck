@@ -10,6 +10,7 @@ ZShellCheck is an evolving static analysis tool for Zsh. Our mission is to provi
 - [x] Set up CI/CD pipeline (GitHub Actions).
 - [x] Create initial set of Katas (ZC1000+).
 - [x] Comprehensive Documentation Suite.
+- [x] Robust Installation Script (install.sh) with binary fallback.
 
 ### 🌟 Version 1.0.0 - The 1000 Kata Milestone
 - [ ] **Goal:** Implement 1000 Katas (ZC1000 - ZC2000) covering:
@@ -28,6 +29,6 @@ ZShellCheck is an evolving static analysis tool for Zsh. Our mission is to provi
 
 ## 📈 Progress Tracking
 
-**Current Progress:** Version 0.0.92 (92/1000 Katas).
+**Current Progress:** Version 0.1.1 (93/1000 Katas).
 
 For the list of currently implemented Katas, please refer to [KATAS.md](KATAS.md).
