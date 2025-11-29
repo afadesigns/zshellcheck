@@ -12,7 +12,7 @@ func init() {
 		Severity:    Info,
 		Check:       checkZC1107DoubleBracket,
 	})
-	
+
 	RegisterKata(ast.SimpleCommandNode, Kata{
 		ID:          "ZC1107",
 		Title:       "Use (( ... )) for arithmetic conditions",
@@ -53,7 +53,7 @@ func checkZC1107DoubleBracket(node ast.Node) []Violation {
 
 func checkZC1107SimpleCommand(node ast.Node) []Violation {
 	cmd := node.(*ast.SimpleCommand)
-	
+
 	// Check if command is "[" or "test"
 	cmdName := cmd.Name.TokenLiteral()
 	if cmdName != "[" && cmdName != "test" {

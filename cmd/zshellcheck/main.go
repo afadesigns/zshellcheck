@@ -233,10 +233,11 @@ func processFile(filename string, out, errOut io.Writer, config config.Config, r
 			r = reporter.NewJSONReporter(out)
 		case "sarif":
 			r = reporter.NewSarifReporter(out, filename)
-											default:
-												r = reporter.NewTextReporter(out, filename, string(data), config)
-										}
-										if err := r.Report(violations); err != nil {			fmt.Fprintf(errOut, "Error reporting violations: %s\n", err)
+		default:
+			r = reporter.NewTextReporter(out, filename, string(data), config)
+		}
+		if err := r.Report(violations); err != nil {
+			fmt.Fprintf(errOut, "Error reporting violations: %s\n", err)
 		}
 	}
 	return len(violations)

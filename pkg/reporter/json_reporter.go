@@ -7,7 +7,7 @@ import (
 	"github.com/afadesigns/zshellcheck/pkg/katas"
 )
 
-// JSONReporter is a reporter that writes JSON to an io.Writer.
+// JSONReporter reports violations in JSON format.
 type JSONReporter struct {
 	writer io.Writer
 }
@@ -17,27 +17,9 @@ func NewJSONReporter(writer io.Writer) *JSONReporter {
 	return &JSONReporter{writer: writer}
 }
 
-// Report prints the violations to the writer as a JSON array.
+// Report prints the violations to the writer in JSON format.
 func (r *JSONReporter) Report(violations []katas.Violation) error {
-	type jsonViolation struct {
-		katas.Violation
-		Title string `json:"Title"`
-	}
-
-	var output []jsonViolation
-	for _, v := range violations {
-		kata, ok := katas.Registry.GetKata(v.KataID)
-		title := ""
-		if ok {
-			title = kata.Title
-		}
-		output = append(output, jsonViolation{
-			Violation: v,
-			Title:     title,
-		})
-	}
-
-	enc := json.NewEncoder(r.writer)
-	enc.SetIndent("", "  ")
-	return enc.Encode(output)
+	encoder := json.NewEncoder(r.writer)
+	encoder.SetIndent("", "  ")
+	return encoder.Encode(violations)
 }

@@ -8,9 +8,9 @@ import (
 
 func TestZC1107(t *testing.T) {
 	tests := []struct {
-		name     string
-		src      string
-		want     int
+		name string
+		src  string
+		want int
 	}{
 		{
 			name: "Valid arithmetic",

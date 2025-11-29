@@ -56,18 +56,24 @@ func (r *TextReporter) Report(violations []katas.Violation) error {
 		bold := r.getColor("\033[1m")
 
 		// Location: filename:line:col
-		fmt.Fprintf(r.writer, "%s:%d:%d: ", r.filename, v.Line, v.Column)
+		if _, err := fmt.Fprintf(r.writer, "%s:%d:%d: ", r.filename, v.Line, v.Column); err != nil {
+			return err
+		}
 
 		// Severity, ID, Message
 		// Example: Error: [ZC1001] Some message
-		fmt.Fprintf(r.writer, "%s%s%s: [%s] %s\n", color, v.Level, reset, v.KataID, v.Message)
+		if _, err := fmt.Fprintf(r.writer, "%s%s%s: [%s] %s\n", color, v.Level, reset, v.KataID, v.Message); err != nil {
+			return err
+		}
 
 		// Code snippet
 		if v.Line > 0 && v.Line <= len(r.lines) {
 			lineContent := r.lines[v.Line-1]
 			// Replace tabs with spaces for correct alignment of caret (simple approach)
 			// Or keep it simple for now.
-			fmt.Fprintf(r.writer, "  %s\n", lineContent)
+			if _, err := fmt.Fprintf(r.writer, "  %s\n", lineContent); err != nil {
+				return err
+			}
 
 			// Caret
 			padding := v.Column - 1
@@ -76,9 +82,13 @@ func (r *TextReporter) Report(violations []katas.Violation) error {
 			}
 			// Use a simple space padding. Note: this might be slightly off if tabs are present,
 			// but it's a standard starting point.
-			fmt.Fprintf(r.writer, "  %s%s^%s\n", strings.Repeat(" ", padding), bold, reset)
+			if _, err := fmt.Fprintf(r.writer, "  %s%s^%s\n", strings.Repeat(" ", padding), bold, reset); err != nil {
+				return err
+			}
 		}
-		fmt.Fprintln(r.writer)
+		if _, err := fmt.Fprintln(r.writer); err != nil {
+			return err
+		}
 	}
 	return nil
 }

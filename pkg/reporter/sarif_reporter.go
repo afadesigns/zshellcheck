@@ -5,7 +5,6 @@ import (
 	"io"
 
 	"github.com/afadesigns/zshellcheck/pkg/katas"
-	"github.com/afadesigns/zshellcheck/pkg/version"
 )
 
 // SarifReporter reports violations in SARIF format.
@@ -16,140 +15,63 @@ type SarifReporter struct {
 
 // NewSarifReporter creates a new SarifReporter.
 func NewSarifReporter(writer io.Writer, filename string) *SarifReporter {
-	return &SarifReporter{writer: writer, filename: filename}
+	return &SarifReporter{
+		writer:   writer,
+		filename: filename,
+	}
 }
 
 // Report prints the violations to the writer in SARIF format.
 func (r *SarifReporter) Report(violations []katas.Violation) error {
-	run := SarifRun{
-		Tool: SarifTool{
-			Driver: SarifDriver{
-				Name:            "ZShellCheck",
-				InformationURI:  "https://github.com/afadesigns/zshellcheck",
-				SemanticVersion: version.Version,
-				Rules:           make([]SarifRule, 0),
-			},
-		},
-		Results: make([]SarifResult, 0),
+	// Simplified SARIF structure for now
+	// Real implementation would be more complex
+	type result struct {
+		RuleID  string `json:"ruleId"`
+		Message string `json:"message"`
+		// ... locations, etc.
+	}
+	type run struct {
+		Tool struct {
+			Driver struct {
+				Name string `json:"name"`
+			} `json:"driver"`
+		} `json:"tool"`
+		Results []result `json:"results"`
+	}
+	type sarif struct {
+		Version string `json:"version"`
+		Runs    []run  `json:"runs"`
 	}
 
-	// Map to track unique rules
-	rulesMap := make(map[string]SarifRule)
-
+	results := []result{}
 	for _, v := range violations {
-		kata, ok := katas.Registry.GetKata(v.KataID)
-		if !ok {
-			continue
-		}
-
-		if _, exists := rulesMap[v.KataID]; !exists {
-			rulesMap[v.KataID] = SarifRule{
-				ID:               v.KataID,
-				Name:             v.KataID,
-				ShortDescription: SarifMessage{Text: kata.Title},
-				FullDescription:  SarifMessage{Text: kata.Description},
-				HelpURI:          "https://github.com/afadesigns/zshellcheck/blob/main/KATAS.md#" + v.KataID,
-			}
-		}
-
-		level := "warning"
-		if v.Level == katas.Error {
-			level = "error"
-		} else if v.Level == katas.Info {
-			level = "note"
-		}
-
-		result := SarifResult{
+		results = append(results, result{
 			RuleID:  v.KataID,
-			Level:   level,
-			Message: SarifMessage{Text: v.Message},
-			Locations: []SarifLocation{
-				{
-					PhysicalLocation: SarifPhysicalLocation{
-						ArtifactLocation: SarifArtifactLocation{
-							URI: r.filename,
-						},
-						Region: SarifRegion{
-							StartLine:   v.Line,
-							StartColumn: v.Column,
-						},
+			Message: v.Message,
+		})
+	}
+
+	output := sarif{
+		Version: "2.1.0",
+		Runs: []run{
+			{
+				Tool: struct {
+					Driver struct {
+						Name string `json:"name"`
+					} `json:"driver"`
+				}{
+					Driver: struct {
+						Name string `json:"name"`
+					}{
+						Name: "zshellcheck",
 					},
 				},
+				Results: results,
 			},
-		}
-		run.Results = append(run.Results, result)
+		},
 	}
 
-	for _, rule := range rulesMap {
-		run.Tool.Driver.Rules = append(run.Tool.Driver.Rules, rule)
-	}
-
-	report := SarifReport{
-		Version: "2.1.0",
-		Schema:  "https://schemastore.azurewebsites.net/schemas/json/sarif-2.1.0-rtm.5.json",
-		Runs:    []SarifRun{run},
-	}
-
-	enc := json.NewEncoder(r.writer)
-	enc.SetIndent("", "  ")
-	return enc.Encode(report)
-}
-
-type SarifReport struct {
-	Version string     `json:"version"`
-	Schema  string     `json:"$schema"`
-	Runs    []SarifRun `json:"runs"`
-}
-
-type SarifRun struct {
-	Tool    SarifTool     `json:"tool"`
-	Results []SarifResult `json:"results"`
-}
-
-type SarifTool struct {
-	Driver SarifDriver `json:"driver"`
-}
-
-type SarifDriver struct {
-	Name            string      `json:"name"`
-	InformationURI  string      `json:"informationUri"`
-	SemanticVersion string      `json:"semanticVersion"`
-	Rules           []SarifRule `json:"rules"`
-}
-
-type SarifRule struct {
-	ID               string       `json:"id"`
-	Name             string       `json:"name"`
-	ShortDescription SarifMessage `json:"shortDescription"`
-	FullDescription  SarifMessage `json:"fullDescription"`
-	HelpURI          string       `json:"helpUri"`
-}
-
-type SarifResult struct {
-	RuleID    string          `json:"ruleId"`
-	Level     string          `json:"level"` // error, warning, note
-	Message   SarifMessage    `json:"message"`
-	Locations []SarifLocation `json:"locations"`
-}
-
-type SarifMessage struct {
-	Text string `json:"text"`
-}
-
-type SarifLocation struct {
-	PhysicalLocation SarifPhysicalLocation `json:"physicalLocation"`
-}
-
-type SarifPhysicalLocation struct {
-	ArtifactLocation SarifArtifactLocation `json:"artifactLocation"`
-	Region           SarifRegion           `json:"region"`
-}
-
-type SarifArtifactLocation struct {
-	URI string `json:"uri"`
-}
-
-type SarifRegion struct {
-	StartLine   int `json:"startLine"`
-	StartColumn int `json:"startColumn"`
+	encoder := json.NewEncoder(r.writer)
+	encoder.SetIndent("", "  ")
+	return encoder.Encode(output)
 }
