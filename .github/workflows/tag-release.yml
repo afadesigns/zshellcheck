@@ -8,6 +8,7 @@ on:
 jobs:
   tag:
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     permissions:
       contents: write
     steps:
