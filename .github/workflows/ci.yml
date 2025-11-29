@@ -48,6 +48,22 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
           fail_ci_if_error: true
 
+  fuzz:
+    name: Fuzzing
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.1.7
+      - name: Set up Go
+        uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # v5.0.1
+        with:
+          go-version: 'stable'
+          cache: true
+          cache-dependency-path: go.sum
+      - name: Fuzz Lexer
+        run: go test -fuzz=FuzzLexer -fuzztime=30s ./pkg/lexer
+      - name: Fuzz Parser
+        run: go test -fuzz=FuzzParser -fuzztime=30s ./pkg/parser
+
   vulncheck:
     name: Security Scan
     runs-on: ubuntu-latest
