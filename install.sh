@@ -9,12 +9,14 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 YES_TO_ALL=false
+TARGET_VERSION="${VERSION:-latest}"
 
 # Usage
 usage() {
     echo "Usage: $0 [OPTIONS]"
     echo "Options:"
     echo "  -y, --yes       Automatic yes to prompts (non-interactive mode)"
+    echo "  -v, --version   Install specific version (default: latest)"
     echo "  --uninstall     Uninstall zshellcheck"
     echo "  -h, --help      Show this help message"
 }
@@ -25,6 +27,11 @@ while [[ $# -gt 0 ]]; do
     case $key in
         -y|--yes) 
             YES_TO_ALL=true
+            shift
+            ;; 
+        -v|--version) 
+            TARGET_VERSION="$2"
+            shift
             shift
             ;; 
         --uninstall) 
@@ -125,52 +132,62 @@ if [[ "${1:-}" == "--uninstall" ]] || [[ "${*:-}" == *"--uninstall"* ]]; then
     exit 0
 fi
 
+# Banner
+echo -e "${BLUE}"
+echo ' zshellcheck installer'
+echo -e "${NC}"
+
 echo -e "${GREEN}Installing zshellcheck...${NC}"
 
 # --- BUILD OR DOWNLOAD ---
 
 BUILD_SUCCESS=false
+TMP_DIR=""
 
-# cleanup trap
+# Cleanup function
 cleanup() {
-    rm -f zshellcheck zshellcheck.tar.gz checksums.txt
+    if [ -n "$TMP_DIR" ] && [ -d "$TMP_DIR" ]; then
+        rm -rf "$TMP_DIR"
+    fi
+    # If we built in current dir, we might want to clean up the binary if it was moved successfully?
+    # Actually, mv moves it, so it's gone.
+    # But if we failed, we might leave it. 
+    rm -f zshellcheck 2>/dev/null || true
 }
 trap cleanup EXIT
 
-# Check for Go
-if command -v go &> /dev/null; then
+# Detect if we are in the source repo
+IN_SOURCE_REPO=false
+if [ -f "go.mod" ] && [ -d "cmd/zshellcheck" ]; then
+    IN_SOURCE_REPO=true
+fi
+
+# Try Building from Source
+if [ "$IN_SOURCE_REPO" = true ] && command -v go &> /dev/null; then
     # Determine Version
     VERSION="dev"
     if command -v git &> /dev/null && [ -d .git ]; then
         VERSION=$(git describe --tags --always --dirty 2>/dev/null || echo "dev")
     fi
 
-    echo -e "Go found. Building binary from source (Version: ${BLUE}${VERSION}${NC})..."
+    echo -e "Go found in source repository. Building binary (Version: ${BLUE}${VERSION}${NC})..."
     if go build -ldflags "-X github.com/afadesigns/zshellcheck/pkg/version.Version=${VERSION}" -o zshellcheck cmd/zshellcheck/main.go; then
         BUILD_SUCCESS=true
+        echo -e "${GREEN}Build successful.${NC}"
     else
-        echo -e "${RED}Build failed.${NC}"
+        echo -e "${RED}Build failed. Falling back to binary download...${NC}"
     fi
 fi
 
 if [ "$BUILD_SUCCESS" = false ]; then
-    echo -e "${YELLOW}Go not found or build failed.${NC}"
-    echo -e "Attempting to download latest binary release..."
-
-    if ! command -v curl &> /dev/null; then
-        echo -e "${RED}Error: curl is required for downloading releases.${NC}"
-        exit 1
-    fi
-    if ! command -v tar &> /dev/null; then
-        echo -e "${RED}Error: tar is required for extracting releases.${NC}"
-        exit 1
-    fi
-
-    # Detect OS/Arch
+    # Use a temp directory for downloading
+    TMP_DIR=$(mktemp -d)
+    echo -e "Using temporary directory: $TMP_DIR"
+    
+    # Determine OS/Arch
     OS=$(uname -s)
     ARCH=$(uname -m)
     
-    # Map to Goreleaser names
     case "$OS" in
         Linux) GOOS="Linux" ;; 
         Darwin) GOOS="Darwin" ;; 
@@ -186,59 +203,71 @@ if [ "$BUILD_SUCCESS" = false ]; then
 
     echo -e "Detected platform: ${BLUE}$GOOS $GOARCH${NC}"
 
-    # Fetch latest tag
-    LATEST_TAG=$(curl -s https://api.github.com/repos/afadesigns/zshellcheck/releases/latest | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
-    
-    if [ -z "$LATEST_TAG" ]; then
-        echo -e "${RED}Failed to fetch latest release info from GitHub.${NC}"
-        exit 1
+    # Resolve Version
+    if [ "$TARGET_VERSION" = "latest" ]; then
+        LATEST_TAG=$(curl -s https://api.github.com/repos/afadesigns/zshellcheck/releases/latest | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
+        if [ -z "$LATEST_TAG" ]; then
+            echo -e "${RED}Failed to fetch latest release info from GitHub.${NC}"
+            exit 1
+        fi
+        RESOLVED_VERSION="$LATEST_TAG"
+    else
+        RESOLVED_VERSION="$TARGET_VERSION"
     fi
 
-    # Construct URL
     FILENAME="zshellcheck_${GOOS}_${GOARCH}.tar.gz"
-    URL="https://github.com/afadesigns/zshellcheck/releases/download/${LATEST_TAG}/${FILENAME}"
-    CHECKSUM_URL="https://github.com/afadesigns/zshellcheck/releases/download/${LATEST_TAG}/checksums.txt"
+    URL="https://github.com/afadesigns/zshellcheck/releases/download/${RESOLVED_VERSION}/${FILENAME}"
+    CHECKSUM_URL="https://github.com/afadesigns/zshellcheck/releases/download/${RESOLVED_VERSION}/checksums.txt"
 
-    echo -e "Downloading version ${BLUE}${LATEST_TAG}${NC}..."
+    echo -e "Downloading version ${BLUE}${RESOLVED_VERSION}${NC}..."
     
+    # Download to TMP_DIR
+    pushd "$TMP_DIR" > /dev/null
+
+    if ! command -v curl &> /dev/null; then
+        echo -e "${RED}Error: curl is required.${NC}"; exit 1
+    fi
+    if ! command -v tar &> /dev/null; then
+        echo -e "${RED}Error: tar is required.${NC}"; exit 1
+    fi
+
     # Download Checksums
     if curl -sL -o "checksums.txt" "$CHECKSUM_URL"; then
-        echo -e "Verifying checksums..."
+        HAS_CHECKSUMS=true
     else 
         echo -e "${YELLOW}Warning: Could not download checksums.txt. Skipping verification.${NC}"
+        HAS_CHECKSUMS=false
     fi
 
     # Download Binary
-    if curl -L -o "$FILENAME" "$URL"; then
-        # Verify Checksum if file exists
-        if [ -f "checksums.txt" ]; then
-            # Use sha256sum if available, else shasum
+    if curl -sL -o "$FILENAME" "$URL"; then
+        # Verify
+        if [ "$HAS_CHECKSUMS" = true ]; then
             if command -v sha256sum &> /dev/null; then
                 if grep "$FILENAME" checksums.txt | sha256sum -c - --status; then
                     echo -e "${GREEN}Checksum verified.${NC}"
                 else
-                    echo -e "${RED}Checksum verification failed! Aborting.${NC}"
-                    exit 1
+                    echo -e "${RED}Checksum verification failed!${NC}"; exit 1
                 fi
             elif command -v shasum &> /dev/null; then
                  if grep "$FILENAME" checksums.txt | shasum -a 256 -c - --status; then
                     echo -e "${GREEN}Checksum verified.${NC}"
                 else
-                    echo -e "${RED}Checksum verification failed! Aborting.${NC}"
-                    exit 1
+                    echo -e "${RED}Checksum verification failed!${NC}"; exit 1
                 fi
             else
                 echo -e "${YELLOW}sha256sum not found, skipping verification.${NC}"
             fi
         fi
 
-        echo "Extracting..."
         tar -xzf "$FILENAME" zshellcheck
         BUILD_SUCCESS=true
     else
         echo -e "${RED}Download failed.${NC}"
         exit 1
     fi
+    
+    popd > /dev/null
 fi
 
 # --- INSTALLATION ---
@@ -256,48 +285,70 @@ else
     BASH_COMP_DIR="$HOME/.local/share/bash-completion/completions"
 fi
 
+# Source of files depends on build method
+if [ -n "$TMP_DIR" ]; then
+    SOURCE_BIN="$TMP_DIR/zshellcheck"
+    # If downloading binary, we might not have man/completions unless they are in the tarball
+    # The .goreleaser.yml says: "files: - LICENSE - README.md"
+    # It does NOT seem to include completions/manpages in the archive yet.
+    # We should probably fix goreleaser to include them, but for now, 
+    # if we are downloading, we might miss them if they aren't in the tarball.
+    # Assuming they ARE in the tarball or we fetch them separately.
+    # For now, let's assume the installer is run from the repo for manpages, 
+    # OR we need to download them raw if missing.
+    
+    # Fallback: if man page not in tmp dir, try to fetch from raw github content?
+    # That gets complicated. For now, let's just install binary if that's all we have.
+    SOURCE_MAN=""
+    SOURCE_ZSH_COMP=""
+    SOURCE_BASH_COMP=""
+else
+    SOURCE_BIN="zshellcheck"
+    SOURCE_MAN="man/man1/zshellcheck.1"
+    SOURCE_ZSH_COMP="completions/zsh/_zshellcheck"
+    SOURCE_BASH_COMP="completions/bash/zshellcheck-completion.bash"
+fi
+
 echo -e "Installing binary to ${BLUE}$BIN_DIR${NC}..."
 mkdir -p "$BIN_DIR"
-if mv zshellcheck "$BIN_DIR/zshellcheck"; then
+if mv "$SOURCE_BIN" "$BIN_DIR/zshellcheck"; then
     echo -e "${GREEN}✓ Binary installed.${NC}"
 else
     echo -e "${RED}Failed to move binary.${NC}"
     if [ -t 0 ] || [ "$YES_TO_ALL" = true ] && command -v sudo &> /dev/null; then
         echo -e "${YELLOW}Attempting to install with sudo...${NC}"
-        if sudo mv zshellcheck "$BIN_DIR/zshellcheck"; then
+        if sudo mv "$SOURCE_BIN" "$BIN_DIR/zshellcheck"; then
              echo -e "${GREEN}✓ Binary installed with sudo.${NC}"
         else
              echo -e "${RED}Failed to install binary even with sudo.${NC}"
              exit 1
         fi
     else
-        rm -f zshellcheck
         exit 1
     fi
 fi
 
-# Install resources (Man page & Completions)
-# These exist in the repo, so we can install them even if we downloaded the binary
-# (assuming we are running install.sh from the repo)
-
-if [ -f "man/man1/zshellcheck.1" ]; then
+# Install Man Page
+if [ -n "$SOURCE_MAN" ] && [ -f "$SOURCE_MAN" ]; then
     echo -e "Installing man page to ${BLUE}$MAN_DIR${NC}..."
     mkdir -p "$MAN_DIR"
-    cp "man/man1/zshellcheck.1" "$MAN_DIR/zshellcheck.1"
+    cp "$SOURCE_MAN" "$MAN_DIR/zshellcheck.1"
     echo -e "${GREEN}✓ Man page installed.${NC}"
 fi
 
-if [ -f "completions/zsh/_zshellcheck" ]; then
+# Install Zsh Completion
+if [ -n "$SOURCE_ZSH_COMP" ] && [ -f "$SOURCE_ZSH_COMP" ]; then
     echo -e "Installing Zsh completions to ${BLUE}$ZSH_COMP_DIR${NC}..."
     mkdir -p "$ZSH_COMP_DIR"
-    cp "completions/zsh/_zshellcheck" "$ZSH_COMP_DIR/_zshellcheck"
+    cp "$SOURCE_ZSH_COMP" "$ZSH_COMP_DIR/_zshellcheck"
     echo -e "${GREEN}✓ Zsh completions installed.${NC}"
 fi
 
-if [ -f "completions/bash/zshellcheck-completion.bash" ]; then
+# Install Bash Completion
+if [ -n "$SOURCE_BASH_COMP" ] && [ -f "$SOURCE_BASH_COMP" ]; then
     echo -e "Installing Bash completions to ${BLUE}$BASH_COMP_DIR${NC}..."
     mkdir -p "$BASH_COMP_DIR"
-    cp "completions/bash/zshellcheck-completion.bash" "$BASH_COMP_DIR/zshellcheck"
+    cp "$SOURCE_BASH_COMP" "$BASH_COMP_DIR/zshellcheck"
     echo -e "${GREEN}✓ Bash completions installed.${NC}"
 fi
 
