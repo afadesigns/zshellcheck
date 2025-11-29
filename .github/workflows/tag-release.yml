@@ -13,12 +13,12 @@ jobs:
       contents: write
     steps:
       - name: Checkout repository
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.1.7
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v4.1.7
         with:
           fetch-depth: 0
 
       - name: Bump version and push tag
-        uses: anothrNick/github-tag-action@a2c70ae13a881faf2b4953baaa9e49731997ab36 # 1.69.0
+        uses: anothrNick/github-tag-action@4ed44965e0db8dab2b466a16da04aec3cc312fd8 # 1.69.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           WITH_V: true
