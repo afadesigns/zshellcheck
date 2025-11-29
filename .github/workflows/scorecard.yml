@@ -6,7 +6,8 @@ on:
   push:
     branches: [main]
 
-permissions: read-all
+permissions:
+  contents: read
 
 jobs:
   analysis:
@@ -19,8 +20,6 @@ jobs:
       id-token: write
       # Needed to checkout the code
       contents: read
-      # Needed to download actions
-      actions: read
 
     steps:
       - name: Checkout repository
