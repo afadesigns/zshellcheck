@@ -1,0 +1,14 @@
+coverage:
+  status:
+    project:
+      default:
+        target: auto
+        threshold: 1%
+    patch:
+      default:
+        target: auto
+        threshold: 1%
+
+ignore:
+  - "cmd/zshellcheck/main.go" # Ignore main entry point as it's hard to test fully
+  - "pkg/testutil" # Ignore test utilities

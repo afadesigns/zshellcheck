@@ -40,16 +40,13 @@ jobs:
         with:
           go-version: ${{ matrix.go-version }}
           cache: true
-      - name: Build
-        run: go build -v ./...
       - name: Test
-        run: go test -v "-coverprofile=coverage.out" ./...
+        run: go test -v -coverprofile=coverage.out -covermode=atomic ./...
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@1e68e06f1dbfde0f2ce0c13999cd13d260d60d6e # v5.1.1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          files: ./coverage.out
-          fail_ci_if_error: false
+          fail_ci_if_error: true
 
   vulncheck:
     name: Security Scan
