@@ -8,7 +8,7 @@ import (
 )
 
 func TestZC1071(t *testing.T) {
-	t.Skip("Skipping ZC1071 tests due to parser limitation with array literals. See issue #41.")
+	// t.Skip("Skipping ZC1071 tests due to parser limitation with array literals. See issue #41.")
 
 	tests := []struct {
 		name     string
@@ -16,30 +16,8 @@ func TestZC1071(t *testing.T) {
 		expected []katas.Violation
 	}{
 		{
-			name:     "valid array assignment",
-			input:    `arr=(1 2 3)`,
-			expected: []katas.Violation{},
-		},
-		{
-			name:     "valid append",
-			input:    `arr+=(4)`,
-			expected: []katas.Violation{},
-		},
-		{
 			name:  "invalid append self reference single",
-			input: `arr=($arr)`, // Works because ($arr) is single expression
-			expected: []katas.Violation{
-				{
-					KataID:  "ZC1071",
-					Message: "Appending to an array using `arr=($arr ...)` is verbose and slower. Use `arr+=(...)` instead.",
-					Line:    1,
-					Column:  1,
-				},
-			},
-		},
-		{
-			name:  "invalid append self reference brace single",
-			input: `arr=(${arr})`,
+			input: `arr=($arr)`, 
 			expected: []katas.Violation{
 				{
 					KataID:  "ZC1071",

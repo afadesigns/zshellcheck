@@ -48,7 +48,7 @@ func TestTextReporter_Report(t *testing.T) {
 	if !bytes.Contains(buf.Bytes(), []byte("This is a test violation.")) {
 		t.Errorf("Report() produced incorrect output.\nGot:\n%s", buf.String())
 	}
-	
+
 	// Check for code snippet and caret
 	// Format:
 	//   first line
@@ -57,7 +57,7 @@ func TestTextReporter_Report(t *testing.T) {
 	if !bytes.Contains(buf.Bytes(), []byte(expectedSnippet)) {
 		t.Errorf("Report() output missing source code snippet.\nWant: %q\nGot:\n%q", expectedSnippet, buf.String())
 	}
-	
+
 	// Check for caret with color
 	// Note: config constants are not exported, so using hardcoded ANSI codes or config public constants if available.
 	// pkg/config/config.go exports ColorBold etc.
@@ -65,10 +65,10 @@ func TestTextReporter_Report(t *testing.T) {
 	if !bytes.Contains(buf.Bytes(), []byte(expectedCaret)) {
 		t.Errorf("Report() output missing caret.\nWant: %q\nGot:\n%q", expectedCaret, buf.String())
 	}
-    
-    // Check for location
-    expectedLocation := "test.zsh:1:1:"
-    if !strings.Contains(buf.String(), expectedLocation) {
-         t.Errorf("Report() output missing location.\nWant: %q\nGot:\n%q", expectedLocation, buf.String())
-    }
+
+	// Check for location
+	expectedLocation := "test.zsh:1:1:"
+	if !strings.Contains(buf.String(), expectedLocation) {
+		t.Errorf("Report() output missing location.\nWant: %q\nGot:\n%q", expectedLocation, buf.String())
+	}
 }

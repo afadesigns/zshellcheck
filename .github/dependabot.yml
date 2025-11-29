@@ -8,6 +8,7 @@ updates:
     groups:
       go-dependencies:
         patterns: ["*"]
+    open-pull-requests-limit: 10
 
   # Enable version updates for GitHub Actions
   - package-ecosystem: "github-actions"
@@ -17,3 +18,4 @@ updates:
     groups:
       github-actions:
         patterns: ["*"]
+    open-pull-requests-limit: 10

@@ -19,50 +19,73 @@ func checkZC1071(node ast.Node) []Violation {
 		return nil
 	}
 
-	if len(cmd.Arguments) < 2 {
+	if len(cmd.Arguments) == 0 {
 		return nil
 	}
 
-	// Check assignment operator
-	assignOp := cmd.Arguments[0]
-	if str, ok := assignOp.(*ast.StringLiteral); !ok || str.Value != "=" {
-		return nil
-	}
-
-	// Check RHS
-	rhs := cmd.Arguments[1]
 	varName := cmd.Name.String()
+	var rhs ast.Expression
+
+	arg0 := cmd.Arguments[0]
+
+	if concat, ok := arg0.(*ast.ConcatenatedExpression); ok {
+		if len(concat.Parts) >= 2 {
+			if str, ok := concat.Parts[0].(*ast.StringLiteral); ok && str.Value == "=" {
+				rhs = concat.Parts[1]
+			}
+		}
+	} else if len(cmd.Arguments) >= 2 {
+		if str, ok := arg0.(*ast.StringLiteral); ok && str.Value == "=" {
+			rhs = cmd.Arguments[1]
+		}
+	}
+
+	if rhs == nil {
+		return nil
+	}
+
 	found := false
 
-	// We only check if RHS is `GroupedExpression`.
-	// If parser fails on `arr=($arr 4)`, we miss it.
-	// But `arr=($arr)` works.
-	// If parser supports `( ... )` as argument list in future, this will work.
-	if grouped, ok := rhs.(*ast.GroupedExpression); ok {
-		ast.Walk(grouped.Expression, func(n ast.Node) bool {
-			// Check ArrayAccess (for ${var})
-			if aa, ok := n.(*ast.ArrayAccess); ok {
-				if ident, ok := aa.Left.(*ast.Identifier); ok && ident.Value == varName {
-					found = true
-					return false
-				}
+	checkNode := func(n ast.Node) bool {
+		// Check ArrayAccess (for ${var})
+		if aa, ok := n.(*ast.ArrayAccess); ok {
+			if ident, ok := aa.Left.(*ast.Identifier); ok && ident.Value == varName {
+				found = true
+				return false
 			}
-			// Check Identifier with value "$var" or "${var}"
-			if ident, ok := n.(*ast.Identifier); ok {
-				if ident.Value == "$"+varName || ident.Value == "${"+varName+"}" {
-					found = true
-					return false
-				}
+		}
+		// Check Identifier with value "$var" or "${var}"
+		if ident, ok := n.(*ast.Identifier); ok {
+			if ident.Value == "$"+varName || ident.Value == "${"+varName+"}" {
+				found = true
+				return false
 			}
-			// Check PrefixExpression like `$var`
-			if prefix, ok := n.(*ast.PrefixExpression); ok && prefix.Operator == "$" {
+		}
+		// Check PrefixExpression like `$var`
+		if prefix, ok := n.(*ast.PrefixExpression); ok {
+			if prefix.Operator == "$" {
 				if ident, ok := prefix.Right.(*ast.Identifier); ok && ident.Value == varName {
 					found = true
 					return false
 				}
 			}
-			return true
-		})
+		}
+		return true
+	}
+
+	// Handle GroupedExpression (legacy/single element)
+	if grouped, ok := rhs.(*ast.GroupedExpression); ok {
+		ast.Walk(grouped.Expression, checkNode)
+	}
+
+	// Handle ArrayLiteral (multiple elements)
+	if arrayLit, ok := rhs.(*ast.ArrayLiteral); ok {
+		for _, elem := range arrayLit.Elements {
+			if found {
+				break
+			}
+			ast.Walk(elem, checkNode)
+		}
 	}
 
 	if found {
