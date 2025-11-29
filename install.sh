@@ -33,11 +33,52 @@ ask_yes_no() {
     fi
 }
 
+# Check if line exists in file
+line_exists() {
+    grep -Fq "$1" "$2" 2>/dev/null
+}
+
+uninstall() {
+    echo -e "${YELLOW}Uninstalling zshellcheck...${NC}"
+    
+    # Determine paths (same logic as install)
+    if [ "$EUID" -eq 0 ]; then
+        BIN_DIR="/usr/local/bin"
+        MAN_DIR="/usr/local/share/man/man1"
+        ZSH_COMP_DIR="/usr/local/share/zsh/site-functions"
+        BASH_COMP_DIR="/usr/local/share/bash-completion/completions"
+    else
+        BIN_DIR="$HOME/.local/bin"
+        MAN_DIR="$HOME/.local/share/man/man1"
+        ZSH_COMP_DIR="$HOME/.local/share/zsh/site-functions"
+        BASH_COMP_DIR="$HOME/.local/share/bash-completion/completions"
+    fi
+
+    echo "Removing files..."
+    rm -v "$BIN_DIR/zshellcheck" 2>/dev/null || true
+    rm -v "$MAN_DIR/zshellcheck.1" 2>/dev/null || true
+    rm -v "$ZSH_COMP_DIR/_zshellcheck" 2>/dev/null || true
+    rm -v "$BASH_COMP_DIR/zshellcheck" 2>/dev/null || true
+    
+    echo -e "${GREEN}Uninstallation complete.${NC}"
+    echo "Note: You may need to manually remove lines added to your shell config."
+}
+
+if [[ "${1:-}" == "--uninstall" ]]; then
+    uninstall
+    exit 0
+fi
+
 echo -e "${GREEN}Installing zshellcheck...${NC}"
 
-# Check for Go
+# Check for Go with helpful messages
 if ! command -v go &> /dev/null; then
-    echo -e "${RED}Error: Go is not installed. Please install Go 1.25 or later.${NC}"
+    echo -e "${RED}Error: Go is not installed.${NC}"
+    echo "Please install Go 1.25+ to build from source."
+    echo -e "${BLUE}macOS:${NC}   brew install go"
+    echo -e "${BLUE}Debian/Ubuntu:${NC} sudo apt install golang-go"
+    echo -e "${BLUE}Fedora:${NC}  sudo dnf install golang"
+    echo -e "${BLUE}Arch:${NC}    sudo pacman -S go"
     exit 1
 fi
 
@@ -49,7 +90,6 @@ fi
 
 # Build
 echo -e "Building binary (Version: ${BLUE}${VERSION}${NC})..."
-# Inject version if possible. Assumes 'github.com/afadesigns/zshellcheck/pkg/version.Version' exists.
 if ! go build -ldflags "-X github.com/afadesigns/zshellcheck/pkg/version.Version=${VERSION}" -o zshellcheck cmd/zshellcheck/main.go; then
     echo -e "${RED}Build failed.${NC}"
     exit 1
@@ -62,7 +102,6 @@ if [ "$EUID" -eq 0 ]; then
     ZSH_COMP_DIR="/usr/local/share/zsh/site-functions"
     BASH_COMP_DIR="/usr/local/share/bash-completion/completions"
 else
-    # Prefer ~/.local for non-root users
     BIN_DIR="$HOME/.local/bin"
     MAN_DIR="$HOME/.local/share/man/man1"
     ZSH_COMP_DIR="$HOME/.local/share/zsh/site-functions"
@@ -117,7 +156,7 @@ echo -e "${GREEN}Installation complete!${NC}"
 SHELL_CONFIG=$(detect_shell_config)
 
 # Path check
-if [[ ":$PATH:" != ".*:*:*:$BIN_DIR:"* ]]; then
+if [[ ":$PATH:" != *":$BIN_DIR:"* ]]; then
     echo ""
     echo -e "${YELLOW}WARNING: $BIN_DIR is not in your PATH.${NC}"
     
