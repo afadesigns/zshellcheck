@@ -58,17 +58,18 @@ func checkSelfReference(varName string, expr ast.Expression) bool {
 		}
 		if aa, ok := n.(*ast.ArrayAccess); ok {
 			if ident, ok := aa.Left.(*ast.Identifier); ok && ident.Value == varName {
-				found = true				
+				found = true
 				return false
 			}
 		}
-			if prefix, ok := n.(*ast.PrefixExpression); ok && prefix.Operator == "$" {
-				if ident, ok := prefix.Right.(*ast.Identifier); ok && ident.Value == varName {
-					found = true
-					return false
-				}
+
+		if prefix, ok := n.(*ast.PrefixExpression); ok && prefix.Operator == "$" {
+			if ident, ok := prefix.Right.(*ast.Identifier); ok && ident.Value == varName {
+				found = true
+				return false
 			}
 		}
+
 		return true
 	}
 	ast.Walk(expr, checkNode)

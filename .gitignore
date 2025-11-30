@@ -29,3 +29,4 @@ zshellcheck-windows-amd64.exe
 # Gemini CLI specific private files
 GEMINI.md
 bin/
+coverage.txt
