@@ -42,7 +42,7 @@ jobs:
           go-version: 'stable'
           cache: true
       - name: golangci-lint
-        uses: golangci/golangci-lint-action@971e284b6050e8a5805b1b15d3b97ce06ab88ea8 # v6.1.1
+        uses: golangci/golangci-lint-action@v6
         with:
           version: latest
           args: --timeout=5m
@@ -65,6 +65,7 @@ jobs:
           scandir: '.'
           severity: warning
           ignore_paths: 'tests/integration_test.zsh' # Ignore specific files if needed
+          ignore_names: '*.zsh'
 
   test:
     name: Tests
@@ -105,7 +106,7 @@ jobs:
           chmod +x tests/integration_test.zsh
           ./tests/integration_test.zsh
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@1e68e06f1dbfde0f2ce0c13999cd13d260d60d6e # v5.1.1
+        uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           fail_ci_if_error: true

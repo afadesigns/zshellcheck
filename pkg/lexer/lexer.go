@@ -365,6 +365,9 @@ func (l *Lexer) readString(quote byte) string {
 		}
 		if l.ch == '\\' {
 			l.readChar() // skip escaped char
+			if l.ch == 0 {
+				break
+			}
 		}
 	}
 	if l.ch == 0 {
