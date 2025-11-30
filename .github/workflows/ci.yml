@@ -92,12 +92,6 @@ jobs:
           cache-dependency-path: go.sum
       - name: Build
         run: go build -v -o zshellcheck ./cmd/zshellcheck
-      - name: List files (Debug)
-        if: runner.os != 'Windows'
-        run: ls -la
-      - name: List files (Windows Debug)
-        if: runner.os == 'Windows'
-        run: dir
       - name: Test (Unit)
         run: go test -v -coverprofile="coverage.txt" -covermode=atomic ./...
       - name: Verify go.mod is tidy
