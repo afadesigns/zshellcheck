@@ -64,7 +64,8 @@ jobs:
         with:
           scandir: '.'
           severity: warning
-          ignore_paths: 'tests/integration_test.zsh pkg/katas/testdata examples scripts completions install.sh' # Ignore specific files if needed
+          ignore_paths: 'pkg/katas/testdata examples scripts completions' # Ignore directories
+          ignore_names: 'install.sh integration_test.zsh' # Ignore specific files
 
   test:
     name: Tests
@@ -91,6 +92,12 @@ jobs:
           cache-dependency-path: go.sum
       - name: Build
         run: go build -v -o zshellcheck ./cmd/zshellcheck
+      - name: List files (Debug)
+        if: runner.os != 'Windows'
+        run: ls -la
+      - name: List files (Windows Debug)
+        if: runner.os == 'Windows'
+        run: dir
       - name: Test (Unit)
         run: go test -v -coverprofile="coverage.txt" -covermode=atomic ./...
       - name: Verify go.mod is tidy
@@ -116,7 +123,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: zshellcheck-${{ runner.os }}-${{ runner.arch }}
-          path: zshellcheck*
+          path: zshellcheck${{ runner.os == 'Windows' && '.exe' || '' }}
           retention-days: 5
 
   fuzz:
