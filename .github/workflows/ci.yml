@@ -64,7 +64,7 @@ jobs:
         with:
           scandir: '.'
           severity: warning
-          ignore_paths: 'tests/integration_test.zsh pkg/katas/testdata examples scripts/validate_local.sh completions/bash/zshellcheck-completion.bash install.sh' # Ignore specific files if needed
+          ignore_paths: 'tests/integration_test.zsh pkg/katas/testdata examples scripts completions install.sh' # Ignore specific files if needed
 
   test:
     name: Tests
@@ -116,7 +116,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: zshellcheck-${{ runner.os }}-${{ runner.arch }}
-          path: zshellcheck${{ runner.os == 'Windows' && '.exe' || '' }}
+          path: zshellcheck*
           retention-days: 5
 
   fuzz:
