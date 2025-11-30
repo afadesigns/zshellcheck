@@ -64,8 +64,7 @@ jobs:
         with:
           scandir: '.'
           severity: warning
-          ignore_paths: 'tests/integration_test.zsh' # Ignore specific files if needed
-          ignore_names: '*.zsh'
+          ignore_paths: 'tests/integration_test.zsh pkg/katas/testdata' # Ignore specific files if needed
 
   test:
     name: Tests
@@ -111,7 +110,7 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
           fail_ci_if_error: true
       - name: Upload Binary Artifact
-        uses: actions/upload-artifact@65c4c4a1ddee5b7c888b470a09886fa126ba21b8 # v4.6.0 (pinned)
+        uses: actions/upload-artifact@v4
         with:
           name: zshellcheck-${{ runner.os }}-${{ runner.arch }}
           path: zshellcheck${{ runner.os == 'Windows' && '.exe' || '' }}
