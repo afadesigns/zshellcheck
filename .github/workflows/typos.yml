@@ -28,5 +28,3 @@ jobs:
 
       - name: Check spelling
         uses: crate-ci/typos@v1
-        with:
-          config: ./typos.toml
