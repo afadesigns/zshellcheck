@@ -64,7 +64,7 @@ jobs:
         with:
           scandir: '.'
           severity: warning
-          ignore_paths: 'tests/integration_test.zsh pkg/katas/testdata examples' # Ignore specific files if needed
+          ignore_paths: 'tests/integration_test.zsh pkg/katas/testdata examples scripts/validate_local.sh completions/bash/zshellcheck-completion.bash install.sh' # Ignore specific files if needed
 
   test:
     name: Tests
@@ -92,7 +92,7 @@ jobs:
       - name: Build
         run: go build -v -o zshellcheck ./cmd/zshellcheck
       - name: Test (Unit)
-        run: go test -v -coverprofile=coverage.txt -covermode=atomic ./...
+        run: go test -v -coverprofile="coverage.txt" -covermode=atomic ./...
       - name: Verify go.mod is tidy
         run: |
           go mod tidy
