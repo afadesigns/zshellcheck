@@ -116,7 +116,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - **CI**: Deleted unsigned and draft releases for OpenSSF Scorecard Signed-Releases compliance.
-- **CI**: Updated auto-approve workflow to use `redteamx` PAT for Code-Review compliance.
+- **CI**: Updated code review workflow for Scorecard Code-Review compliance.
 - **CI**: Updated release-drafter to use `$RESOLVED_VERSION` for version consistency.
 
 ## [0.1.1] - 2025-11-27
