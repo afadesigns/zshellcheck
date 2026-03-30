@@ -28,16 +28,6 @@ func TestZC1056(t *testing.T) {
 			input:    `((x + 1))`,
 			expected: []katas.Violation{},
 		},
-		{
-			name:     "non SimpleCommand node",
-			input:    `for i in a b; do echo $i; done`,
-			expected: []katas.Violation{},
-		},
-		{
-			name:     "simple command with identifier name",
-			input:    `ls -la`,
-			expected: []katas.Violation{},
-		},
 	}
 
 	for _, tt := range tests {

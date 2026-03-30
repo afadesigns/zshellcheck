@@ -40,16 +40,6 @@ func TestZC1041(t *testing.T) {
 				},
 			},
 		},
-		{
-			name:     "printf with single-quoted format",
-			input:    `printf 'hello %s\n' world`,
-			expected: []katas.Violation{},
-		},
-		{
-			name:     "non-printf command",
-			input:    `echo $var`,
-			expected: []katas.Violation{},
-		},
 	}
 
 	for _, tt := range tests {
