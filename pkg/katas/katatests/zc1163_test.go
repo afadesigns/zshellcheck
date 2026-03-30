@@ -30,6 +30,21 @@ func TestZC1163(t *testing.T) {
 				},
 			},
 		},
+		{
+			name:     "non-pipe operator",
+			input:    `echo hello && echo world`,
+			expected: []katas.Violation{},
+		},
+		{
+			name:     "pipe but left not grep",
+			input:    `cat file | head -1`,
+			expected: []katas.Violation{},
+		},
+		{
+			name:     "grep piped to non-head",
+			input:    `grep pattern file | sort`,
+			expected: []katas.Violation{},
+		},
 	}
 
 	for _, tt := range tests {

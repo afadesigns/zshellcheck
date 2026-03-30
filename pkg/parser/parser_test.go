@@ -2339,3 +2339,482 @@ func TestReturnStatementNoValue(t *testing.T) {
 	program := p.ParseProgram()
 	_ = program
 }
+
+func TestParseSingleCommand_FuncDefDetailed(t *testing.T) {
+	input := "greet() { echo hi; }"
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	if len(program.Statements) < 1 {
+		t.Fatalf("expected at least 1 statement, got=%d", len(program.Statements))
+	}
+
+	if stmt, ok := program.Statements[0].(*ast.ExpressionStatement); ok {
+		if funcDef, ok := stmt.Expression.(*ast.FunctionDefinition); ok {
+			if funcDef.Name.Value != "greet" {
+				t.Errorf("expected name 'greet', got %q", funcDef.Name.Value)
+			}
+		}
+	}
+}
+
+func TestCommandPipelineMultiRedir(t *testing.T) {
+	tests := []string{
+		"echo hello > out.txt",
+		"echo hello >> out.txt",
+		"cat < input.txt",
+		"cmd << EOF",
+		"cmd 2>&1",
+		"cmd <&3",
+		"echo a > out1 >> out2",
+	}
+	for _, input := range tests {
+		t.Run(input, func(t *testing.T) {
+			l := lexer.New(input)
+			p := New(l)
+			_ = p.ParseProgram()
+		})
+	}
+}
+
+func TestCaseMultiplePatterns(t *testing.T) {
+	input := "case $x in\na|b|c) echo matched;;\n*) echo default;;\nesac"
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	stmt, ok := program.Statements[0].(*ast.CaseStatement)
+	if !ok {
+		t.Fatalf("not ast.CaseStatement. got=%T", program.Statements[0])
+	}
+	if len(stmt.Clauses) != 2 {
+		t.Fatalf("expected 2 clauses, got %d", len(stmt.Clauses))
+	}
+	if len(stmt.Clauses[0].Patterns) != 3 {
+		t.Errorf("expected 3 patterns in first clause, got %d", len(stmt.Clauses[0].Patterns))
+	}
+}
+
+func TestForLoopEmptyInitAndPost(t *testing.T) {
+	// Empty init and empty post (condition present)
+	input := "for ((;i<10;)) do echo loop; done"
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	stmt, ok := program.Statements[0].(*ast.ForLoopStatement)
+	if !ok {
+		t.Fatalf("not ast.ForLoopStatement. got=%T", program.Statements[0])
+	}
+	if stmt.Init != nil {
+		t.Error("Init should be nil")
+	}
+	if stmt.Condition == nil {
+		t.Error("Condition should not be nil")
+	}
+	if stmt.Post != nil {
+		t.Error("Post should be nil")
+	}
+}
+
+func TestIfNoFi(t *testing.T) {
+	input := "if true; then echo yes"
+	l := lexer.New(input)
+	p := New(l)
+	_ = p.ParseProgram()
+}
+
+func TestIfMissingThen(t *testing.T) {
+	input := "if true; echo yes; fi"
+	l := lexer.New(input)
+	p := New(l)
+	_ = p.ParseProgram()
+}
+
+func TestSingleCmdMultiArgs(t *testing.T) {
+	input := "ls -la /tmp /var /home"
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	if len(program.Statements) < 1 {
+		t.Fatalf("expected at least 1 statement, got=%d", len(program.Statements))
+	}
+}
+
+func TestCmdWordConcatenation(t *testing.T) {
+	input := "echo ${HOME}/.config/file"
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	stmt := program.Statements[0].(*ast.ExpressionStatement)
+	cmd := stmt.Expression.(*ast.SimpleCommand)
+	if len(cmd.Arguments) < 1 {
+		t.Fatal("expected at least 1 argument")
+	}
+}
+
+func TestExprOrFuncDef_NotCall(t *testing.T) {
+	input := "true"
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	if len(program.Statements) < 1 {
+		t.Fatalf("expected at least 1 statement, got=%d", len(program.Statements))
+	}
+}
+
+func TestExprOrFuncDef_CallWithArgs(t *testing.T) {
+	input := "myfunc(1, 2);"
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	if len(program.Statements) < 1 {
+		t.Fatalf("expected at least 1 statement, got=%d", len(program.Statements))
+	}
+}
+
+func TestFuncLiteralNamedWithParens(t *testing.T) {
+	input := "function myfunc() { echo hello; }"
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	stmt := program.Statements[0].(*ast.ExpressionStatement)
+	fl, ok := stmt.Expression.(*ast.FunctionLiteral)
+	if !ok {
+		t.Fatalf("not FunctionLiteral. got=%T", stmt.Expression)
+	}
+	if fl.Name.Value != "myfunc" {
+		t.Errorf("expected name 'myfunc', got %q", fl.Name.Value)
+	}
+}
+
+func TestFuncLiteralNoParens(t *testing.T) {
+	input := "function myfunc { echo hello; }"
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	stmt := program.Statements[0].(*ast.ExpressionStatement)
+	fl, ok := stmt.Expression.(*ast.FunctionLiteral)
+	if !ok {
+		t.Fatalf("not FunctionLiteral. got=%T", stmt.Expression)
+	}
+	if len(fl.Params) != 0 {
+		t.Errorf("expected 0 params, got %d", len(fl.Params))
+	}
+}
+
+func TestDollarParenSeparateRparens(t *testing.T) {
+	input := "$(( 1 + 2 ))"
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	if len(program.Statements) < 1 {
+		t.Fatalf("expected at least 1 statement, got=%d", len(program.Statements))
+	}
+}
+
+func TestDeclLocal(t *testing.T) {
+	input := "local x y z"
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	if len(program.Statements) < 1 {
+		t.Fatalf("expected at least 1 statement, got=%d", len(program.Statements))
+	}
+}
+
+func TestCmdWordLiterals(t *testing.T) {
+	tests := []string{
+		"echo *",
+		"echo ?",
+		"echo ~user",
+		"echo .hidden",
+		"echo ,list",
+		"echo :path",
+	}
+	for _, input := range tests {
+		t.Run(input, func(t *testing.T) {
+			l := lexer.New(input)
+			p := New(l)
+			_ = p.ParseProgram()
+		})
+	}
+}
+
+func TestSelectSemiBeforeDo(t *testing.T) {
+	input := "select opt in a b c; do echo $opt; done"
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	stmt, ok := program.Statements[0].(*ast.SelectStatement)
+	if !ok {
+		t.Fatalf("not ast.SelectStatement. got=%T", program.Statements[0])
+	}
+	if len(stmt.Items) != 3 {
+		t.Errorf("expected 3 items, got %d", len(stmt.Items))
+	}
+}
+
+func TestCoprocNamedBrace(t *testing.T) {
+	input := "coproc worker { echo hello; }"
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	stmt, ok := program.Statements[0].(*ast.CoprocStatement)
+	if !ok {
+		t.Fatalf("not ast.CoprocStatement. got=%T", program.Statements[0])
+	}
+	if stmt.Name != "worker" {
+		t.Errorf("expected name 'worker', got %q", stmt.Name)
+	}
+}
+
+func TestArithCmdMissingClose(t *testing.T) {
+	input := "((x + 1"
+	l := lexer.New(input)
+	p := New(l)
+	_ = p.ParseProgram()
+}
+
+func TestCaseMissingIn(t *testing.T) {
+	input := "case $x a) echo a;; esac"
+	l := lexer.New(input)
+	p := New(l)
+	_ = p.ParseProgram()
+}
+
+func TestForLoopMissingDoKw(t *testing.T) {
+	input := "for i in a b c; echo $i; done"
+	l := lexer.New(input)
+	p := New(l)
+	_ = p.ParseProgram()
+	if len(p.Errors()) == 0 {
+		t.Error("expected parser errors for missing 'do'")
+	}
+}
+
+func TestSelectMissingDoKw(t *testing.T) {
+	input := "select i in a b c; echo $i; done"
+	l := lexer.New(input)
+	p := New(l)
+	_ = p.ParseProgram()
+	if len(p.Errors()) == 0 {
+		t.Error("expected parser errors for missing 'do'")
+	}
+}
+
+func TestGroupedExprArithMissing(t *testing.T) {
+	input := "let x = (a + b"
+	l := lexer.New(input)
+	p := New(l)
+	_ = p.ParseProgram()
+}
+
+func TestFuncParamsWithComma(t *testing.T) {
+	input := "function(a, b, c) { echo; }"
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	stmt := program.Statements[0].(*ast.ExpressionStatement)
+	fl := stmt.Expression.(*ast.FunctionLiteral)
+	if len(fl.Params) != 3 {
+		t.Errorf("expected 3 params, got %d", len(fl.Params))
+	}
+}
+
+func TestProcessSubOutput(t *testing.T) {
+	input := "tee >(sort > sorted.txt)"
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	if len(program.Statements) < 1 {
+		t.Fatalf("expected at least 1 statement, got=%d", len(program.Statements))
+	}
+}
+
+func TestEqProcessSub(t *testing.T) {
+	input := "diff =(sort a) =(sort b)"
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	if len(program.Statements) < 1 {
+		t.Fatalf("expected at least 1 statement, got=%d", len(program.Statements))
+	}
+}
+
+func TestBacktickMissingClose(t *testing.T) {
+	input := "`echo hello"
+	l := lexer.New(input)
+	p := New(l)
+	_ = p.ParseProgram()
+}
+
+func TestIndexExprMissingClose(t *testing.T) {
+	input := "arr[0"
+	l := lexer.New(input)
+	p := New(l)
+	_ = p.ParseProgram()
+}
+
+func TestArrayAccessMissingRbrace(t *testing.T) {
+	input := "${arr[0]"
+	l := lexer.New(input)
+	p := New(l)
+	_ = p.ParseProgram()
+}
+
+func TestProcessSubMissingClose(t *testing.T) {
+	input := "<(sort a"
+	l := lexer.New(input)
+	p := New(l)
+	_ = p.ParseProgram()
+}
+
+func TestFuncLitMissingLbrace(t *testing.T) {
+	input := "function myfunc echo hello"
+	l := lexer.New(input)
+	p := New(l)
+	_ = p.ParseProgram()
+}
+
+func TestDollarParenMissingClose(t *testing.T) {
+	input := "$(echo hello"
+	l := lexer.New(input)
+	p := New(l)
+	_ = p.ParseProgram()
+}
+
+func TestCaseMissingRparen(t *testing.T) {
+	input := "case $x in\na echo a;;\nesac"
+	l := lexer.New(input)
+	p := New(l)
+	_ = p.ParseProgram()
+}
+
+func TestWhileInPipeRHS(t *testing.T) {
+	input := "echo a | while true; do read line; done"
+	l := lexer.New(input)
+	p := New(l)
+	_ = p.ParseProgram()
+}
+
+func TestForLoopArithNoInit(t *testing.T) {
+	input := "for ((;i<10;i++)) do echo $i; done"
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	stmt := program.Statements[0].(*ast.ForLoopStatement)
+	if stmt.Init != nil {
+		t.Error("Init should be nil")
+	}
+	if stmt.Condition == nil {
+		t.Error("Condition should not be nil")
+	}
+	if stmt.Post == nil {
+		t.Error("Post should not be nil")
+	}
+}
+
+func TestForLoopArithNoPost(t *testing.T) {
+	input := "for ((i=0;i<10;)) do echo $i; done"
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	stmt := program.Statements[0].(*ast.ForLoopStatement)
+	if stmt.Init == nil {
+		t.Error("Init should not be nil")
+	}
+	if stmt.Post != nil {
+		t.Error("Post should be nil")
+	}
+}
+
+func TestForLoopArithWithSemicolonBeforeDo(t *testing.T) {
+	// Tests the optional semicolon before DO path
+	input := "for ((i=0;i<10;i++)); do echo $i; done"
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	stmt := program.Statements[0].(*ast.ForLoopStatement)
+	if stmt.Init == nil {
+		t.Error("Init should not be nil")
+	}
+}
+
+func TestDeclarationMultiFlags(t *testing.T) {
+	input := "typeset -A -g mymap"
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	stmt := program.Statements[0].(*ast.DeclarationStatement)
+	if len(stmt.Flags) < 2 {
+		t.Errorf("expected at least 2 flags, got %d", len(stmt.Flags))
+	}
+}
+
+func TestDeclarationPlusEq(t *testing.T) {
+	input := "declare x+=5"
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	stmt := program.Statements[0].(*ast.DeclarationStatement)
+	if len(stmt.Assignments) < 1 {
+		t.Fatalf("expected at least 1 assignment, got %d", len(stmt.Assignments))
+	}
+	if !stmt.Assignments[0].IsAppend {
+		t.Error("expected IsAppend to be true")
+	}
+}
+
+func TestCaseStatementSemicolonsInBody(t *testing.T) {
+	input := "case $x in\n  a) echo one; echo two;;\nesac"
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	stmt := program.Statements[0].(*ast.CaseStatement)
+	if len(stmt.Clauses) != 1 {
+		t.Fatalf("expected 1 clause, got %d", len(stmt.Clauses))
+	}
+}
