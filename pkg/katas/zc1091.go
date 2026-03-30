@@ -11,7 +11,8 @@ func init() {
 		Description: "The `[[ ... ]]` construct is primarily for string comparisons and file tests. " +
 			"For arithmetic comparisons (`-eq`, `-lt`, etc.), use the dedicated arithmetic context `(( ... ))`. " +
 			"It is cleaner and strictly numeric.",
-		Check: checkZC1091,
+		Severity: SeverityStyle,
+		Check:    checkZC1091,
 	})
 }
 
@@ -32,6 +33,7 @@ func checkZC1091(node ast.Node) []Violation {
 					Message: "Use `(( ... ))` for arithmetic comparisons. e.g. `(( a < b ))` instead of `[[ a -lt b ]]`.",
 					Line:    infix.TokenLiteralNode().Line,
 					Column:  infix.TokenLiteralNode().Column,
+					Level:   SeverityStyle,
 				})
 			}
 		}

@@ -14,7 +14,8 @@ func init() {
 		Description: "Using 'echo' to print strings containing variables can lead to unexpected behavior " +
 			"if the variable contains special characters or flags. A safer, more reliable alternative " +
 			"is 'print -r --'.",
-		Check: checkZC1037,
+		Severity: SeverityStyle,
+		Check:    checkZC1037,
 	})
 }
 
@@ -36,6 +37,7 @@ func checkZC1037(node ast.Node) []Violation {
 					Message: "Use 'print -r --' instead of 'echo' to reliably print variable expansions.",
 					Line:    cmd.Token.Line,
 					Column:  cmd.Token.Column,
+					Level:   SeverityStyle,
 				},
 			}
 		}
@@ -46,6 +48,7 @@ func checkZC1037(node ast.Node) []Violation {
 					Message: "Use 'print -r --' instead of 'echo' to reliably print variable expansions.",
 					Line:    cmd.Token.Line,
 					Column:  cmd.Token.Column,
+					Level:   SeverityStyle,
 				},
 			}
 		}

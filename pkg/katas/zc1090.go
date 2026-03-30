@@ -11,7 +11,8 @@ func init() {
 		Description: "Quoting the pattern on the right side of `=~` forces literal string matching in Zsh/Bash. " +
 			"Regex metacharacters inside quotes will be matched literally. " +
 			"Remove quotes to enable regex matching, or use `==` for literal string comparison.",
-		Check: checkZC1090,
+		Severity: SeverityStyle,
+		Check:    checkZC1090,
 	})
 }
 
@@ -49,6 +50,7 @@ func checkOperand(node ast.Expression, infix *ast.InfixExpression, violations *[
 				Message: "Quoted regex pattern matches literally. Remove quotes to enable regex matching.",
 				Line:    n.TokenLiteralNode().Line,
 				Column:  n.TokenLiteralNode().Column,
+				Level:   SeverityStyle,
 			})
 		}
 	case *ast.ConcatenatedExpression:
@@ -60,6 +62,7 @@ func checkOperand(node ast.Expression, infix *ast.InfixExpression, violations *[
 						Message: "Quoted regex pattern matches literally. Remove quotes from the regex part.",
 						Line:    sl.TokenLiteralNode().Line,
 						Column:  sl.TokenLiteralNode().Column,
+						Level:   SeverityStyle,
 					})
 					return // One violation per expression is enough
 				}

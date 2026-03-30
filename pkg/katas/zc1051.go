@@ -10,7 +10,8 @@ func init() {
 		Title: "Quote variables in `rm` to avoid globbing",
 		Description: "`rm $VAR` is dangerous if `$VAR` contains spaces or glob characters. " +
 			"Quote the variable (`rm \"$VAR\"`) to ensure safe deletion.",
-		Check: checkZC1051,
+		Severity: SeverityWarning,
+		Check:    checkZC1051,
 	})
 }
 
@@ -61,6 +62,7 @@ func checkZC1051(node ast.Node) []Violation {
 				Message: "Unquoted variable in `rm`. Quote it to prevent globbing (e.g. `rm \"$VAR\"`).",
 				Line:    arg.TokenLiteralNode().Line,
 				Column:  arg.TokenLiteralNode().Column,
+				Level:   SeverityWarning,
 			})
 		}
 	}

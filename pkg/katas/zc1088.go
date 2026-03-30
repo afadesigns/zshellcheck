@@ -11,7 +11,8 @@ func init() {
 		Description: "Commands inside `( ... )` run in a subshell. " +
 			"State changes like `cd`, `export`, or variable assignments are lost when the subshell exits. " +
 			"Use `{ ... }` for grouping if you want to preserve state changes.",
-		Check: checkZC1088,
+		Severity: SeverityWarning,
+		Check:    checkZC1088,
 	})
 }
 
@@ -121,6 +122,7 @@ func (v *zc1088Visitor) checkSubshell(sub *ast.Subshell) {
 			Message: "Subshell `( ... )` isolates state changes. The changes (e.g. `cd`, variable assignment) will be lost. Use `{ ... }` to preserve them, or add commands that use the changed state.",
 			Line:    sub.TokenLiteralNode().Line,
 			Column:  sub.TokenLiteralNode().Column,
+			Level:   SeverityWarning,
 		})
 	}
 }
@@ -135,6 +137,7 @@ func (v *zc1088Visitor) checkGroupedExpression(group *ast.GroupedExpression) {
 			Message: "Subshell `( ... )` isolates state changes. The changes (e.g. `cd`, variable assignment) will be lost. Use `{ ... }` to preserve them, or add commands that use the changed state.",
 			Line:    group.TokenLiteralNode().Line,
 			Column:  group.TokenLiteralNode().Column,
+			Level:   SeverityWarning,
 		})
 	}
 }

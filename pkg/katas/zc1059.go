@@ -10,7 +10,8 @@ func init() {
 		Title: "Use `${var:?}` for `rm` arguments",
 		Description: "Deleting a directory based on a variable is dangerous if the variable is empty or unset. " +
 			"Use `${var:?}` to fail if empty, or check explicitly.",
-		Check: checkZC1059,
+		Severity: SeverityWarning,
+		Check:    checkZC1059,
 	})
 }
 
@@ -63,6 +64,7 @@ func checkZC1059(node ast.Node) []Violation {
 				Message: "Use `${var:?}` or ensure the variable is set before using it in `rm`.",
 				Line:    arg.TokenLiteralNode().Line,
 				Column:  arg.TokenLiteralNode().Column,
+				Level:   SeverityWarning,
 			})
 		}
 	}

@@ -10,7 +10,8 @@ func init() {
 		Title: "Use `$(...)` for command substitution instead of backticks",
 		Description: "The `$(...)` syntax is the modern, recommended way to perform command substitution. " +
 			"It is more readable and can be nested easily, unlike backticks.",
-		Check: checkZC1015,
+		Severity: SeverityStyle,
+		Check:    checkZC1015,
 	})
 }
 
@@ -23,6 +24,7 @@ func checkZC1015(node ast.Node) []Violation {
 			Message: "Use `$(...)` for command substitution instead of backticks.",
 			Line:    cs.Token.Line,
 			Column:  cs.Token.Column,
+			Level:   SeverityStyle,
 		})
 	}
 

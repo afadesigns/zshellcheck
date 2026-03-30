@@ -10,7 +10,8 @@ func init() {
 		Title: "Consider Zsh `=(...)` for temporary files",
 		Description: "Zsh `=(cmd)` creates a temporary file with the command output that is automatically " +
 			"cleaned up. Consider this instead of manual `mktemp` and cleanup patterns.",
-		Check: checkZC1114,
+		Severity: SeverityStyle,
+		Check:    checkZC1114,
 	})
 }
 
@@ -39,5 +40,6 @@ func checkZC1114(node ast.Node) []Violation {
 			"Zsh auto-cleans temporary files created with `=(...)` process substitution.",
 		Line:   cmd.Token.Line,
 		Column: cmd.Token.Column,
+		Level:  SeverityStyle,
 	}}
 }

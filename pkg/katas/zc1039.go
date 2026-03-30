@@ -12,7 +12,8 @@ func init() {
 		Title: "Avoid `rm` with root path",
 		Description: "Running `rm` on the root directory `/` is dangerous. " +
 			"Ensure you are not deleting the entire filesystem.",
-		Check: checkZC1039,
+		Severity: SeverityWarning,
+		Check:    checkZC1039,
 	})
 }
 
@@ -38,6 +39,7 @@ func checkZC1039(node ast.Node) []Violation {
 					Message: "Avoid `rm` on the root directory `/`. This is highly dangerous.",
 					Line:    str.Token.Line,
 					Column:  str.Token.Column,
+					Level:   SeverityWarning,
 				})
 			}
 		}

@@ -10,7 +10,8 @@ func init() {
 		Title: "Avoid iterating over `ls` output",
 		Description: "Iterating over `ls` output is fragile because filenames can contain spaces and newlines. " +
 			"Use globs (e.g. `for f in *.txt`) instead.",
-		Check: checkZC1050,
+		Severity: SeverityStyle,
+		Check:    checkZC1050,
 	})
 }
 
@@ -39,6 +40,7 @@ func checkZC1050(node ast.Node) []Violation {
 							"Use globs (e.g. `*.txt`) to handle filenames with spaces correctly.",
 						Line:   item.TokenLiteralNode().Line,
 						Column: item.TokenLiteralNode().Column,
+						Level:  SeverityStyle,
 					})
 				}
 			}

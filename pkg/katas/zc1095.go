@@ -10,7 +10,8 @@ func init() {
 		Title: "Use `repeat N` for simple repetition",
 		Description: "Zsh provides `repeat N do ... done` for running a block a fixed number of times. " +
 			"It is cleaner than `for i in {1..N}` or C-style for loops when the iterator variable is unused.",
-		Check: checkZC1095,
+		Severity: SeverityStyle,
+		Check:    checkZC1095,
 	})
 }
 
@@ -44,5 +45,6 @@ func checkZC1095(node ast.Node) []Violation {
 			"Zsh has built-in constructs for repetition that avoid spawning an external process.",
 		Line:   cmd.Token.Line,
 		Column: cmd.Token.Column,
+		Level:  SeverityStyle,
 	}}
 }

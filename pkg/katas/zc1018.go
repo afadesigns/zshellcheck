@@ -11,7 +11,8 @@ func init() {
 		Description: "The `((...))` construct in Zsh allows for C-style arithmetic. " +
 			"It is generally more efficient and readable than using `expr` or other " +
 			"external commands for arithmetic.",
-		Check: checkZC1018,
+		Severity: SeverityInfo,
+		Check:    checkZC1018,
 	})
 }
 
@@ -26,6 +27,7 @@ func checkZC1018(node ast.Node) []Violation {
 					Message: "Use `((...))` for C-style arithmetic instead of `expr`.",
 					Line:    ident.Token.Line,
 					Column:  ident.Token.Column,
+					Level:   SeverityInfo,
 				})
 			}
 		}

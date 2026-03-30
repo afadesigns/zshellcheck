@@ -9,6 +9,7 @@ func init() {
 		ID:          "ZC1062",
 		Title:       "Prefer `grep -E` over `egrep`",
 		Description: "`egrep` is deprecated. Use `grep -E` instead.",
+		Severity:    SeverityInfo,
 		Check:       checkZC1062,
 	})
 }
@@ -25,6 +26,7 @@ func checkZC1062(node ast.Node) []Violation {
 			Message: "`egrep` is deprecated. Use `grep -E` instead.",
 			Line:    name.Token.Line,
 			Column:  name.Token.Column,
+			Level:   SeverityInfo,
 		}}
 	}
 

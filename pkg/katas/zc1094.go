@@ -10,7 +10,8 @@ func init() {
 		Title: "Use parameter expansion instead of `sed` for simple substitutions",
 		Description: "For simple string substitutions on variables, use Zsh parameter expansion " +
 			"`${var//pattern/replacement}` instead of piping through `sed`. It avoids spawning an external process.",
-		Check: checkZC1094,
+		Severity: SeverityStyle,
+		Check:    checkZC1094,
 	})
 }
 
@@ -63,5 +64,6 @@ func checkZC1094(node ast.Node) []Violation {
 			"Parameter expansion avoids spawning an external process.",
 		Line:   cmd.Token.Line,
 		Column: cmd.Token.Column,
+		Level:  SeverityStyle,
 	}}
 }

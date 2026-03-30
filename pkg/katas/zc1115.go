@@ -10,7 +10,8 @@ func init() {
 		Title: "Use Zsh string manipulation instead of `rev`",
 		Description: "Zsh can reverse strings using parameter expansion. " +
 			"Avoid spawning `rev` as an external process for simple string reversal.",
-		Check: checkZC1115,
+		Severity: SeverityStyle,
+		Check:    checkZC1115,
 	})
 }
 
@@ -39,5 +40,6 @@ func checkZC1115(node ast.Node) []Violation {
 			"Parameter expansion can reverse strings without spawning an external process.",
 		Line:   cmd.Token.Line,
 		Column: cmd.Token.Column,
+		Level:  SeverityStyle,
 	}}
 }

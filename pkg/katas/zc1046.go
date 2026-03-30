@@ -10,7 +10,8 @@ func init() {
 		Title: "Avoid `eval`",
 		Description: "`eval` is dangerous as it executes arbitrary code. " +
 			"Use arrays, parameter expansion, or other constructs instead.",
-		Check: checkZC1046,
+		Severity: SeverityWarning,
+		Check:    checkZC1046,
 	})
 }
 
@@ -29,6 +30,7 @@ func checkZC1046(node ast.Node) []Violation {
 			Message: "Avoid `eval`. It allows execution of arbitrary code and is hard to debug.",
 			Line:    cmd.Token.Line,
 			Column:  cmd.Token.Column,
+			Level:   SeverityWarning,
 		}}
 	}
 
@@ -41,6 +43,7 @@ func checkZC1046(node ast.Node) []Violation {
 				Message: "Avoid `eval`. It allows execution of arbitrary code and is hard to debug.",
 				Line:    arg.TokenLiteralNode().Line,
 				Column:  arg.TokenLiteralNode().Column,
+				Level:   SeverityWarning,
 			}}
 		}
 	}

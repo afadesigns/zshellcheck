@@ -16,7 +16,8 @@ func init() {
 		Title: "Use `git` porcelain commands instead of plumbing commands",
 		Description: "Plumbing commands in `git` are designed for scripting and can be unstable. " +
 			"Porcelain commands are designed for interactive use and are more stable.",
-		Check: checkZC1011,
+		Severity: SeverityInfo,
+		Check:    checkZC1011,
 	})
 }
 
@@ -34,6 +35,7 @@ func checkZC1011(node ast.Node) []Violation {
 							Message: "Avoid using `git` plumbing commands in scripts. They are not guaranteed to be stable.",
 							Line:    ident.Token.Line,
 							Column:  ident.Token.Column,
+							Level:   SeverityInfo,
 						})
 					}
 				}

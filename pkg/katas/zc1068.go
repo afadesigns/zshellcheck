@@ -11,7 +11,8 @@ func init() {
 		Description: "Defining special functions like `precmd`, `preexec`, `chpwd`, etc. directly overwrites any " +
 			"previously defined hooks. Use `autoload -Uz add-zsh-hook; add-zsh-hook <hook> <function>` " +
 			"to append to the hook list safely.",
-		Check: checkZC1068,
+		Severity: SeverityInfo,
+		Check:    checkZC1068,
 	}
 	RegisterKata(ast.FunctionDefinitionNode, kata)
 	RegisterKata(ast.FunctionLiteralNode, kata)
@@ -53,6 +54,7 @@ func checkZC1068(node ast.Node) []Violation {
 					"Use `autoload -Uz add-zsh-hook; add-zsh-hook " + name + " my_func` instead.",
 				Line:   tokenLine,
 				Column: tokenCol,
+				Level:  SeverityInfo,
 			},
 		}
 	}

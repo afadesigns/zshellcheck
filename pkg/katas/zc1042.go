@@ -12,7 +12,8 @@ func init() {
 		Title: "Use \"$@\" to iterate over arguments",
 		Description: "`$*` joins all arguments into a single string, which is rarely what you want in a loop. " +
 			"Use `\"$@\"` to iterate over each argument individually.",
-		Check: checkZC1042,
+		Severity: SeverityStyle,
+		Check:    checkZC1042,
 	})
 }
 
@@ -75,6 +76,7 @@ func checkZC1042(node ast.Node) []Violation {
 					"\"$*\" merges arguments into a single string.",
 				Line:   item.TokenLiteralNode().Line,
 				Column: item.TokenLiteralNode().Column,
+				Level:  SeverityStyle,
 			})
 		}
 	}

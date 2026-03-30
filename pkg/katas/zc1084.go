@@ -12,7 +12,8 @@ func init() {
 		Description: "Unquoted globs in `find` commands are expanded by the shell before `find` runs. " +
 			"If files match, `find` receives the list of files instead of the pattern. " +
 			"Quote arguments to `-name`, `-path`, etc.",
-		Check: checkZC1084,
+		Severity: SeverityStyle,
+		Check:    checkZC1084,
 	})
 }
 
@@ -46,6 +47,7 @@ func checkZC1084(node ast.Node) []Violation {
 								Message: "Quote globs in `find` commands. `" + cleanString(arg.String()) + "` contains unquoted brackets.",
 								Line:    str.Token.Line,
 								Column:  str.Token.Column,
+								Level:   SeverityStyle,
 							})
 							foundMerged = true
 							break
@@ -61,6 +63,7 @@ func checkZC1084(node ast.Node) []Violation {
 							Message: "Quote globs in `find` commands. `" + cleanString(arg.String()) + "` contains unquoted brackets.",
 							Line:    idx.Token.Line,
 							Column:  idx.Token.Column,
+							Level:   SeverityStyle,
 						})
 						foundMerged = true
 						break
@@ -92,6 +95,7 @@ func checkZC1084(node ast.Node) []Violation {
 				Message: "Quote globs in `find` commands. `" + cleanString(patternArg.String()) + "` is subject to shell expansion.",
 				Line:    patternArg.TokenLiteralNode().Line,
 				Column:  patternArg.TokenLiteralNode().Column,
+				Level:   SeverityStyle,
 			})
 		}
 	}

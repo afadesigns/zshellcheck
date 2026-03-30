@@ -10,7 +10,8 @@ func init() {
 		Title: "Use [[ ... ]] instead of [ ... ]",
 		Description: "Zsh's [[ ... ]] is more powerful and safer than [ ... ]. " +
 			"It supports pattern matching, regex, and doesn't require quoting variables to prevent word splitting.",
-		Check: checkZC1010,
+		Severity: SeverityStyle,
+		Check:    checkZC1010,
 	})
 }
 
@@ -25,6 +26,7 @@ func checkZC1010(node ast.Node) []Violation {
 				Message: "Use `[[ ... ]]` instead of `[ ... ]` or `test`. `[[` is safer and more powerful.",
 				Line:    cmd.Token.Line,
 				Column:  cmd.Token.Column,
+				Level:   SeverityStyle,
 			})
 		}
 	}

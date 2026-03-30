@@ -12,14 +12,16 @@ func init() {
 		Title: "Brace expansion limits cannot be variables",
 		Description: "Brace expansion `{x..y}` happens before variable expansion. " +
 			"`{1..$n}` will not work. Use `seq` or `for ((...))`.",
-		Check: checkZC1083,
+		Severity: SeverityError,
+		Check:    checkZC1083,
 	})
 	RegisterKata(ast.StringLiteralNode, Kata{
 		ID:    "ZC1083",
 		Title: "Brace expansion limits cannot be variables",
 		Description: "Brace expansion `{x..y}` happens before variable expansion. " +
 			"`{1..$n}` will not work. Use `seq` or `for ((...))`.",
-		Check: checkZC1083,
+		Severity: SeverityError,
+		Check:    checkZC1083,
 	})
 }
 
@@ -32,6 +34,7 @@ func checkZC1083(node ast.Node) []Violation {
 				Message: "Brace expansion limits cannot be variables. `{...$var...}` is treated as a literal string. Use `seq` or `for ((...))`.",
 				Line:    strNode.TokenLiteralNode().Line,
 				Column:  strNode.TokenLiteralNode().Column,
+				Level:   SeverityError,
 			}}
 		}
 		return nil
@@ -121,6 +124,7 @@ func checkZC1083(node ast.Node) []Violation {
 			Message: "Brace expansion limits cannot be variables. `{...$var...}` is treated as a literal string. Use `seq` or `for ((...))`.",
 			Line:    concat.TokenLiteralNode().Line,
 			Column:  concat.TokenLiteralNode().Column,
+			Level:   SeverityError,
 		}}
 	}
 

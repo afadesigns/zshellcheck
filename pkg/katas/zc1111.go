@@ -10,7 +10,8 @@ func init() {
 		Title: "Avoid `xargs` for simple command invocation",
 		Description: "Zsh can iterate arrays directly with `for` loops or use `${(f)...}` to split " +
 			"command output by newlines. Avoid `xargs` when processing lines one at a time.",
-		Check: checkZC1111,
+		Severity: SeverityStyle,
+		Check:    checkZC1111,
 	})
 }
 
@@ -51,5 +52,6 @@ func checkZC1111(node ast.Node) []Violation {
 			"`for item in ${(f)$(cmd)}` splits output by newlines without spawning xargs.",
 		Line:   cmd.Token.Line,
 		Column: cmd.Token.Column,
+		Level:  SeverityStyle,
 	}}
 }

@@ -12,7 +12,8 @@ func init() {
 		Title: "Prefer `${var//old/new}` over `sed` for simple replacements",
 		Description: "Using `sed` for simple string replacement is slower than Zsh's built-in " +
 			"parameter expansion. Use `${var/old/new}` (replace first) or `${var//old/new}` (replace all).",
-		Check: checkZC1082,
+		Severity: SeverityStyle,
+		Check:    checkZC1082,
 	})
 }
 
@@ -53,6 +54,7 @@ func checkZC1082(node ast.Node) []Violation {
 				Message: "Use `${var//old/new}` for string replacement. Pipeline to `sed` is inefficient.",
 				Line:    infix.TokenLiteralNode().Line,
 				Column:  infix.TokenLiteralNode().Column,
+				Level:   SeverityStyle,
 			}}
 		}
 	}

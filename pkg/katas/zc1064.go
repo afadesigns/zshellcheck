@@ -10,7 +10,8 @@ func init() {
 		Title: "Prefer `command -v` over `type`",
 		Description: "`type` output format varies and is not POSIX standard for checking existence. " +
 			"`command -v` is quieter and standard.",
-		Check: checkZC1064,
+		Severity: SeverityInfo,
+		Check:    checkZC1064,
 	})
 }
 
@@ -26,6 +27,7 @@ func checkZC1064(node ast.Node) []Violation {
 			Message: "Prefer `command -v` over `type`. `type` output is not stable/standard for checking command existence.",
 			Line:    name.Token.Line,
 			Column:  name.Token.Column,
+			Level:   SeverityInfo,
 		}}
 	}
 

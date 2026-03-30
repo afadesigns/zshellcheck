@@ -765,3 +765,1577 @@ func TestForLoopStatementStub(t *testing.T) { // Renamed from TestForLoopStateme
 		t.Errorf("stmt.TokenLiteral not 'for', got %q", stmt.TokenLiteral())
 	}
 }
+
+func TestWhileLoopStatement(t *testing.T) {
+	input := "while [[ $x -lt 10 ]]; do echo $x; done"
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	if len(program.Statements) != 1 {
+		t.Fatalf("expected 1 statement, got=%d", len(program.Statements))
+	}
+
+	stmt, ok := program.Statements[0].(*ast.WhileLoopStatement)
+	if !ok {
+		t.Fatalf("not ast.WhileLoopStatement. got=%T", program.Statements[0])
+	}
+	if stmt.TokenLiteral() != "while" {
+		t.Errorf("TokenLiteral not 'while', got %q", stmt.TokenLiteral())
+	}
+	if stmt.Body == nil {
+		t.Fatal("Body is nil")
+	}
+}
+
+func TestSelectStatement(t *testing.T) {
+	input := "select item in a b c; do echo $item; done"
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	if len(program.Statements) != 1 {
+		t.Fatalf("expected 1 statement, got=%d", len(program.Statements))
+	}
+
+	stmt, ok := program.Statements[0].(*ast.SelectStatement)
+	if !ok {
+		t.Fatalf("not ast.SelectStatement. got=%T", program.Statements[0])
+	}
+	if stmt.Name.Value != "item" {
+		t.Errorf("Name not 'item', got %q", stmt.Name.Value)
+	}
+	if len(stmt.Items) != 3 {
+		t.Errorf("expected 3 items, got %d", len(stmt.Items))
+	}
+}
+
+func TestSelectStatementNoIn(t *testing.T) {
+	input := "select item; do echo $item; done"
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	if len(program.Statements) != 1 {
+		t.Fatalf("expected 1 statement, got=%d", len(program.Statements))
+	}
+
+	stmt, ok := program.Statements[0].(*ast.SelectStatement)
+	if !ok {
+		t.Fatalf("not ast.SelectStatement. got=%T", program.Statements[0])
+	}
+	if stmt.Name.Value != "item" {
+		t.Errorf("Name not 'item', got %q", stmt.Name.Value)
+	}
+}
+
+func TestCoprocStatement(t *testing.T) {
+	input := "coproc myproc { echo hello; }"
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	if len(program.Statements) != 1 {
+		t.Fatalf("expected 1 statement, got=%d", len(program.Statements))
+	}
+
+	stmt, ok := program.Statements[0].(*ast.CoprocStatement)
+	if !ok {
+		t.Fatalf("not ast.CoprocStatement. got=%T", program.Statements[0])
+	}
+	if stmt.Name != "myproc" {
+		t.Errorf("Name not 'myproc', got %q", stmt.Name)
+	}
+	if stmt.Command == nil {
+		t.Fatal("Command is nil")
+	}
+}
+
+func TestCoprocStatementNoName(t *testing.T) {
+	input := "coproc { echo hello; }"
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	if len(program.Statements) != 1 {
+		t.Fatalf("expected 1 statement, got=%d", len(program.Statements))
+	}
+
+	stmt, ok := program.Statements[0].(*ast.CoprocStatement)
+	if !ok {
+		t.Fatalf("not ast.CoprocStatement. got=%T", program.Statements[0])
+	}
+	if stmt.Name != "" {
+		t.Errorf("expected empty Name, got %q", stmt.Name)
+	}
+}
+
+func TestCaseStatement(t *testing.T) {
+	input := `case $x in
+a) echo a;;
+b|c) echo bc;;
+esac`
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	if len(program.Statements) != 1 {
+		t.Fatalf("expected 1 statement, got=%d", len(program.Statements))
+	}
+
+	stmt, ok := program.Statements[0].(*ast.CaseStatement)
+	if !ok {
+		t.Fatalf("not ast.CaseStatement. got=%T", program.Statements[0])
+	}
+	if len(stmt.Clauses) != 2 {
+		t.Fatalf("expected 2 clauses, got %d", len(stmt.Clauses))
+	}
+	// Second clause should have 2 patterns
+	if len(stmt.Clauses[1].Patterns) != 2 {
+		t.Errorf("expected 2 patterns in second clause, got %d", len(stmt.Clauses[1].Patterns))
+	}
+}
+
+func TestDeclarationStatement(t *testing.T) {
+	input := "typeset -a myarray"
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	if len(program.Statements) != 1 {
+		t.Fatalf("expected 1 statement, got=%d", len(program.Statements))
+	}
+
+	stmt, ok := program.Statements[0].(*ast.DeclarationStatement)
+	if !ok {
+		t.Fatalf("not ast.DeclarationStatement. got=%T", program.Statements[0])
+	}
+	if stmt.Command != "typeset" {
+		t.Errorf("Command not 'typeset', got %q", stmt.Command)
+	}
+}
+
+func TestDeclarationStatementWithAssignment(t *testing.T) {
+	input := "declare x=5"
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	if len(program.Statements) != 1 {
+		t.Fatalf("expected 1 statement, got=%d", len(program.Statements))
+	}
+
+	stmt, ok := program.Statements[0].(*ast.DeclarationStatement)
+	if !ok {
+		t.Fatalf("not ast.DeclarationStatement. got=%T", program.Statements[0])
+	}
+	if len(stmt.Assignments) != 1 {
+		t.Fatalf("expected 1 assignment, got %d", len(stmt.Assignments))
+	}
+	if stmt.Assignments[0].Name.Value != "x" {
+		t.Errorf("expected assignment name 'x', got %q", stmt.Assignments[0].Name.Value)
+	}
+}
+
+func TestDeclarationStatementWithAppend(t *testing.T) {
+	input := "declare x+=5"
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	if len(program.Statements) != 1 {
+		t.Fatalf("expected 1 statement, got=%d", len(program.Statements))
+	}
+
+	stmt, ok := program.Statements[0].(*ast.DeclarationStatement)
+	if !ok {
+		t.Fatalf("not ast.DeclarationStatement. got=%T", program.Statements[0])
+	}
+	if len(stmt.Assignments) != 1 {
+		t.Fatalf("expected 1 assignment, got %d", len(stmt.Assignments))
+	}
+	if !stmt.Assignments[0].IsAppend {
+		t.Error("expected IsAppend to be true")
+	}
+}
+
+func TestDeclarationStatementWithArrayValue(t *testing.T) {
+	input := "declare x=(a b c)"
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	if len(program.Statements) != 1 {
+		t.Fatalf("expected 1 statement, got=%d", len(program.Statements))
+	}
+
+	stmt, ok := program.Statements[0].(*ast.DeclarationStatement)
+	if !ok {
+		t.Fatalf("not ast.DeclarationStatement. got=%T", program.Statements[0])
+	}
+	if len(stmt.Assignments) != 1 {
+		t.Fatalf("expected 1 assignment, got %d", len(stmt.Assignments))
+	}
+}
+
+func TestArithmeticCommand(t *testing.T) {
+	input := "((x + 1))"
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	if len(program.Statements) != 1 {
+		t.Fatalf("expected 1 statement, got=%d", len(program.Statements))
+	}
+
+	stmt, ok := program.Statements[0].(*ast.ArithmeticCommand)
+	if !ok {
+		t.Fatalf("not ast.ArithmeticCommand. got=%T", program.Statements[0])
+	}
+	if stmt.Expression == nil {
+		t.Fatal("Expression is nil")
+	}
+}
+
+func TestSubshellStatement(t *testing.T) {
+	input := "(echo hello)"
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	if len(program.Statements) != 1 {
+		t.Fatalf("expected 1 statement, got=%d", len(program.Statements))
+	}
+
+	stmt, ok := program.Statements[0].(*ast.Subshell)
+	if !ok {
+		t.Fatalf("not ast.Subshell. got=%T", program.Statements[0])
+	}
+	if stmt.Command == nil {
+		t.Fatal("Command is nil")
+	}
+}
+
+func TestSimpleCommandStatement(t *testing.T) {
+	input := "echo hello world"
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	if len(program.Statements) != 1 {
+		t.Fatalf("expected 1 statement, got=%d", len(program.Statements))
+	}
+
+	stmt, ok := program.Statements[0].(*ast.ExpressionStatement)
+	if !ok {
+		t.Fatalf("not ast.ExpressionStatement. got=%T", program.Statements[0])
+	}
+	cmd, ok := stmt.Expression.(*ast.SimpleCommand)
+	if !ok {
+		t.Fatalf("not ast.SimpleCommand. got=%T", stmt.Expression)
+	}
+	if cmd.Name.String() != "echo" {
+		t.Errorf("Name not 'echo', got %q", cmd.Name.String())
+	}
+	if len(cmd.Arguments) != 2 {
+		t.Errorf("expected 2 arguments, got %d", len(cmd.Arguments))
+	}
+}
+
+func TestTestCommandStatement(t *testing.T) {
+	input := "test -f /tmp/foo"
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	if len(program.Statements) != 1 {
+		t.Fatalf("expected 1 statement, got=%d", len(program.Statements))
+	}
+
+	stmt, ok := program.Statements[0].(*ast.ExpressionStatement)
+	if !ok {
+		t.Fatalf("not ast.ExpressionStatement. got=%T", program.Statements[0])
+	}
+	cmd, ok := stmt.Expression.(*ast.SimpleCommand)
+	if !ok {
+		t.Fatalf("not ast.SimpleCommand. got=%T", stmt.Expression)
+	}
+	if cmd.Name.String() != "test" {
+		t.Errorf("Name not 'test', got %q", cmd.Name.String())
+	}
+}
+
+func TestBraceGroupStatement(t *testing.T) {
+	input := "{ echo hello; }"
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	if len(program.Statements) != 1 {
+		t.Fatalf("expected 1 statement, got=%d", len(program.Statements))
+	}
+
+	_, ok := program.Statements[0].(*ast.BlockStatement)
+	if !ok {
+		t.Fatalf("not ast.BlockStatement. got=%T", program.Statements[0])
+	}
+}
+
+func TestPipelineStatement(t *testing.T) {
+	input := "echo hello | grep foo"
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	if len(program.Statements) != 1 {
+		t.Fatalf("expected 1 statement, got=%d", len(program.Statements))
+	}
+
+	stmt, ok := program.Statements[0].(*ast.ExpressionStatement)
+	if !ok {
+		t.Fatalf("not ast.ExpressionStatement. got=%T", program.Statements[0])
+	}
+	infix, ok := stmt.Expression.(*ast.InfixExpression)
+	if !ok {
+		t.Fatalf("not ast.InfixExpression. got=%T", stmt.Expression)
+	}
+	if infix.Operator != "|" {
+		t.Errorf("Operator not '|', got %q", infix.Operator)
+	}
+}
+
+func TestCommandListAndOr(t *testing.T) {
+	input := "cmd1 && cmd2 || cmd3"
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	if len(program.Statements) != 1 {
+		t.Fatalf("expected 1 statement, got=%d", len(program.Statements))
+	}
+}
+
+func TestNegatedPipeline(t *testing.T) {
+	input := "! grep foo /tmp/bar"
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	if len(program.Statements) < 1 {
+		t.Fatalf("expected at least 1 statement, got=%d", len(program.Statements))
+	}
+}
+
+func TestRedirectionInCommand(t *testing.T) {
+	input := "echo hello > /tmp/out"
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	if len(program.Statements) != 1 {
+		t.Fatalf("expected 1 statement, got=%d", len(program.Statements))
+	}
+}
+
+func TestRedirectionAppend(t *testing.T) {
+	input := "echo hello >> /tmp/out"
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	if len(program.Statements) != 1 {
+		t.Fatalf("expected 1 statement, got=%d", len(program.Statements))
+	}
+}
+
+func TestDollarParenCommandSubstitution(t *testing.T) {
+	input := "$(echo hello)"
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	if len(program.Statements) != 1 {
+		t.Fatalf("expected 1 statement, got=%d", len(program.Statements))
+	}
+}
+
+func TestDollarParenArithmetic(t *testing.T) {
+	input := "$((1 + 2))"
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	if len(program.Statements) != 1 {
+		t.Fatalf("expected 1 statement, got=%d", len(program.Statements))
+	}
+}
+
+func TestProcessSubstitution(t *testing.T) {
+	input := "diff <(sort a) <(sort b)"
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	if len(program.Statements) < 1 {
+		t.Fatalf("expected at least 1 statement, got=%d", len(program.Statements))
+	}
+}
+
+func TestForEachLoop(t *testing.T) {
+	input := "for item in a b c; do echo $item; done"
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	if len(program.Statements) != 1 {
+		t.Fatalf("expected 1 statement, got=%d", len(program.Statements))
+	}
+
+	stmt, ok := program.Statements[0].(*ast.ForLoopStatement)
+	if !ok {
+		t.Fatalf("not ast.ForLoopStatement. got=%T", program.Statements[0])
+	}
+	if stmt.Name == nil {
+		t.Fatal("Name is nil")
+	}
+	if stmt.Name.Value != "item" {
+		t.Errorf("Name not 'item', got %q", stmt.Name.Value)
+	}
+	if len(stmt.Items) != 3 {
+		t.Errorf("expected 3 items, got %d", len(stmt.Items))
+	}
+}
+
+func TestForLoopNoIn(t *testing.T) {
+	input := "for item; do echo $item; done"
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	if len(program.Statements) != 1 {
+		t.Fatalf("expected 1 statement, got=%d", len(program.Statements))
+	}
+
+	stmt, ok := program.Statements[0].(*ast.ForLoopStatement)
+	if !ok {
+		t.Fatalf("not ast.ForLoopStatement. got=%T", program.Statements[0])
+	}
+	if stmt.Name == nil {
+		t.Fatal("Name is nil")
+	}
+}
+
+func TestFunctionDefinitionNameParens(t *testing.T) {
+	input := "myfunc() { echo hello; }"
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	if len(program.Statements) != 1 {
+		t.Fatalf("expected 1 statement, got=%d", len(program.Statements))
+	}
+}
+
+func TestFunctionDefinitionKeyword(t *testing.T) {
+	input := "function myfunc { echo hello; }"
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	if len(program.Statements) != 1 {
+		t.Fatalf("expected 1 statement, got=%d", len(program.Statements))
+	}
+}
+
+func TestDoubleBracketExpression(t *testing.T) {
+	input := "[[ -f /tmp/foo ]]"
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	if len(program.Statements) != 1 {
+		t.Fatalf("expected 1 statement, got=%d", len(program.Statements))
+	}
+}
+
+func TestCommandSubstitutionBacktick(t *testing.T) {
+	input := "`echo hello`"
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	if len(program.Statements) != 1 {
+		t.Fatalf("expected 1 statement, got=%d", len(program.Statements))
+	}
+
+	stmt, ok := program.Statements[0].(*ast.ExpressionStatement)
+	if !ok {
+		t.Fatalf("not ast.ExpressionStatement. got=%T", program.Statements[0])
+	}
+	_, ok = stmt.Expression.(*ast.CommandSubstitution)
+	if !ok {
+		t.Fatalf("not ast.CommandSubstitution. got=%T", stmt.Expression)
+	}
+}
+
+func TestShebangStatement(t *testing.T) {
+	input := "#!/bin/zsh\necho hello"
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	if len(program.Statements) < 1 {
+		t.Fatalf("expected at least 1 statement, got=%d", len(program.Statements))
+	}
+
+	_, ok := program.Statements[0].(*ast.Shebang)
+	if !ok {
+		t.Fatalf("not ast.Shebang. got=%T", program.Statements[0])
+	}
+}
+
+func TestDollarSpecialVariables(t *testing.T) {
+	tests := []string{
+		"$#",
+		"$0",
+		"$*",
+		"$!",
+	}
+
+	for _, input := range tests {
+		t.Run(input, func(t *testing.T) {
+			l := lexer.New(input)
+			p := New(l)
+			program := p.ParseProgram()
+			_ = program
+			// These may produce parser errors for some special forms, but should not panic.
+		})
+	}
+}
+
+func TestGroupedExpressionInArithmetic(t *testing.T) {
+	input := "let x = (y + z)"
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	if len(program.Statements) != 1 {
+		t.Fatalf("expected 1 statement, got=%d", len(program.Statements))
+	}
+}
+
+func TestArrayAccessWithLengthOperator(t *testing.T) {
+	input := "${#arr}"
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	if len(program.Statements) != 1 {
+		t.Fatalf("expected 1 statement, got=%d", len(program.Statements))
+	}
+}
+
+func TestArrayAccessWithFlags(t *testing.T) {
+	input := "${(f)foo}"
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	if len(program.Statements) != 1 {
+		t.Fatalf("expected 1 statement, got=%d", len(program.Statements))
+	}
+}
+
+func TestInvalidIntegerLiteral(t *testing.T) {
+	input := "let x = 99999999999999999999999999999999999"
+	l := lexer.New(input)
+	p := New(l)
+	_ = p.ParseProgram()
+
+	if len(p.Errors()) == 0 {
+		t.Error("expected parser error for invalid integer")
+	}
+}
+
+func TestCaseStatementWithLeadingParen(t *testing.T) {
+	input := `case $x in
+(a) echo a;;
+esac`
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	stmt, ok := program.Statements[0].(*ast.CaseStatement)
+	if !ok {
+		t.Fatalf("not ast.CaseStatement. got=%T", program.Statements[0])
+	}
+	if len(stmt.Clauses) != 1 {
+		t.Fatalf("expected 1 clause, got %d", len(stmt.Clauses))
+	}
+}
+
+func TestCommandWithRedirections(t *testing.T) {
+	tests := []string{
+		"echo hello > /dev/null",
+		"echo hello >> /tmp/log",
+		"cat << EOF",
+		"cmd 2>&1",
+		"cmd <&3",
+	}
+
+	for _, input := range tests {
+		t.Run(input, func(t *testing.T) {
+			l := lexer.New(input)
+			p := New(l)
+			program := p.ParseProgram()
+			_ = program
+		})
+	}
+}
+
+func TestSimpleCommandWithDollarArgs(t *testing.T) {
+	input := "echo $HOME $USER"
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	if len(program.Statements) != 1 {
+		t.Fatalf("expected 1 statement, got=%d", len(program.Statements))
+	}
+}
+
+func TestSimpleCommandWithStringArgs(t *testing.T) {
+	input := `echo "hello" "world"`
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	if len(program.Statements) != 1 {
+		t.Fatalf("expected 1 statement, got=%d", len(program.Statements))
+	}
+}
+
+func TestSimpleCommandStartingWithSlash(t *testing.T) {
+	input := "/usr/bin/echo hello"
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	if len(program.Statements) < 1 {
+		t.Fatalf("expected at least 1 statement, got=%d", len(program.Statements))
+	}
+}
+
+func TestSimpleCommandStartingWithDot(t *testing.T) {
+	input := ". /etc/profile"
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	if len(program.Statements) < 1 {
+		t.Fatalf("expected at least 1 statement, got=%d", len(program.Statements))
+	}
+}
+
+func TestSimpleCommandStartingWithColon(t *testing.T) {
+	input := ": noop"
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	if len(program.Statements) < 1 {
+		t.Fatalf("expected at least 1 statement, got=%d", len(program.Statements))
+	}
+}
+
+func TestSemicolonSkipping(t *testing.T) {
+	input := ";echo hello"
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	// Semicolons should be skipped; at least echo hello should parse
+	found := false
+	for _, s := range program.Statements {
+		if s != nil {
+			found = true
+		}
+	}
+	if !found {
+		t.Error("expected at least one non-nil statement")
+	}
+}
+
+func TestParseCurPrecedence(t *testing.T) {
+	// Test curPrecedence with tokens that have precedence
+	input := "let x = a && b"
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	if len(program.Statements) != 1 {
+		t.Fatalf("expected 1 statement, got=%d", len(program.Statements))
+	}
+}
+
+func TestEqTildeOperator(t *testing.T) {
+	input := "[[ $x =~ foo ]]"
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	if len(program.Statements) != 1 {
+		t.Fatalf("expected 1 statement, got=%d", len(program.Statements))
+	}
+}
+
+func TestNumericComparisonOperators(t *testing.T) {
+	tests := []string{
+		"[[ $a -eq $b ]]",
+		"[[ $a -ne $b ]]",
+		"[[ $a -lt $b ]]",
+		"[[ $a -le $b ]]",
+		"[[ $a -gt $b ]]",
+		"[[ $a -ge $b ]]",
+	}
+
+	for _, input := range tests {
+		t.Run(input, func(t *testing.T) {
+			l := lexer.New(input)
+			p := New(l)
+			program := p.ParseProgram()
+			checkParserErrors(t, p)
+
+			if len(program.Statements) != 1 {
+				t.Fatalf("expected 1 statement, got=%d", len(program.Statements))
+			}
+		})
+	}
+}
+
+func TestWhileInPipeline(t *testing.T) {
+	input := "echo a | while true; do echo b; done"
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	if len(program.Statements) < 1 {
+		t.Fatalf("expected at least 1 statement, got=%d", len(program.Statements))
+	}
+}
+
+func TestFunctionDefinitionInSingleCommand(t *testing.T) {
+	input := "greet() { echo hi; }"
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	if len(program.Statements) < 1 {
+		t.Fatalf("expected at least 1 statement, got=%d", len(program.Statements))
+	}
+}
+
+func TestProcessSubstitutionOutputDirection(t *testing.T) {
+	input := "tee >(sort > sorted.txt)"
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	if len(program.Statements) < 1 {
+		t.Fatalf("expected at least 1 statement, got=%d", len(program.Statements))
+	}
+}
+
+func TestCommentSkipping(t *testing.T) {
+	input := "# this is a comment\necho hello"
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	found := false
+	for _, s := range program.Statements {
+		if s != nil {
+			found = true
+		}
+	}
+	if !found {
+		t.Error("expected at least one non-nil statement after comment")
+	}
+}
+
+func TestDoubleParenInExpression(t *testing.T) {
+	input := "let x = ((1 + 2))"
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	if len(program.Statements) < 1 {
+		t.Fatalf("expected at least 1 statement, got=%d", len(program.Statements))
+	}
+}
+
+func TestInfixRedirection(t *testing.T) {
+	input := "let x = a >> b"
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	if len(program.Statements) < 1 {
+		t.Fatalf("expected at least 1 statement, got=%d", len(program.Statements))
+	}
+}
+
+func TestInfixRedirectionLeftShift(t *testing.T) {
+	input := "let x = a << b"
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	if len(program.Statements) < 1 {
+		t.Fatalf("expected at least 1 statement, got=%d", len(program.Statements))
+	}
+}
+
+func TestInfixRedirectionGtAmp(t *testing.T) {
+	input := "let x = a >& b"
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	if len(program.Statements) < 1 {
+		t.Fatalf("expected at least 1 statement, got=%d", len(program.Statements))
+	}
+}
+
+func TestInfixRedirectionLtAmp(t *testing.T) {
+	input := "let x = a <& b"
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	if len(program.Statements) < 1 {
+		t.Fatalf("expected at least 1 statement, got=%d", len(program.Statements))
+	}
+}
+
+func TestInvalidArrayAccess(t *testing.T) {
+	input := "$arr[0]"
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	if len(program.Statements) < 1 {
+		t.Fatalf("expected at least 1 statement, got=%d", len(program.Statements))
+	}
+}
+
+func TestDollarWithSpecialTokens(t *testing.T) {
+	tests := []string{
+		"echo $#",
+		"echo $0",
+		"echo $*",
+		"echo $!",
+		"echo $-",
+	}
+	for _, input := range tests {
+		t.Run(input, func(t *testing.T) {
+			l := lexer.New(input)
+			p := New(l)
+			program := p.ParseProgram()
+			_ = program
+		})
+	}
+}
+
+func TestFunctionDefinitionKeywordWithParens(t *testing.T) {
+	input := "function myfunc() { echo hello; }"
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	if len(program.Statements) < 1 {
+		t.Fatalf("expected at least 1 statement, got=%d", len(program.Statements))
+	}
+}
+
+func TestCoprocStatementSimpleCommand(t *testing.T) {
+	input := "coproc echo hello"
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	if len(program.Statements) < 1 {
+		t.Fatalf("expected at least 1 statement, got=%d", len(program.Statements))
+	}
+}
+
+func TestCommandWithGTRedirection(t *testing.T) {
+	input := "> /tmp/out echo hello"
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	if len(program.Statements) < 1 {
+		t.Fatalf("expected at least 1 statement, got=%d", len(program.Statements))
+	}
+}
+
+func TestCommandWithLTRedirection(t *testing.T) {
+	input := "< /tmp/in cat"
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	if len(program.Statements) < 1 {
+		t.Fatalf("expected at least 1 statement, got=%d", len(program.Statements))
+	}
+}
+
+func TestCommandWithAmpersand(t *testing.T) {
+	input := "& echo hello"
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	_ = program
+}
+
+func TestDeclarationStatementMultipleAssignments(t *testing.T) {
+	input := "typeset -r x=1 y=2"
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	if len(program.Statements) != 1 {
+		t.Fatalf("expected 1 statement, got=%d", len(program.Statements))
+	}
+
+	stmt, ok := program.Statements[0].(*ast.DeclarationStatement)
+	if !ok {
+		t.Fatalf("not ast.DeclarationStatement. got=%T", program.Statements[0])
+	}
+	if len(stmt.Assignments) < 2 {
+		t.Errorf("expected at least 2 assignments, got %d", len(stmt.Assignments))
+	}
+}
+
+func TestDeclarationStatementNoAssignment(t *testing.T) {
+	input := "declare -a arr"
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	if len(program.Statements) != 1 {
+		t.Fatalf("expected 1 statement, got=%d", len(program.Statements))
+	}
+}
+
+func TestForLoopArithmeticWithSemicolons(t *testing.T) {
+	input := "for ((;i<10;)) do echo $i; done"
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	if len(program.Statements) != 1 {
+		t.Fatalf("expected 1 statement, got=%d", len(program.Statements))
+	}
+
+	stmt, ok := program.Statements[0].(*ast.ForLoopStatement)
+	if !ok {
+		t.Fatalf("not ast.ForLoopStatement. got=%T", program.Statements[0])
+	}
+	if stmt.Init != nil {
+		t.Error("Init should be nil for empty init")
+	}
+}
+
+func TestForLoopArithmeticEmptyPost(t *testing.T) {
+	input := "for ((i=0;i<10;)) do echo $i; done"
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	if len(program.Statements) != 1 {
+		t.Fatalf("expected 1 statement, got=%d", len(program.Statements))
+	}
+}
+
+func TestSingleCommandWithFunctionNotParenRparen(t *testing.T) {
+	input := "echo (hello)"
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	_ = program
+}
+
+func TestEqProcessSubstitution(t *testing.T) {
+	input := "diff =(sort a) =(sort b)"
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	if len(program.Statements) < 1 {
+		t.Fatalf("expected at least 1 statement, got=%d", len(program.Statements))
+	}
+}
+
+func TestBlockStatementWithSemicolons(t *testing.T) {
+	input := "{ ;echo hello; ;echo world; }"
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	if len(program.Statements) < 1 {
+		t.Fatalf("expected at least 1 statement, got=%d", len(program.Statements))
+	}
+}
+
+func TestIfStatementWithElse(t *testing.T) {
+	input := "if [[ -f /tmp/foo ]]; then echo yes; else echo no; fi"
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	if len(program.Statements) != 1 {
+		t.Fatalf("expected 1 statement, got=%d", len(program.Statements))
+	}
+
+	stmt, ok := program.Statements[0].(*ast.IfStatement)
+	if !ok {
+		t.Fatalf("not ast.IfStatement. got=%T", program.Statements[0])
+	}
+	if stmt.Alternative == nil {
+		t.Fatal("expected Alternative to not be nil")
+	}
+}
+
+func TestCommandConcatenation(t *testing.T) {
+	input := `echo ${HOME}/.config`
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	if len(program.Statements) < 1 {
+		t.Fatalf("expected at least 1 statement, got=%d", len(program.Statements))
+	}
+}
+
+func TestCommandWithVariableArgs(t *testing.T) {
+	input := "echo ${var} $HOME ${arr[0]}"
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	if len(program.Statements) < 1 {
+		t.Fatalf("expected at least 1 statement, got=%d", len(program.Statements))
+	}
+}
+
+func TestExpressionStatementFallback(t *testing.T) {
+	input := "true"
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	if len(program.Statements) < 1 {
+		t.Fatalf("expected at least 1 statement, got=%d", len(program.Statements))
+	}
+}
+
+func TestExpressionCallNoBody(t *testing.T) {
+	input := "myfunc();"
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	if len(program.Statements) < 1 {
+		t.Fatalf("expected at least 1 statement, got=%d", len(program.Statements))
+	}
+}
+
+func TestMultipleRedirections(t *testing.T) {
+	input := "echo hello > out.txt 2>&1"
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	if len(program.Statements) < 1 {
+		t.Fatalf("expected at least 1 statement, got=%d", len(program.Statements))
+	}
+}
+
+func TestParseSimpleCommandWithTilde(t *testing.T) {
+	input := "cd ~/projects"
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	if len(program.Statements) < 1 {
+		t.Fatalf("expected at least 1 statement, got=%d", len(program.Statements))
+	}
+}
+
+func TestParseSimpleCommandWithGlob(t *testing.T) {
+	input := "echo *.txt"
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	if len(program.Statements) < 1 {
+		t.Fatalf("expected at least 1 statement, got=%d", len(program.Statements))
+	}
+}
+
+func TestParseSimpleCommandWithBang(t *testing.T) {
+	input := "echo !ref"
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	if len(program.Statements) < 1 {
+		t.Fatalf("expected at least 1 statement, got=%d", len(program.Statements))
+	}
+}
+
+func TestParseSimpleCommandWithBrace(t *testing.T) {
+	input := "echo {a,b,c}"
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	if len(program.Statements) < 1 {
+		t.Fatalf("expected at least 1 statement, got=%d", len(program.Statements))
+	}
+}
+
+func TestParseIdentWithDollarLparen(t *testing.T) {
+	input := "echo $(date)"
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	if len(program.Statements) < 1 {
+		t.Fatalf("expected at least 1 statement, got=%d", len(program.Statements))
+	}
+}
+
+func TestParseIdentWithDollarBrace(t *testing.T) {
+	input := "echo ${HOME}"
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	if len(program.Statements) < 1 {
+		t.Fatalf("expected at least 1 statement, got=%d", len(program.Statements))
+	}
+}
+
+func TestParseIdentFollowedByIdent(t *testing.T) {
+	input := "cmd arg1 arg2"
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	if len(program.Statements) < 1 {
+		t.Fatalf("expected at least 1 statement, got=%d", len(program.Statements))
+	}
+}
+
+func TestParseIdentFollowedByString(t *testing.T) {
+	input := `cmd "arg1"`
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	if len(program.Statements) < 1 {
+		t.Fatalf("expected at least 1 statement, got=%d", len(program.Statements))
+	}
+}
+
+func TestParseIdentFollowedByInt(t *testing.T) {
+	input := "cmd 42"
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	if len(program.Statements) < 1 {
+		t.Fatalf("expected at least 1 statement, got=%d", len(program.Statements))
+	}
+}
+
+func TestParseIdentFollowedByMinus(t *testing.T) {
+	input := "cmd -f"
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	if len(program.Statements) < 1 {
+		t.Fatalf("expected at least 1 statement, got=%d", len(program.Statements))
+	}
+}
+
+func TestParseIdentFollowedByDot(t *testing.T) {
+	input := "cmd .hidden"
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	if len(program.Statements) < 1 {
+		t.Fatalf("expected at least 1 statement, got=%d", len(program.Statements))
+	}
+}
+
+func TestParseIdentFollowedByVariable(t *testing.T) {
+	input := "cmd $var"
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	if len(program.Statements) < 1 {
+		t.Fatalf("expected at least 1 statement, got=%d", len(program.Statements))
+	}
+}
+
+func TestParseIdentFollowedByDollar(t *testing.T) {
+	input := "cmd $#"
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	_ = program
+}
+
+func TestSingleBracketCommand(t *testing.T) {
+	input := "[ -f /tmp/foo ]"
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	if len(program.Statements) < 1 {
+		t.Fatalf("expected at least 1 statement, got=%d", len(program.Statements))
+	}
+}
+
+func TestCommandWithSlashPrefix(t *testing.T) {
+	input := "/bin/echo hello"
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	if len(program.Statements) < 1 {
+		t.Fatalf("expected at least 1 statement, got=%d", len(program.Statements))
+	}
+}
+
+func TestCommandWithGtgtPrefix(t *testing.T) {
+	input := ">> /tmp/log echo hello"
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	_ = program
+}
+
+func TestCommandWithLtltPrefix(t *testing.T) {
+	input := "<< EOF"
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	_ = program
+}
+
+func TestCommandWithGtampPrefix(t *testing.T) {
+	input := ">& /dev/null echo hello"
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	_ = program
+}
+
+func TestCommandWithLtampPrefix(t *testing.T) {
+	input := "<& 3 echo hello"
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	_ = program
+}
+
+func TestPipelineWithMultipleRedirections(t *testing.T) {
+	input := "echo hello > /tmp/a >> /tmp/b < /tmp/c"
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	if len(program.Statements) < 1 {
+		t.Fatalf("expected at least 1 statement, got=%d", len(program.Statements))
+	}
+}
+
+func TestPipelineWithNegation(t *testing.T) {
+	input := "! echo hello | grep foo"
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	_ = program
+}
+
+func TestSingleCommandFuncDefInPipeline(t *testing.T) {
+	// Test the path where single command sees () and becomes function def
+	input := "myfunc() { echo hello; } | grep hello"
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	_ = program
+}
+
+func TestSingleCommandWithParensNotFunc(t *testing.T) {
+	// name ( non-rparen -- triggers the else branch in parseSingleCommand
+	input := "cmd (arg1 arg2)"
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	_ = program
+}
+
+func TestParserErrorOnMissing(t *testing.T) {
+	// Test noPrefixParseFnError
+	input := "let x = "
+	l := lexer.New(input)
+	p := New(l)
+	_ = p.ParseProgram()
+
+	if len(p.Errors()) == 0 {
+		t.Error("expected parser errors")
+	}
+}
+
+func TestParserPeekError(t *testing.T) {
+	// Test peekError path - missing expected token
+	input := "let = 5"
+	l := lexer.New(input)
+	p := New(l)
+	_ = p.ParseProgram()
+
+	if len(p.Errors()) == 0 {
+		t.Error("expected parser errors")
+	}
+}
+
+func TestDollarParenDoubleRparen(t *testing.T) {
+	// Test $(( expr )) with DoubleRparen token
+	input := "$((x + y))"
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	if len(program.Statements) < 1 {
+		t.Fatalf("expected at least 1 statement, got=%d", len(program.Statements))
+	}
+}
+
+func TestDollarParenWithDoubleParenSeparated(t *testing.T) {
+	// Test $((expr)) where )) is two separate ) tokens
+	input := "$(( 1 + 2 ))"
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	if len(program.Statements) < 1 {
+		t.Fatalf("expected at least 1 statement, got=%d", len(program.Statements))
+	}
+}
+
+func TestForLoopArithmeticOptionalSemicolonBeforeDo(t *testing.T) {
+	input := "for ((i=0;i<10;i++)); do echo $i; done"
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	if len(program.Statements) != 1 {
+		t.Fatalf("expected 1 statement, got=%d", len(program.Statements))
+	}
+}
+
+func TestDeclarationStatementWithFlagIdent(t *testing.T) {
+	// Test ident starting with - being treated as flag
+	input := "declare -x PATH"
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	if len(program.Statements) != 1 {
+		t.Fatalf("expected 1 statement, got=%d", len(program.Statements))
+	}
+}
+
+func TestDeclarationStatementUnexpectedToken(t *testing.T) {
+	// Test unexpected token in declaration
+	input := "declare 42"
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	_ = program
+	// Should not panic
+}
+
+func TestDeclarationValue_ArrayLiteral(t *testing.T) {
+	// Test parseDeclarationValue with array
+	input := "declare arr=(one two three)"
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	if len(program.Statements) != 1 {
+		t.Fatalf("expected 1 statement, got=%d", len(program.Statements))
+	}
+}
+
+func TestWhileLoopMissingDo(t *testing.T) {
+	input := "while true; echo foo; done"
+	l := lexer.New(input)
+	p := New(l)
+	_ = p.ParseProgram()
+	// Should not panic even with missing do
+}
+
+func TestCaseStatementEmpty(t *testing.T) {
+	input := "case $x in\nesac"
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	if len(program.Statements) < 1 {
+		t.Fatalf("expected at least 1 statement, got=%d", len(program.Statements))
+	}
+}
+
+func TestSubshellMissingRparen(t *testing.T) {
+	input := "(echo hello"
+	l := lexer.New(input)
+	p := New(l)
+	_ = p.ParseProgram()
+	// Should not panic
+}
+
+func TestDoubleBracketMissingClose(t *testing.T) {
+	input := "[[ -f foo"
+	l := lexer.New(input)
+	p := New(l)
+	_ = p.ParseProgram()
+	// Should not panic, produces error
+}
+
+func TestLBracketSpaceAfterIdentBreaksLoop(t *testing.T) {
+	// Test the path where LBRACKET with preceding space stops infix parsing
+	input := "arr [0]"
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	_ = program
+}
+
+func TestProcessSubstitutionInExpression(t *testing.T) {
+	input := "<(sort file.txt)"
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	if len(program.Statements) < 1 {
+		t.Fatalf("expected at least 1 statement, got=%d", len(program.Statements))
+	}
+}
+
+func TestReturnStatementNoValue(t *testing.T) {
+	input := "return;"
+	l := lexer.New(input)
+	p := New(l)
+	program := p.ParseProgram()
+	_ = program
+}

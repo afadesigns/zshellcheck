@@ -10,14 +10,16 @@ func init() {
 		Title: "Avoid `ls` in assignments",
 		Description: "Assigning the output of `ls` to a variable is fragile. " +
 			"Use globs or arrays (e.g. `files=(*)`) to handle filenames correctly.",
-		Check: checkZC1057,
+		Severity: SeverityStyle,
+		Check:    checkZC1057,
 	})
 	RegisterKata(ast.InfixExpressionNode, Kata{
 		ID:    "ZC1057",
 		Title: "Avoid `ls` in assignments",
 		Description: "Assigning the output of `ls` to a variable is fragile. " +
 			"Use globs or arrays (e.g. `files=(*)`) to handle filenames correctly.",
-		Check: checkZC1057,
+		Severity: SeverityStyle,
+		Check:    checkZC1057,
 	})
 }
 
@@ -42,6 +44,7 @@ func checkZC1057(node ast.Node) []Violation {
 							Message: "Avoid assigning `ls` output to a variable. Use globs (e.g. `files=(*)`) instead.",
 							Line:    part.TokenLiteralNode().Line,
 							Column:  part.TokenLiteralNode().Column,
+							Level:   SeverityStyle,
 						})
 					}
 				}
@@ -63,6 +66,7 @@ func checkZC1057(node ast.Node) []Violation {
 					Message: "Avoid assigning `ls` output to a variable. Use globs (e.g. `files=(*)`) instead.",
 					Line:    n.TokenLiteralNode().Line,
 					Column:  n.TokenLiteralNode().Column,
+					Level:   SeverityStyle,
 				})
 			}
 		}

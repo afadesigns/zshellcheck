@@ -10,7 +10,8 @@ func init() {
 		Title: "Avoid `$((...))` as a statement",
 		Description: "Using `$((...))` as a statement tries to execute the result as a command. " +
 			"Use `((...))` for arithmetic evaluation/assignment.",
-		Check: checkZC1056,
+		Severity: SeverityStyle,
+		Check:    checkZC1056,
 	})
 }
 
@@ -59,6 +60,7 @@ func checkZC1056(node ast.Node) []Violation {
 			Message: "Avoid `$((...))` as a statement. It executes the result. Use `((...))` for arithmetic.",
 			Line:    dpe.TokenLiteralNode().Line,
 			Column:  dpe.TokenLiteralNode().Column,
+			Level:   SeverityStyle,
 		}}
 	}
 

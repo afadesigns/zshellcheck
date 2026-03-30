@@ -10,7 +10,8 @@ func init() {
 		Title: "Avoid using `chmod 777`",
 		Description: "Using `chmod 777` is a security risk as it gives read, write, and execute " +
 			"permissions to everyone. It's better to use more restrictive permissions.",
-		Check: checkZC1007,
+		Severity: SeverityWarning,
+		Check:    checkZC1007,
 	})
 }
 
@@ -29,6 +30,7 @@ func checkZC1007(node ast.Node) []Violation {
 								Message: "Avoid using `chmod 777`. It is a security risk.",
 								Line:    ident.Token.Line,
 								Column:  ident.Token.Column,
+								Level:   SeverityWarning,
 							})
 						}
 					case *ast.IntegerLiteral:
@@ -38,6 +40,7 @@ func checkZC1007(node ast.Node) []Violation {
 								Message: "Avoid using `chmod 777`. It is a security risk.",
 								Line:    ident.Token.Line,
 								Column:  ident.Token.Column,
+								Level:   SeverityWarning,
 							})
 						}
 					}

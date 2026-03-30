@@ -11,7 +11,8 @@ func init() {
 		Description: "The `test` command is an external command and may not be available on all systems. " +
 			"The `[[...]]` construct is a Zsh keyword, offering safer and more powerful conditional " +
 			"expressions than the traditional `test` command.",
-		Check: checkZC1020,
+		Severity: SeverityStyle,
+		Check:    checkZC1020,
 	})
 }
 
@@ -26,6 +27,7 @@ func checkZC1020(node ast.Node) []Violation {
 					Message: "Use `[[ ... ]]` for tests instead of `test`.",
 					Line:    ident.Token.Line,
 					Column:  ident.Token.Column,
+					Level:   SeverityStyle,
 				})
 			}
 		}

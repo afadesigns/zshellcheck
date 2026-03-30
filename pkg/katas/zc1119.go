@@ -12,7 +12,8 @@ func init() {
 		Title: "Use `$EPOCHSECONDS` instead of `date +%s`",
 		Description: "Zsh provides `$EPOCHSECONDS` and `$EPOCHREALTIME` via `zsh/datetime` module. " +
 			"Avoid spawning `date` for simple Unix timestamp retrieval.",
-		Check: checkZC1119,
+		Severity: SeverityStyle,
+		Check:    checkZC1119,
 	})
 }
 
@@ -36,6 +37,7 @@ func checkZC1119(node ast.Node) []Violation {
 					"instead of `date +%s`. Avoids spawning an external process.",
 				Line:   cmd.Token.Line,
 				Column: cmd.Token.Column,
+				Level:  SeverityStyle,
 			}}
 		}
 	}

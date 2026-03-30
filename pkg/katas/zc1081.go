@@ -12,7 +12,8 @@ func init() {
 		Title: "Use `${#var}` to get string length instead of `wc -c`",
 		Description: "Using `echo $var | wc -c` involves a subshell and external command overhead. " +
 			"Zsh has a built-in operator `${#var}` to get the length of a string instantly.",
-		Check: checkZC1081,
+		Severity: SeverityStyle,
+		Check:    checkZC1081,
 	})
 }
 
@@ -58,6 +59,7 @@ func checkZC1081(node ast.Node) []Violation {
 			Message: "Use `${#var}` to get string length. Pipeline to `wc` is inefficient.",
 			Line:    infix.TokenLiteralNode().Line,
 			Column:  infix.TokenLiteralNode().Column,
+			Level:   SeverityStyle,
 		}}
 	}
 

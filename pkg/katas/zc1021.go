@@ -10,7 +10,8 @@ func init() {
 		Title: "Use symbolic permissions with `chmod` instead of octal",
 		Description: "Symbolic permissions (e.g., `u+x`) are more readable and less error-prone than " +
 			"octal permissions (e.g., `755`).",
-		Check: checkZC1021,
+		Severity: SeverityStyle,
+		Check:    checkZC1021,
 	})
 }
 
@@ -26,6 +27,7 @@ func checkZC1021(node ast.Node) []Violation {
 						Message: "Use symbolic permissions with `chmod` instead of octal.",
 						Line:    name.Token.Line,
 						Column:  name.Token.Column,
+						Level:   SeverityStyle,
 					})
 					break
 				}

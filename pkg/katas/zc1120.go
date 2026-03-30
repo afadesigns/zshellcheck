@@ -10,7 +10,8 @@ func init() {
 		Title: "Use `$PWD` instead of `pwd`",
 		Description: "Zsh maintains `$PWD` as a built-in variable tracking the current directory. " +
 			"Avoid spawning `pwd` as an external process.",
-		Check: checkZC1120,
+		Severity: SeverityStyle,
+		Check:    checkZC1120,
 	})
 }
 
@@ -40,5 +41,6 @@ func checkZC1120(node ast.Node) []Violation {
 			"Zsh maintains `$PWD` as a built-in variable, avoiding an external process.",
 		Line:   cmd.Token.Line,
 		Column: cmd.Token.Column,
+		Level:  SeverityStyle,
 	}}
 }

@@ -10,7 +10,8 @@ func init() {
 		Title: "Prefer functions over aliases",
 		Description: "Aliases are expanded at parse time and can be confusing in scripts. " +
 			"Use functions for more predictable behavior.",
-		Check: checkZC1049,
+		Severity: SeverityStyle,
+		Check:    checkZC1049,
 	})
 }
 
@@ -28,6 +29,7 @@ func checkZC1049(node ast.Node) []Violation {
 				"Aliases are expanded at parse time and can behave unexpectedly in scripts.",
 			Line:   name.Token.Line,
 			Column: name.Token.Column,
+			Level:  SeverityStyle,
 		}}
 	}
 

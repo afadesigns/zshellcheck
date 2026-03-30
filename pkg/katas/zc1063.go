@@ -9,6 +9,7 @@ func init() {
 		ID:          "ZC1063",
 		Title:       "Prefer `grep -F` over `fgrep`",
 		Description: "`fgrep` is deprecated. Use `grep -F` instead.",
+		Severity:    SeverityInfo,
 		Check:       checkZC1063,
 	})
 }
@@ -25,6 +26,7 @@ func checkZC1063(node ast.Node) []Violation {
 			Message: "`fgrep` is deprecated. Use `grep -F` instead.",
 			Line:    name.Token.Line,
 			Column:  name.Token.Column,
+			Level:   SeverityInfo,
 		}}
 	}
 

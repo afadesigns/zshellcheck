@@ -10,7 +10,8 @@ func init() {
 		Title: "Use `&!` or `disown` instead of `nohup`",
 		Description: "Zsh provides `&!` (shorthand for `& disown`) to run a command in the background " +
 			"immune to hangups. Avoid spawning `nohup` as an external process.",
-		Check: checkZC1117,
+		Severity: SeverityStyle,
+		Check:    checkZC1117,
 	})
 }
 
@@ -31,5 +32,6 @@ func checkZC1117(node ast.Node) []Violation {
 			"Zsh `&!` is a built-in shorthand that avoids spawning nohup.",
 		Line:   cmd.Token.Line,
 		Column: cmd.Token.Column,
+		Level:  SeverityStyle,
 	}}
 }

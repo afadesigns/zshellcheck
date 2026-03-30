@@ -11,7 +11,8 @@ func init() {
 		Description: "Running `export var=$(cmd)` masks the return code of `cmd`. " +
 			"The exit status will be that of `export` (usually 0). " +
 			"Declare the variable first or export it after assignment.",
-		Check: checkZC1067,
+		Severity: SeverityStyle,
+		Check:    checkZC1067,
 	})
 }
 
@@ -37,6 +38,7 @@ func checkZC1067(node ast.Node) []Violation {
 					"Use `var=$(cmd); export var`.",
 				Line:   cmd.Token.Line,
 				Column: cmd.Token.Column,
+				Level:  SeverityStyle,
 			})
 		}
 	}

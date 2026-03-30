@@ -10,7 +10,8 @@ func init() {
 		Title: "Avoid `echo | grep` for string matching",
 		Description: "Using `echo $var | grep pattern` spawns two unnecessary processes. " +
 			"Use Zsh `[[ $var =~ pattern ]]` or `[[ $var == *pattern* ]]` for string matching.",
-		Check: checkZC1125,
+		Severity: SeverityStyle,
+		Check:    checkZC1125,
 	})
 }
 
@@ -56,5 +57,6 @@ func checkZC1125(node ast.Node) []Violation {
 			"through `grep -q`. Zsh pattern matching avoids spawning external processes.",
 		Line:   cmd.Token.Line,
 		Column: cmd.Token.Column,
+		Level:  SeverityStyle,
 	}}
 }

@@ -10,7 +10,8 @@ func init() {
 		Title: "Avoid `local` outside of functions",
 		Description: "The `local` builtin can only be used inside functions. " +
 			"Using it in the global scope causes an error.",
-		Check: checkZC1069,
+		Severity: SeverityInfo,
+		Check:    checkZC1069,
 	})
 }
 
@@ -39,6 +40,7 @@ func checkZC1069(node ast.Node) []Violation {
 							"Use `typeset`, `declare`, or just assignment for global variables.",
 						Line:   name.Token.Line,
 						Column: name.Token.Column,
+						Level:  SeverityInfo,
 					})
 				}
 			}

@@ -10,7 +10,8 @@ func init() {
 		Title: "Avoid `sudo` in scripts",
 		Description: "Using `sudo` in scripts is generally discouraged. It makes the script interactive and less portable. " +
 			"Run the script as root or use `sudo` to invoke the script.",
-		Check: checkZC1047,
+		Severity: SeverityWarning,
+		Check:    checkZC1047,
 	})
 }
 
@@ -27,6 +28,7 @@ func checkZC1047(node ast.Node) []Violation {
 			Message: "Avoid `sudo` in scripts. Run the entire script as root if privileges are required.",
 			Line:    name.Token.Line,
 			Column:  name.Token.Column,
+			Level:   SeverityWarning,
 		}}
 	}
 

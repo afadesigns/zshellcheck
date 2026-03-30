@@ -10,7 +10,8 @@ func init() {
 		Title: "Use $(...) instead of backticks",
 		Description: "Backticks are the old-style command substitution. " +
 			"$(...) is nesting-safe, easier to read, and generally preferred.",
-		Check: checkZC1002,
+		Severity: SeverityStyle,
+		Check:    checkZC1002,
 	})
 }
 
@@ -24,6 +25,7 @@ func checkZC1002(node ast.Node) []Violation {
 				"The `$(...)` syntax is more readable and can be nested easily.",
 			Line:   cs.Token.Line,
 			Column: cs.Token.Column,
+			Level:  SeverityStyle,
 		})
 	}
 

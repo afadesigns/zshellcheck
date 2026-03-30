@@ -10,7 +10,8 @@ func init() {
 		Title: "Use `[[ -n/-z ]]` for empty string checks",
 		Description: "Comparing with empty string is less idiomatic than using `[[ -z $var ]]` (is empty) " +
 			"or `[[ -n $var ]]` (is not empty).",
-		Check: checkZC1055,
+		Severity: SeverityStyle,
+		Check:    checkZC1055,
 	})
 }
 
@@ -46,6 +47,7 @@ func checkZC1055(node ast.Node) []Violation {
 			Message: "Use `[[ " + opSuggestion + " ... ]]` instead of comparing with empty string.",
 			Line:    expr.TokenLiteralNode().Line,
 			Column:  expr.TokenLiteralNode().Column,
+			Level:   SeverityStyle,
 		}}
 	}
 

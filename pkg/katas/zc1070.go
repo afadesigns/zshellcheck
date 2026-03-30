@@ -11,7 +11,8 @@ func init() {
 		Description: "When defining a wrapper function with the same name as a builtin or command (e.g., `cd`), " +
 			"calling the command directly inside the function causes infinite recursion. " +
 			"Use `builtin cd` or `command cd`.",
-		Check: checkZC1070,
+		Severity: SeverityWarning,
+		Check:    checkZC1070,
 	})
 }
 
@@ -75,6 +76,7 @@ func checkZC1070(node ast.Node) []Violation {
 						"Use `builtin " + name + "` or `command " + name + "` to invoke the underlying command.",
 					Line:   cmd.Token.Line,
 					Column: cmd.Token.Column,
+					Level:  SeverityWarning,
 				})
 			}
 		}

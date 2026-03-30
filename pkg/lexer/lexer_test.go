@@ -222,3 +222,404 @@ func TestNextToken_ZshArrayAndCommandSubstitution(t *testing.T) {
 		}
 	}
 }
+
+func TestNextToken_DoubleParens(t *testing.T) {
+	input := "(( )) ;; ++"
+	tests := []struct {
+		expectedType    token.Type
+		expectedLiteral string
+	}{
+		{token.DoubleLparen, "(("},
+		{token.DoubleRparen, "))"},
+		{token.DSEMI, ";;"},
+		{token.INC, "++"},
+		{token.EOF, ""},
+	}
+
+	l := New(input)
+	for i, tt := range tests {
+		tok := l.NextToken()
+		if tok.Type != tt.expectedType {
+			t.Fatalf("tests[%d] - tokentype wrong. expected=%q, got=%q",
+				i, tt.expectedType, tok.Type)
+		}
+		if tok.Literal != tt.expectedLiteral {
+			t.Fatalf("tests[%d] - literal wrong. expected=%q, got=%q",
+				i, tt.expectedLiteral, tok.Literal)
+		}
+	}
+}
+
+func TestNextToken_DecrementAndPlusEqual(t *testing.T) {
+	input := "-- +="
+	tests := []struct {
+		expectedType    token.Type
+		expectedLiteral string
+	}{
+		{token.DEC, "--"},
+		{token.PLUSEQ, "+="},
+		{token.EOF, ""},
+	}
+
+	l := New(input)
+	for i, tt := range tests {
+		tok := l.NextToken()
+		if tok.Type != tt.expectedType {
+			t.Fatalf("tests[%d] - tokentype wrong. expected=%q, got=%q",
+				i, tt.expectedType, tok.Type)
+		}
+		if tok.Literal != tt.expectedLiteral {
+			t.Fatalf("tests[%d] - literal wrong. expected=%q, got=%q",
+				i, tt.expectedLiteral, tok.Literal)
+		}
+	}
+}
+
+func TestNextToken_RedirectionOperators(t *testing.T) {
+	input := ">> << >& <& <( >("
+	tests := []struct {
+		expectedType    token.Type
+		expectedLiteral string
+	}{
+		{token.GTGT, ">>"},
+		{token.LTLT, "<<"},
+		{token.GTAMP, ">&"},
+		{token.LTAMP, "<&"},
+		{token.LT_LPAREN, "<("},
+		{token.GT_LPAREN, ">("},
+		{token.EOF, ""},
+	}
+
+	l := New(input)
+	for i, tt := range tests {
+		tok := l.NextToken()
+		if tok.Type != tt.expectedType {
+			t.Fatalf("tests[%d] - tokentype wrong. expected=%q, got=%q",
+				i, tt.expectedType, tok.Type)
+		}
+		if tok.Literal != tt.expectedLiteral {
+			t.Fatalf("tests[%d] - literal wrong. expected=%q, got=%q",
+				i, tt.expectedLiteral, tok.Literal)
+		}
+	}
+}
+
+func TestNextToken_DoubleBrackets(t *testing.T) {
+	input := "[[ ]]"
+	tests := []struct {
+		expectedType    token.Type
+		expectedLiteral string
+	}{
+		{token.LDBRACKET, "[["},
+		{token.RDBRACKET, "]]"},
+		{token.EOF, ""},
+	}
+
+	l := New(input)
+	for i, tt := range tests {
+		tok := l.NextToken()
+		if tok.Type != tt.expectedType {
+			t.Fatalf("tests[%d] - tokentype wrong. expected=%q, got=%q",
+				i, tt.expectedType, tok.Type)
+		}
+		if tok.Literal != tt.expectedLiteral {
+			t.Fatalf("tests[%d] - literal wrong. expected=%q, got=%q",
+				i, tt.expectedLiteral, tok.Literal)
+		}
+	}
+}
+
+func TestNextToken_SpecialTokens(t *testing.T) {
+	input := "~ ^ % . : ?"
+	tests := []struct {
+		expectedType    token.Type
+		expectedLiteral string
+	}{
+		{token.TILDE, "~"},
+		{token.CARET, "^"},
+		{token.PERCENT, "%"},
+		{token.DOT, "."},
+		{token.COLON, ":"},
+		{token.QUESTION, "?"},
+		{token.EOF, ""},
+	}
+
+	l := New(input)
+	for i, tt := range tests {
+		tok := l.NextToken()
+		if tok.Type != tt.expectedType {
+			t.Fatalf("tests[%d] - tokentype wrong. expected=%q, got=%q",
+				i, tt.expectedType, tok.Type)
+		}
+		if tok.Literal != tt.expectedLiteral {
+			t.Fatalf("tests[%d] - literal wrong. expected=%q, got=%q",
+				i, tt.expectedLiteral, tok.Literal)
+		}
+	}
+}
+
+func TestNextToken_EqTilde(t *testing.T) {
+	input := "=~"
+	tests := []struct {
+		expectedType    token.Type
+		expectedLiteral string
+	}{
+		{token.EQTILDE, "=~"},
+		{token.EOF, ""},
+	}
+
+	l := New(input)
+	for i, tt := range tests {
+		tok := l.NextToken()
+		if tok.Type != tt.expectedType {
+			t.Fatalf("tests[%d] - tokentype wrong. expected=%q, got=%q",
+				i, tt.expectedType, tok.Type)
+		}
+		if tok.Literal != tt.expectedLiteral {
+			t.Fatalf("tests[%d] - literal wrong. expected=%q, got=%q",
+				i, tt.expectedLiteral, tok.Literal)
+		}
+	}
+}
+
+func TestNextToken_EqLparen(t *testing.T) {
+	input := " =("
+	tests := []struct {
+		expectedType    token.Type
+		expectedLiteral string
+	}{
+		{token.EQ_LPAREN, "=("},
+		{token.EOF, ""},
+	}
+
+	l := New(input)
+	for i, tt := range tests {
+		tok := l.NextToken()
+		if tok.Type != tt.expectedType {
+			t.Fatalf("tests[%d] - tokentype wrong. expected=%q, got=%q",
+				i, tt.expectedType, tok.Type)
+		}
+	}
+}
+
+func TestNextToken_EqLparenNoSpace(t *testing.T) {
+	input := "=("
+	tests := []struct {
+		expectedType    token.Type
+		expectedLiteral string
+	}{
+		{token.ASSIGN, "="},
+		{token.LPAREN, "("},
+		{token.EOF, ""},
+	}
+
+	l := New(input)
+	for i, tt := range tests {
+		tok := l.NextToken()
+		if tok.Type != tt.expectedType {
+			t.Fatalf("tests[%d] - tokentype wrong. expected=%q, got=%q",
+				i, tt.expectedType, tok.Type)
+		}
+	}
+}
+
+func TestNextToken_LogicalOperators(t *testing.T) {
+	input := "&& ||"
+	tests := []struct {
+		expectedType    token.Type
+		expectedLiteral string
+	}{
+		{token.AND, "&&"},
+		{token.OR, "||"},
+		{token.EOF, ""},
+	}
+
+	l := New(input)
+	for i, tt := range tests {
+		tok := l.NextToken()
+		if tok.Type != tt.expectedType {
+			t.Fatalf("tests[%d] - tokentype wrong. expected=%q, got=%q",
+				i, tt.expectedType, tok.Type)
+		}
+		if tok.Literal != tt.expectedLiteral {
+			t.Fatalf("tests[%d] - literal wrong. expected=%q, got=%q",
+				i, tt.expectedLiteral, tok.Literal)
+		}
+	}
+}
+
+func TestNextToken_DollarLparen(t *testing.T) {
+	input := "$("
+	tests := []struct {
+		expectedType    token.Type
+		expectedLiteral string
+	}{
+		{token.DOLLAR_LPAREN, "$("},
+		{token.EOF, ""},
+	}
+
+	l := New(input)
+	for i, tt := range tests {
+		tok := l.NextToken()
+		if tok.Type != tt.expectedType {
+			t.Fatalf("tests[%d] - tokentype wrong. expected=%q, got=%q",
+				i, tt.expectedType, tok.Type)
+		}
+	}
+}
+
+func TestNextToken_DollarVariable(t *testing.T) {
+	input := "$HOME"
+	tests := []struct {
+		expectedType    token.Type
+		expectedLiteral string
+	}{
+		{token.VARIABLE, "$HOME"},
+		{token.EOF, ""},
+	}
+
+	l := New(input)
+	for i, tt := range tests {
+		tok := l.NextToken()
+		if tok.Type != tt.expectedType {
+			t.Fatalf("tests[%d] - tokentype wrong. expected=%q, got=%q",
+				i, tt.expectedType, tok.Type)
+		}
+		if tok.Literal != tt.expectedLiteral {
+			t.Fatalf("tests[%d] - literal wrong. expected=%q, got=%q",
+				i, tt.expectedLiteral, tok.Literal)
+		}
+	}
+}
+
+func TestNextToken_SingleQuotedString(t *testing.T) {
+	input := "'hello world'"
+	l := New(input)
+	tok := l.NextToken()
+	if tok.Type != token.STRING {
+		t.Fatalf("expected STRING, got %q", tok.Type)
+	}
+	if tok.Literal != "'hello world'" {
+		t.Fatalf("expected literal %q, got %q", "'hello world'", tok.Literal)
+	}
+}
+
+func TestNextToken_UnterminatedString(t *testing.T) {
+	input := `"hello`
+	l := New(input)
+	tok := l.NextToken()
+	if tok.Type != token.STRING {
+		t.Fatalf("expected STRING, got %q", tok.Type)
+	}
+	// Unterminated string should still produce a token
+	if tok.Literal != `"hello` {
+		t.Fatalf("expected literal %q, got %q", `"hello`, tok.Literal)
+	}
+}
+
+func TestNextToken_EscapedString(t *testing.T) {
+	input := `"hello \"world\""`
+	l := New(input)
+	tok := l.NextToken()
+	if tok.Type != token.STRING {
+		t.Fatalf("expected STRING, got %q", tok.Type)
+	}
+}
+
+func TestNextToken_Shebang(t *testing.T) {
+	input := "#!/bin/zsh\necho"
+	l := New(input)
+	tok := l.NextToken()
+	if tok.Type != token.SHEBANG {
+		t.Fatalf("expected SHEBANG, got %q", tok.Type)
+	}
+}
+
+func TestNextToken_InlineComment(t *testing.T) {
+	input := "echo # this is a comment\nfoo"
+	l := New(input)
+	tok1 := l.NextToken() // echo
+	if tok1.Type != token.IDENT || tok1.Literal != "echo" {
+		t.Fatalf("expected IDENT 'echo', got %q %q", tok1.Type, tok1.Literal)
+	}
+	tok2 := l.NextToken() // # (as HASH, not a comment at non-bol without space context)
+	_ = tok2
+}
+
+func TestNextToken_IllegalCharacter(t *testing.T) {
+	input := "\x01"
+	l := New(input)
+	tok := l.NextToken()
+	if tok.Type != token.ILLEGAL {
+		t.Fatalf("expected ILLEGAL, got %q", tok.Type)
+	}
+}
+
+func TestNextToken_HasPrecedingSpace(t *testing.T) {
+	input := "a b"
+	l := New(input)
+
+	tok1 := l.NextToken()
+	if tok1.HasPrecedingSpace {
+		t.Error("first token should not have preceding space")
+	}
+
+	tok2 := l.NextToken()
+	if !tok2.HasPrecedingSpace {
+		t.Error("second token should have preceding space")
+	}
+}
+
+func TestNextToken_MinusKeyword(t *testing.T) {
+	input := "-eq -ne -lt -le -gt -ge"
+	tests := []struct {
+		expectedType    token.Type
+		expectedLiteral string
+	}{
+		{token.EQ_NUM, "-eq"},
+		{token.NE_NUM, "-ne"},
+		{token.LT_NUM, "-lt"},
+		{token.LE_NUM, "-le"},
+		{token.GT_NUM, "-gt"},
+		{token.GE_NUM, "-ge"},
+		{token.EOF, ""},
+	}
+
+	l := New(input)
+	for i, tt := range tests {
+		tok := l.NextToken()
+		if tok.Type != tt.expectedType {
+			t.Fatalf("tests[%d] - tokentype wrong. expected=%q, got=%q",
+				i, tt.expectedType, tok.Type)
+		}
+		if tok.Literal != tt.expectedLiteral {
+			t.Fatalf("tests[%d] - literal wrong. expected=%q, got=%q",
+				i, tt.expectedLiteral, tok.Literal)
+		}
+	}
+}
+
+func TestNextToken_MinusNonKeyword(t *testing.T) {
+	// -f is not a keyword, so it should be MINUS followed by IDENT
+	input := "-f"
+	l := New(input)
+	tok := l.NextToken()
+	if tok.Type != token.MINUS {
+		t.Fatalf("expected MINUS, got %q %q", tok.Type, tok.Literal)
+	}
+}
+
+func TestNextToken_LineAndColumnTracking(t *testing.T) {
+	input := "a\nb"
+	l := New(input)
+
+	tok1 := l.NextToken()
+	if tok1.Line != 1 {
+		t.Errorf("first token line expected 1, got %d", tok1.Line)
+	}
+
+	tok2 := l.NextToken()
+	if tok2.Line != 2 {
+		t.Errorf("second token line expected 2, got %d", tok2.Line)
+	}
+}

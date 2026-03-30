@@ -11,7 +11,8 @@ func init() {
 		Description: "In Zsh, `echo` behavior can vary significantly based on options like `BSD_ECHO`. " +
 			"`print` is a builtin with consistent behavior and more features. " +
 			"For formatted output, `printf` is preferred.",
-		Check: checkZC1092,
+		Severity: SeverityWarning,
+		Check:    checkZC1092,
 	})
 }
 
@@ -40,6 +41,7 @@ func checkZC1092(node ast.Node) []Violation {
 			Message: msg,
 			Line:    cmd.Token.Line,
 			Column:  cmd.Token.Column,
+			Level:   SeverityWarning,
 		}}
 	}
 

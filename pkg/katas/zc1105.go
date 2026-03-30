@@ -13,7 +13,8 @@ func init() {
 		Description: "While Zsh supports nested arithmetic expansions like `(( $((...)) ))`, " +
 			"they can make code harder to read and reason about. Prefer flatter expressions " +
 			"or temporary variables for intermediate results to improve clarity.",
-		Check: checkZC1105,
+		Severity: SeverityStyle,
+		Check:    checkZC1105,
 	})
 }
 
@@ -32,6 +33,7 @@ func checkZC1105(node ast.Node) []Violation {
 			Message: "Avoid nested arithmetic expansions. Use intermediate variables for clarity.",
 			Line:    arithCmd.Token.Line,
 			Column:  arithCmd.Token.Column,
+			Level:   SeverityStyle,
 		}}
 	}
 

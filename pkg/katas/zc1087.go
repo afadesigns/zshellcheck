@@ -11,7 +11,8 @@ func init() {
 		Title: "Output redirection overwrites input file",
 		Description: "Redirecting output to a file that is also being read as input causes the file to be truncated before it is read. " +
 			"Use a temporary file or `sponge`.",
-		Check: checkZC1087,
+		Severity: SeverityError,
+		Check:    checkZC1087,
 	})
 	// Register for Pipeline (|) to detect clobbering across pipe
 	RegisterKata(ast.InfixExpressionNode, Kata{
@@ -19,7 +20,8 @@ func init() {
 		Title: "Output redirection overwrites input file",
 		Description: "Redirecting output to a file that is also being read as input causes the file to be truncated before it is read. " +
 			"Use a temporary file or `sponge`.",
-		Check: checkZC1087,
+		Severity: SeverityError,
+		Check:    checkZC1087,
 	})
 }
 
@@ -38,6 +40,7 @@ func checkZC1087(node ast.Node) []Violation {
 							Message: "Output redirection overwrites input file `" + output + "`. The file is truncated before reading.",
 							Line:    cmd.TokenLiteralNode().Line,
 							Column:  cmd.TokenLiteralNode().Column,
+							Level:   SeverityError,
 						},
 					}
 				}
@@ -66,6 +69,7 @@ func checkZC1087(node ast.Node) []Violation {
 							Message: "Output redirection overwrites input file `" + output + "`. The file is truncated before reading.",
 							Line:    infix.TokenLiteralNode().Line,
 							Column:  infix.TokenLiteralNode().Column,
+							Level:   SeverityError,
 						},
 					}
 				}

@@ -10,7 +10,8 @@ func init() {
 		Title: "Use `: > file` instead of `cat /dev/null > file` to truncate",
 		Description: "Truncating a file with `cat /dev/null > file` spawns an unnecessary process. " +
 			"Use `: > file` or simply `> file` in Zsh.",
-		Check: checkZC1124,
+		Severity: SeverityStyle,
+		Check:    checkZC1124,
 	})
 }
 
@@ -34,6 +35,7 @@ func checkZC1124(node ast.Node) []Violation {
 					"The `:` builtin avoids spawning cat.",
 				Line:   cmd.Token.Line,
 				Column: cmd.Token.Column,
+				Level:  SeverityStyle,
 			}}
 		}
 	}

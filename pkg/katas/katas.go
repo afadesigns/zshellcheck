@@ -10,9 +10,10 @@ import (
 type Severity string
 
 const (
-	Error   Severity = "Error"
-	Warning Severity = "Warning"
-	Info    Severity = "Info"
+	SeverityError   Severity = "error"
+	SeverityWarning Severity = "warning"
+	SeverityInfo    Severity = "info"
+	SeverityStyle   Severity = "style"
 )
 
 // Violation represents a found violation in the code.
@@ -50,7 +51,7 @@ func NewKatasRegistry() *KatasRegistry {
 // RegisterKata registers a new Kata.
 func (kr *KatasRegistry) RegisterKata(nodeType ast.Node, kata Kata) {
 	if kata.Severity == "" {
-		kata.Severity = Warning
+		kata.Severity = SeverityWarning
 	}
 	key := fmt.Sprintf("%T", nodeType)
 	kr.KatasByType[key] = append(kr.KatasByType[key], kata)

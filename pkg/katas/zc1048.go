@@ -12,7 +12,8 @@ func init() {
 		Title: "Avoid `source` with relative paths",
 		Description: "Sourcing a file with a relative path (e.g. `source ./lib.zsh`) depends on the current " +
 			"working directory. Use `${0:a:h}/lib.zsh` to source relative to the script location.",
-		Check: checkZC1048,
+		Severity: SeverityStyle,
+		Check:    checkZC1048,
 	})
 }
 
@@ -51,6 +52,7 @@ func checkZC1048(node ast.Node) []Violation {
 			Message: "Avoid `source` with relative paths. Use `${0:a:h}/...` to resolve relative to the script.",
 			Line:    arg.TokenLiteralNode().Line,
 			Column:  arg.TokenLiteralNode().Column,
+			Level:   SeverityStyle,
 		}}
 	}
 

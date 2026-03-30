@@ -11,7 +11,8 @@ func init() {
 		Description: "The `let` command is a shell builtin, but the `\\$(())` syntax is more portable " +
 			"and generally preferred for arithmetic operations in Zsh. It's also more powerful as it " +
 			"can be used in more contexts.",
-		Check: checkZC1008,
+		Severity: SeverityStyle,
+		Check:    checkZC1008,
 	})
 }
 
@@ -30,5 +31,6 @@ func checkZC1008(node ast.Node) []Violation {
 		Message: "Use `\\$(())` for arithmetic operations instead of `let`.",
 		Line:    stmt.TokenLiteralNode().Line,
 		Column:  stmt.TokenLiteralNode().Column,
+		Level:   SeverityStyle,
 	}}
 }

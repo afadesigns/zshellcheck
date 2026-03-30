@@ -12,7 +12,8 @@ func init() {
 		Title: "Use `awk` instead of `grep | awk`",
 		Description: "`grep pattern | awk '{...}'` is inefficient. " +
 			"Use `awk '/pattern/ {...}'` to combine matching and processing in a single process.",
-		Check: checkZC1072,
+		Severity: SeverityStyle,
+		Check:    checkZC1072,
 	})
 }
 
@@ -55,6 +56,7 @@ func checkZC1072(node ast.Node) []Violation {
 		Message: "Use `awk '/pattern/ {...}'` instead of `grep pattern | awk '{...}'` to avoid a pipeline.",
 		Line:    pipe.TokenLiteralNode().Line,
 		Column:  pipe.TokenLiteralNode().Column,
+		Level:   SeverityStyle,
 	}}
 }
 

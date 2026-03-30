@@ -10,7 +10,8 @@ func init() {
 		Title: "Use `(f)` flag to split lines instead of `while read`",
 		Description: "Zsh provides the `(f)` parameter expansion flag to split a string into lines. " +
 			"Iterating over `${(f)variable}` is often cleaner and faster than piping to `while read`.",
-		Check: checkZC1099,
+		Severity: SeverityStyle,
+		Check:    checkZC1099,
 	})
 }
 
@@ -38,6 +39,7 @@ func checkZC1099(node ast.Node) []Violation {
 					Message: "Consider using `for line in ${(f)variable}` instead of `... | while read line`. It's faster and cleaner in Zsh.",
 					Line:    infix.Token.Line,
 					Column:  infix.Token.Column,
+					Level:   SeverityStyle,
 				}}
 			}
 		}

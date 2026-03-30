@@ -10,7 +10,8 @@ func init() {
 		Title: "Prefer modifiers :h/:t over dirname/basename",
 		Description: "Zsh provides modifiers like `:h` (head/dirname) and `:t` (tail/basename) " +
 			"that are faster and more idiomatic than spawning external commands.",
-		Check: checkZC1074,
+		Severity: SeverityStyle,
+		Check:    checkZC1074,
 	}
 	RegisterKata(ast.CommandSubstitutionNode, kata)
 	RegisterKata(ast.DollarParenExpressionNode, kata)
@@ -37,6 +38,7 @@ func checkZC1074(node ast.Node) []Violation {
 				Message: "Use '${var:h}' instead of '$(dirname $var)'. Modifiers are faster and built-in.",
 				Line:    node.TokenLiteralNode().Line,
 				Column:  node.TokenLiteralNode().Column,
+				Level:   SeverityStyle,
 			}}
 		}
 		if cmdName == "basename" {
@@ -45,6 +47,7 @@ func checkZC1074(node ast.Node) []Violation {
 				Message: "Use '${var:t}' instead of '$(basename $var)'. Modifiers are faster and built-in.",
 				Line:    node.TokenLiteralNode().Line,
 				Column:  node.TokenLiteralNode().Column,
+				Level:   SeverityStyle,
 			}}
 		}
 	}

@@ -11,7 +11,8 @@ func init() {
 		Description: "`which` is an external command and may not be available or consistent across all " +
 			"systems. `command -v` is a POSIX standard and a shell builtin, making it more portable " +
 			"and reliable for checking if a command exists.",
-		Check: checkZC1034,
+		Severity: SeverityStyle,
+		Check:    checkZC1034,
 	})
 }
 
@@ -26,6 +27,7 @@ func checkZC1034(node ast.Node) []Violation {
 					Message: "Use `command -v` instead of `which` for portability.",
 					Line:    cmd.Token.Line,
 					Column:  cmd.Token.Column,
+					Level:   SeverityStyle,
 				})
 			}
 		}

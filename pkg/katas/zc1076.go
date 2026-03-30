@@ -12,7 +12,8 @@ func init() {
 		Title: "Use `autoload -Uz` for lazy loading",
 		Description: "When using `autoload`, prefer `-Uz` to ensure standard Zsh behavior (no alias expansion, zsh style). " +
 			"`-U` prevents alias expansion, and `-z` ensures Zsh style autoloading.",
-		Check: checkZC1076,
+		Severity: SeverityStyle,
+		Check:    checkZC1076,
 	})
 }
 
@@ -48,6 +49,7 @@ func checkZC1076(node ast.Node) []Violation {
 			Message: "Use `autoload -Uz` to ensure consistent and safe function loading.",
 			Line:    cmd.TokenLiteralNode().Line,
 			Column:  cmd.TokenLiteralNode().Column,
+			Level:   SeverityStyle,
 		}}
 	}
 

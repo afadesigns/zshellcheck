@@ -12,7 +12,8 @@ func init() {
 		Title: "Suggest `path` array instead of `export PATH` string manipulation",
 		Description: "Zsh automatically maps the `$PATH` environment variable to the `$path` array. " +
 			"Modifying `$path` is cleaner and less error-prone than manipulating the colon-separated `$PATH` string.",
-		Check: checkZC1104,
+		Severity: SeverityStyle,
+		Check:    checkZC1104,
 	})
 }
 
@@ -32,6 +33,7 @@ func checkZC1104(node ast.Node) []Violation {
 					Message: "Use the `path` array instead of manually manipulating the `$PATH` string.",
 					Line:    cmd.Token.Line,
 					Column:  cmd.Token.Column,
+					Level:   SeverityStyle,
 				}}
 			}
 		}

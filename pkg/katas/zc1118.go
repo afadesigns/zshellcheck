@@ -10,7 +10,8 @@ func init() {
 		Title: "Use `print -rn` instead of `echo -n`",
 		Description: "The behavior of `echo -n` varies across shells and platforms. " +
 			"In Zsh, `print -rn` is the reliable way to output text without a trailing newline.",
-		Check: checkZC1118,
+		Severity: SeverityStyle,
+		Check:    checkZC1118,
 	})
 }
 
@@ -37,6 +38,7 @@ func checkZC1118(node ast.Node) []Violation {
 				"`echo -n` behavior varies across shells; `print -rn` is the reliable Zsh idiom.",
 			Line:   cmd.Token.Line,
 			Column: cmd.Token.Column,
+			Level:  SeverityStyle,
 		}}
 	}
 

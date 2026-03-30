@@ -12,7 +12,8 @@ func init() {
 		Title: "Use `print -r` to print strings literally",
 		Description: "The `print` command interprets backslash escape sequences by default. " +
 			"To print a string literally, use the `-r` option.",
-		Check: checkZC1017,
+		Severity: SeverityStyle,
+		Check:    checkZC1017,
 	})
 }
 
@@ -36,6 +37,7 @@ func checkZC1017(node ast.Node) []Violation {
 					Message: "Use `print -r` to print strings literally.",
 					Line:    name.Token.Line,
 					Column:  name.Token.Column,
+					Level:   SeverityStyle,
 				})
 			}
 		}

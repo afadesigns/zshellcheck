@@ -45,8 +45,8 @@ func TestKatasRegistry_RegisterAndGetKata(t *testing.T) {
 		t.Errorf("expected ID=ZC_TEST_001, got %s", got.ID)
 	}
 	// Default severity should be applied
-	if got.Severity != Warning {
-		t.Errorf("expected default severity Warning, got %s", got.Severity)
+	if got.Severity != SeverityWarning {
+		t.Errorf("expected default severity SeverityWarning, got %s", got.Severity)
 	}
 
 	// GetKata should not find unknown
@@ -68,7 +68,7 @@ func TestKatasRegistry_RegisterWithExplicitSeverity(t *testing.T) {
 	kata := Kata{
 		ID:       "ZC_TEST_002",
 		Title:    "Error kata",
-		Severity: Error,
+		Severity: SeverityError,
 		Check:    func(node ast.Node) []Violation { return nil },
 	}
 
@@ -78,8 +78,8 @@ func TestKatasRegistry_RegisterWithExplicitSeverity(t *testing.T) {
 	if !ok {
 		t.Fatal("expected to find registered kata")
 	}
-	if got.Severity != Error {
-		t.Errorf("expected severity Error, got %s", got.Severity)
+	if got.Severity != SeverityError {
+		t.Errorf("expected severity SeverityError, got %s", got.Severity)
 	}
 }
 
@@ -117,8 +117,8 @@ func TestKatasRegistry_Check(t *testing.T) {
 		t.Fatalf("expected 2 violations, got %d", len(violations))
 	}
 	// Default severity should be applied when violation has no level
-	if violations[0].Level != Warning {
-		t.Errorf("expected default level Warning, got %s", violations[0].Level)
+	if violations[0].Level != SeverityWarning {
+		t.Errorf("expected default level SeverityWarning, got %s", violations[0].Level)
 	}
 
 	// Check with one disabled kata
@@ -147,10 +147,10 @@ func TestKatasRegistry_CheckPreservesExplicitLevel(t *testing.T) {
 	kr.RegisterKata(ast.IdentifierNode, Kata{
 		ID:       "ZC_LVL_001",
 		Title:    "Level test",
-		Severity: Warning,
+		Severity: SeverityWarning,
 		Check: func(node ast.Node) []Violation {
 			return []Violation{
-				{KataID: "ZC_LVL_001", Message: "has level", Level: Error},
+				{KataID: "ZC_LVL_001", Message: "has level", Level: SeverityError},
 				{KataID: "ZC_LVL_001", Message: "no level"},
 			}
 		},
@@ -165,12 +165,12 @@ func TestKatasRegistry_CheckPreservesExplicitLevel(t *testing.T) {
 	if len(violations) != 2 {
 		t.Fatalf("expected 2 violations, got %d", len(violations))
 	}
-	// First violation has explicit Error level - should be preserved
-	if violations[0].Level != Error {
-		t.Errorf("expected explicit Error level preserved, got %s", violations[0].Level)
+	// First violation has explicit SeverityError level - should be preserved
+	if violations[0].Level != SeverityError {
+		t.Errorf("expected explicit SeverityError level preserved, got %s", violations[0].Level)
 	}
-	// Second violation has no level - should get kata's default (Warning)
-	if violations[1].Level != Warning {
-		t.Errorf("expected default Warning level, got %s", violations[1].Level)
+	// Second violation has no level - should get kata's default (SeverityWarning)
+	if violations[1].Level != SeverityWarning {
+		t.Errorf("expected default SeverityWarning level, got %s", violations[1].Level)
 	}
 }

@@ -12,7 +12,8 @@ func init() {
 		Title: "Use `(N)` nullglob qualifier for globs in loops",
 		Description: "In Zsh, if a glob matches no files, it throws an error by default. " +
 			"When iterating over a glob in a `for` loop, use the `(N)` glob qualifier to allow it to match nothing (nullglob).",
-		Check: checkZC1080,
+		Severity: SeverityStyle,
+		Check:    checkZC1080,
 	})
 }
 
@@ -38,6 +39,7 @@ func checkZC1080(node ast.Node) []Violation {
 					Message: "Glob '" + s + "' will error if no matches found. Append `(N)` to make it nullglob.",
 					Line:    item.TokenLiteralNode().Line,
 					Column:  item.TokenLiteralNode().Column,
+					Level:   SeverityStyle,
 				})
 			}
 		}

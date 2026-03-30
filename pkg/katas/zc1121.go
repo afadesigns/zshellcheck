@@ -10,7 +10,8 @@ func init() {
 		Title: "Use `$HOST` instead of `hostname`",
 		Description: "Zsh provides `$HOST` as a built-in variable containing the hostname. " +
 			"Avoid spawning `hostname` as an external process.",
-		Check: checkZC1121,
+		Severity: SeverityStyle,
+		Check:    checkZC1121,
 	})
 }
 
@@ -39,5 +40,6 @@ func checkZC1121(node ast.Node) []Violation {
 			"Zsh maintains `$HOST` as a built-in variable, avoiding an external process.",
 		Line:   cmd.Token.Line,
 		Column: cmd.Token.Column,
+		Level:  SeverityStyle,
 	}}
 }

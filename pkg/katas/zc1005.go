@@ -11,7 +11,8 @@ func init() {
 		Description: "The `which` command is an external command and may not be available on all systems. " +
 			"The `whence` command is a built-in Zsh command that provides a more reliable and consistent " +
 			"way to find the location of a command.",
-		Check: checkZC1005,
+		Severity: SeverityInfo,
+		Check:    checkZC1005,
 	})
 }
 
@@ -27,6 +28,7 @@ func checkZC1005(node ast.Node) []Violation {
 						"that provides a more reliable and consistent way to find the location of a command.",
 					Line:   ident.Token.Line,
 					Column: ident.Token.Column,
+					Level:  SeverityInfo,
 				})
 			}
 		}

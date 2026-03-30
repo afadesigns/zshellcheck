@@ -12,7 +12,8 @@ func init() {
 		Title: "Check for unchecked `cd` commands",
 		Description: "`cd` failures should be handled to avoid executing commands in the wrong directory. " +
 			"Use `cd ... || return` (or `exit`).",
-		Check: checkZC1044,
+		Severity: SeverityWarning,
+		Check:    checkZC1044,
 	})
 }
 
@@ -125,6 +126,7 @@ func checkCommandZC1044(cmd *ast.SimpleCommand, isChecked bool, violations *[]Vi
 			Message: "Use `cd ... || return` (or `exit`) in case cd fails.",
 			Line:    name.Token.Line,
 			Column:  name.Token.Column,
+			Level:   SeverityWarning,
 		})
 	}
 }

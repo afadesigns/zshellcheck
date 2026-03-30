@@ -11,7 +11,8 @@ func init() {
 		Title: "Use `return` instead of `exit` in functions",
 		Description: "Using `exit` in a function terminates the entire shell, which is often unintended " +
 			"in interactive sessions or sourced scripts. Use `return` to exit the function.",
-		Check: checkZC1004,
+		Severity: SeverityWarning,
+		Check:    checkZC1004,
 	}
 	RegisterKata(ast.FunctionDefinitionNode, kata)
 	RegisterKata(ast.FunctionLiteralNode, kata)
@@ -55,6 +56,7 @@ func checkZC1004(node ast.Node) []Violation {
 					Message: "Use `return` instead of `exit` in functions to avoid killing the shell.",
 					Line:    cmd.Token.Line,
 					Column:  cmd.Token.Column,
+					Level:   SeverityWarning,
 				})
 			}
 		}

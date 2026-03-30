@@ -9,6 +9,7 @@ func init() {
 		ID:          "ZC1073",
 		Title:       "Unnecessary use of `$` in arithmetic expressions",
 		Description: "Variables in `((...))` do not need `$` prefix. Use `(( var > 0 ))` instead of `(( $var > 0 ))`.",
+		Severity:    SeverityStyle,
 		Check:       checkZC1073,
 	})
 }
@@ -35,6 +36,7 @@ func checkZC1073(node ast.Node) []Violation {
 						Message: "Unnecessary use of `$` in arithmetic expressions. Use `(( var ))` instead of `(( $var ))`.",
 						Line:    prefix.Token.Line,
 						Column:  prefix.Token.Column,
+						Level:   SeverityStyle,
 					})
 				}
 			}
@@ -51,6 +53,7 @@ func checkZC1073(node ast.Node) []Violation {
 						Message: "Unnecessary use of `$` in arithmetic expressions. Use `(( var ))` instead of `(( $var ))`.",
 						Line:    ident.Token.Line,
 						Column:  ident.Token.Column,
+						Level:   SeverityStyle,
 					})
 				}
 			}

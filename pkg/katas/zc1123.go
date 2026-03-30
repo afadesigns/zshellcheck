@@ -10,7 +10,8 @@ func init() {
 		Title: "Use `$OSTYPE` instead of `uname`",
 		Description: "Zsh provides `$OSTYPE` (e.g., `linux-gnu`, `darwin`) as a built-in variable. " +
 			"Avoid spawning `uname` for simple OS detection.",
-		Check: checkZC1123,
+		Severity: SeverityStyle,
+		Check:    checkZC1123,
 	})
 }
 
@@ -34,6 +35,7 @@ func checkZC1123(node ast.Node) []Violation {
 				"Zsh maintains `$OSTYPE` as a built-in variable.",
 			Line:   cmd.Token.Line,
 			Column: cmd.Token.Column,
+			Level:  SeverityStyle,
 		}}
 	}
 
@@ -46,6 +48,7 @@ func checkZC1123(node ast.Node) []Violation {
 					"Zsh maintains `$OSTYPE` as a built-in variable.",
 				Line:   cmd.Token.Line,
 				Column: cmd.Token.Column,
+				Level:  SeverityStyle,
 			}}
 		}
 	}

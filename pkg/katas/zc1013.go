@@ -10,7 +10,8 @@ func init() {
 		Title: "Use `((...))` for arithmetic operations instead of `let`",
 		Description: "The `let` command is a shell builtin, but the `((...))` syntax is more portable " +
 			"and generally preferred for arithmetic operations in Zsh.",
-		Check: checkZC1013,
+		Severity: SeverityInfo,
+		Check:    checkZC1013,
 	})
 }
 
@@ -25,5 +26,6 @@ func checkZC1013(node ast.Node) []Violation {
 		Message: "Use `((...))` for arithmetic operations instead of `let`.",
 		Line:    stmt.TokenLiteralNode().Line,
 		Column:  stmt.TokenLiteralNode().Column,
+		Level:   SeverityInfo,
 	}}
 }
