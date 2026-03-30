@@ -35,6 +35,21 @@ func TestZC1126(t *testing.T) {
 				},
 			},
 		},
+		{
+			name:     "non-pipe operator",
+			input:    `echo a && echo b`,
+			expected: []katas.Violation{},
+		},
+		{
+			name:     "pipe but not sort",
+			input:    `cat file | uniq`,
+			expected: []katas.Violation{},
+		},
+		{
+			name:     "sort piped to non-uniq",
+			input:    `sort file | head`,
+			expected: []katas.Violation{},
+		},
 	}
 
 	for _, tt := range tests {

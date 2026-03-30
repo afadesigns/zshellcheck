@@ -23,6 +23,16 @@ func TestZC1154(t *testing.T) {
 			input:    `find . -print0`,
 			expected: []katas.Violation{},
 		},
+		{
+			name:     "not find command",
+			input:    `ls -la`,
+			expected: []katas.Violation{},
+		},
+		{
+			name:     "find with -exec ending in +",
+			input:    `find . -exec rm {} +`,
+			expected: []katas.Violation{},
+		},
 	}
 
 	for _, tt := range tests {

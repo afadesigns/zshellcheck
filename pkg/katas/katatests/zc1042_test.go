@@ -33,6 +33,11 @@ func TestZC1042(t *testing.T) {
 			input:    `for i in $*; do echo $i; done`,
 			expected: []katas.Violation{},
 		},
+		{
+			name:     "for-each with string literal items",
+			input:    `for i in "one" "two"; do echo $i; done`,
+			expected: []katas.Violation{},
+		},
 	}
 
 	for _, tt := range tests {

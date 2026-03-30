@@ -52,6 +52,23 @@ func TestZC1004(t *testing.T) {
 				},
 			},
 		},
+		{
+			name:  "exit in function keyword style",
+			input: `function my_func { exit 1; }`,
+			expected: []katas.Violation{
+				{
+					KataID:  "ZC1004",
+					Message: "Use `return` instead of `exit` in functions to avoid killing the shell.",
+					Line:    1,
+					Column:  20,
+				},
+			},
+		},
+		{
+			name:     "non-function node",
+			input:    `exit 0`,
+			expected: []katas.Violation{},
+		},
 	}
 
 	for _, tt := range tests {

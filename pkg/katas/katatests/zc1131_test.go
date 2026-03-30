@@ -30,6 +30,21 @@ func TestZC1131(t *testing.T) {
 				},
 			},
 		},
+		{
+			name:     "non-pipe operator",
+			input:    `echo hello && echo world`,
+			expected: []katas.Violation{},
+		},
+		{
+			name:     "pipe but left not cat",
+			input:    `echo hello | read line`,
+			expected: []katas.Violation{},
+		},
+		{
+			name:     "cat no args piped to read",
+			input:    `cat | read line`,
+			expected: []katas.Violation{},
+		},
 	}
 
 	for _, tt := range tests {
