@@ -1,6 +1,6 @@
 # ZShellCheck Katas
 
-Comprehensive list of all 92 implemented checks, migrated from the Wiki.
+Comprehensive list of all 120 implemented checks, migrated from the Wiki.
 
 ## Table of Contents
 
@@ -99,7 +99,29 @@ Comprehensive list of all 92 implemented checks, migrated from the Wiki.
 - [ZC1095: Quote here-string content](#zc1095)
 - [ZC1096: Avoid using `test -e` or `[ -e ... ]` for file existence checks](#zc1096)
 - [ZC1097: Declare loop variables as `local` in functions](#zc1097)
+- [ZC1098: Use `(q)` flag for quoting variables in `eval`](#zc1098)
+- [ZC1099: Use `(f)` flag to split lines instead of `while read`](#zc1099)
+- [ZC1100: Use parameter expansion instead of `dirname`/`basename`](#zc1100)
+- [ZC1101: Use `$(( ))` instead of `bc` for simple arithmetic](#zc1101)
+- [ZC1102: Redirecting output of `sudo` does not work as expected](#zc1102)
+- [ZC1103: Suggest `path` array instead of `$PATH` string manipulation](#zc1103)
+- [ZC1104: Suggest `path` array instead of `export PATH` string manipulation](#zc1104)
+- [ZC1105: Avoid nested arithmetic expansions for clarity](#zc1105)
+- [ZC1106: Avoid `set -x` in production scripts](#zc1106)
 - [ZC1107: Use `(( ... ))` for arithmetic conditions](#zc1107)
+- [ZC1108: Use Zsh case conversion instead of `tr`](#zc1108)
+- [ZC1109: Use parameter expansion instead of `cut` for field extraction](#zc1109)
+- [ZC1110: Use Zsh subscripts instead of `head -1` or `tail -1`](#zc1110)
+- [ZC1111: Avoid `xargs` for simple command invocation](#zc1111)
+- [ZC1112: Avoid `grep -c` -- use Zsh pattern matching for counting](#zc1112)
+- [ZC1113: Use `${var:A}` instead of `realpath` or `readlink -f`](#zc1113)
+- [ZC1114: Consider Zsh `=(...)` for temporary files](#zc1114)
+- [ZC1115: Use Zsh string manipulation instead of `rev`](#zc1115)
+- [ZC1116: Use Zsh multios instead of `tee`](#zc1116)
+- [ZC1117: Use `&!` or `disown` instead of `nohup`](#zc1117)
+- [ZC1118: Use `print -rn` instead of `echo -n`](#zc1118)
+- [ZC1119: Use `$EPOCHSECONDS` instead of `date +%s`](#zc1119)
+- [ZC1120: Use `$PWD` instead of `pwd`](#zc1120)
 
 ---
 
@@ -3153,140 +3175,276 @@ To disable this Kata, add `ZC1096` to the `disabled_katas` list in your `.zshell
 [⬆ Back to Top](#table-of-contents)
 </details>
 
-### ZC1092
-
-**Prefer `print` or `printf` over `echo`**
-
-In Zsh, `echo` behavior can vary significantly based on options like `BSD_ECHO` or `POSIX_STRINGS`. `print` is a Zsh builtin with consistent behavior and features. For strictly formatted output, `printf` is preferred.
-
-**Bad:**
-```zsh
-echo "Hello World"
-echo -n "No newline"
-```
-
-**Good:**
-```zsh
-print "Hello World"
-print -n "No newline"
-# Or better:
-print -r -- "Raw string"
-```
-
-### ZC1096
-
-**Warn on `bc` for simple arithmetic**
-
-Zsh has built-in support for floating point arithmetic using `(( ... ))` or `$(( ... ))`. Using `bc` is often unnecessary and slower.
-
-**Bad:**
-```zsh
-echo "1.5 + 2.5" | bc
-```
-
-**Good:**
-```zsh
-(( 1.5 + 2.5 ))
-```
-
-### ZC1098
-
-**Use `(q)` flag for quoting variables in eval**
-
-When constructing a command string for `eval`, use the `(q)` flag (or `(qq)`, `(q-)`) to safely quote variables and prevent command injection.
-
-**Bad:**
-```zsh
-eval "ls $dir"
-```
-
-**Good:**
-```zsh
-eval "ls ${(q)dir}"
-```
-
-### ZC1099
-
-**Use `(f)` flag to split lines instead of `while read`**
-
-Zsh provides the `(f)` parameter expansion flag to split a string into lines. Iterating over `${(f)variable}` is often cleaner and faster than piping to `while read`.
-
-**Bad:**
-```zsh
-cat file | while read line; do ...; done
-```
-
-**Good:**
-```zsh
-for line in ${(f)"$(<file)"}; do ...; done
-```
-
-### ZC1102
-
-**Redirecting output of `sudo` doesn't work as expected**
-
-Redirections are performed by the current shell before `sudo` is started. So `sudo echo > /root/file` will try to open `/root/file` as the current user, failing.
-
-**Bad:**
-```zsh
-sudo echo "content" > /root/file
-```
-
-**Good:**
-```zsh
-echo "content" | sudo tee /root/file > /dev/null
-```
-
-### ZC1103
-
-**Suggest `path` array instead of `$PATH` string manipulation**
-
-Zsh automatically maps the `$PATH` environment variable to the `$path` array. Modifying `$path` is cleaner and less error-prone than manipulating the colon-separated `$PATH` string.
-
-**Bad:**
-```zsh
-export PATH=$PATH:/usr/local/bin
-```
-
-**Good:**
-```zsh
-path+=('/usr/local/bin')
-```
-
-### ZC1097
+<div id="zc1098"></div>
 
 <details>
-<summary><strong>ZC1097</strong>: Declare loop variables as `local` in functions <img src="https://img.shields.io/badge/Status-Active-brightgreen?style=flat-square" height="15"/></summary>
+<summary><strong>ZC1098</strong>: Use `(q)` flag for quoting variables in `eval` <img src="https://img.shields.io/badge/Status-Active-brightgreen?style=flat-square" height="15"/></summary>
 
 ### Description
 
-Loop variables in `for` loops are global by default in Zsh functions. Use `local` to scope them to the function before the loop.
+When constructing a command string for `eval`, use the `(q)` flag (or `(qq)`, `(q-)`) to safely quote variables and prevent command injection.
 
 ### Bad Example
 
 ```zsh
-my_func() {
-    for i in {1..5}; do
-        echo $i
-    done
-}
-# 'i' leaks into global scope
+eval "ls $dir"
 ```
 
 ### Good Example
 
 ```zsh
-my_func() {
-    local i
-    for i in {1..5}; do
-        echo $i
-    done
-}
+eval "ls ${(q)dir}"
 ```
 
 ### Configuration
 
-To disable this Kata, add `ZC1097` to the `disabled_katas` list in your `.zshellcheckrc` file.
+To disable this Kata, add `ZC1098` to the `disabled_katas` list in your `.zshellcheckrc` file.
+
+---
+
+[⬆ Back to Top](#table-of-contents)
+</details>
+
+<div id="zc1099"></div>
+
+<details>
+<summary><strong>ZC1099</strong>: Use `(f)` flag to split lines instead of `while read` <img src="https://img.shields.io/badge/Status-Active-brightgreen?style=flat-square" height="15"/></summary>
+
+### Description
+
+Zsh provides the `(f)` parameter expansion flag to split a string into lines. Iterating over `${(f)variable}` is often cleaner and faster than piping to `while read`.
+
+### Bad Example
+
+```zsh
+cat file | while read line; do ...; done
+```
+
+### Good Example
+
+```zsh
+for line in ${(f)"$(<file)"}; do ...; done
+```
+
+### Configuration
+
+To disable this Kata, add `ZC1099` to the `disabled_katas` list in your `.zshellcheckrc` file.
+
+---
+
+[⬆ Back to Top](#table-of-contents)
+</details>
+
+<div id="zc1100"></div>
+
+<details>
+<summary><strong>ZC1100</strong>: Use parameter expansion instead of `dirname`/`basename` <img src="https://img.shields.io/badge/Status-Active-brightgreen?style=flat-square" height="15"/></summary>
+
+### Description
+
+Zsh parameter expansion `${var%/*}` (dirname) and `${var##*/}` (basename) avoid spawning external processes for simple path manipulation.
+
+### Bad Example
+
+```zsh
+dir=$(dirname "$filepath")
+name=$(basename "$filepath")
+```
+
+### Good Example
+
+```zsh
+dir=${filepath%/*}
+name=${filepath##*/}
+```
+
+### Configuration
+
+To disable this Kata, add `ZC1100` to the `disabled_katas` list in your `.zshellcheckrc` file.
+
+---
+
+[⬆ Back to Top](#table-of-contents)
+</details>
+
+<div id="zc1101"></div>
+
+<details>
+<summary><strong>ZC1101</strong>: Use `$(( ))` instead of `bc` for simple arithmetic <img src="https://img.shields.io/badge/Status-Active-brightgreen?style=flat-square" height="15"/></summary>
+
+### Description
+
+Zsh supports arithmetic expansion with `$(( ))` and floating point via `zmodload zsh/mathfunc`. Avoid piping to `bc` for simple calculations.
+
+### Bad Example
+
+```zsh
+result=$(echo "1.5 + 2.5" | bc)
+```
+
+### Good Example
+
+```zsh
+result=$(( 1.5 + 2.5 ))
+```
+
+### Configuration
+
+To disable this Kata, add `ZC1101` to the `disabled_katas` list in your `.zshellcheckrc` file.
+
+---
+
+[⬆ Back to Top](#table-of-contents)
+</details>
+
+<div id="zc1102"></div>
+
+<details>
+<summary><strong>ZC1102</strong>: Redirecting output of `sudo` does not work as expected <img src="https://img.shields.io/badge/Status-Active-brightgreen?style=flat-square" height="15"/></summary>
+
+### Description
+
+Redirections are performed by the current shell before `sudo` is started. So `sudo echo > /root/file` will try to open `/root/file` as the current user, failing.
+
+### Bad Example
+
+```zsh
+sudo echo "content" > /root/file
+```
+
+### Good Example
+
+```zsh
+echo "content" | sudo tee /root/file > /dev/null
+```
+
+### Configuration
+
+To disable this Kata, add `ZC1102` to the `disabled_katas` list in your `.zshellcheckrc` file.
+
+---
+
+[⬆ Back to Top](#table-of-contents)
+</details>
+
+<div id="zc1103"></div>
+
+<details>
+<summary><strong>ZC1103</strong>: Suggest `path` array instead of `$PATH` string manipulation <img src="https://img.shields.io/badge/Status-Active-brightgreen?style=flat-square" height="15"/></summary>
+
+### Description
+
+Zsh automatically maps the `$PATH` environment variable to the `$path` array. Modifying `$path` is cleaner and less error-prone than manipulating the colon-separated `$PATH` string.
+
+### Bad Example
+
+```zsh
+PATH="$PATH:/usr/local/bin"
+```
+
+### Good Example
+
+```zsh
+path+=('/usr/local/bin')
+```
+
+### Configuration
+
+To disable this Kata, add `ZC1103` to the `disabled_katas` list in your `.zshellcheckrc` file.
+
+---
+
+[⬆ Back to Top](#table-of-contents)
+</details>
+
+<div id="zc1104"></div>
+
+<details>
+<summary><strong>ZC1104</strong>: Suggest `path` array instead of `export PATH` string manipulation <img src="https://img.shields.io/badge/Status-Active-brightgreen?style=flat-square" height="15"/></summary>
+
+### Description
+
+Zsh automatically maps the `$PATH` environment variable to the `$path` array. Modifying `$path` is cleaner and less error-prone than manipulating the colon-separated `$PATH` string via `export PATH=...`.
+
+### Bad Example
+
+```zsh
+export PATH=$PATH:/usr/local/bin
+```
+
+### Good Example
+
+```zsh
+path+=('/usr/local/bin')
+```
+
+### Configuration
+
+To disable this Kata, add `ZC1104` to the `disabled_katas` list in your `.zshellcheckrc` file.
+
+---
+
+[⬆ Back to Top](#table-of-contents)
+</details>
+
+<div id="zc1105"></div>
+
+<details>
+<summary><strong>ZC1105</strong>: Avoid nested arithmetic expansions for clarity <img src="https://img.shields.io/badge/Status-Active-brightgreen?style=flat-square" height="15"/></summary>
+
+### Description
+
+While Zsh supports nested arithmetic expansions like `(( $((...)) ))`, they can make code harder to read and reason about. Prefer flatter expressions or temporary variables for intermediate results to improve clarity.
+
+### Bad Example
+
+```zsh
+(( result = $(( a + b )) * c ))
+```
+
+### Good Example
+
+```zsh
+(( sum = a + b ))
+(( result = sum * c ))
+```
+
+### Configuration
+
+To disable this Kata, add `ZC1105` to the `disabled_katas` list in your `.zshellcheckrc` file.
+
+---
+
+[⬆ Back to Top](#table-of-contents)
+</details>
+
+<div id="zc1106"></div>
+
+<details>
+<summary><strong>ZC1106</strong>: Avoid `set -x` in production scripts <img src="https://img.shields.io/badge/Status-Active-brightgreen?style=flat-square" height="15"/></summary>
+
+### Description
+
+Using `set -x` (xtrace) in production environments can expose sensitive information, such as API keys or passwords, in logs. While useful for debugging, it should be avoided in production. Consider using targeted debugging or secure logging.
+
+### Bad Example
+
+```zsh
+set -x
+curl -H "Authorization: Bearer $TOKEN" https://api.example.com
+```
+
+### Good Example
+
+```zsh
+# Use targeted debugging or secure logging
+print -r -- "Making API request to api.example.com"
+curl -s -H "Authorization: Bearer $TOKEN" https://api.example.com
+```
+
+### Configuration
+
+To disable this Kata, add `ZC1106` to the `disabled_katas` list in your `.zshellcheckrc` file.
 
 ---
 
@@ -3319,6 +3477,422 @@ if (( count > 10 )); then echo "Greater"; fi
 ### Configuration
 
 To disable this Kata, add `ZC1107` to the `disabled_katas` list in your `.zshellcheckrc` file.
+
+---
+
+[⬆ Back to Top](#table-of-contents)
+</details>
+
+<div id="zc1108"></div>
+
+<details>
+<summary><strong>ZC1108</strong>: Use Zsh case conversion instead of `tr` <img src="https://img.shields.io/badge/Status-Active-brightgreen?style=flat-square" height="15"/></summary>
+
+### Description
+
+Zsh provides `${(U)var}` for uppercase and `${(L)var}` for lowercase. Avoid piping through `tr '[:lower:]' '[:upper:]'` for simple case conversion.
+
+### Bad Example
+
+```zsh
+upper=$(echo "$var" | tr '[:lower:]' '[:upper:]')
+lower=$(echo "$var" | tr 'A-Z' 'a-z')
+```
+
+### Good Example
+
+```zsh
+upper=${(U)var}
+lower=${(L)var}
+```
+
+### Configuration
+
+To disable this Kata, add `ZC1108` to the `disabled_katas` list in your `.zshellcheckrc` file.
+
+---
+
+[⬆ Back to Top](#table-of-contents)
+</details>
+
+<div id="zc1109"></div>
+
+<details>
+<summary><strong>ZC1109</strong>: Use parameter expansion instead of `cut` for field extraction <img src="https://img.shields.io/badge/Status-Active-brightgreen?style=flat-square" height="15"/></summary>
+
+### Description
+
+For simple field extraction from variables, use Zsh parameter expansion like `${var%%:*}` or `${(s.:.)var}` instead of piping through `cut`.
+
+### Bad Example
+
+```zsh
+field=$(echo "$line" | cut -d: -f1)
+```
+
+### Good Example
+
+```zsh
+field=${line%%:*}
+# Or split into array:
+fields=(${(s.:.)line})
+```
+
+### Configuration
+
+To disable this Kata, add `ZC1109` to the `disabled_katas` list in your `.zshellcheckrc` file.
+
+---
+
+[⬆ Back to Top](#table-of-contents)
+</details>
+
+<div id="zc1110"></div>
+
+<details>
+<summary><strong>ZC1110</strong>: Use Zsh subscripts instead of `head -1` or `tail -1` <img src="https://img.shields.io/badge/Status-Active-brightgreen?style=flat-square" height="15"/></summary>
+
+### Description
+
+Zsh array subscripts `${lines[1]}` and `${lines[-1]}` can extract the first or last element without spawning `head` or `tail` as external processes.
+
+### Bad Example
+
+```zsh
+first=$(echo "$data" | head -1)
+last=$(echo "$data" | tail -1)
+```
+
+### Good Example
+
+```zsh
+lines=(${(f)data})
+first=${lines[1]}
+last=${lines[-1]}
+```
+
+### Configuration
+
+To disable this Kata, add `ZC1110` to the `disabled_katas` list in your `.zshellcheckrc` file.
+
+---
+
+[⬆ Back to Top](#table-of-contents)
+</details>
+
+<div id="zc1111"></div>
+
+<details>
+<summary><strong>ZC1111</strong>: Avoid `xargs` for simple command invocation <img src="https://img.shields.io/badge/Status-Active-brightgreen?style=flat-square" height="15"/></summary>
+
+### Description
+
+Zsh can iterate arrays directly with `for` loops or use `${(f)...}` to split command output by newlines. Avoid `xargs` when processing lines one at a time.
+
+### Bad Example
+
+```zsh
+find . -name "*.txt" | xargs rm
+```
+
+### Good Example
+
+```zsh
+for f in ${(f)$(find . -name "*.txt")}; do
+    rm "$f"
+done
+# Or better: rm **/*.txt(N)
+```
+
+### Configuration
+
+To disable this Kata, add `ZC1111` to the `disabled_katas` list in your `.zshellcheckrc` file.
+
+---
+
+[⬆ Back to Top](#table-of-contents)
+</details>
+
+<div id="zc1112"></div>
+
+<details>
+<summary><strong>ZC1112</strong>: Avoid `grep -c` -- use Zsh pattern matching for counting <img src="https://img.shields.io/badge/Status-Active-brightgreen?style=flat-square" height="15"/></summary>
+
+### Description
+
+For counting matches in a variable, use Zsh `${#${(f)...}}` or array filtering with `${(M)array:#pattern}` instead of piping through `grep -c`.
+
+### Bad Example
+
+```zsh
+count=$(echo "$data" | grep -c "pattern")
+```
+
+### Good Example
+
+```zsh
+lines=(${(f)data})
+matches=(${(M)lines:#*pattern*})
+count=${#matches}
+```
+
+### Configuration
+
+To disable this Kata, add `ZC1112` to the `disabled_katas` list in your `.zshellcheckrc` file.
+
+---
+
+[⬆ Back to Top](#table-of-contents)
+</details>
+
+<div id="zc1113"></div>
+
+<details>
+<summary><strong>ZC1113</strong>: Use `${var:A}` instead of `realpath` or `readlink -f` <img src="https://img.shields.io/badge/Status-Active-brightgreen?style=flat-square" height="15"/></summary>
+
+### Description
+
+Zsh provides the `:A` modifier to resolve a path to its absolute form, following symlinks. Avoid spawning `realpath` or `readlink -f` as external processes.
+
+### Bad Example
+
+```zsh
+abs=$(realpath "$path")
+abs=$(readlink -f "$path")
+```
+
+### Good Example
+
+```zsh
+abs=${path:A}
+```
+
+### Configuration
+
+To disable this Kata, add `ZC1113` to the `disabled_katas` list in your `.zshellcheckrc` file.
+
+---
+
+[⬆ Back to Top](#table-of-contents)
+</details>
+
+<div id="zc1114"></div>
+
+<details>
+<summary><strong>ZC1114</strong>: Consider Zsh `=(...)` for temporary files <img src="https://img.shields.io/badge/Status-Active-brightgreen?style=flat-square" height="15"/></summary>
+
+### Description
+
+Zsh `=(cmd)` creates a temporary file with the command output that is automatically cleaned up. Consider this instead of manual `mktemp` and cleanup patterns.
+
+### Bad Example
+
+```zsh
+tmpfile=$(mktemp)
+cmd > "$tmpfile"
+diff "$tmpfile" other_file
+rm "$tmpfile"
+```
+
+### Good Example
+
+```zsh
+diff =(cmd) other_file
+```
+
+### Configuration
+
+To disable this Kata, add `ZC1114` to the `disabled_katas` list in your `.zshellcheckrc` file.
+
+---
+
+[⬆ Back to Top](#table-of-contents)
+</details>
+
+<div id="zc1115"></div>
+
+<details>
+<summary><strong>ZC1115</strong>: Use Zsh string manipulation instead of `rev` <img src="https://img.shields.io/badge/Status-Active-brightgreen?style=flat-square" height="15"/></summary>
+
+### Description
+
+Zsh can reverse strings using parameter expansion. Avoid spawning `rev` as an external process for simple string reversal.
+
+### Bad Example
+
+```zsh
+reversed=$(echo "$string" | rev)
+```
+
+### Good Example
+
+```zsh
+reversed=${(j::)${(Oas::)string}}
+```
+
+### Configuration
+
+To disable this Kata, add `ZC1115` to the `disabled_katas` list in your `.zshellcheckrc` file.
+
+---
+
+[⬆ Back to Top](#table-of-contents)
+</details>
+
+<div id="zc1116"></div>
+
+<details>
+<summary><strong>ZC1116</strong>: Use Zsh multios instead of `tee` <img src="https://img.shields.io/badge/Status-Active-brightgreen?style=flat-square" height="15"/></summary>
+
+### Description
+
+Zsh `setopt multios` allows redirecting output to multiple files with `cmd > file1 > file2`. Avoid spawning `tee` for simple output duplication.
+
+### Bad Example
+
+```zsh
+cmd | tee output.log
+cmd | tee file1 file2
+```
+
+### Good Example
+
+```zsh
+setopt multios
+cmd > file1 > file2
+cmd > output.log > /dev/tty
+```
+
+### Configuration
+
+To disable this Kata, add `ZC1116` to the `disabled_katas` list in your `.zshellcheckrc` file.
+
+---
+
+[⬆ Back to Top](#table-of-contents)
+</details>
+
+<div id="zc1117"></div>
+
+<details>
+<summary><strong>ZC1117</strong>: Use `&!` or `disown` instead of `nohup` <img src="https://img.shields.io/badge/Status-Active-brightgreen?style=flat-square" height="15"/></summary>
+
+### Description
+
+Zsh provides `&!` (shorthand for `& disown`) to run a command in the background immune to hangups. Avoid spawning `nohup` as an external process.
+
+### Bad Example
+
+```zsh
+nohup long_running_cmd &
+```
+
+### Good Example
+
+```zsh
+long_running_cmd &!
+# Or equivalently:
+long_running_cmd & disown
+```
+
+### Configuration
+
+To disable this Kata, add `ZC1117` to the `disabled_katas` list in your `.zshellcheckrc` file.
+
+---
+
+[⬆ Back to Top](#table-of-contents)
+</details>
+
+<div id="zc1118"></div>
+
+<details>
+<summary><strong>ZC1118</strong>: Use `print -rn` instead of `echo -n` <img src="https://img.shields.io/badge/Status-Active-brightgreen?style=flat-square" height="15"/></summary>
+
+### Description
+
+The behavior of `echo -n` varies across shells and platforms. In Zsh, `print -rn` is the reliable way to output text without a trailing newline.
+
+### Bad Example
+
+```zsh
+echo -n "Enter your name: "
+```
+
+### Good Example
+
+```zsh
+print -rn "Enter your name: "
+```
+
+### Configuration
+
+To disable this Kata, add `ZC1118` to the `disabled_katas` list in your `.zshellcheckrc` file.
+
+---
+
+[⬆ Back to Top](#table-of-contents)
+</details>
+
+<div id="zc1119"></div>
+
+<details>
+<summary><strong>ZC1119</strong>: Use `$EPOCHSECONDS` instead of `date +%s` <img src="https://img.shields.io/badge/Status-Active-brightgreen?style=flat-square" height="15"/></summary>
+
+### Description
+
+Zsh provides `$EPOCHSECONDS` and `$EPOCHREALTIME` via `zsh/datetime` module. Avoid spawning `date` for simple Unix timestamp retrieval.
+
+### Bad Example
+
+```zsh
+timestamp=$(date +%s)
+```
+
+### Good Example
+
+```zsh
+zmodload zsh/datetime
+timestamp=$EPOCHSECONDS
+# For sub-second precision:
+timestamp=$EPOCHREALTIME
+```
+
+### Configuration
+
+To disable this Kata, add `ZC1119` to the `disabled_katas` list in your `.zshellcheckrc` file.
+
+---
+
+[⬆ Back to Top](#table-of-contents)
+</details>
+
+<div id="zc1120"></div>
+
+<details>
+<summary><strong>ZC1120</strong>: Use `$PWD` instead of `pwd` <img src="https://img.shields.io/badge/Status-Active-brightgreen?style=flat-square" height="15"/></summary>
+
+### Description
+
+Zsh maintains `$PWD` as a built-in variable tracking the current directory. Avoid spawning `pwd` as an external process.
+
+### Bad Example
+
+```zsh
+current=$(pwd)
+cd "$(pwd)/subdir"
+```
+
+### Good Example
+
+```zsh
+current=$PWD
+cd "$PWD/subdir"
+```
+
+### Configuration
+
+To disable this Kata, add `ZC1120` to the `disabled_katas` list in your `.zshellcheckrc` file.
 
 ---
 
