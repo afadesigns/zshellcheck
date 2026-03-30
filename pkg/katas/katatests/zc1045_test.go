@@ -28,6 +28,50 @@ func TestZC1045(t *testing.T) {
 			input:    `local var=hello`,
 			expected: []katas.Violation{},
 		},
+		{
+			name:  "local with command substitution",
+			input: `local var=$(date)`,
+			expected: []katas.Violation{
+				{
+					KataID: "ZC1045",
+					Message: "Declare and assign separately to avoid masking return values. " +
+						"`local var=$(cmd)` masks the exit code of `cmd`.",
+					Line:   1,
+					Column: 7,
+				},
+			},
+		},
+		{
+			name:  "readonly with command substitution",
+			input: `readonly var=$(whoami)`,
+			expected: []katas.Violation{
+				{
+					KataID: "ZC1045",
+					Message: "Declare and assign separately to avoid masking return values. " +
+						"`readonly var=$(cmd)` masks the exit code of `cmd`.",
+					Line:   1,
+					Column: 10,
+				},
+			},
+		},
+		{
+			name:  "declare with command substitution",
+			input: `declare var=$(date)`,
+			expected: []katas.Violation{
+				{
+					KataID: "ZC1045",
+					Message: "Declare and assign separately to avoid masking return values. " +
+						"`declare var=$(cmd)` masks the exit code of `cmd`.",
+					Line:   1,
+					Column: 1,
+				},
+			},
+		},
+		{
+			name:     "echo is not local or readonly",
+			input:    `echo $(date)`,
+			expected: []katas.Violation{},
+		},
 	}
 
 	for _, tt := range tests {

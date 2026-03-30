@@ -2,12 +2,47 @@
 
 This guide covers the configuration, usage, and troubleshooting of ZShellCheck.
 
+ZShellCheck currently implements **166 Katas** (checks) covering syntax errors, security issues, performance improvements, and Zsh best practices.
+
 ## Table of Contents
 
+- [Severity Levels](#severity-levels)
 - [Configuration](#configuration)
 - [Integrations](#integrations)
 - [Troubleshooting](#troubleshooting)
 - [Support](#support)
+
+---
+
+## Severity Levels
+
+Every check is assigned a severity level. Use the `--severity` flag to filter output by minimum severity.
+
+| Level | Description |
+| :--- | :--- |
+| **error** | Bugs or dangerous constructs that will likely cause incorrect behavior |
+| **warning** | Risky patterns that may cause subtle issues or security concerns |
+| **info** | Suggestions for improved practices and platform compatibility |
+| **style** | Cosmetic or idiomatic improvements for cleaner Zsh code |
+
+### Filtering by Severity
+
+```bash
+# Show only errors
+zshellcheck --severity error my_script.zsh
+
+# Show errors and warnings
+zshellcheck --severity warning my_script.zsh
+
+# Show everything (default)
+zshellcheck --severity style my_script.zsh
+```
+
+### Output Formats
+
+- **Text (default)**: Human-readable with ANSI colors and source context. Use `--no-color` to disable colors.
+- **JSON**: `zshellcheck -format json file.zsh`
+- **SARIF**: `zshellcheck -format sarif file.zsh` (GitHub Security integration)
 
 ---
 
@@ -76,7 +111,7 @@ Add to `.pre-commit-config.yaml`:
 
 ```yaml
 -   repo: https://github.com/afadesigns/zshellcheck
-    rev: v0.0.93
+    rev: v0.1.66
     hooks:
     -   id: zshellcheck
 ```

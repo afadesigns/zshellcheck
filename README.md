@@ -14,7 +14,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 ![Release](https://img.shields.io/github/v/release/afadesigns/zshellcheck)
 
-**ZShellCheck** is the definitive static analysis and comprehensive development suite for the entire Zsh ecosystem, meticulously engineered as the full Zsh equivalent of ShellCheck for Bash. It offers intelligent automatic fixes (planned), advanced formatting capabilities, and deep code analysis to deliver unparalleled quality, performance, and reliability for Zsh scripts, functions, and configurations.
+**ZShellCheck** (`v0.1.66` -- 166 Katas) is the definitive static analysis and comprehensive development suite for the entire Zsh ecosystem, meticulously engineered as the full Zsh equivalent of ShellCheck for Bash. It offers intelligent automatic fixes (planned), advanced formatting capabilities, and deep code analysis to deliver unparalleled quality, performance, and reliability for Zsh scripts, functions, and configurations.
 
 ## Inspiration
 
@@ -31,6 +31,7 @@ Why use ZShellCheck over ShellCheck? See our **[Detailed Comparison](docs/REFERE
 - [Inspiration](#inspiration)
 - [Comparison](docs/REFERENCE.md#comparison-vs-shellcheck)
 - [Features](#features)
+- [Severity Levels](#severity-levels)
 - [Installation](#installation)
 - [Usage](#usage)
 - [Configuration](docs/USER_GUIDE.md#configuration)
@@ -51,6 +52,25 @@ Why use ZShellCheck over ShellCheck? See our **[Detailed Comparison](docs/REFERE
 *   **Extensible Katas:** A modular system where rules are implemented as independent "Katas," allowing for easy expansion, customization, and precise control over checks.
 *   **Highly Configurable:** Tailor ZShellCheck's behavior to your project's needs by enabling or disabling specific checks via a flexible `.zshellcheckrc` configuration file.
 *   **Seamless Integration:** Designed for effortless integration into modern development workflows, supporting `pre-commit` hooks and continuous integration (CI) pipelines to enforce quality at every stage.
+
+## Severity Levels
+
+Every Kata is assigned a severity level that indicates the impact of the issue it detects. Use the `--severity` flag to filter violations by minimum severity.
+
+| Level | Description | Example |
+| :--- | :--- | :--- |
+| **error** | Bugs or dangerous constructs that will likely cause incorrect behavior | Redirection overwrites input file, brace expansion with variables |
+| **warning** | Risky patterns that may cause subtle issues or security concerns | `rm -rf` without safeguard, `chown -R` following symlinks |
+| **info** | Suggestions for improved practices and platform compatibility | Use signal names instead of numbers, avoid `set -e` |
+| **style** | Cosmetic or idiomatic improvements for cleaner Zsh code | Prefer `[[ ]]` over `test`, use built-in variables |
+
+```bash
+# Show only errors and warnings
+zshellcheck --severity warning my_script.zsh
+
+# Show everything including style suggestions
+zshellcheck --severity style my_script.zsh
+```
 
 ## Installation
 
@@ -107,7 +127,7 @@ Add this to your `.pre-commit-config.yaml`:
 
 ```yaml
 -   repo: https://github.com/afadesigns/zshellcheck
-    rev: v0.1.1
+    rev: v0.1.66
     hooks:
     -   id: zshellcheck
 ```
