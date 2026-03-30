@@ -28,6 +28,16 @@ func TestZC1057(t *testing.T) {
 			input:    `echo $(ls)`,
 			expected: []katas.Violation{},
 		},
+		{
+			name:     "infix non-assignment operator",
+			input:    `echo hello`,
+			expected: []katas.Violation{},
+		},
+		{
+			name:     "simple command not matching",
+			input:    `ls -la`,
+			expected: []katas.Violation{},
+		},
 	}
 
 	for _, tt := range tests {

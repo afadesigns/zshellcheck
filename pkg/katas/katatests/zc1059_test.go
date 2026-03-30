@@ -28,6 +28,35 @@ func TestZC1059(t *testing.T) {
 			input:    `rm`,
 			expected: []katas.Violation{},
 		},
+		{
+			name:  "rm with ${var} argument",
+			input: `rm ${dir}`,
+			expected: []katas.Violation{
+				{
+					KataID:  "ZC1059",
+					Message: "Use `${var:?}` or ensure the variable is set before using it in `rm`.",
+					Line:    1,
+					Column:  4,
+				},
+			},
+		},
+		{
+			name:  "rm with $var argument",
+			input: `rm $dir`,
+			expected: []katas.Violation{
+				{
+					KataID:  "ZC1059",
+					Message: "Use `${var:?}` or ensure the variable is set before using it in `rm`.",
+					Line:    1,
+					Column:  4,
+				},
+			},
+		},
+		{
+			name:     "rm with flags and literal",
+			input:    `rm -rf /tmp/build`,
+			expected: []katas.Violation{},
+		},
 	}
 
 	for _, tt := range tests {

@@ -28,6 +28,21 @@ func TestZC1045(t *testing.T) {
 			input:    `local var=hello`,
 			expected: []katas.Violation{},
 		},
+		{
+			name:     "non-local command",
+			input:    `echo $(date)`,
+			expected: []katas.Violation{},
+		},
+		{
+			name:     "readonly with simple value",
+			input:    `readonly var=hello`,
+			expected: []katas.Violation{},
+		},
+		{
+			name:     "declare with simple value",
+			input:    `declare var=hello`,
+			expected: []katas.Violation{},
+		},
 	}
 
 	for _, tt := range tests {

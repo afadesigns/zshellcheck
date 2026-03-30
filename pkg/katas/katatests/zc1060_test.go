@@ -40,6 +40,33 @@ func TestZC1060(t *testing.T) {
 			input:    `ps aux | sort`,
 			expected: []katas.Violation{},
 		},
+		{
+			name:     "ps piped to grep with bracket exclusion",
+			input:    `ps aux | grep [m]yprocess`,
+			expected: []katas.Violation{},
+		},
+		{
+			name:     "non-pipe operator",
+			input:    `echo a && echo b`,
+			expected: []katas.Violation{},
+		},
+		{
+			name:  "ps piped to grep with flag args only",
+			input: `ps aux | grep -i myprocess`,
+			expected: []katas.Violation{
+				{
+					KataID:  "ZC1060",
+					Message: "`ps | grep pattern` matches the grep process itself. Use `grep [p]attern` to exclude the grep process.",
+					Line:    1,
+					Column:  8,
+				},
+			},
+		},
+		{
+			name:     "non-ps command piped to grep",
+			input:    `ls -la | grep foo`,
+			expected: []katas.Violation{},
+		},
 	}
 
 	for _, tt := range tests {
