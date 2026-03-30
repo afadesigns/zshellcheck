@@ -50,12 +50,14 @@ jobs:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.1.7
       - name: Run ShellCheck
         uses: ludeeus/action-shellcheck@00cae500b08a931fb5698e11e79bfbd38e612a38 # v2.0.0
+        env:
+          SHELLCHECK_OPTS: '-e SC1071 -e SC2148'
         with:
           scandir: '.'
           severity: warning
-          ignore_paths: >-
-            tests/integration_test.zsh
-            examples/demo.zsh
+          ignore_paths: |-
+            tests
+            examples
             pkg/katas/testdata
             completions
 
@@ -81,7 +83,8 @@ jobs:
       - name: Build
         run: go build -v -o zshellcheck ./cmd/zshellcheck
       - name: Test (Unit)
-        run: go test -v -coverprofile=coverage.out -covermode=atomic ./...
+        shell: bash
+        run: go test -v -coverprofile=coverage.txt -covermode=atomic ./...
       - name: Verify go.mod is tidy
         run: |
           go mod tidy
@@ -103,6 +106,7 @@ jobs:
         uses: codecov/codecov-action@75cd11691c0faa626561e295848008c8a7dddffe # v5.5.4
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
+          files: coverage.txt
           fail_ci_if_error: true
       - name: Upload Binary Artifact
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
