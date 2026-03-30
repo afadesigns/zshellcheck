@@ -17,7 +17,7 @@ func TestZC1071(t *testing.T) {
 	}{
 		{
 			name:  "invalid append self reference single",
-			input: `arr=($arr)`, 
+			input: `arr=($arr)`,
 			expected: []katas.Violation{
 				{
 					KataID:  "ZC1071",
