@@ -12,7 +12,8 @@ func init() {
 		Title: "Suggest `path` array instead of `$PATH` string manipulation (direct assignment)",
 		Description: "Zsh automatically maps the `$PATH` environment variable to the `$path` array. " +
 			"Modifying `$path` is cleaner and less error-prone than manipulating the colon-separated `$PATH` string.",
-		Check: checkZC1103,
+		Severity: SeverityStyle,
+		Check:    checkZC1103,
 	})
 }
 
@@ -31,6 +32,7 @@ func checkZC1103(node ast.Node) []Violation {
 					Message: "Use the `path` array instead of manually manipulating the `$PATH` string.",
 					Line:    infixExp.Token.Line,
 					Column:  infixExp.Token.Column,
+					Level:   SeverityStyle,
 				}}
 			}
 		}

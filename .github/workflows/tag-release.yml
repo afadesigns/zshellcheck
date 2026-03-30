@@ -26,6 +26,8 @@ jobs:
       - name: Bump version and push tag
         uses: anothrNick/github-tag-action@a2c70ae13a881faf2b4953baaa9e49731997ab36 # 1.69.0
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Use PAT so the tag push triggers the release workflow
+          # (GITHUB_TOKEN-created events don't trigger downstream workflows)
+          GITHUB_TOKEN: ${{ secrets.REDTEAMX_PAT }}
           WITH_V: true
           DEFAULT_BUMP: patch

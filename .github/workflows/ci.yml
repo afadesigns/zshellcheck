@@ -84,7 +84,9 @@ jobs:
         run: go build -v -o zshellcheck ./cmd/zshellcheck
       - name: Test (Unit)
         shell: bash
-        run: go test -v -coverprofile=coverage.txt -covermode=atomic -coverpkg=./... ./...
+        run: |
+          COVERPKGS=$(go list ./... | grep -v -E '(cmd/zshellcheck|pkg/version|pkg/testutil|/tests$|katatests)' | tr '\n' ',' | sed 's/,$//')
+          go test -v -coverprofile=coverage.txt -covermode=atomic -coverpkg="$COVERPKGS" ./...
       - name: Verify go.mod is tidy
         run: |
           go mod tidy

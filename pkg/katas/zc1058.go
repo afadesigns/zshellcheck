@@ -12,7 +12,8 @@ func init() {
 		Title: "Avoid `sudo` with redirection",
 		Description: "Redirecting output of `sudo` (e.g. `sudo cmd > /file`) fails if the current user " +
 			"doesn't have permission. Use `| sudo tee /file` instead.",
-		Check: checkZC1058,
+		Severity: SeverityStyle,
+		Check:    checkZC1058,
 	})
 }
 
@@ -37,6 +38,7 @@ func checkZC1058(node ast.Node) []Violation {
 				Message: "Redirecting `sudo` output happens as the current user. Use `| sudo tee file` to write with privileges.",
 				Line:    arg.TokenLiteralNode().Line,
 				Column:  arg.TokenLiteralNode().Column,
+				Level:   SeverityStyle,
 			})
 		}
 	}

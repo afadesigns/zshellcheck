@@ -9,6 +9,7 @@ func init() {
 		ID:          "ZC1071",
 		Title:       "Use `+=` for appending to arrays",
 		Description: "Appending to an array using `arr=($arr ...)` is verbose and slower. Use `arr+=(...)` instead.",
+		Severity:    SeverityWarning,
 		Check:       checkZC1071,
 	})
 }
@@ -73,6 +74,7 @@ func checkZC1071(node ast.Node) []Violation {
 				"Use `arr+=(...)` instead.",
 			Line:   leftToken.Line,
 			Column: leftToken.Column,
+			Level:  SeverityWarning,
 		}}
 	}
 

@@ -10,13 +10,15 @@ func init() {
 		Title: "Ensure spaces around `[` and `[[`",
 		Description: "`[condition]` is parsed as a command named `[condition]`, which likely doesn't exist. " +
 			"Add spaces: `[ condition ]`.",
-		Check: checkZC1065,
+		Severity: SeverityError,
+		Check:    checkZC1065,
 	})
 	// Register for DoubleBracketExpression to check `[[foo]]`
 	RegisterKata(ast.DoubleBracketExpressionNode, Kata{
 		ID:          "ZC1065",
 		Title:       "Ensure spaces around `[` and `[[`",
 		Description: "`[[condition]]` is parsed incorrectly. Add spaces: `[[ condition ]]`.",
+		Severity:    SeverityError,
 		Check:       checkZC1065,
 	})
 }
@@ -36,6 +38,7 @@ func checkZC1065(node ast.Node) []Violation {
 						Message: "Missing space after `[`. Use `[ condition ]`.",
 						Line:    n.Token.Line,
 						Column:  n.Token.Column,
+						Level:   SeverityError,
 					})
 				}
 			}
@@ -50,6 +53,7 @@ func checkZC1065(node ast.Node) []Violation {
 					Message: "Missing space after `[[`. Use `[[ condition ]]`.",
 					Line:    n.Token.Line,
 					Column:  n.Token.Column,
+					Level:   SeverityError,
 				})
 			}
 		}

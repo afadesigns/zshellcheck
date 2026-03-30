@@ -10,7 +10,8 @@ func init() {
 		Title: "Use `local` for variables in functions",
 		Description: "Variables defined in functions are global by default in Zsh. " +
 			"Use `local` to scope them to the function.",
-		Check: checkZC1043,
+		Severity: SeverityStyle,
+		Check:    checkZC1043,
 	})
 }
 
@@ -64,6 +65,7 @@ func checkZC1043(node ast.Node) []Violation {
 								"Use `local " + ident.Value + "=" + assign.Right.String() + "`.",
 							Line:   ident.Token.Line,
 							Column: ident.Token.Column,
+							Level:  SeverityStyle,
 						})
 					}
 				}

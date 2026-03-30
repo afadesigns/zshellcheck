@@ -12,7 +12,8 @@ func init() {
 		Title: "Use `((...))` for arithmetic comparisons instead of `[` or `test`",
 		Description: "Bash/Zsh have a dedicated arithmetic context `((...))` " +
 			"which is cleaner and faster than `[` or `test` for numeric comparisons.",
-		Check: checkZC1003,
+		Severity: SeverityStyle,
+		Check:    checkZC1003,
 	})
 }
 
@@ -33,6 +34,7 @@ func checkZC1003(node ast.Node) []Violation {
 						Message: "Use `((...))` for arithmetic comparisons instead of `[` or `test`.",
 						Line:    cmd.Token.Line,
 						Column:  cmd.Token.Column,
+						Level:   SeverityStyle,
 					})
 					return violations
 				}

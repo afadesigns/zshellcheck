@@ -10,7 +10,8 @@ func init() {
 		Title: "Use Zsh subscripts instead of `head -1` or `tail -1`",
 		Description: "Zsh array subscripts `${lines[1]}` and `${lines[-1]}` can extract the first or last " +
 			"element without spawning `head` or `tail` as external processes.",
-		Check: checkZC1110,
+		Severity: SeverityStyle,
+		Check:    checkZC1110,
 	})
 }
 
@@ -69,5 +70,6 @@ func checkZC1110(node ast.Node) []Violation {
 			"Zsh array subscripts avoid spawning an external process.",
 		Line:   cmd.Token.Line,
 		Column: cmd.Token.Column,
+		Level:  SeverityStyle,
 	}}
 }

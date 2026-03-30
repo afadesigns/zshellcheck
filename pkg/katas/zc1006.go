@@ -12,7 +12,8 @@ func init() {
 			"The `[[...]]` construct is a Zsh keyword, offering safer and more powerful conditional " +
 			"expressions than the traditional `test` command. It prevents word splitting and pathname " +
 			"expansion, and supports advanced features like regex matching.",
-		Check: checkZC1006,
+		Severity: SeverityStyle,
+		Check:    checkZC1006,
 	})
 }
 
@@ -28,6 +29,7 @@ func checkZC1006(node ast.Node) []Violation {
 						"[[ is a Zsh keyword that offers safer and more powerful conditional expressions.",
 					Line:   ident.Token.Line,
 					Column: ident.Token.Column,
+					Level:  SeverityStyle,
 				})
 			}
 		}

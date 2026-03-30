@@ -10,7 +10,8 @@ func init() {
 		Title: "Avoid useless `cat`",
 		Description: "`cat file | command` spawns an unnecessary process. " +
 			"Use `command < file` or pass the file as an argument directly.",
-		Check: checkZC1093,
+		Severity: SeverityStyle,
+		Check:    checkZC1093,
 	})
 }
 
@@ -49,5 +50,6 @@ func checkZC1093(node ast.Node) []Violation {
 			"Use `command < file` or pass the filename as an argument.",
 		Line:   pipe.TokenLiteralNode().Line,
 		Column: pipe.TokenLiteralNode().Column,
+		Level:  SeverityStyle,
 	}}
 }

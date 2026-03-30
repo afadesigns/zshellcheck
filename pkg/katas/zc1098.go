@@ -10,7 +10,8 @@ func init() {
 		Title: "Use `(q)` flag for quoting variables in eval",
 		Description: "When constructing a command string for `eval`, use the `(q)` flag (or `(qq)`, `(q-)`) to safely quote variables " +
 			"and prevent command injection.",
-		Check: checkZC1098,
+		Severity: SeverityStyle,
+		Check:    checkZC1098,
 	})
 }
 
@@ -50,6 +51,7 @@ func checkZC1098(node ast.Node) []Violation {
 						Message: "Use the `(q)` flag (or `(qq)`, `(q-)`) when using variables in `eval` to prevent injection.",
 						Line:    cmd.Token.Line,
 						Column:  cmd.Token.Column,
+						Level:   SeverityStyle,
 					}}
 				}
 			}

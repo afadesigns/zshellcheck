@@ -10,7 +10,8 @@ func init() {
 		Title: "Use `$(( ))` instead of `bc` for simple arithmetic",
 		Description: "Zsh supports arithmetic expansion with `$(( ))` and floating point via `zmodload zsh/mathfunc`. " +
 			"Avoid piping to `bc` for simple calculations.",
-		Check: checkZC1101,
+		Severity: SeverityStyle,
+		Check:    checkZC1101,
 	})
 }
 
@@ -39,5 +40,6 @@ func checkZC1101(node ast.Node) []Violation {
 			"Zsh arithmetic expansion avoids spawning an external process.",
 		Line:   cmd.Token.Line,
 		Column: cmd.Token.Column,
+		Level:  SeverityStyle,
 	}}
 }

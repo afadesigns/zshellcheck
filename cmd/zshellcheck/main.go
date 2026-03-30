@@ -41,7 +41,7 @@ func run() int {
 	showVersion := flag.Bool("version", false, "Show version and exit")
 	verbose := flag.Bool("verbose", false, "Show detailed Kata descriptions in text output")
 	noColor := flag.Bool("no-color", false, "Disable colored output")
-	severityFilter := flag.String("severity", "", "Comma-separated list of severities to show (Error,Warning,Info)")
+	severityFilter := flag.String("severity", "", "Comma-separated list of severities to show (error,warning,info,style)")
 	flag.Parse()
 
 	if *showVersion {
@@ -95,10 +95,10 @@ func run() int {
 		for _, s := range strings.Split(*severityFilter, ",") {
 			sTrimmed := katas.Severity(strings.TrimSpace(s))
 			switch sTrimmed {
-			case katas.Error, katas.Warning, katas.Info:
+			case katas.SeverityError, katas.SeverityWarning, katas.SeverityInfo, katas.SeverityStyle:
 				allowedSeverities = append(allowedSeverities, sTrimmed)
 			default:
-				fmt.Fprintf(os.Stderr, "Invalid severity level: %s. Must be one of Error, Warning, Info.\n", s)
+				fmt.Fprintf(os.Stderr, "Invalid severity level: %s. Must be one of error, warning, info, style.\n", s)
 				return 1
 			}
 		}

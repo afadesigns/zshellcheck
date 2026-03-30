@@ -12,7 +12,8 @@ func init() {
 		Title: "Use `read -s` when reading sensitive information",
 		Description: "When asking for passwords or secrets, use `read -s` to prevent " +
 			"the input from being echoed to the terminal.",
-		Check: checkZC1016,
+		Severity: SeverityStyle,
+		Check:    checkZC1016,
 	})
 }
 
@@ -75,6 +76,7 @@ func checkZC1016(node ast.Node) []Violation {
 				Message: "Use `read -s` to hide input when reading sensitive variable '" + varName + "'.",
 				Line:    cmd.TokenLiteralNode().Line,
 				Column:  cmd.TokenLiteralNode().Column,
+				Level:   SeverityStyle,
 			})
 		}
 	}

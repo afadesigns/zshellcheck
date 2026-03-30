@@ -12,7 +12,8 @@ func init() {
 		Title: "Use parameter expansion instead of `cut` for field extraction",
 		Description: "For simple field extraction from variables, use Zsh parameter expansion " +
 			"like `${var%%:*}` or `${(s.:.)var}` instead of piping through `cut`.",
-		Check: checkZC1109,
+		Severity: SeverityStyle,
+		Check:    checkZC1109,
 	})
 }
 
@@ -54,5 +55,6 @@ func checkZC1109(node ast.Node) []Violation {
 			"`${var%%delim*}` or `${(s.delim.)var}` avoid spawning an external process.",
 		Line:   cmd.Token.Line,
 		Column: cmd.Token.Column,
+		Level:  SeverityStyle,
 	}}
 }

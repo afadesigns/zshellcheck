@@ -10,7 +10,8 @@ func init() {
 		Title: "Avoid `ps | grep` without exclusion",
 		Description: "`ps | grep pattern` often matches the grep process itself. " +
 			"Use `grep [p]attern`, `pgrep`, or exclude grep with `grep -v grep`.",
-		Check: checkZC1060,
+		Severity: SeverityStyle,
+		Check:    checkZC1060,
 	})
 }
 
@@ -78,6 +79,7 @@ func checkZC1060(node ast.Node) []Violation {
 			Message: "`ps | grep pattern` matches the grep process itself. Use `grep [p]attern` to exclude the grep process.",
 			Line:    pipe.TokenLiteralNode().Line,
 			Column:  pipe.TokenLiteralNode().Column,
+			Level:   SeverityStyle,
 		}}
 	}
 

@@ -11,7 +11,8 @@ func init() {
 		Description: "Declaring a variable with `local var=$(cmd)` masks the return value of `cmd`. " +
 			"The `local` command returns 0 (success) even if `cmd` fails. " +
 			"Declare the variable first (`local var`), then assign it (`var=$(cmd)`).",
-		Check: checkZC1045,
+		Severity: SeverityInfo,
+		Check:    checkZC1045,
 	}
 	RegisterKata(ast.SimpleCommandNode, kata)
 	RegisterKata(ast.DeclarationStatementNode, kata)
@@ -32,6 +33,7 @@ func checkZC1045(node ast.Node) []Violation {
 							"`" + name + " var=$(cmd)` masks the exit code of `cmd`.",
 						Line:   arg.TokenLiteralNode().Line,
 						Column: arg.TokenLiteralNode().Column,
+						Level:  SeverityInfo,
 					})
 				}
 			}
@@ -49,6 +51,7 @@ func checkZC1045(node ast.Node) []Violation {
 						"`" + decl.Command + " var=$(cmd)` masks the exit code of `cmd`.",
 					Line:   decl.Token.Line,
 					Column: decl.Token.Column,
+					Level:  SeverityInfo,
 				})
 			}
 		}

@@ -13,7 +13,8 @@ func init() {
 		Description: "`sed -i` usage varies between GNU/Linux and macOS/BSD. " +
 			"macOS requires an extension argument (e.g. `sed -i ''`), while GNU does not. " +
 			"Use a temporary file and `mv`, or `perl -i`, for portability.",
-		Check: checkZC1052,
+		Severity: SeverityStyle,
+		Check:    checkZC1052,
 	})
 }
 
@@ -39,6 +40,7 @@ func checkZC1052(node ast.Node) []Violation {
 					Message: "`sed -i` is non-portable (GNU vs BSD differences). Use `perl -i` or a temporary file.",
 					Line:    arg.TokenLiteralNode().Line,
 					Column:  arg.TokenLiteralNode().Column,
+					Level:   SeverityStyle,
 				})
 			}
 		}

@@ -11,7 +11,8 @@ func init() {
 		Description: "The `echo` command's behavior can be inconsistent across different shells and " +
 			"environments, especially with flags and escape sequences. `printf` provides more reliable " +
 			"and portable string formatting.",
-		Check: checkZC1030,
+		Severity: SeverityStyle,
+		Check:    checkZC1030,
 	})
 }
 
@@ -40,6 +41,7 @@ func checkZC1030(node ast.Node) []Violation {
 			Message: "Use `printf` for more reliable and portable string formatting instead of `echo`.",
 			Line:    cmd.Token.Line,
 			Column:  cmd.Token.Column,
+			Level:   SeverityStyle,
 		},
 	}
 }

@@ -10,7 +10,8 @@ func init() {
 		Title: "Use `#!/usr/bin/env zsh` for portability",
 		Description: "Using `#!/usr/bin/env zsh` is more portable than `#!/bin/zsh` because it searches " +
 			"for the `zsh` executable in the user's `PATH`.",
-		Check: checkZC1031,
+		Severity: SeverityInfo,
+		Check:    checkZC1031,
 	})
 }
 
@@ -24,6 +25,7 @@ func checkZC1031(node ast.Node) []Violation {
 				Message: "Use `#!/usr/bin/env zsh` for portability instead of `#!/bin/zsh`.",
 				Line:    1,
 				Column:  1,
+				Level:   SeverityInfo,
 			})
 		}
 	}

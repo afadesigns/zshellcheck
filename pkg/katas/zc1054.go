@@ -12,6 +12,7 @@ func init() {
 		ID:          "ZC1054",
 		Title:       "Use POSIX classes in regex/glob",
 		Description: "Ranges like `[a-z]` are locale-dependent. Use `[[:lower:]]` or `[a-z]` with `LC_ALL=C` to be explicit.",
+		Severity:    SeverityStyle,
 		Check:       checkZC1054,
 	})
 }
@@ -39,6 +40,7 @@ func checkZC1054(node ast.Node) []Violation {
 				Message: "Ranges like `[a-z]` are locale-dependent. Use POSIX classes like `[[:lower:]]` or `[[:digit:]]`.",
 				Line:    arg.TokenLiteralNode().Line,
 				Column:  arg.TokenLiteralNode().Column,
+				Level:   SeverityStyle,
 			})
 		}
 	}

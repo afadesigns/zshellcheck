@@ -10,7 +10,8 @@ func init() {
 		Title: "Use parameter expansion instead of `dirname`/`basename`",
 		Description: "Zsh parameter expansion `${var%/*}` (dirname) and `${var##*/}` (basename) " +
 			"avoid spawning external processes for simple path manipulation.",
-		Check: checkZC1100,
+		Severity: SeverityStyle,
+		Check:    checkZC1100,
 	})
 }
 
@@ -57,5 +58,6 @@ func checkZC1100(node ast.Node) []Violation {
 		Message: msg,
 		Line:    cmd.Token.Line,
 		Column:  cmd.Token.Column,
+		Level:   SeverityStyle,
 	}}
 }

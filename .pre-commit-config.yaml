@@ -9,3 +9,11 @@ repos:
       - id: go-fmt
       - id: go-vet
       - id: go-unit-tests
+  - repo: local
+    hooks:
+      - id: update-version
+        name: Update version from kata count
+        entry: bash scripts/update-version.sh
+        language: system
+        files: 'pkg/katas/zc.*\.go$'
+        pass_filenames: false

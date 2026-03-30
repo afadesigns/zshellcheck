@@ -10,7 +10,8 @@ func init() {
 		Title: "Avoid iterating over `cat` output",
 		Description: "Iterating over `cat` output is fragile because lines can contain spaces. " +
 			"Use `while IFS= read -r line; do ... done < file` or `($(<file))` array expansion.",
-		Check: checkZC1066,
+		Severity: SeverityStyle,
+		Check:    checkZC1066,
 	})
 }
 
@@ -38,6 +39,7 @@ func checkZC1066(node ast.Node) []Violation {
 						Message: "Avoid iterating over `cat` output. Use `while read` loop or `($(<file))` for line-based iteration.",
 						Line:    item.TokenLiteralNode().Line,
 						Column:  item.TokenLiteralNode().Column,
+						Level:   SeverityStyle,
 					})
 				}
 			}

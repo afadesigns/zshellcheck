@@ -379,6 +379,75 @@ func TestSelectStatement_String(t *testing.T) {
 	}
 }
 
+// TestMarkerMethods explicitly calls statementNode() and expressionNode() on
+// all AST types to cover those empty interface-conformance markers.
+func TestMarkerMethods(t *testing.T) {
+	tok := token.Token{Type: token.IDENT, Literal: "test"}
+	ident := &Identifier{Token: tok, Value: "x"}
+	intLit := &IntegerLiteral{Token: tok, Value: 42}
+	block := &BlockStatement{Token: tok, Statements: []Statement{}}
+
+	// Statement + Expression markers for types that implement both
+	type stmtExpr interface {
+		statementNode()
+		expressionNode()
+	}
+	bothNodes := []stmtExpr{
+		&LetStatement{Token: tok, Name: ident, Value: intLit},
+		&ReturnStatement{Token: tok, ReturnValue: intLit},
+		&ExpressionStatement{Token: tok, Expression: ident},
+		&BlockStatement{Token: tok, Statements: []Statement{}},
+		&IfStatement{Token: tok, Condition: ident, Consequence: block},
+		&ForLoopStatement{Token: tok, Body: block},
+		&WhileLoopStatement{Token: tok, Condition: ident, Body: block},
+		&SimpleCommand{Token: tok, Name: ident},
+		&CaseStatement{Token: tok, Value: ident},
+		&CaseClause{Token: tok, Patterns: []Expression{ident}, Body: block},
+		&SelectStatement{Token: tok, Name: ident, Body: block},
+		&CoprocStatement{Token: tok, Command: &ExpressionStatement{Token: tok, Expression: ident}},
+		&DeclarationStatement{Token: tok, Command: "declare"},
+		&ArithmeticCommand{Token: tok, Expression: intLit},
+		&Shebang{Token: tok, Path: "#!/bin/zsh"},
+		&Subshell{Token: tok, Command: ident},
+		&FunctionDefinition{Token: tok, Name: ident, Body: block},
+	}
+	for _, n := range bothNodes {
+		n.statementNode()
+		n.expressionNode()
+	}
+
+	// Expression-only markers
+	type exprOnly interface {
+		expressionNode()
+	}
+	exprNodes := []exprOnly{
+		&Identifier{Token: tok, Value: "x"},
+		&IntegerLiteral{Token: tok, Value: 1},
+		&Boolean{Token: tok, Value: true},
+		&PrefixExpression{Token: tok, Operator: "-", Right: intLit},
+		&PostfixExpression{Token: tok, Operator: "++", Left: ident},
+		&InfixExpression{Token: tok, Left: intLit, Operator: "+", Right: intLit},
+		&FunctionLiteral{Token: tok, Name: ident, Params: []*Identifier{}, Body: block},
+		&CallExpression{Token: tok, Function: ident, Arguments: []Expression{}},
+		&IndexExpression{Token: tok, Left: ident, Index: intLit},
+		&BracketExpression{Token: tok, Elements: []Expression{}},
+		&DoubleBracketExpression{Token: tok, Elements: []Expression{}},
+		&StringLiteral{Token: tok, Value: "s"},
+		&GroupedExpression{Token: tok, Expression: ident},
+		&ArrayAccess{Token: tok, Left: ident, Index: intLit},
+		&CommandSubstitution{Token: tok, Command: ident},
+		&InvalidArrayAccess{Token: tok, Left: ident, Index: intLit},
+		&ArrayLiteral{Token: tok, Elements: []Expression{}},
+		&DollarParenExpression{Token: tok, Command: ident},
+		&ConcatenatedExpression{Token: tok, Parts: []Expression{}},
+		&Redirection{Token: tok, Left: ident, Right: ident},
+		&ProcessSubstitution{Token: tok, Command: ident},
+	}
+	for _, n := range exprNodes {
+		n.expressionNode()
+	}
+}
+
 func TestDeclarationAssignment_String(t *testing.T) {
 	tok := token.Token{Type: token.IDENT, Literal: "x"}
 	ident := &Identifier{Token: tok, Value: "x"}

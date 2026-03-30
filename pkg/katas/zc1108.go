@@ -12,7 +12,8 @@ func init() {
 		Title: "Use Zsh case conversion instead of `tr`",
 		Description: "Zsh provides `${(U)var}` for uppercase and `${(L)var}` for lowercase. " +
 			"Avoid piping through `tr '[:lower:]' '[:upper:]'` for simple case conversion.",
-		Check: checkZC1108,
+		Severity: SeverityStyle,
+		Check:    checkZC1108,
 	})
 }
 
@@ -56,5 +57,6 @@ func checkZC1108(node ast.Node) []Violation {
 			"Zsh parameter expansion flags avoid spawning an external process.",
 		Line:   cmd.Token.Line,
 		Column: cmd.Token.Column,
+		Level:  SeverityStyle,
 	}}
 }

@@ -10,14 +10,16 @@ func init() {
 		Title: "Prefer `func() { ... }` over `function func { ... }`",
 		Description: "The `function` keyword is optional in Zsh and non-standard in POSIX sh. " +
 			"Using `func() { ... }` is more portable and consistent.",
-		Check: checkZC1086,
+		Severity: SeverityStyle,
+		Check:    checkZC1086,
 	})
 	RegisterKata(ast.FunctionLiteralNode, Kata{
 		ID:    "ZC1086",
 		Title: "Prefer `func() { ... }` over `function func { ... }`",
 		Description: "The `function` keyword is optional in Zsh and non-standard in POSIX sh. " +
 			"Using `func() { ... }` is more portable and consistent.",
-		Check: checkZC1086,
+		Severity: SeverityStyle,
+		Check:    checkZC1086,
 	})
 }
 
@@ -31,6 +33,7 @@ func checkZC1086(node ast.Node) []Violation {
 					Message: "Prefer `func() { ... }` over `function func { ... }` for portability and consistency.",
 					Line:    funcLit.TokenLiteralNode().Line,
 					Column:  funcLit.TokenLiteralNode().Column,
+					Level:   SeverityStyle,
 				},
 			}
 		}
@@ -45,6 +48,7 @@ func checkZC1086(node ast.Node) []Violation {
 					Message: "Prefer `func() { ... }` over `function func { ... }` for portability and consistency.",
 					Line:    funcDef.TokenLiteralNode().Line,
 					Column:  funcDef.TokenLiteralNode().Column,
+					Level:   SeverityStyle,
 				},
 			}
 		}

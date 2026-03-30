@@ -45,12 +45,14 @@ func (r *TextReporter) Report(violations []katas.Violation) error {
 		// Severity Color
 		color := ""
 		switch v.Level {
-		case katas.Error:
+		case katas.SeverityError:
 			color = r.getColor("\033[31m") // Red
-		case katas.Warning:
+		case katas.SeverityWarning:
 			color = r.getColor("\033[33m") // Yellow
-		case katas.Info:
+		case katas.SeverityInfo:
 			color = r.getColor("\033[34m") // Blue
+		case katas.SeverityStyle:
+			color = r.getColor("\033[36m") // Cyan
 		}
 		reset := r.getColor("\033[0m")
 		bold := r.getColor("\033[1m")

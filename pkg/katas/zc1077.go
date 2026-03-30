@@ -10,14 +10,16 @@ func init() {
 		Title: "Prefer `${var:u/l}` over `tr` for case conversion",
 		Description: "Using `tr` in a pipeline for simple case conversion is slower than using " +
 			"Zsh's built-in parameter expansion flags `:u` (upper) and `:l` (lower).",
-		Check: checkZC1077,
+		Severity: SeverityStyle,
+		Check:    checkZC1077,
 	})
 	RegisterKata(ast.DollarParenExpressionNode, Kata{
 		ID:    "ZC1077",
 		Title: "Prefer `${var:u/l}` over `tr` for case conversion",
 		Description: "Using `tr` in a pipeline for simple case conversion is slower than using " +
 			"Zsh's built-in parameter expansion flags `:u` (upper) and `:l` (lower).",
-		Check: checkZC1077,
+		Severity: SeverityStyle,
+		Check:    checkZC1077,
 	})
 }
 
@@ -68,6 +70,7 @@ func checkZC1077(node ast.Node) []Violation {
 			Message: "Use `${var:u}` instead of `tr` for uppercase conversion. It is faster and built-in.",
 			Line:    node.TokenLiteralNode().Line,
 			Column:  node.TokenLiteralNode().Column,
+			Level:   SeverityStyle,
 		}}
 	}
 
@@ -77,6 +80,7 @@ func checkZC1077(node ast.Node) []Violation {
 			Message: "Use `${var:l}` instead of `tr` for lowercase conversion. It is faster and built-in.",
 			Line:    node.TokenLiteralNode().Line,
 			Column:  node.TokenLiteralNode().Column,
+			Level:   SeverityStyle,
 		}}
 	}
 

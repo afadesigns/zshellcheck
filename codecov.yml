@@ -28,3 +28,6 @@ ignore:
   - "cmd/zshellcheck/main.go"
   - "pkg/testutil"
   - "pkg/version"
+  - "tests"
+  - "pkg/parser/parser_test_helpers.go"
+  - "pkg/parser/parser_test_minimal.go"

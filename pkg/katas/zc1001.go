@@ -11,7 +11,8 @@ func init() {
 		Description: "In Zsh, accessing array elements with `$my_array[1]` doesn't work as expected. " +
 			"It tries to access an element from an array named `my_array[1]`. " +
 			"The correct way to access an array element is to use `${my_array[1]}`.",
-		Check: checkZC1001,
+		Severity: SeverityStyle,
+		Check:    checkZC1001,
 	})
 	RegisterKata(ast.InvalidArrayAccessNode, Kata{
 		ID:    "ZC1001",
@@ -19,7 +20,8 @@ func init() {
 		Description: "In Zsh, accessing array elements with `$my_array[1]` doesn't work as expected. " +
 			"It tries to access an element from an array named `my_array[1]`. " +
 			"The correct way to access an array element is to use `${my_array[1]}`.",
-		Check: checkZC1001,
+		Severity: SeverityStyle,
+		Check:    checkZC1001,
 	})
 }
 
@@ -35,6 +37,7 @@ func checkZC1001(node ast.Node) []Violation {
 						"Accessing array elements with `" + ident.Value + "[...]` is not the correct syntax in Zsh.",
 					Line:   ident.Token.Line,
 					Column: ident.Token.Column,
+					Level:  SeverityStyle,
 				})
 			}
 		}
@@ -45,6 +48,7 @@ func checkZC1001(node ast.Node) []Violation {
 				"Accessing array elements with `$my_array[1]` is not the correct syntax in Zsh.",
 			Line:   arrayAccess.Token.Line,
 			Column: arrayAccess.Token.Column,
+			Level:  SeverityStyle,
 		})
 	}
 

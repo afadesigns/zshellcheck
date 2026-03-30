@@ -10,7 +10,8 @@ func init() {
 		Title: "Quote variable expansions in `for` loops",
 		Description: "Unquoted variable expansions in `for` loops are split by IFS (usually spaces). " +
 			"This often leads to iterating over words instead of lines or array elements. Quote the expansion to preserve structure.",
-		Check: checkZC1085,
+		Severity: SeverityStyle,
+		Check:    checkZC1085,
 	})
 }
 
@@ -34,6 +35,7 @@ func checkZC1085(node ast.Node) []Violation {
 				Message: "Unquoted variable expansion in for loop. This will split on IFS (usually space). Quote it to iterate over lines or array elements.",
 				Line:    item.TokenLiteralNode().Line,
 				Column:  item.TokenLiteralNode().Column,
+				Level:   SeverityStyle,
 			})
 		}
 	}

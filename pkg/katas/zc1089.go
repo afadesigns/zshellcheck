@@ -11,7 +11,8 @@ func init() {
 		Description: "Redirecting stderr to stdout (`2>&1`) before redirecting stdout to a file (`> file`) " +
 			"means stderr goes to the *original* stdout (usually tty), not the file. " +
 			"Use `> file 2>&1` or `&> file` to redirect both.",
-		Check: checkZC1089,
+		Severity: SeverityError,
+		Check:    checkZC1089,
 	})
 }
 
@@ -47,6 +48,7 @@ func checkZC1089(node ast.Node) []Violation {
 				Message: "Redirection order matters. `2>&1 > file` does not redirect stderr to file. Use `> file 2>&1` instead.",
 				Line:    redirectArg.TokenLiteralNode().Line,
 				Column:  redirectArg.TokenLiteralNode().Column,
+				Level:   SeverityError,
 			},
 		}
 	}

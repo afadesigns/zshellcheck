@@ -10,7 +10,8 @@ func init() {
 		Title: "Use `${var:A}` instead of `realpath` or `readlink -f`",
 		Description: "Zsh provides the `:A` modifier to resolve a path to its absolute form, " +
 			"following symlinks. Avoid spawning `realpath` or `readlink -f` as external processes.",
-		Check: checkZC1113,
+		Severity: SeverityStyle,
+		Check:    checkZC1113,
 	})
 }
 
@@ -40,6 +41,7 @@ func checkZC1113(node ast.Node) []Violation {
 				"Zsh path modifiers avoid spawning an external process.",
 			Line:   cmd.Token.Line,
 			Column: cmd.Token.Column,
+			Level:  SeverityStyle,
 		}}
 	}
 
@@ -60,6 +62,7 @@ func checkZC1113(node ast.Node) []Violation {
 				"Zsh path modifiers avoid spawning an external process.",
 			Line:   cmd.Token.Line,
 			Column: cmd.Token.Column,
+			Level:  SeverityStyle,
 		}}
 	}
 

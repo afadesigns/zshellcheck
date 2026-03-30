@@ -10,7 +10,8 @@ func init() {
 		Title: "Declare loop variables as `local` in functions",
 		Description: "Loop variables in `for` loops are global by default in Zsh functions. " +
 			"Use `local` to scope them to the function before the loop.",
-		Check: checkZC1097,
+		Severity: SeverityStyle,
+		Check:    checkZC1097,
 	})
 }
 
@@ -76,6 +77,7 @@ func checkZC1097(node ast.Node) []Violation {
 							"Use `local " + forLoop.Name.Value + "` before the loop.",
 						Line:   forLoop.Name.Token.Line,
 						Column: forLoop.Name.Token.Column,
+						Level:  SeverityStyle,
 					})
 				}
 			}

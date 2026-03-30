@@ -10,7 +10,8 @@ func init() {
 		Title: "Use Zsh multios instead of `tee`",
 		Description: "Zsh `setopt multios` allows redirecting output to multiple files with " +
 			"`cmd > file1 > file2`. Avoid spawning `tee` for simple output duplication.",
-		Check: checkZC1116,
+		Severity: SeverityStyle,
+		Check:    checkZC1116,
 	})
 }
 
@@ -45,5 +46,6 @@ func checkZC1116(node ast.Node) []Violation {
 			"With multios, `cmd > file1 > file2` writes to both files without spawning tee.",
 		Line:   cmd.Token.Line,
 		Column: cmd.Token.Column,
+		Level:  SeverityStyle,
 	}}
 }

@@ -11,7 +11,8 @@ func init() {
 		Description: "Using `cat file | command` is unnecessary and inefficient. " +
 			"Most commands can read from a file directly, e.g., `command file`. " +
 			"If not, you can use input redirection: `command < file`.",
-		Check: checkZC1038,
+		Severity: SeverityStyle,
+		Check:    checkZC1038,
 	})
 }
 
@@ -51,6 +52,7 @@ func checkZC1038(node ast.Node) []Violation {
 				"Prefer `command file` or `command < file` over `cat file | command`.",
 			Line:   ident.Token.Line,
 			Column: ident.Token.Column,
+			Level:  SeverityStyle,
 		})
 	}
 

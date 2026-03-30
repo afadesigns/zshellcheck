@@ -10,7 +10,8 @@ func init() {
 		Title: "Warn on `bc` for simple arithmetic",
 		Description: "Zsh has built-in support for floating point arithmetic using `(( ... ))` or `$(( ... ))`. " +
 			"Using `bc` is often unnecessary and slower.",
-		Check: checkZC1096,
+		Severity: SeverityStyle,
+		Check:    checkZC1096,
 	})
 }
 
@@ -26,6 +27,7 @@ func checkZC1096(node ast.Node) []Violation {
 			Message: "Zsh supports floating point arithmetic natively. You often don't need `bc`.",
 			Line:    cmd.Token.Line,
 			Column:  cmd.Token.Column,
+			Level:   SeverityStyle,
 		}}
 	}
 

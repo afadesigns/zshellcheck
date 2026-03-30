@@ -10,7 +10,8 @@ func init() {
 		Title: "Do not use variables in printf format string",
 		Description: "Using variables in `printf` format strings allows for format string attacks and unexpected behavior " +
 			"if the variable contains `%`. Use `printf '%s' \"$var\"` instead.",
-		Check: checkZC1041,
+		Severity: SeverityStyle,
+		Check:    checkZC1041,
 	})
 }
 
@@ -45,6 +46,7 @@ func checkZC1041(node ast.Node) []Violation {
 			Message: "Do not use variables in printf format string. Use `printf '..%s..' \"$var\"` instead.",
 			Line:    firstArg.TokenLiteralNode().Line,
 			Column:  firstArg.TokenLiteralNode().Column,
+			Level:   SeverityStyle,
 		}}
 		return violations
 	}
@@ -66,6 +68,7 @@ func checkZC1041(node ast.Node) []Violation {
 						Message: "Do not use variables in printf format string. Use `printf '..%s..' \"$var\"` instead.",
 						Line:    firstArg.TokenLiteralNode().Line,
 						Column:  firstArg.TokenLiteralNode().Column,
+						Level:   SeverityStyle,
 					}}
 					return violations
 				}

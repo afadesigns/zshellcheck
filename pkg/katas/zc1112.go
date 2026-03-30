@@ -10,7 +10,8 @@ func init() {
 		Title: "Avoid `grep -c` — use Zsh pattern matching for counting",
 		Description: "For counting matches in a variable, use Zsh `${#${(f)...}}` or array filtering " +
 			"with `${(M)array:#pattern}` instead of piping through `grep -c`.",
-		Check: checkZC1112,
+		Severity: SeverityStyle,
+		Check:    checkZC1112,
 	})
 }
 
@@ -55,5 +56,6 @@ func checkZC1112(node ast.Node) []Violation {
 			"instead of `grep -c`. Avoids spawning an external process.",
 		Line:   cmd.Token.Line,
 		Column: cmd.Token.Column,
+		Level:  SeverityStyle,
 	}}
 }

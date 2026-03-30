@@ -10,7 +10,8 @@ func init() {
 		Title: "Quote `$@` and `$*` when passing arguments",
 		Description: "Using unquoted `$@` or `$*` splits arguments by IFS (usually space). " +
 			"Use `\"$@\"` to preserve the original argument grouping, or `\"$*\"` to join them into a single string.",
-		Check: checkZC1078,
+		Severity: SeverityStyle,
+		Check:    checkZC1078,
 	})
 }
 
@@ -42,6 +43,7 @@ func checkZC1078(node ast.Node) []Violation {
 				Message: "Unquoted " + s + " splits arguments. Use \"" + s + "\" to preserve structure.",
 				Line:    arg.TokenLiteralNode().Line,
 				Column:  arg.TokenLiteralNode().Column,
+				Level:   SeverityStyle,
 			})
 		}
 	}

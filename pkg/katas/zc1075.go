@@ -11,7 +11,8 @@ func init() {
 		Description: "Unquoted variable expansions in Zsh are subject to globbing (filename generation). " +
 			"If the variable contains characters like `*` or `?`, it might match files unexpectedly. " +
 			"Use quotes `\"$var\"` to prevent this.",
-		Check: checkZC1075,
+		Severity: SeverityStyle,
+		Check:    checkZC1075,
 	})
 }
 
@@ -37,6 +38,7 @@ func checkZC1075(node ast.Node) []Violation {
 					Message: "Unquoted variable expansion '" + ident.Value + "' is subject to globbing. Quote it: \"" + ident.Value + "\".",
 					Line:    ident.Token.Line,
 					Column:  ident.Token.Column,
+					Level:   SeverityStyle,
 				})
 			}
 		} else if _, ok := arg.(*ast.ArrayAccess); ok {
@@ -46,6 +48,7 @@ func checkZC1075(node ast.Node) []Violation {
 				Message: "Unquoted array access is subject to globbing. Quote it.",
 				Line:    arg.TokenLiteralNode().Line,
 				Column:  arg.TokenLiteralNode().Column,
+				Level:   SeverityStyle,
 			})
 		} else if _, ok := arg.(*ast.InvalidArrayAccess); ok {
 			_ = ok
@@ -66,6 +69,7 @@ func checkZC1075(node ast.Node) []Violation {
 							Message: "Unquoted variable expansion '" + ident.Value + "' in concatenated string is subject to globbing.",
 							Line:    ident.Token.Line,
 							Column:  ident.Token.Column,
+							Level:   SeverityStyle,
 						})
 					}
 				}

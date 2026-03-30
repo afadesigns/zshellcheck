@@ -12,14 +12,16 @@ func init() {
 		Title: "Silence `grep` output in conditions",
 		Description: "Using `grep` in a condition prints matches to stdout. " +
 			"Use `grep -q` (or `> /dev/null`) to silence output if you only care about the exit code.",
-		Check: checkZC1053,
+		Severity: SeverityStyle,
+		Check:    checkZC1053,
 	})
 	RegisterKata(ast.WhileLoopStatementNode, Kata{
 		ID:    "ZC1053",
 		Title: "Silence `grep` output in conditions",
 		Description: "Using `grep` in a condition prints matches to stdout. " +
 			"Use `grep -q` (or `> /dev/null`) to silence output if you only care about the exit code.",
-		Check: checkZC1053,
+		Severity: SeverityStyle,
+		Check:    checkZC1053,
 	})
 }
 
@@ -128,6 +130,7 @@ func checkCommandZC1053(cmd *ast.SimpleCommand, isSilenced bool, violations *[]V
 					Message: "Silence `grep` output in conditions. Use `grep -q` or redirect to `/dev/null`.",
 					Line:    name.Token.Line,
 					Column:  name.Token.Column,
+					Level:   SeverityStyle,
 				})
 			}
 		}

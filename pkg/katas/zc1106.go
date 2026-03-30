@@ -13,7 +13,8 @@ func init() {
 		Description: "Using `set -x` (xtrace) in production environments can expose sensitive " +
 			"information, such as API keys or passwords, in logs. While useful for debugging, " +
 			"it should be avoided in production. Consider using targeted debugging or secure logging.",
-		Check: checkZC1106,
+		Severity: SeverityStyle,
+		Check:    checkZC1106,
 	})
 }
 
@@ -35,6 +36,7 @@ func checkZC1106(node ast.Node) []Violation {
 						Message: "Avoid `set -x` in production scripts to prevent sensitive data exposure.",
 						Line:    cmd.Token.Line,
 						Column:  cmd.Token.Column,
+						Level:   SeverityStyle,
 					}}
 				}
 			}

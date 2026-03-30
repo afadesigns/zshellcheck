@@ -12,7 +12,8 @@ func init() {
 		Title: "Use `read -r` to prevent backslash escaping",
 		Description: "By default, `read` interprets backslashes as escape characters. " +
 			"Use `read -r` to treat backslashes literally, which is usually what you want.",
-		Check: checkZC1012,
+		Severity: SeverityStyle,
+		Check:    checkZC1012,
 	})
 }
 
@@ -42,6 +43,7 @@ func checkZC1012(node ast.Node) []Violation {
 					Message: "Use `read -r` to read input without interpreting backslashes.",
 					Line:    cmd.Token.Line,
 					Column:  cmd.Token.Column,
+					Level:   SeverityStyle,
 				})
 			}
 		}

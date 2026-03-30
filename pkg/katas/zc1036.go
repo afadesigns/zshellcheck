@@ -11,7 +11,8 @@ func init() {
 		Description: "The `[[ ... ]]` construct is a more powerful and safer alternative to the `test` " +
 			"command (or `[ ... ]`) for conditional expressions in modern shells. It handles word " +
 			"splitting and globbing more intuitively and supports advanced features like regex matching.",
-		Check: checkZC1036,
+		Severity: SeverityStyle,
+		Check:    checkZC1036,
 	})
 }
 
@@ -25,6 +26,7 @@ func checkZC1036(node ast.Node) []Violation {
 				Message: "Prefer `[[ ... ]]` over `test` command for conditional expressions.",
 				Line:    cmd.Token.Line,
 				Column:  cmd.Token.Column,
+				Level:   SeverityStyle,
 			})
 		}
 	}

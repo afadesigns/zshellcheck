@@ -9,7 +9,7 @@ func init() {
 		ID:          "ZC1107",
 		Title:       "Use (( ... )) for arithmetic conditions",
 		Description: "Use `(( ... ))` for arithmetic comparisons instead of `[[ ... -gt ... ]]`. The double parenthesis syntax supports standard math operators (`>`, `<`, `==`, `!=`) and is optimized.",
-		Severity:    Info,
+		Severity:    SeverityStyle,
 		Check:       checkZC1107DoubleBracket,
 	})
 
@@ -17,7 +17,7 @@ func init() {
 		ID:          "ZC1107",
 		Title:       "Use (( ... )) for arithmetic conditions",
 		Description: "Use `(( ... ))` for arithmetic comparisons instead of `[ ... -eq ... ]`. The double parenthesis syntax supports standard math operators (`>`, `<`, `==`, `!=`) and is optimized.",
-		Severity:    Info,
+		Severity:    SeverityStyle,
 		Check:       checkZC1107SimpleCommand,
 	})
 }
@@ -36,6 +36,7 @@ func checkZC1107DoubleBracket(node ast.Node) []Violation {
 					Message: "Prefer `(( ... ))` for arithmetic comparisons (e.g., `(( a > b ))`) over `[[ ... ]]` with flags like `" + infix.Operator + "`.",
 					Line:    infix.TokenLiteralNode().Line,
 					Column:  infix.TokenLiteralNode().Column,
+					Level:   SeverityStyle,
 				})
 			}
 		}
@@ -69,6 +70,7 @@ func checkZC1107SimpleCommand(node ast.Node) []Violation {
 				Message: "Prefer `(( ... ))` for arithmetic comparisons (e.g., `(( a > b ))`) over `[ ... ]` with flags like `" + argText + "`.",
 				Line:    arg.TokenLiteralNode().Line,
 				Column:  arg.TokenLiteralNode().Column,
+				Level:   SeverityStyle,
 			})
 		}
 	}

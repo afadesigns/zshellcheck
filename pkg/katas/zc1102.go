@@ -11,7 +11,8 @@ func init() {
 		Description: "Redirections are performed by the current shell before `sudo` is started. " +
 			"So `sudo echo > /root/file` will try to open `/root/file` as the current user, failing. " +
 			"Use `echo ... | sudo tee file` or `sudo sh -c 'echo ... > file'`.",
-		Check: checkZC1102,
+		Severity: SeverityStyle,
+		Check:    checkZC1102,
 	})
 }
 
@@ -32,6 +33,7 @@ func checkZC1102(node ast.Node) []Violation {
 					Message: "Redirection happens before `sudo`. This will likely fail permission checks. Use `| sudo tee`.",
 					Line:    cmd.TokenLiteralNode().Line,
 					Column:  cmd.TokenLiteralNode().Column,
+					Level:   SeverityStyle,
 				}}
 			}
 		}

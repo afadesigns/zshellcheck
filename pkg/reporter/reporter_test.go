@@ -25,7 +25,7 @@ func TestTextReporter_Report(t *testing.T) {
 		{
 			KataID:  testKataID,
 			Message: "This is a test violation.",
-			Level:   katas.Warning,
+			Level:   katas.SeverityWarning,
 		},
 	}
 
@@ -79,7 +79,7 @@ func TestTextReporter_NoColor(t *testing.T) {
 		{
 			KataID:  "ZC0001",
 			Message: "no color test",
-			Level:   katas.Error,
+			Level:   katas.SeverityError,
 			Line:    1,
 			Column:  5,
 		},
@@ -106,9 +106,9 @@ func TestTextReporter_NoColor(t *testing.T) {
 
 func TestTextReporter_AllSeverities(t *testing.T) {
 	violations := []katas.Violation{
-		{KataID: "ZC0001", Message: "error msg", Level: katas.Error, Line: 1, Column: 1},
-		{KataID: "ZC0002", Message: "warning msg", Level: katas.Warning, Line: 1, Column: 1},
-		{KataID: "ZC0003", Message: "info msg", Level: katas.Info, Line: 1, Column: 1},
+		{KataID: "ZC0001", Message: "error msg", Level: katas.SeverityError, Line: 1, Column: 1},
+		{KataID: "ZC0002", Message: "warning msg", Level: katas.SeverityWarning, Line: 1, Column: 1},
+		{KataID: "ZC0003", Message: "info msg", Level: katas.SeverityInfo, Line: 1, Column: 1},
 	}
 
 	var buf bytes.Buffer
@@ -144,7 +144,7 @@ func TestTextReporter_EmptyViolations(t *testing.T) {
 
 func TestTextReporter_LineOutOfRange(t *testing.T) {
 	violations := []katas.Violation{
-		{KataID: "ZC0001", Message: "out of range", Level: katas.Warning, Line: 99, Column: 1},
+		{KataID: "ZC0001", Message: "out of range", Level: katas.SeverityWarning, Line: 99, Column: 1},
 	}
 
 	var buf bytes.Buffer
@@ -163,7 +163,7 @@ func TestTextReporter_LineOutOfRange(t *testing.T) {
 
 func TestTextReporter_ZeroColumn(t *testing.T) {
 	violations := []katas.Violation{
-		{KataID: "ZC0001", Message: "zero col", Level: katas.Warning, Line: 1, Column: 0},
+		{KataID: "ZC0001", Message: "zero col", Level: katas.SeverityWarning, Line: 1, Column: 0},
 	}
 
 	var buf bytes.Buffer
@@ -181,7 +181,7 @@ func TestTextReporter_ZeroColumn(t *testing.T) {
 
 func TestTextReporter_MultiLineSource(t *testing.T) {
 	violations := []katas.Violation{
-		{KataID: "ZC0001", Message: "line2 issue", Level: katas.Error, Line: 2, Column: 3},
+		{KataID: "ZC0001", Message: "line2 issue", Level: katas.SeverityError, Line: 2, Column: 3},
 	}
 
 	var buf bytes.Buffer
@@ -202,8 +202,8 @@ func TestTextReporter_MultiLineSource(t *testing.T) {
 
 func TestSarifReporter_Report(t *testing.T) {
 	violations := []katas.Violation{
-		{KataID: "ZC1001", Message: "test violation 1", Level: katas.Error, Line: 1, Column: 1},
-		{KataID: "ZC1002", Message: "test violation 2", Level: katas.Warning, Line: 5, Column: 10},
+		{KataID: "ZC1001", Message: "test violation 1", Level: katas.SeverityError, Line: 1, Column: 1},
+		{KataID: "ZC1002", Message: "test violation 2", Level: katas.SeverityWarning, Line: 5, Column: 10},
 	}
 
 	var buf bytes.Buffer
@@ -293,9 +293,9 @@ func TestJSONReporter_EmptyViolations(t *testing.T) {
 
 func TestJSONReporter_MultipleViolations(t *testing.T) {
 	violations := []katas.Violation{
-		{KataID: "ZC0001", Message: "first", Level: katas.Error, Line: 1, Column: 1},
-		{KataID: "ZC0002", Message: "second", Level: katas.Warning, Line: 2, Column: 5},
-		{KataID: "ZC0003", Message: "third", Level: katas.Info, Line: 3, Column: 10},
+		{KataID: "ZC0001", Message: "first", Level: katas.SeverityError, Line: 1, Column: 1},
+		{KataID: "ZC0002", Message: "second", Level: katas.SeverityWarning, Line: 2, Column: 5},
+		{KataID: "ZC0003", Message: "third", Level: katas.SeverityInfo, Line: 3, Column: 10},
 	}
 
 	var buf bytes.Buffer

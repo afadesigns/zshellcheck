@@ -11,7 +11,8 @@ func init() {
 		Description: "The `git checkout` command can be ambiguous. `git switch` is used for switching " +
 			"branches and `git restore` is used for restoring files. Using these more specific commands " +
 			"can make your scripts clearer and less error-prone.",
-		Check: checkZC1014,
+		Severity: SeverityInfo,
+		Check:    checkZC1014,
 	})
 }
 
@@ -27,6 +28,7 @@ func checkZC1014(node ast.Node) []Violation {
 						Message: "Use `git switch` or `git restore` instead of the ambiguous `git checkout`.",
 						Line:    name.Token.Line,
 						Column:  name.Token.Column,
+						Level:   SeverityInfo,
 					})
 				}
 			}

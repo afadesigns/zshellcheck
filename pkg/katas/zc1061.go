@@ -9,6 +9,7 @@ func init() {
 		ID:          "ZC1061",
 		Title:       "Prefer `{start..end}` over `seq`",
 		Description: "Using `seq` creates an external process. Zsh supports integer range expansion natively: `{1..10}`.",
+		Severity:    SeverityStyle,
 		Check:       checkZC1061,
 	})
 }
@@ -26,6 +27,7 @@ func checkZC1061(node ast.Node) []Violation {
 			Message: "Prefer `{start..end}` range expansion over `seq`. It is built-in and faster.",
 			Line:    name.Token.Line,
 			Column:  name.Token.Column,
+			Level:   SeverityStyle,
 		}}
 	}
 
