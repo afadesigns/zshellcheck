@@ -365,12 +365,23 @@ func (l *Lexer) readString(quote byte) string {
 		}
 		if l.ch == '\\' {
 			l.readChar() // skip escaped char
+			if l.ch == 0 {
+				break
+			}
 		}
 	}
 	if l.ch == 0 {
-		return l.input[position:l.position]
+		end := l.position
+		if end > len(l.input) {
+			end = len(l.input)
+		}
+		return l.input[position:end]
 	}
-	return l.input[position : l.position+1] // include closing quote
+	end := l.position + 1
+	if end > len(l.input) {
+		end = len(l.input)
+	}
+	return l.input[position:end] // include closing quote
 }
 
 func (l *Lexer) skipWhitespace() bool {

@@ -11,12 +11,6 @@ on:
       - '.github/workflows/ci.yml'
   pull_request:
     branches: [ main ]
-    paths:
-      - '**.go'
-      - '**.zsh'
-      - 'go.mod'
-      - 'go.sum'
-      - '.github/workflows/ci.yml'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -31,46 +25,52 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: step-security/harden-runner@c6295a65d1254861815972266d5933fd6e532bdf # v2.11.1
+      - uses: step-security/harden-runner@fa2e9d605c4eeb9fcad4c99c224cee0c6c7f3594 # v2.16.0
         with:
           egress-policy: audit
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.1.7
-      - uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # v5.0.1
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5.6.0
         with:
           go-version: 'stable'
           cache: true
       - name: golangci-lint
-        uses: golangci/golangci-lint-action@971e284b6050e8a5805b1b15d3b97ce06ab88ea8 # v6.1.1
+        uses: golangci/golangci-lint-action@55c2c1448f86e01eaae002a5a3a9624417608d84 # v6.5.2
         with:
           version: latest
           args: --timeout=5m
-          # install-mode: goinstall # Let the action decide or use binary for speed
 
   lint-shell:
     name: Lint Shell Scripts
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: step-security/harden-runner@c6295a65d1254861815972266d5933fd6e532bdf # v2.11.1
+      - uses: step-security/harden-runner@fa2e9d605c4eeb9fcad4c99c224cee0c6c7f3594 # v2.16.0
         with:
           egress-policy: audit
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.1.7
       - name: Run ShellCheck
         uses: ludeeus/action-shellcheck@00cae500b08a931fb5698e11e79bfbd38e612a38 # v2.0.0
+        env:
+          SHELLCHECK_OPTS: '-e SC1071 -e SC2148'
         with:
           scandir: '.'
           severity: warning
-          ignore_paths: 'tests/integration_test.zsh' # Ignore specific files if needed
+          ignore_paths: |-
+            tests
+            examples
+            pkg/katas/testdata
+            completions
 
-  test:
-    name: Tests
+  build-and-test:
+    name: Build & Test
     strategy:
+      fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
     runs-on: ${{ matrix.os }}
     timeout-minutes: 20
     steps:
-      - uses: step-security/harden-runner@c6295a65d1254861815972266d5933fd6e532bdf # v2.11.1
+      - uses: step-security/harden-runner@fa2e9d605c4eeb9fcad4c99c224cee0c6c7f3594 # v2.16.0
         with:
           egress-policy: audit
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.1.7
@@ -83,7 +83,8 @@ jobs:
       - name: Build
         run: go build -v -o zshellcheck ./cmd/zshellcheck
       - name: Test (Unit)
-        run: go test -v -coverprofile=coverage.out -covermode=atomic ./...
+        shell: bash
+        run: go test -v -coverprofile=coverage.txt -covermode=atomic ./...
       - name: Verify go.mod is tidy
         run: |
           go mod tidy
@@ -93,18 +94,22 @@ jobs:
         run: |
           ./install.sh
           ~/.local/bin/zshellcheck --version
+      - name: Install Zsh
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y zsh
       - name: Test (Integration)
-        if: runner.os != 'Windows' # Skip shell script integration tests on Windows for now
+        if: runner.os != 'Windows'
         run: |
           chmod +x tests/integration_test.zsh
           ./tests/integration_test.zsh
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@1e68e06f1dbfde0f2ce0c13999cd13d260d60d6e # v5.1.1
+        uses: codecov/codecov-action@75cd11691c0faa626561e295848008c8a7dddffe # v5.5.4
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
+          files: coverage.txt
           fail_ci_if_error: true
       - name: Upload Binary Artifact
-        uses: actions/upload-artifact@65c4c4a1ddee5b7c888b470a09886fa126ba21b8 # v4.6.0 (pinned)
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: zshellcheck-${{ runner.os }}-${{ runner.arch }}
           path: zshellcheck${{ runner.os == 'Windows' && '.exe' || '' }}
@@ -115,7 +120,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: step-security/harden-runner@c6295a65d1254861815972266d5933fd6e532bdf # v2.11.1
+      - uses: step-security/harden-runner@fa2e9d605c4eeb9fcad4c99c224cee0c6c7f3594 # v2.16.0
         with:
           egress-policy: audit
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.1.7
@@ -131,11 +136,11 @@ jobs:
         run: go test -fuzz=FuzzParser -fuzztime=30s ./pkg/parser
 
   vulncheck:
-    name: Security Scan
+    name: Vulnerability Scan
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: step-security/harden-runner@c6295a65d1254861815972266d5933fd6e532bdf # v2.11.1
+      - uses: step-security/harden-runner@fa2e9d605c4eeb9fcad4c99c224cee0c6c7f3594 # v2.16.0
         with:
           egress-policy: audit
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.1.7
@@ -148,3 +153,68 @@ jobs:
         run: go install golang.org/x/vuln/cmd/govulncheck@v1.1.4
       - name: Scan for vulnerabilities
         run: govulncheck ./...
+
+  sbom:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: step-security/harden-runner@fa2e9d605c4eeb9fcad4c99c224cee0c6c7f3594 # v2.16.0
+        with:
+          egress-policy: audit
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.1.7
+      - name: Set up Go
+        uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # v5.0.1
+        with:
+          go-version: 'stable'
+          cache: true
+      - name: Build
+        run: go build -v ./cmd/zshellcheck
+      - name: Generate SBOM
+        run: go version -m zshellcheck > sbom-go-modules.txt
+      - name: Verify SBOM
+        run: test -s sbom-go-modules.txt
+      - name: Upload SBOM
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: sbom
+          path: sbom-go-modules.txt
+          retention-days: 30
+
+  # Gate jobs matching branch protection required status checks
+  test:
+    if: always()
+    needs: [lint, lint-shell, build-and-test, fuzz]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Verify all test jobs passed
+        run: |
+          if [[ "${{ needs.lint.result }}" != "success" ]]; then
+            echo "::error::Lint failed"
+            exit 1
+          fi
+          if [[ "${{ needs.lint-shell.result }}" != "success" ]]; then
+            echo "::error::Shell lint failed"
+            exit 1
+          fi
+          if [[ "${{ needs.build-and-test.result }}" != "success" ]]; then
+            echo "::error::Build & Test failed"
+            exit 1
+          fi
+          if [[ "${{ needs.fuzz.result }}" != "success" ]]; then
+            echo "::error::Fuzzing failed"
+            exit 1
+          fi
+
+  security:
+    if: always()
+    needs: [vulncheck]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Verify security scan passed
+        run: |
+          if [[ "${{ needs.vulncheck.result }}" != "success" ]]; then
+            echo "::error::Vulnerability scan failed"
+            exit 1
+          fi

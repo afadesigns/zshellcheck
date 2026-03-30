@@ -29,7 +29,6 @@ FAIL=0
 for f in $FILES; do
     # echo "Checking $f..."
     OUTPUT=$($ZSHELLCHECK_BIN "$f" 2>&1 || true)
-    EXIT_CODE=$?
     
     # zshellcheck might not return non-zero on violations yet?
     # Check if output is empty.

@@ -360,7 +360,7 @@ echo -e "${GREEN}Installation complete!${NC}"
 SHELL_CONFIG=$(detect_shell_config)
 
 # Path check
-if [[ ":$PATH:" != ".*:${BIN_DIR}:"* ]]; then
+if [[ ":$PATH:" != *":${BIN_DIR}:"* ]]; then
     echo ""
     echo -e "${YELLOW}WARNING: $BIN_DIR is not in your PATH.${NC}"
     EXPORT_CMD="export PATH=\"
