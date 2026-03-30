@@ -69,6 +69,43 @@ func TestZC1088(t *testing.T) {
 			input:    `out=$( ( cd /tmp; pwd ) )`,
 			expected: []katas.Violation{},
 		},
+		{
+			name:  "invalid subshell export",
+			input: `( export VAR=1 )`,
+			expected: []katas.Violation{
+				{
+					KataID:  "ZC1088",
+					Message: "Subshell `( ... )` isolates state changes. The changes (e.g. `cd`, variable assignment) will be lost. Use `{ ... }` to preserve them, or add commands that use the changed state.",
+					Line:    1,
+					Column:  1,
+				},
+			},
+		},
+		{
+			name:     "brace group is fine",
+			input:    `{ cd /tmp; }`,
+			expected: []katas.Violation{},
+		},
+		{
+			name:     "no subshell just command",
+			input:    `echo hello`,
+			expected: []katas.Violation{},
+		},
+		{
+			name:     "subshell with non-state-changing commands",
+			input:    `( echo hello; ls )`,
+			expected: []katas.Violation{},
+		},
+		{
+			name:     "while loop no violation",
+			input:    `while true; do echo x; done`,
+			expected: []katas.Violation{},
+		},
+		{
+			name:     "for loop no violation",
+			input:    `for i in a b c; do echo $i; done`,
+			expected: []katas.Violation{},
+		},
 	}
 
 	for _, tt := range tests {

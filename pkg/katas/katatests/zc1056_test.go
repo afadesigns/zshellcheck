@@ -28,6 +28,21 @@ func TestZC1056(t *testing.T) {
 			input:    `((x + 1))`,
 			expected: []katas.Violation{},
 		},
+		{
+			name:     "variable expansion command",
+			input:    `$var`,
+			expected: []katas.Violation{},
+		},
+		{
+			name:     "ls command no violation",
+			input:    `ls -la`,
+			expected: []katas.Violation{},
+		},
+		{
+			name:     "assignment statement",
+			input:    `x=5`,
+			expected: []katas.Violation{},
+		},
 	}
 
 	for _, tt := range tests {

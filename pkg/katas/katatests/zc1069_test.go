@@ -67,6 +67,55 @@ func TestZC1069(t *testing.T) {
 				},
 			},
 		},
+		{
+			name:     "valid local in function keyword",
+			input:    "function myfunc { local x=1; }",
+			expected: []katas.Violation{},
+		},
+		{
+			name:  "invalid local in while loop (global)",
+			input: `while true; do local x=1; done`,
+			expected: []katas.Violation{
+				{
+					KataID: "ZC1069",
+					Message: "`local` can only be used inside functions. " +
+						"Use `typeset`, `declare`, or just assignment for global variables.",
+					Line:   1,
+					Column: 16,
+				},
+			},
+		},
+		{
+			name:  "invalid local in for loop (global)",
+			input: `for i in a b c; do local x=1; done`,
+			expected: []katas.Violation{
+				{
+					KataID: "ZC1069",
+					Message: "`local` can only be used inside functions. " +
+						"Use `typeset`, `declare`, or just assignment for global variables.",
+					Line:   1,
+					Column: 20,
+				},
+			},
+		},
+		{
+			name:  "invalid local in case (global)",
+			input: "case $x in\na) local y=1;;\nesac",
+			expected: []katas.Violation{
+				{
+					KataID: "ZC1069",
+					Message: "`local` can only be used inside functions. " +
+						"Use `typeset`, `declare`, or just assignment for global variables.",
+					Line:   2,
+					Column: 4,
+				},
+			},
+		},
+		{
+			name:     "regular echo command",
+			input:    `echo hello world`,
+			expected: []katas.Violation{},
+		},
 	}
 
 	for _, tt := range tests {

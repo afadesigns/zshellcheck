@@ -1,6 +1,6 @@
 # ZShellCheck Katas
 
-Comprehensive list of all 120 implemented checks, migrated from the Wiki.
+Comprehensive list of all 166 implemented checks, migrated from the Wiki.
 
 ## Table of Contents
 
@@ -18,6 +18,8 @@ Comprehensive list of all 120 implemented checks, migrated from the Wiki.
 - [ZC1012: Use `read -r` to prevent backslash escaping](#zc1012)
 - [ZC1013: Use `((...))` for arithmetic operations instead of `let`](#zc1013)
 - [ZC1014: Use `git switch` or `git restore` instead of `git checkout`](#zc1014)
+- [ZC1015: Use `$(...)` for command substitution instead of backticks](#zc1015)
+- [ZC1016: Use `read -s` when reading sensitive information](#zc1016)
 - [ZC1017: Use `print -r` to print strings literally](#zc1017)
 - [ZC1018: Use `((...))` for C-style arithmetic instead of `expr`](#zc1018)
 - [ZC1019: Use `whence` instead of `which`](#zc1019)
@@ -122,6 +124,52 @@ Comprehensive list of all 120 implemented checks, migrated from the Wiki.
 - [ZC1118: Use `print -rn` instead of `echo -n`](#zc1118)
 - [ZC1119: Use `$EPOCHSECONDS` instead of `date +%s`](#zc1119)
 - [ZC1120: Use `$PWD` instead of `pwd`](#zc1120)
+- [ZC1121: Use `$HOST` instead of `hostname`](#zc1121)
+- [ZC1122: Use `$USER` instead of `whoami`](#zc1122)
+- [ZC1123: Use `$OSTYPE` instead of `uname`](#zc1123)
+- [ZC1124: Use `: > file` instead of `cat /dev/null > file` to truncate](#zc1124)
+- [ZC1125: Avoid `echo | grep` for string matching](#zc1125)
+- [ZC1126: Use `sort -u` instead of `sort | uniq`](#zc1126)
+- [ZC1127: Avoid `ls` for counting files](#zc1127)
+- [ZC1128: Use `> file` instead of `touch file` for creation](#zc1128)
+- [ZC1129: Use Zsh `stat` module instead of `wc -c` for file size](#zc1129)
+- [ZC1131: Avoid `cat file | while read` -- use redirection](#zc1131)
+- [ZC1132: Use Zsh pattern extraction instead of `grep -o`](#zc1132)
+- [ZC1133: Avoid `kill -9` -- use `kill` first, then escalate](#zc1133)
+- [ZC1134: Avoid `sleep` in tight loops](#zc1134)
+- [ZC1135: Avoid `env VAR=val cmd` -- use inline assignment](#zc1135)
+- [ZC1136: Avoid `rm -rf` without safeguard](#zc1136)
+- [ZC1137: Avoid hardcoded `/tmp` paths](#zc1137)
+- [ZC1139: Avoid `source` with URL -- use local files](#zc1139)
+- [ZC1140: Use `command -v` instead of `hash` for command existence](#zc1140)
+- [ZC1141: Avoid `curl | sh` pattern](#zc1141)
+- [ZC1142: Avoid chained `grep | grep` -- combine patterns](#zc1142)
+- [ZC1143: Avoid `set -e` -- use explicit error handling](#zc1143)
+- [ZC1144: Avoid `trap` with signal numbers -- use names](#zc1144)
+- [ZC1145: Avoid `tr -d` for character deletion -- use parameter expansion](#zc1145)
+- [ZC1146: Avoid `cat file | awk` -- pass file to awk directly](#zc1146)
+- [ZC1147: Avoid `mkdir` without `-p` for nested paths](#zc1147)
+- [ZC1148: Use `compdef` instead of `compctl` for completions](#zc1148)
+- [ZC1149: Avoid `echo` for error messages -- use `>&2`](#zc1149)
+- [ZC1151: Avoid `cat -A` -- use `print -v` or `od` for non-printable characters](#zc1151)
+- [ZC1152: Use Zsh PCRE module instead of `grep -P`](#zc1152)
+- [ZC1153: Use `cmp -s` instead of `diff` for equality check](#zc1153)
+- [ZC1154: Use `find -exec {} +` instead of `find -exec {} \;`](#zc1154)
+- [ZC1155: Use `whence -a` instead of `which -a`](#zc1155)
+- [ZC1156: Avoid `ln` without `-s` for symlinks](#zc1156)
+- [ZC1157: Avoid `strings` command -- use Zsh expansion](#zc1157)
+- [ZC1158: Avoid `chown -R` without `--no-dereference`](#zc1158)
+- [ZC1159: Avoid `tar` without explicit compression flag](#zc1159)
+- [ZC1160: Prefer `curl` over `wget` for portability](#zc1160)
+- [ZC1161: Avoid `openssl` for simple hashing -- use Zsh modules](#zc1161)
+- [ZC1162: Use `cp -a` instead of `cp -r` to preserve attributes](#zc1162)
+- [ZC1163: Use `grep -m 1` instead of `grep | head -1`](#zc1163)
+- [ZC1164: Avoid `sed -n 'Np'` -- use Zsh array subscript](#zc1164)
+- [ZC1165: Use Zsh parameter expansion for simple `awk` field extraction](#zc1165)
+- [ZC1166: Avoid `grep -i` for case-insensitive match -- use `(#i)` glob flag](#zc1166)
+- [ZC1167: Avoid `timeout` command -- use Zsh `TMOUT` or `zsh/sched`](#zc1167)
+- [ZC1168: Use `${(f)...}` instead of `readarray`/`mapfile`](#zc1168)
+- [ZC1169: Avoid `install` for simple copy+chmod -- use `cp` then `chmod`](#zc1169)
 
 ---
 
@@ -797,6 +845,37 @@ To disable this Kata, add `ZC1014` to the `disabled_katas` list in your `.zshell
 [⬆ Back to Top](#table-of-contents)
 </details>
 
+<div id="zc1015"></div>
+
+<details>
+<summary><strong>ZC1015</strong>: Use <code>$(...)</code> for command substitution instead of backticks <img src="https://img.shields.io/badge/Severity-style-blue?style=flat-square" height="15"/></summary>
+
+### Description
+
+The `$(...)` syntax is the modern, recommended way to perform command substitution. It is easier to nest and less error-prone than backticks.
+
+### Bad Example
+
+```zsh
+result=`ls -la`
+nested=`echo \`date\``
+```
+
+### Good Example
+
+```zsh
+result=$(ls -la)
+nested=$(echo $(date))
+```
+
+### Configuration
+
+To disable this Kata, add `ZC1015` to the `disabled_katas` list in your `.zshellcheckrc` file.
+
+---
+
+[Back to Top](#table-of-contents)
+</details>
 
 <div id="zc1016"></div>
 
@@ -3030,8 +3109,322 @@ To disable this Kata, add `ZC1082` to the `disabled_katas` list in your `.zshell
 [⬆ Back to Top](#table-of-contents)
 </details>
 
+<div id="zc1083"></div>
 
+<details>
+<summary><strong>ZC1083</strong>: Brace expansion limits cannot be variables <img src="https://img.shields.io/badge/Severity-error-red?style=flat-square" height="15"/></summary>
 
+### Description
+
+Brace expansion `{x..y}` happens before variable expansion. Using variables as limits does not work as expected -- the braces are treated literally.
+
+### Bad Example
+
+```zsh
+n=10
+for i in {1..$n}; do echo $i; done
+```
+
+### Good Example
+
+```zsh
+n=10
+for i in $(seq 1 $n); do echo $i; done
+## Or use a C-style loop:
+for (( i = 1; i <= n; i++ )); do echo $i; done
+```
+
+### Configuration
+
+To disable this Kata, add `ZC1083` to the `disabled_katas` list in your `.zshellcheckrc` file.
+
+---
+
+[Back to Top](#table-of-contents)
+</details>
+
+<div id="zc1084"></div>
+
+<details>
+<summary><strong>ZC1084</strong>: Quote globs in <code>find</code> commands <img src="https://img.shields.io/badge/Severity-style-blue?style=flat-square" height="15"/></summary>
+
+### Description
+
+Unquoted globs in `find` commands are expanded by the shell before `find` runs. Quote the pattern so `find` receives it literally.
+
+### Bad Example
+
+```zsh
+find . -name *.txt
+```
+
+### Good Example
+
+```zsh
+find . -name '*.txt'
+```
+
+### Configuration
+
+To disable this Kata, add `ZC1084` to the `disabled_katas` list in your `.zshellcheckrc` file.
+
+---
+
+[Back to Top](#table-of-contents)
+</details>
+
+<div id="zc1085"></div>
+
+<details>
+<summary><strong>ZC1085</strong>: Quote variable expansions in <code>for</code> loops <img src="https://img.shields.io/badge/Severity-style-blue?style=flat-square" height="15"/></summary>
+
+### Description
+
+Unquoted variable expansions in `for` loops are split by IFS (usually spaces). Quote variables or use arrays to iterate safely.
+
+### Bad Example
+
+```zsh
+files="file one.txt file two.txt"
+for f in $files; do echo "$f"; done
+```
+
+### Good Example
+
+```zsh
+files=("file one.txt" "file two.txt")
+for f in "${files[@]}"; do echo "$f"; done
+```
+
+### Configuration
+
+To disable this Kata, add `ZC1085` to the `disabled_katas` list in your `.zshellcheckrc` file.
+
+---
+
+[Back to Top](#table-of-contents)
+</details>
+
+<div id="zc1086"></div>
+
+<details>
+<summary><strong>ZC1086</strong>: Prefer <code>func() { ... }</code> over <code>function func { ... }</code> <img src="https://img.shields.io/badge/Severity-style-blue?style=flat-square" height="15"/></summary>
+
+### Description
+
+The `function` keyword is optional in Zsh and non-standard in POSIX sh. Use the `name() { ... }` form for portability and consistency.
+
+### Bad Example
+
+```zsh
+function greet {
+  echo "Hello"
+}
+```
+
+### Good Example
+
+```zsh
+greet() {
+  echo "Hello"
+}
+```
+
+### Configuration
+
+To disable this Kata, add `ZC1086` to the `disabled_katas` list in your `.zshellcheckrc` file.
+
+---
+
+[Back to Top](#table-of-contents)
+</details>
+
+<div id="zc1087"></div>
+
+<details>
+<summary><strong>ZC1087</strong>: Output redirection overwrites input file <img src="https://img.shields.io/badge/Severity-error-red?style=flat-square" height="15"/></summary>
+
+### Description
+
+Redirecting output to a file that is also being read as input causes the file to be truncated before it is read. Use a temporary file or `sponge`.
+
+### Bad Example
+
+```zsh
+sort file.txt > file.txt
+```
+
+### Good Example
+
+```zsh
+sort file.txt > file.tmp && mv file.tmp file.txt
+## Or with sponge:
+sort file.txt | sponge file.txt
+```
+
+### Configuration
+
+To disable this Kata, add `ZC1087` to the `disabled_katas` list in your `.zshellcheckrc` file.
+
+---
+
+[Back to Top](#table-of-contents)
+</details>
+
+<div id="zc1088"></div>
+
+<details>
+<summary><strong>ZC1088</strong>: Subshell isolates state changes <img src="https://img.shields.io/badge/Severity-warning-orange?style=flat-square" height="15"/></summary>
+
+### Description
+
+Commands inside `( ... )` run in a subshell. Variable assignments, `cd`, and other state changes inside a subshell do not affect the parent shell.
+
+### Bad Example
+
+```zsh
+(cd /tmp && myvar="changed")
+echo $myvar  # Still the old value
+```
+
+### Good Example
+
+```zsh
+cd /tmp && myvar="changed"
+echo $myvar
+## Or use braces for grouping without a subshell:
+{ cd /tmp && myvar="changed"; }
+```
+
+### Configuration
+
+To disable this Kata, add `ZC1088` to the `disabled_katas` list in your `.zshellcheckrc` file.
+
+---
+
+[Back to Top](#table-of-contents)
+</details>
+
+<div id="zc1089"></div>
+
+<details>
+<summary><strong>ZC1089</strong>: Redirection order matters (<code>2>&1 > file</code>) <img src="https://img.shields.io/badge/Severity-error-red?style=flat-square" height="15"/></summary>
+
+### Description
+
+Redirecting stderr to stdout (`2>&1`) before redirecting stdout to a file (`> file`) means stderr goes to the original stdout (terminal), not the file. Reverse the order.
+
+### Bad Example
+
+```zsh
+command 2>&1 > output.log
+```
+
+### Good Example
+
+```zsh
+command > output.log 2>&1
+```
+
+### Configuration
+
+To disable this Kata, add `ZC1089` to the `disabled_katas` list in your `.zshellcheckrc` file.
+
+---
+
+[Back to Top](#table-of-contents)
+</details>
+
+<div id="zc1090"></div>
+
+<details>
+<summary><strong>ZC1090</strong>: Quoted regex pattern in <code>=~</code> <img src="https://img.shields.io/badge/Severity-style-blue?style=flat-square" height="15"/></summary>
+
+### Description
+
+Quoting the pattern on the right side of `=~` forces literal string matching in Zsh/Bash. Leave the regex pattern unquoted for proper regex evaluation.
+
+### Bad Example
+
+```zsh
+if [[ $var =~ "^[0-9]+$" ]]; then echo "numeric"; fi
+```
+
+### Good Example
+
+```zsh
+if [[ $var =~ ^[0-9]+$ ]]; then echo "numeric"; fi
+```
+
+### Configuration
+
+To disable this Kata, add `ZC1090` to the `disabled_katas` list in your `.zshellcheckrc` file.
+
+---
+
+[Back to Top](#table-of-contents)
+</details>
+
+<div id="zc1091"></div>
+
+<details>
+<summary><strong>ZC1091</strong>: Use <code>(( ... ))</code> for arithmetic comparisons in <code>[[...]]</code> <img src="https://img.shields.io/badge/Severity-style-blue?style=flat-square" height="15"/></summary>
+
+### Description
+
+The `[[ ... ]]` construct is primarily for string comparisons and file tests. For arithmetic comparisons, use `(( ... ))` which provides natural C-style syntax.
+
+### Bad Example
+
+```zsh
+if [[ $a -gt $b ]]; then echo "a is greater"; fi
+```
+
+### Good Example
+
+```zsh
+if (( a > b )); then echo "a is greater"; fi
+```
+
+### Configuration
+
+To disable this Kata, add `ZC1091` to the `disabled_katas` list in your `.zshellcheckrc` file.
+
+---
+
+[Back to Top](#table-of-contents)
+</details>
+
+<div id="zc1092"></div>
+
+<details>
+<summary><strong>ZC1092</strong>: Arrays cannot be exported <img src="https://img.shields.io/badge/Severity-warning-orange?style=flat-square" height="15"/></summary>
+
+### Description
+
+In Zsh, arrays cannot be exported to child processes via `export`. Serialize arrays to a string when passing data to subprocesses.
+
+### Bad Example
+
+```zsh
+export my_array=(one two three)
+```
+
+### Good Example
+
+```zsh
+my_array=(one two three)
+export MY_ARRAY_STR="${(j/:/)my_array}"
+```
+
+### Configuration
+
+To disable this Kata, add `ZC1092` to the `disabled_katas` list in your `.zshellcheckrc` file.
+
+---
+
+[Back to Top](#table-of-contents)
+</details>
 
 
 
@@ -3173,6 +3566,45 @@ To disable this Kata, add `ZC1096` to the `disabled_katas` list in your `.zshell
 ---
 
 [⬆ Back to Top](#table-of-contents)
+</details>
+
+<div id="zc1097"></div>
+
+<details>
+<summary><strong>ZC1097</strong>: Declare loop variables as <code>local</code> in functions <img src="https://img.shields.io/badge/Severity-style-blue?style=flat-square" height="15"/></summary>
+
+### Description
+
+Loop variables in `for` loops are global by default in Zsh functions. Declare them as `local` to prevent leaking state to the caller.
+
+### Bad Example
+
+```zsh
+my_func() {
+  for item in a b c; do
+    echo $item
+  done
+}
+```
+
+### Good Example
+
+```zsh
+my_func() {
+  local item
+  for item in a b c; do
+    echo $item
+  done
+}
+```
+
+### Configuration
+
+To disable this Kata, add `ZC1097` to the `disabled_katas` list in your `.zshellcheckrc` file.
+
+---
+
+[Back to Top](#table-of-contents)
 </details>
 
 <div id="zc1098"></div>
@@ -3897,4 +4329,1428 @@ To disable this Kata, add `ZC1120` to the `disabled_katas` list in your `.zshell
 ---
 
 [⬆ Back to Top](#table-of-contents)
+</details>
+
+<div id="zc1121"></div>
+
+<details>
+<summary><strong>ZC1121</strong>: Use <code>$HOST</code> instead of <code>hostname</code> <img src="https://img.shields.io/badge/Severity-style-blue?style=flat-square" height="15"/></summary>
+
+### Description
+
+Zsh provides `$HOST` as a built-in variable containing the hostname. Avoid spawning the `hostname` command.
+
+### Bad Example
+
+```zsh
+host=$(hostname)
+```
+
+### Good Example
+
+```zsh
+host=$HOST
+```
+
+### Configuration
+
+To disable this Kata, add `ZC1121` to the `disabled_katas` list in your `.zshellcheckrc` file.
+
+---
+
+[Back to Top](#table-of-contents)
+</details>
+
+<div id="zc1122"></div>
+
+<details>
+<summary><strong>ZC1122</strong>: Use <code>$USER</code> instead of <code>whoami</code> <img src="https://img.shields.io/badge/Severity-style-blue?style=flat-square" height="15"/></summary>
+
+### Description
+
+Zsh provides `$USER` as a built-in variable containing the current username. Avoid spawning the `whoami` command.
+
+### Bad Example
+
+```zsh
+me=$(whoami)
+```
+
+### Good Example
+
+```zsh
+me=$USER
+```
+
+### Configuration
+
+To disable this Kata, add `ZC1122` to the `disabled_katas` list in your `.zshellcheckrc` file.
+
+---
+
+[Back to Top](#table-of-contents)
+</details>
+
+<div id="zc1123"></div>
+
+<details>
+<summary><strong>ZC1123</strong>: Use <code>$OSTYPE</code> instead of <code>uname</code> <img src="https://img.shields.io/badge/Severity-style-blue?style=flat-square" height="15"/></summary>
+
+### Description
+
+Zsh provides `$OSTYPE` (e.g., `linux-gnu`, `darwin`) as a built-in variable. Avoid spawning the `uname` command for OS detection.
+
+### Bad Example
+
+```zsh
+os=$(uname -s)
+```
+
+### Good Example
+
+```zsh
+case $OSTYPE in
+  linux*) echo "Linux" ;;
+  darwin*) echo "macOS" ;;
+esac
+```
+
+### Configuration
+
+To disable this Kata, add `ZC1123` to the `disabled_katas` list in your `.zshellcheckrc` file.
+
+---
+
+[Back to Top](#table-of-contents)
+</details>
+
+<div id="zc1124"></div>
+
+<details>
+<summary><strong>ZC1124</strong>: Use <code>: > file</code> instead of <code>cat /dev/null > file</code> to truncate <img src="https://img.shields.io/badge/Severity-style-blue?style=flat-square" height="15"/></summary>
+
+### Description
+
+Truncating a file with `cat /dev/null > file` spawns an unnecessary process. Use `: > file` or `> file` instead.
+
+### Bad Example
+
+```zsh
+cat /dev/null > logfile.txt
+```
+
+### Good Example
+
+```zsh
+: > logfile.txt
+## Or simply:
+> logfile.txt
+```
+
+### Configuration
+
+To disable this Kata, add `ZC1124` to the `disabled_katas` list in your `.zshellcheckrc` file.
+
+---
+
+[Back to Top](#table-of-contents)
+</details>
+
+<div id="zc1125"></div>
+
+<details>
+<summary><strong>ZC1125</strong>: Avoid <code>echo | grep</code> for string matching <img src="https://img.shields.io/badge/Severity-style-blue?style=flat-square" height="15"/></summary>
+
+### Description
+
+Using `echo $var | grep pattern` spawns two unnecessary processes. Use Zsh's built-in pattern matching with `[[ $var == *pattern* ]]` instead.
+
+### Bad Example
+
+```zsh
+if echo "$var" | grep -q "error"; then
+  echo "found"
+fi
+```
+
+### Good Example
+
+```zsh
+if [[ $var == *error* ]]; then
+  echo "found"
+fi
+```
+
+### Configuration
+
+To disable this Kata, add `ZC1125` to the `disabled_katas` list in your `.zshellcheckrc` file.
+
+---
+
+[Back to Top](#table-of-contents)
+</details>
+
+<div id="zc1126"></div>
+
+<details>
+<summary><strong>ZC1126</strong>: Use <code>sort -u</code> instead of <code>sort | uniq</code> <img src="https://img.shields.io/badge/Severity-style-blue?style=flat-square" height="15"/></summary>
+
+### Description
+
+`sort | uniq` spawns two processes when `sort -u` does the same in one.
+
+### Bad Example
+
+```zsh
+cat data.txt | sort | uniq
+```
+
+### Good Example
+
+```zsh
+sort -u data.txt
+```
+
+### Configuration
+
+To disable this Kata, add `ZC1126` to the `disabled_katas` list in your `.zshellcheckrc` file.
+
+---
+
+[Back to Top](#table-of-contents)
+</details>
+
+<div id="zc1127"></div>
+
+<details>
+<summary><strong>ZC1127</strong>: Avoid <code>ls</code> for counting files <img src="https://img.shields.io/badge/Severity-style-blue?style=flat-square" height="15"/></summary>
+
+### Description
+
+Using `ls | wc -l` to count files spawns unnecessary processes and fails with filenames containing newlines. Use Zsh glob qualifiers instead.
+
+### Bad Example
+
+```zsh
+count=$(ls *.txt | wc -l)
+```
+
+### Good Example
+
+```zsh
+files=(*.txt(N))
+count=${#files}
+```
+
+### Configuration
+
+To disable this Kata, add `ZC1127` to the `disabled_katas` list in your `.zshellcheckrc` file.
+
+---
+
+[Back to Top](#table-of-contents)
+</details>
+
+<div id="zc1128"></div>
+
+<details>
+<summary><strong>ZC1128</strong>: Use <code>> file</code> instead of <code>touch file</code> for creation <img src="https://img.shields.io/badge/Severity-style-blue?style=flat-square" height="15"/></summary>
+
+### Description
+
+If the goal is to create an empty file, `> file` does it without spawning an external process. Use `touch` only when you need to update timestamps.
+
+### Bad Example
+
+```zsh
+touch newfile.txt
+```
+
+### Good Example
+
+```zsh
+> newfile.txt
+```
+
+### Configuration
+
+To disable this Kata, add `ZC1128` to the `disabled_katas` list in your `.zshellcheckrc` file.
+
+---
+
+[Back to Top](#table-of-contents)
+</details>
+
+<div id="zc1129"></div>
+
+<details>
+<summary><strong>ZC1129</strong>: Use Zsh <code>stat</code> module instead of <code>wc -c</code> for file size <img src="https://img.shields.io/badge/Severity-style-blue?style=flat-square" height="15"/></summary>
+
+### Description
+
+Zsh's `zstat` (via `zmodload zsh/stat`) provides file size without spawning external processes like `wc -c`.
+
+### Bad Example
+
+```zsh
+size=$(wc -c < file.txt)
+```
+
+### Good Example
+
+```zsh
+zmodload zsh/stat
+zstat -A size +size file.txt
+```
+
+### Configuration
+
+To disable this Kata, add `ZC1129` to the `disabled_katas` list in your `.zshellcheckrc` file.
+
+---
+
+[Back to Top](#table-of-contents)
+</details>
+
+<div id="zc1131"></div>
+
+<details>
+<summary><strong>ZC1131</strong>: Avoid <code>cat file | while read</code> -- use redirection <img src="https://img.shields.io/badge/Severity-style-blue?style=flat-square" height="15"/></summary>
+
+### Description
+
+`cat file | while read line` spawns an unnecessary `cat` process and runs the loop in a subshell. Use input redirection instead.
+
+### Bad Example
+
+```zsh
+cat file.txt | while read line; do
+  echo "$line"
+done
+```
+
+### Good Example
+
+```zsh
+while read line; do
+  echo "$line"
+done < file.txt
+```
+
+### Configuration
+
+To disable this Kata, add `ZC1131` to the `disabled_katas` list in your `.zshellcheckrc` file.
+
+---
+
+[Back to Top](#table-of-contents)
+</details>
+
+<div id="zc1132"></div>
+
+<details>
+<summary><strong>ZC1132</strong>: Use Zsh pattern extraction instead of <code>grep -o</code> <img src="https://img.shields.io/badge/Severity-style-blue?style=flat-square" height="15"/></summary>
+
+### Description
+
+For extracting matching parts from variables, use Zsh `${(M)var:#pattern}` or parameter expansion instead of spawning `grep -o`.
+
+### Bad Example
+
+```zsh
+result=$(echo "$var" | grep -o '[0-9]*')
+```
+
+### Good Example
+
+```zsh
+if [[ $var =~ '([0-9]+)' ]]; then
+  result=$match[1]
+fi
+```
+
+### Configuration
+
+To disable this Kata, add `ZC1132` to the `disabled_katas` list in your `.zshellcheckrc` file.
+
+---
+
+[Back to Top](#table-of-contents)
+</details>
+
+<div id="zc1133"></div>
+
+<details>
+<summary><strong>ZC1133</strong>: Avoid <code>kill -9</code> -- use <code>kill</code> first, then escalate <img src="https://img.shields.io/badge/Severity-style-blue?style=flat-square" height="15"/></summary>
+
+### Description
+
+`kill -9` (SIGKILL) cannot be caught or ignored. Always try `kill` (SIGTERM) first to allow processes to clean up gracefully, then escalate if needed.
+
+### Bad Example
+
+```zsh
+kill -9 $pid
+```
+
+### Good Example
+
+```zsh
+kill $pid
+sleep 2
+kill -0 $pid 2>/dev/null && kill -9 $pid
+```
+
+### Configuration
+
+To disable this Kata, add `ZC1133` to the `disabled_katas` list in your `.zshellcheckrc` file.
+
+---
+
+[Back to Top](#table-of-contents)
+</details>
+
+<div id="zc1134"></div>
+
+<details>
+<summary><strong>ZC1134</strong>: Avoid <code>sleep</code> in tight loops <img src="https://img.shields.io/badge/Severity-style-blue?style=flat-square" height="15"/></summary>
+
+### Description
+
+Using `sleep` inside a loop for polling creates busy-wait patterns. Consider using inotifywait, signals, or other event-driven approaches.
+
+### Bad Example
+
+```zsh
+while true; do
+  check_status && break
+  sleep 1
+done
+```
+
+### Good Example
+
+```zsh
+inotifywait -e modify /path/to/file
+## Or use a reasonable interval with a maximum retry count
+```
+
+### Configuration
+
+To disable this Kata, add `ZC1134` to the `disabled_katas` list in your `.zshellcheckrc` file.
+
+---
+
+[Back to Top](#table-of-contents)
+</details>
+
+<div id="zc1135"></div>
+
+<details>
+<summary><strong>ZC1135</strong>: Avoid <code>env VAR=val cmd</code> -- use inline assignment <img src="https://img.shields.io/badge/Severity-style-blue?style=flat-square" height="15"/></summary>
+
+### Description
+
+Zsh supports inline environment variable assignment with `VAR=val cmd`. The `env` command is unnecessary.
+
+### Bad Example
+
+```zsh
+env LANG=C sort file.txt
+```
+
+### Good Example
+
+```zsh
+LANG=C sort file.txt
+```
+
+### Configuration
+
+To disable this Kata, add `ZC1135` to the `disabled_katas` list in your `.zshellcheckrc` file.
+
+---
+
+[Back to Top](#table-of-contents)
+</details>
+
+<div id="zc1136"></div>
+
+<details>
+<summary><strong>ZC1136</strong>: Avoid <code>rm -rf</code> without safeguard <img src="https://img.shields.io/badge/Severity-style-blue?style=flat-square" height="15"/></summary>
+
+### Description
+
+`rm -rf` with a variable path is dangerous if the variable is empty. Always validate the variable or use `${var:?}` to abort on empty values.
+
+### Bad Example
+
+```zsh
+rm -rf "$dir/"
+```
+
+### Good Example
+
+```zsh
+rm -rf "${dir:?'dir is not set'}/"
+```
+
+### Configuration
+
+To disable this Kata, add `ZC1136` to the `disabled_katas` list in your `.zshellcheckrc` file.
+
+---
+
+[Back to Top](#table-of-contents)
+</details>
+
+<div id="zc1137"></div>
+
+<details>
+<summary><strong>ZC1137</strong>: Avoid hardcoded <code>/tmp</code> paths <img src="https://img.shields.io/badge/Severity-style-blue?style=flat-square" height="15"/></summary>
+
+### Description
+
+Hardcoded `/tmp` paths are predictable and may cause race conditions or security issues. Use `mktemp` for safe temporary file creation.
+
+### Bad Example
+
+```zsh
+echo "data" > /tmp/myapp.log
+```
+
+### Good Example
+
+```zsh
+tmpfile=$(mktemp)
+echo "data" > "$tmpfile"
+```
+
+### Configuration
+
+To disable this Kata, add `ZC1137` to the `disabled_katas` list in your `.zshellcheckrc` file.
+
+---
+
+[Back to Top](#table-of-contents)
+</details>
+
+<div id="zc1139"></div>
+
+<details>
+<summary><strong>ZC1139</strong>: Avoid <code>source</code> with URL -- use local files <img src="https://img.shields.io/badge/Severity-style-blue?style=flat-square" height="15"/></summary>
+
+### Description
+
+Sourcing scripts from URLs (curl | source) is a security risk. Download first, inspect, then source from a local file.
+
+### Bad Example
+
+```zsh
+source <(curl -s https://example.com/script.zsh)
+```
+
+### Good Example
+
+```zsh
+curl -o script.zsh https://example.com/script.zsh
+## Inspect the script, then:
+source script.zsh
+```
+
+### Configuration
+
+To disable this Kata, add `ZC1139` to the `disabled_katas` list in your `.zshellcheckrc` file.
+
+---
+
+[Back to Top](#table-of-contents)
+</details>
+
+<div id="zc1140"></div>
+
+<details>
+<summary><strong>ZC1140</strong>: Use <code>command -v</code> instead of <code>hash</code> for command existence <img src="https://img.shields.io/badge/Severity-style-blue?style=flat-square" height="15"/></summary>
+
+### Description
+
+`hash cmd` is a POSIX way to check command existence but provides less clear output. `command -v` is more portable and explicit.
+
+### Bad Example
+
+```zsh
+if hash git 2>/dev/null; then echo "git found"; fi
+```
+
+### Good Example
+
+```zsh
+if command -v git &>/dev/null; then echo "git found"; fi
+```
+
+### Configuration
+
+To disable this Kata, add `ZC1140` to the `disabled_katas` list in your `.zshellcheckrc` file.
+
+---
+
+[Back to Top](#table-of-contents)
+</details>
+
+<div id="zc1141"></div>
+
+<details>
+<summary><strong>ZC1141</strong>: Avoid <code>curl | sh</code> pattern <img src="https://img.shields.io/badge/Severity-style-blue?style=flat-square" height="15"/></summary>
+
+### Description
+
+Piping curl output to sh/bash/zsh is a security risk. Download first, inspect the script, then execute it.
+
+### Bad Example
+
+```zsh
+curl -s https://example.com/install.sh | sh
+```
+
+### Good Example
+
+```zsh
+curl -o install.sh https://example.com/install.sh
+less install.sh  # Inspect first
+sh install.sh
+```
+
+### Configuration
+
+To disable this Kata, add `ZC1141` to the `disabled_katas` list in your `.zshellcheckrc` file.
+
+---
+
+[Back to Top](#table-of-contents)
+</details>
+
+<div id="zc1142"></div>
+
+<details>
+<summary><strong>ZC1142</strong>: Avoid chained <code>grep | grep</code> -- combine patterns <img src="https://img.shields.io/badge/Severity-style-blue?style=flat-square" height="15"/></summary>
+
+### Description
+
+Chaining `grep pattern1 | grep pattern2` spawns multiple processes. Combine patterns with `grep -E 'p1.*p2'` or use `awk`.
+
+### Bad Example
+
+```zsh
+grep "error" log.txt | grep "fatal"
+```
+
+### Good Example
+
+```zsh
+grep -E "error.*fatal" log.txt
+## Or for independent patterns:
+grep -E "error|fatal" log.txt
+```
+
+### Configuration
+
+To disable this Kata, add `ZC1142` to the `disabled_katas` list in your `.zshellcheckrc` file.
+
+---
+
+[Back to Top](#table-of-contents)
+</details>
+
+<div id="zc1143"></div>
+
+<details>
+<summary><strong>ZC1143</strong>: Avoid <code>set -e</code> -- use explicit error handling <img src="https://img.shields.io/badge/Severity-info-yellow?style=flat-square" height="15"/></summary>
+
+### Description
+
+`set -e` (errexit) has surprising behavior in Zsh with conditionals, subshells, and pipelines. Prefer explicit error handling with `||`, `&&`, or `trap ERR`.
+
+### Bad Example
+
+```zsh
+set -e
+cd /nonexistent  # Script exits here
+```
+
+### Good Example
+
+```zsh
+cd /nonexistent || { echo "Failed to cd" >&2; return 1; }
+```
+
+### Configuration
+
+To disable this Kata, add `ZC1143` to the `disabled_katas` list in your `.zshellcheckrc` file.
+
+---
+
+[Back to Top](#table-of-contents)
+</details>
+
+<div id="zc1144"></div>
+
+<details>
+<summary><strong>ZC1144</strong>: Avoid <code>trap</code> with signal numbers -- use names <img src="https://img.shields.io/badge/Severity-info-yellow?style=flat-square" height="15"/></summary>
+
+### Description
+
+Signal numbers vary across platforms. Use signal names like `SIGTERM`, `SIGINT`, `SIGHUP` for portability and readability.
+
+### Bad Example
+
+```zsh
+trap 'cleanup' 2 15
+```
+
+### Good Example
+
+```zsh
+trap 'cleanup' INT TERM
+```
+
+### Configuration
+
+To disable this Kata, add `ZC1144` to the `disabled_katas` list in your `.zshellcheckrc` file.
+
+---
+
+[Back to Top](#table-of-contents)
+</details>
+
+<div id="zc1145"></div>
+
+<details>
+<summary><strong>ZC1145</strong>: Avoid <code>tr -d</code> for character deletion -- use parameter expansion <img src="https://img.shields.io/badge/Severity-style-blue?style=flat-square" height="15"/></summary>
+
+### Description
+
+For simple character deletion from variables, use Zsh `${var//char/}` instead of spawning `tr`.
+
+### Bad Example
+
+```zsh
+clean=$(echo "$var" | tr -d ' ')
+```
+
+### Good Example
+
+```zsh
+clean=${var// /}
+```
+
+### Configuration
+
+To disable this Kata, add `ZC1145` to the `disabled_katas` list in your `.zshellcheckrc` file.
+
+---
+
+[Back to Top](#table-of-contents)
+</details>
+
+<div id="zc1146"></div>
+
+<details>
+<summary><strong>ZC1146</strong>: Avoid <code>cat file | awk</code> -- pass file to awk directly <img src="https://img.shields.io/badge/Severity-style-blue?style=flat-square" height="15"/></summary>
+
+### Description
+
+`cat file | awk` spawns an unnecessary `cat` process. Pass the file directly to awk.
+
+### Bad Example
+
+```zsh
+cat data.txt | awk '{print $1}'
+```
+
+### Good Example
+
+```zsh
+awk '{print $1}' data.txt
+```
+
+### Configuration
+
+To disable this Kata, add `ZC1146` to the `disabled_katas` list in your `.zshellcheckrc` file.
+
+---
+
+[Back to Top](#table-of-contents)
+</details>
+
+<div id="zc1147"></div>
+
+<details>
+<summary><strong>ZC1147</strong>: Avoid <code>mkdir</code> without <code>-p</code> for nested paths <img src="https://img.shields.io/badge/Severity-info-yellow?style=flat-square" height="15"/></summary>
+
+### Description
+
+Using `mkdir` without `-p` fails if parent directories do not exist. Use `mkdir -p` to create nested directory structures safely.
+
+### Bad Example
+
+```zsh
+mkdir /path/to/nested/dir
+```
+
+### Good Example
+
+```zsh
+mkdir -p /path/to/nested/dir
+```
+
+### Configuration
+
+To disable this Kata, add `ZC1147` to the `disabled_katas` list in your `.zshellcheckrc` file.
+
+---
+
+[Back to Top](#table-of-contents)
+</details>
+
+<div id="zc1148"></div>
+
+<details>
+<summary><strong>ZC1148</strong>: Use <code>compdef</code> instead of <code>compctl</code> for completions <img src="https://img.shields.io/badge/Severity-info-yellow?style=flat-square" height="15"/></summary>
+
+### Description
+
+`compctl` is the old Zsh completion system. Use `compdef` with the new completion system (`compsys`) for more powerful and maintainable completions.
+
+### Bad Example
+
+```zsh
+compctl -f my_command
+```
+
+### Good Example
+
+```zsh
+compdef _files my_command
+```
+
+### Configuration
+
+To disable this Kata, add `ZC1148` to the `disabled_katas` list in your `.zshellcheckrc` file.
+
+---
+
+[Back to Top](#table-of-contents)
+</details>
+
+<div id="zc1149"></div>
+
+<details>
+<summary><strong>ZC1149</strong>: Avoid <code>echo</code> for error messages -- use <code>>&2</code> <img src="https://img.shields.io/badge/Severity-info-yellow?style=flat-square" height="15"/></summary>
+
+### Description
+
+Error messages should go to stderr, not stdout. Use `>&2` redirection or `print -u2` so error output does not interfere with piped data.
+
+### Bad Example
+
+```zsh
+echo "Error: file not found"
+```
+
+### Good Example
+
+```zsh
+print -u2 "Error: file not found"
+## Or:
+echo "Error: file not found" >&2
+```
+
+### Configuration
+
+To disable this Kata, add `ZC1149` to the `disabled_katas` list in your `.zshellcheckrc` file.
+
+---
+
+[Back to Top](#table-of-contents)
+</details>
+
+<div id="zc1151"></div>
+
+<details>
+<summary><strong>ZC1151</strong>: Avoid <code>cat -A</code> -- use <code>print -v</code> or <code>od</code> for non-printable characters <img src="https://img.shields.io/badge/Severity-style-blue?style=flat-square" height="15"/></summary>
+
+### Description
+
+`cat -A` shows non-printable characters but varies across platforms. Use `od`, `hexdump`, or Zsh `print -v` for consistent behavior.
+
+### Bad Example
+
+```zsh
+cat -A file.txt
+```
+
+### Good Example
+
+```zsh
+od -c file.txt
+## Or for hex:
+hexdump -C file.txt
+```
+
+### Configuration
+
+To disable this Kata, add `ZC1151` to the `disabled_katas` list in your `.zshellcheckrc` file.
+
+---
+
+[Back to Top](#table-of-contents)
+</details>
+
+<div id="zc1152"></div>
+
+<details>
+<summary><strong>ZC1152</strong>: Use Zsh PCRE module instead of <code>grep -P</code> <img src="https://img.shields.io/badge/Severity-style-blue?style=flat-square" height="15"/></summary>
+
+### Description
+
+`grep -P` (Perl regex) is not available on all platforms (e.g., macOS). Use Zsh's `zmodload zsh/pcre` for portable PCRE support.
+
+### Bad Example
+
+```zsh
+grep -P '\d{3}-\d{4}' file.txt
+```
+
+### Good Example
+
+```zsh
+zmodload zsh/pcre
+pcre_compile '\d{3}-\d{4}'
+pcre_match "$line"
+```
+
+### Configuration
+
+To disable this Kata, add `ZC1152` to the `disabled_katas` list in your `.zshellcheckrc` file.
+
+---
+
+[Back to Top](#table-of-contents)
+</details>
+
+<div id="zc1153"></div>
+
+<details>
+<summary><strong>ZC1153</strong>: Use <code>cmp -s</code> instead of <code>diff</code> for equality check <img src="https://img.shields.io/badge/Severity-style-blue?style=flat-square" height="15"/></summary>
+
+### Description
+
+When only checking if two files are identical (not viewing differences), `cmp -s` is faster and produces no output.
+
+### Bad Example
+
+```zsh
+if diff file1 file2 > /dev/null 2>&1; then echo "same"; fi
+```
+
+### Good Example
+
+```zsh
+if cmp -s file1 file2; then echo "same"; fi
+```
+
+### Configuration
+
+To disable this Kata, add `ZC1153` to the `disabled_katas` list in your `.zshellcheckrc` file.
+
+---
+
+[Back to Top](#table-of-contents)
+</details>
+
+<div id="zc1154"></div>
+
+<details>
+<summary><strong>ZC1154</strong>: Use <code>find -exec {} +</code> instead of <code>find -exec {} \;</code> <img src="https://img.shields.io/badge/Severity-style-blue?style=flat-square" height="15"/></summary>
+
+### Description
+
+`find -exec cmd {} \;` runs cmd once per file. Using `+` instead of `\;` batches files into fewer invocations, improving performance.
+
+### Bad Example
+
+```zsh
+find . -name '*.log' -exec rm {} \;
+```
+
+### Good Example
+
+```zsh
+find . -name '*.log' -exec rm {} +
+```
+
+### Configuration
+
+To disable this Kata, add `ZC1154` to the `disabled_katas` list in your `.zshellcheckrc` file.
+
+---
+
+[Back to Top](#table-of-contents)
+</details>
+
+<div id="zc1155"></div>
+
+<details>
+<summary><strong>ZC1155</strong>: Use <code>whence -a</code> instead of <code>which -a</code> <img src="https://img.shields.io/badge/Severity-info-yellow?style=flat-square" height="15"/></summary>
+
+### Description
+
+`which -a` may be an external command on some systems. In Zsh, `whence -a` is a built-in that provides the same functionality.
+
+### Bad Example
+
+```zsh
+which -a python
+```
+
+### Good Example
+
+```zsh
+whence -a python
+```
+
+### Configuration
+
+To disable this Kata, add `ZC1155` to the `disabled_katas` list in your `.zshellcheckrc` file.
+
+---
+
+[Back to Top](#table-of-contents)
+</details>
+
+<div id="zc1156"></div>
+
+<details>
+<summary><strong>ZC1156</strong>: Avoid <code>ln</code> without <code>-s</code> for symlinks <img src="https://img.shields.io/badge/Severity-info-yellow?style=flat-square" height="15"/></summary>
+
+### Description
+
+Hard links (`ln` without `-s`) share inodes and can cause confusion. Prefer symbolic links with `ln -s` unless hard links are specifically required.
+
+### Bad Example
+
+```zsh
+ln target linkname
+```
+
+### Good Example
+
+```zsh
+ln -s target linkname
+```
+
+### Configuration
+
+To disable this Kata, add `ZC1156` to the `disabled_katas` list in your `.zshellcheckrc` file.
+
+---
+
+[Back to Top](#table-of-contents)
+</details>
+
+<div id="zc1157"></div>
+
+<details>
+<summary><strong>ZC1157</strong>: Avoid <code>strings</code> command -- use Zsh expansion <img src="https://img.shields.io/badge/Severity-style-blue?style=flat-square" height="15"/></summary>
+
+### Description
+
+The `strings` command extracts printable strings from binaries. For text processing in variables, Zsh parameter expansion `${(ps:\0:)var}` is more efficient.
+
+### Bad Example
+
+```zsh
+strings binary_file | grep "version"
+```
+
+### Good Example
+
+```zsh
+## For variable content:
+print -r -- ${(ps:\0:)var}
+```
+
+### Configuration
+
+To disable this Kata, add `ZC1157` to the `disabled_katas` list in your `.zshellcheckrc` file.
+
+---
+
+[Back to Top](#table-of-contents)
+</details>
+
+<div id="zc1158"></div>
+
+<details>
+<summary><strong>ZC1158</strong>: Avoid <code>chown -R</code> without <code>--no-dereference</code> <img src="https://img.shields.io/badge/Severity-warning-orange?style=flat-square" height="15"/></summary>
+
+### Description
+
+`chown -R` follows symlinks by default, potentially changing ownership of files outside the intended directory tree. Use `--no-dereference` or `-h` to operate on symlinks themselves.
+
+### Bad Example
+
+```zsh
+chown -R user:group /var/www
+```
+
+### Good Example
+
+```zsh
+chown -Rh user:group /var/www
+```
+
+### Configuration
+
+To disable this Kata, add `ZC1158` to the `disabled_katas` list in your `.zshellcheckrc` file.
+
+---
+
+[Back to Top](#table-of-contents)
+</details>
+
+<div id="zc1159"></div>
+
+<details>
+<summary><strong>ZC1159</strong>: Avoid <code>tar</code> without explicit compression flag <img src="https://img.shields.io/badge/Severity-info-yellow?style=flat-square" height="15"/></summary>
+
+### Description
+
+Use explicit compression flags (`-z` for gzip, `-j` for bzip2, `-J` for xz) with `tar` instead of relying on auto-detection from file extension.
+
+### Bad Example
+
+```zsh
+tar cf archive.tar.gz /path
+```
+
+### Good Example
+
+```zsh
+tar czf archive.tar.gz /path
+```
+
+### Configuration
+
+To disable this Kata, add `ZC1159` to the `disabled_katas` list in your `.zshellcheckrc` file.
+
+---
+
+[Back to Top](#table-of-contents)
+</details>
+
+<div id="zc1160"></div>
+
+<details>
+<summary><strong>ZC1160</strong>: Prefer <code>curl</code> over <code>wget</code> for portability <img src="https://img.shields.io/badge/Severity-style-blue?style=flat-square" height="15"/></summary>
+
+### Description
+
+`wget` is not installed by default on macOS. `curl` is available on both Linux and macOS, making it a more portable choice.
+
+### Bad Example
+
+```zsh
+wget https://example.com/file.tar.gz
+```
+
+### Good Example
+
+```zsh
+curl -LO https://example.com/file.tar.gz
+```
+
+### Configuration
+
+To disable this Kata, add `ZC1160` to the `disabled_katas` list in your `.zshellcheckrc` file.
+
+---
+
+[Back to Top](#table-of-contents)
+</details>
+
+<div id="zc1161"></div>
+
+<details>
+<summary><strong>ZC1161</strong>: Avoid <code>openssl</code> for simple hashing -- use Zsh modules <img src="https://img.shields.io/badge/Severity-style-blue?style=flat-square" height="15"/></summary>
+
+### Description
+
+For simple SHA/MD5 hashing, Zsh provides `zmodload zsh/sha256` and related modules. Avoid spawning `openssl` or `sha256sum` for simple hash operations.
+
+### Bad Example
+
+```zsh
+hash=$(echo -n "$data" | sha256sum | cut -d' ' -f1)
+```
+
+### Good Example
+
+```zsh
+zmodload zsh/sha256
+hash=$(sha256 -r "$data")
+```
+
+### Configuration
+
+To disable this Kata, add `ZC1161` to the `disabled_katas` list in your `.zshellcheckrc` file.
+
+---
+
+[Back to Top](#table-of-contents)
+</details>
+
+<div id="zc1162"></div>
+
+<details>
+<summary><strong>ZC1162</strong>: Use <code>cp -a</code> instead of <code>cp -r</code> to preserve attributes <img src="https://img.shields.io/badge/Severity-info-yellow?style=flat-square" height="15"/></summary>
+
+### Description
+
+`cp -r` copies recursively but may not preserve permissions, timestamps, or symlinks. Use `cp -a` (archive mode) to preserve all file attributes.
+
+### Bad Example
+
+```zsh
+cp -r /src /dest
+```
+
+### Good Example
+
+```zsh
+cp -a /src /dest
+```
+
+### Configuration
+
+To disable this Kata, add `ZC1162` to the `disabled_katas` list in your `.zshellcheckrc` file.
+
+---
+
+[Back to Top](#table-of-contents)
+</details>
+
+<div id="zc1163"></div>
+
+<details>
+<summary><strong>ZC1163</strong>: Use <code>grep -m 1</code> instead of <code>grep | head -1</code> <img src="https://img.shields.io/badge/Severity-style-blue?style=flat-square" height="15"/></summary>
+
+### Description
+
+`grep pattern | head -1` spawns two processes when `grep -m 1` does the same in one, stopping after the first match.
+
+### Bad Example
+
+```zsh
+result=$(grep "error" log.txt | head -1)
+```
+
+### Good Example
+
+```zsh
+result=$(grep -m 1 "error" log.txt)
+```
+
+### Configuration
+
+To disable this Kata, add `ZC1163` to the `disabled_katas` list in your `.zshellcheckrc` file.
+
+---
+
+[Back to Top](#table-of-contents)
+</details>
+
+<div id="zc1164"></div>
+
+<details>
+<summary><strong>ZC1164</strong>: Avoid <code>sed -n 'Np'</code> -- use Zsh array subscript <img src="https://img.shields.io/badge/Severity-style-blue?style=flat-square" height="15"/></summary>
+
+### Description
+
+Extracting a specific line with `sed -n 'Np'` spawns a process. Read the file into a Zsh array and use subscript indexing instead.
+
+### Bad Example
+
+```zsh
+line=$(sed -n '5p' file.txt)
+```
+
+### Good Example
+
+```zsh
+lines=("${(@f)$(< file.txt)}")
+line=$lines[5]
+```
+
+### Configuration
+
+To disable this Kata, add `ZC1164` to the `disabled_katas` list in your `.zshellcheckrc` file.
+
+---
+
+[Back to Top](#table-of-contents)
+</details>
+
+<div id="zc1165"></div>
+
+<details>
+<summary><strong>ZC1165</strong>: Use Zsh parameter expansion for simple <code>awk</code> field extraction <img src="https://img.shields.io/badge/Severity-style-blue?style=flat-square" height="15"/></summary>
+
+### Description
+
+Simple `awk '{print $1}'` or `awk '{print $NF}'` can often be replaced with Zsh parameter expansion, avoiding a process spawn.
+
+### Bad Example
+
+```zsh
+first=$(echo "$line" | awk '{print $1}')
+```
+
+### Good Example
+
+```zsh
+first=${line%% *}
+## Or for the last field:
+last=${line##* }
+```
+
+### Configuration
+
+To disable this Kata, add `ZC1165` to the `disabled_katas` list in your `.zshellcheckrc` file.
+
+---
+
+[Back to Top](#table-of-contents)
+</details>
+
+<div id="zc1166"></div>
+
+<details>
+<summary><strong>ZC1166</strong>: Avoid <code>grep -i</code> for case-insensitive match -- use <code>(#i)</code> glob flag <img src="https://img.shields.io/badge/Severity-style-blue?style=flat-square" height="15"/></summary>
+
+### Description
+
+Zsh provides the `(#i)` glob flag for case-insensitive matching. Use it instead of spawning `grep -i` for variable content.
+
+### Bad Example
+
+```zsh
+if echo "$var" | grep -qi "error"; then echo "found"; fi
+```
+
+### Good Example
+
+```zsh
+if [[ $var == (#i)*error* ]]; then echo "found"; fi
+```
+
+### Configuration
+
+To disable this Kata, add `ZC1166` to the `disabled_katas` list in your `.zshellcheckrc` file.
+
+---
+
+[Back to Top](#table-of-contents)
+</details>
+
+<div id="zc1167"></div>
+
+<details>
+<summary><strong>ZC1167</strong>: Avoid <code>timeout</code> command -- use Zsh <code>TMOUT</code> or <code>zsh/sched</code> <img src="https://img.shields.io/badge/Severity-style-blue?style=flat-square" height="15"/></summary>
+
+### Description
+
+`timeout` is not available on all systems (macOS lacks it by default). Use Zsh's `TMOUT` variable or `zsh/sched` module for portable timeouts.
+
+### Bad Example
+
+```zsh
+timeout 5 command
+```
+
+### Good Example
+
+```zsh
+TMOUT=5 read response
+## Or use zsh/sched for scheduling
+```
+
+### Configuration
+
+To disable this Kata, add `ZC1167` to the `disabled_katas` list in your `.zshellcheckrc` file.
+
+---
+
+[Back to Top](#table-of-contents)
+</details>
+
+<div id="zc1168"></div>
+
+<details>
+<summary><strong>ZC1168</strong>: Use <code>${(f)...}</code> instead of <code>readarray</code>/<code>mapfile</code> <img src="https://img.shields.io/badge/Severity-style-blue?style=flat-square" height="15"/></summary>
+
+### Description
+
+`readarray` and `mapfile` are Bash builtins not available in Zsh. Use Zsh's `${(f)...}` flag to split output into an array by newlines.
+
+### Bad Example
+
+```zsh
+readarray -t lines < file.txt
+```
+
+### Good Example
+
+```zsh
+lines=("${(@f)$(< file.txt)}")
+```
+
+### Configuration
+
+To disable this Kata, add `ZC1168` to the `disabled_katas` list in your `.zshellcheckrc` file.
+
+---
+
+[Back to Top](#table-of-contents)
+</details>
+
+<div id="zc1169"></div>
+
+<details>
+<summary><strong>ZC1169</strong>: Avoid <code>install</code> for simple copy+chmod -- use <code>cp</code> then <code>chmod</code> <img src="https://img.shields.io/badge/Severity-style-blue?style=flat-square" height="15"/></summary>
+
+### Description
+
+`install` command is less common and may confuse readers. For clarity, use separate `cp` and `chmod` commands or `install` only in Makefiles.
+
+### Bad Example
+
+```zsh
+install -m 755 my_script /usr/local/bin/my_script
+```
+
+### Good Example
+
+```zsh
+cp my_script /usr/local/bin/my_script
+chmod 755 /usr/local/bin/my_script
+```
+
+### Configuration
+
+To disable this Kata, add `ZC1169` to the `disabled_katas` list in your `.zshellcheckrc` file.
+
+---
+
+[Back to Top](#table-of-contents)
 </details>

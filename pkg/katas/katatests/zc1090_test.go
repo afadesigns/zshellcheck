@@ -84,6 +84,16 @@ func TestZC1090(t *testing.T) {
 				},
 			},
 		},
+		{
+			name:     "non-regex operator ignored",
+			input:    `[[ $a == "^foo" ]]`,
+			expected: []katas.Violation{},
+		},
+		{
+			name:     "no double bracket",
+			input:    `echo hello`,
+			expected: []katas.Violation{},
+		},
 	}
 
 	for _, tt := range tests {

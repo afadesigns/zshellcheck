@@ -17,7 +17,7 @@ This document serves as the comprehensive manual for contributing to the ZShellC
 
 ### Prerequisites
 
-- **Go**: Version 1.18 or higher.
+- **Go**: Version 1.25 or higher.
 - **Git**: For version control.
 - **Make** (Optional): For running build scripts if available.
 
@@ -81,10 +81,11 @@ We use the standard Go testing framework.
 
     func init() {
         RegisterKata(ast.SimpleCommandNode, Kata{
-            ID: "ZCXXXX",
-            Title: "Title of your check",
+            ID:          "ZCXXXX",
+            Title:       "Title of your check",
             Description: "Description of what is wrong.",
-            Check: checkZCXXXX,
+            Severity:    SeverityStyle, // See Severity Levels below
+            Check:       checkZCXXXX,
         })
     }
 
@@ -96,6 +97,19 @@ We use the standard Go testing framework.
     }
     ```
 5.  **Test**: Add `pkg/katas/katatests/zcXXXX_test.go` with test cases.
+
+### Severity Levels
+
+Every Kata must be assigned a severity level. The severity is defined in `pkg/katas/katas.go`:
+
+| Level | Constant | When to Use |
+| :--- | :--- | :--- |
+| **error** | `SeverityError` | Bugs or dangerous constructs that will likely cause incorrect behavior (e.g., redirection overwrites input, brace expansion with variables) |
+| **warning** | `SeverityWarning` | Risky patterns that may cause subtle issues or security concerns (e.g., `rm -rf` without safeguard, subshell state isolation) |
+| **info** | `SeverityInfo` | Suggestions for improved practices and platform compatibility (e.g., use signal names, avoid `set -e`) |
+| **style** | `SeverityStyle` | Cosmetic or idiomatic improvements for cleaner Zsh code (e.g., prefer `[[ ]]` over `test`, use built-in variables) |
+
+Users can filter violations by severity using the `--severity` flag on the CLI.
 
 ---
 
@@ -120,7 +134,7 @@ graph TD
 2.  **Parser (`pkg/parser`)**: Consumes tokens to build an **Abstract Syntax Tree (AST)**. Implements a recursive descent parser.
 3.  **AST (`pkg/ast`)**: Defines the tree structure (Nodes, Statements, Expressions).
 4.  **Katas (`pkg/katas`)**: The check rules. Each Kata registers to listen for specific AST Node types.
-5.  **Reporter (`pkg/reporter`)**: Formats violations into Text or JSON output.
+5.  **Reporter (`pkg/reporter`)**: Formats violations into Text, JSON, or SARIF output. Supports `--severity` filtering and `--no-color` mode.
 
 ---
 

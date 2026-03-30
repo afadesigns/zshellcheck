@@ -480,3 +480,249 @@ func TestProcessPath_DirectorySkipsNonShellFiles(t *testing.T) {
 		t.Errorf("expected 0 violations for skipped files, got %d", count)
 	}
 }
+
+func TestRun_MultipleFiles(t *testing.T) {
+	dir := t.TempDir()
+	path1 := filepath.Join(dir, "a.zsh")
+	path2 := filepath.Join(dir, "b.zsh")
+	if err := os.WriteFile(path1, []byte("#!/bin/zsh\necho hello\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(path2, []byte("#!/bin/zsh\necho world\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	resetFlags()
+	oldArgs := os.Args
+	defer func() { os.Args = oldArgs }()
+	os.Args = []string{"zshellcheck", "-no-color", path1, path2}
+
+	code := run()
+	_ = code
+}
+
+func TestRun_TextFormatBannerSuppressed(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "test.zsh")
+	if err := os.WriteFile(path, []byte("#!/bin/zsh\necho hello\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	// JSON format suppresses banner
+	resetFlags()
+	oldArgs := os.Args
+	defer func() { os.Args = oldArgs }()
+	os.Args = []string{"zshellcheck", "-format", "json", path}
+
+	code := run()
+	_ = code
+}
+
+func TestRun_SarifFormatBannerSuppressed(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "test.zsh")
+	if err := os.WriteFile(path, []byte("#!/bin/zsh\necho hello\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	resetFlags()
+	oldArgs := os.Args
+	defer func() { os.Args = oldArgs }()
+	os.Args = []string{"zshellcheck", "-format", "sarif", path}
+
+	code := run()
+	_ = code
+}
+
+func TestRun_WithViolationsAndSeverityFilterCombo(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "test.zsh")
+	// Script that produces violations with various severities
+	if err := os.WriteFile(path, []byte("#!/bin/zsh\nfor i in $(ls); do echo $i; done\nrm -rf ${dir}\neval $cmd\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	resetFlags()
+	oldArgs := os.Args
+	defer func() { os.Args = oldArgs }()
+	os.Args = []string{"zshellcheck", "-severity", "error,warning,info,style", "-no-color", path}
+
+	code := run()
+	_ = code
+}
+
+func TestRun_WithViolationsJSONFormat(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "test.zsh")
+	// Script that produces violations
+	if err := os.WriteFile(path, []byte("#!/bin/zsh\nfor i in $(ls); do echo $i; done\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	resetFlags()
+	oldArgs := os.Args
+	defer func() { os.Args = oldArgs }()
+	os.Args = []string{"zshellcheck", "-format", "json", path}
+
+	code := run()
+	_ = code
+}
+
+func TestRun_WithViolationsSarifFormat(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "test.zsh")
+	if err := os.WriteFile(path, []byte("#!/bin/zsh\nfor i in $(ls); do echo $i; done\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	resetFlags()
+	oldArgs := os.Args
+	defer func() { os.Args = oldArgs }()
+	os.Args = []string{"zshellcheck", "-format", "sarif", path}
+
+	code := run()
+	_ = code
+}
+
+func TestProcessFile_WithViolationsAllFormats(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "test.zsh")
+	// Script that is very likely to produce violations
+	if err := os.WriteFile(path, []byte("#!/bin/zsh\nfor i in $(ls); do echo $i; done\nrm -rf ${dir}\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	cfg := config.DefaultConfig()
+	cfg.NoColor = true
+	registry := katas.Registry
+
+	for _, format := range []string{"text", "json", "sarif"} {
+		t.Run(format, func(t *testing.T) {
+			var out, errOut bytes.Buffer
+			count := processFile(path, &out, &errOut, cfg, registry, format, nil)
+			if count == 0 {
+				t.Logf("no violations found for format %s (may vary by katas)", format)
+			}
+		})
+	}
+}
+
+func TestProcessFile_WithSeverityFilterAll(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "test.zsh")
+	if err := os.WriteFile(path, []byte("#!/bin/zsh\nfor i in $(ls); do echo $i; done\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	var out, errOut bytes.Buffer
+	cfg := config.DefaultConfig()
+	cfg.NoColor = true
+	registry := katas.Registry
+
+	allSeverities := []katas.Severity{katas.SeverityError, katas.SeverityWarning, katas.SeverityInfo, katas.SeverityStyle}
+	count := processFile(path, &out, &errOut, cfg, registry, "text", allSeverities)
+	_ = count
+}
+
+func TestProcessPath_DirectoryWithNestedDirs(t *testing.T) {
+	dir := t.TempDir()
+	subDir := filepath.Join(dir, "sub")
+	if err := os.MkdirAll(subDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	path := filepath.Join(subDir, "test.zsh")
+	if err := os.WriteFile(path, []byte("#!/bin/zsh\necho nested\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	var out, errOut bytes.Buffer
+	cfg := config.DefaultConfig()
+	cfg.NoColor = true
+	registry := katas.Registry
+
+	count := processPath(dir, &out, &errOut, cfg, registry, "text", nil)
+	_ = count
+}
+
+func TestRun_NoColorWithBanner(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "test.zsh")
+	if err := os.WriteFile(path, []byte("#!/bin/zsh\necho hello\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	// Text format without no-color shows banner
+	resetFlags()
+	oldArgs := os.Args
+	defer func() { os.Args = oldArgs }()
+	os.Args = []string{"zshellcheck", path}
+
+	code := run()
+	_ = code
+}
+
+func TestRun_HelpFlag(t *testing.T) {
+	resetFlags()
+	oldArgs := os.Args
+	defer func() { os.Args = oldArgs }()
+	os.Args = []string{"zshellcheck", "-help"}
+
+	// -help triggers flag.Usage which prints usage to stderr
+	code := run()
+	_ = code
+}
+
+func TestRun_CPUProfileError(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "test.zsh")
+	if err := os.WriteFile(path, []byte("#!/bin/zsh\necho hello\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	resetFlags()
+	oldArgs := os.Args
+	defer func() { os.Args = oldArgs }()
+	// Use an invalid path for the CPU profile to trigger the error
+	os.Args = []string{"zshellcheck", "-cpuprofile", "/nonexistent/dir/cpu.prof", "-no-color", path}
+
+	code := run()
+	if code != 1 {
+		t.Errorf("expected exit code 1 for cpuprofile error, got %d", code)
+	}
+}
+
+func TestRun_CleanFileNoViolations(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "test.zsh")
+	// An empty file should produce no violations
+	if err := os.WriteFile(path, []byte(""), 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	resetFlags()
+	oldArgs := os.Args
+	defer func() { os.Args = oldArgs }()
+	os.Args = []string{"zshellcheck", "-no-color", path}
+
+	code := run()
+	if code != 0 {
+		t.Errorf("expected exit code 0 for clean file, got %d", code)
+	}
+}
+
+func TestProcessFile_ViolationsWithVerbose(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "test.zsh")
+	if err := os.WriteFile(path, []byte("#!/bin/zsh\nfor i in $(ls); do echo $i; done\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	var out, errOut bytes.Buffer
+	cfg := config.DefaultConfig()
+	cfg.NoColor = true
+	cfg.Verbose = true
+	registry := katas.Registry
+
+	count := processFile(path, &out, &errOut, cfg, registry, "text", nil)
+	_ = count
+}

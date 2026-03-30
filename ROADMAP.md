@@ -4,7 +4,7 @@ ZShellCheck is an evolving static analysis tool for Zsh. Our mission is to provi
 
 ## 🚀 Milestones
 
-### ✅ Version 0.0.x - The Foundation
+### Version 0.0.x - The Foundation (Complete)
 - [x] Establish core architecture (Lexer, Parser, AST, Walker).
 - [x] Implement basic linting framework.
 - [x] Set up CI/CD pipeline (GitHub Actions).
@@ -12,7 +12,18 @@ ZShellCheck is an evolving static analysis tool for Zsh. Our mission is to provi
 - [x] Comprehensive Documentation Suite.
 - [x] Robust Installation Script (install.sh) with binary fallback.
 
-### 🌟 Version 1.0.0 - The 1000 Kata Milestone
+### Version 0.1.x - Growing the Rule Set (In Progress)
+- [x] Implement severity levels (error, warning, info, style) for all Katas.
+- [x] Add `--severity` flag for filtering violations.
+- [x] Add `--no-color` flag and verbose output mode.
+- [x] Add SARIF output format for GitHub Security integration.
+- [x] Add source code context to violation output.
+- [x] Enhanced installer with auto-sudo, CI detection, man pages, and completions.
+- [x] Reach 166 Katas (ZC1001 - ZC1169).
+- [ ] Reach 250 Katas covering core Zsh idioms and common anti-patterns.
+- [ ] Reach 500 Katas as the halfway milestone to 1.0.
+
+### Version 1.0.0 - The 1000 Kata Milestone
 - [ ] **Goal:** Implement 1000 Katas (ZC1000 - ZC2000) covering:
     - Syntax errors
     - Portability issues
@@ -23,12 +34,16 @@ ZShellCheck is an evolving static analysis tool for Zsh. Our mission is to provi
 - [ ] **Auto-Fixer**: Implement `zshellcheck --fix` to automatically apply corrections for common violations (e.g., changing `[ ]` to `[[ ]]`).
 - [ ] **Plugin System**: Allow users to write their own custom checks in Lua or Wasm.
 
-## 🔮 Long-Term Vision
+## Long-Term Vision
 - **Type Checking**: Experimental static type inference for Zsh scripts.
 - **Formatter**: A strictly opinionated formatter (like `gofmt` or `prettier`) for Zsh.
 
-## 📈 Progress Tracking
+## Progress Tracking
 
-**Current Progress:** Version 0.1.1 (93/1000 Katas).
+**Current Progress:** Version 0.1.66 (166/1000 Katas -- 16.6%).
+
+```
+[=================>                                                                  ] 166/1000
+```
 
 For the list of currently implemented Katas, please refer to [KATAS.md](KATAS.md).
