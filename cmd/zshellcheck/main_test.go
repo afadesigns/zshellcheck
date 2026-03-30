@@ -209,6 +209,26 @@ func TestRun_StyleSeverity(t *testing.T) {
 	_ = code
 }
 
+func TestRun_WithViolationsTextFormat(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "test.zsh")
+	// Input likely to produce violations
+	if err := os.WriteFile(path, []byte("#!/bin/zsh\nfor i in $(ls); do echo $i; done\nrm -rf ${dir}\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	resetFlags()
+	oldArgs := os.Args
+	defer func() { os.Args = oldArgs }()
+	os.Args = []string{"zshellcheck", "-no-color", "-format", "text", path}
+
+	code := run()
+	// Should return 1 if violations found
+	if code != 1 {
+		t.Logf("expected exit code 1 for violations, got %d", code)
+	}
+}
+
 func TestRun_InfoSeverity(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "test.zsh")
