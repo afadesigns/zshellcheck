@@ -40,6 +40,11 @@ func TestZC1041(t *testing.T) {
 				},
 			},
 		},
+		{
+			name:     "printf with safe static format",
+			input:    `printf 'hello world'`,
+			expected: []katas.Violation{},
+		},
 	}
 
 	for _, tt := range tests {

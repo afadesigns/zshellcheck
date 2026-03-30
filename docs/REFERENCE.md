@@ -32,6 +32,10 @@ Decisions are made by consensus. The Lead Maintainer has the casting vote in dea
 | **Focus** | `sh`/`bash` (POSIX) | **`zsh`** (Native) |
 | **Language** | Haskell | Go |
 | **Philosophy** | Portability | Zsh Power |
+| **Checks** | ~500 | 166 (growing toward 1000) |
+| **Output** | Text, JSON, GCC, TTY | Text, JSON, SARIF |
+| **Severity** | error, warning, info, style | error, warning, info, style |
+| **Auto-fix** | Partial | Planned |
 
 **Use ZShellCheck for:** `.zshrc`, Zsh plugins, and scripts using specific Zsh features (`[[`, modifiers).
 
@@ -44,3 +48,5 @@ Decisions are made by consensus. The Lead Maintainer has the casting vote in dea
 -   **Lexer**: Tokenizer.
 -   **Walker**: AST traverser.
 -   **Registry**: Central store of Katas.
+-   **Severity**: The impact level of a Kata violation (`error`, `warning`, `info`, `style`).
+-   **SARIF**: Static Analysis Results Interchange Format -- used for GitHub Security integration.

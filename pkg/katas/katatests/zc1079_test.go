@@ -64,6 +64,26 @@ func TestZC1079(t *testing.T) {
 				},
 			},
 		},
+		{
+			name:     "non-equality operator",
+			input:    `[[ $a -lt $b ]]`,
+			expected: []katas.Violation{},
+		},
+		{
+			name:     "quoted string RHS",
+			input:    `[[ $a == "hello" ]]`,
+			expected: []katas.Violation{},
+		},
+		{
+			name:     "integer comparison",
+			input:    `[[ $a -eq 5 ]]`,
+			expected: []katas.Violation{},
+		},
+		{
+			name:     "no infix elements",
+			input:    `[[ -f /tmp/foo ]]`,
+			expected: []katas.Violation{},
+		},
 	}
 
 	for _, tt := range tests {

@@ -27,6 +27,21 @@ func TestZC1071(t *testing.T) {
 				},
 			},
 		},
+		{
+			name:     "no self reference in array",
+			input:    `arr=(a b c)`,
+			expected: []katas.Violation{},
+		},
+		{
+			name:     "simple assignment no array",
+			input:    `x=5`,
+			expected: []katas.Violation{},
+		},
+		{
+			name:     "non-assignment operator",
+			input:    `x + 5;`,
+			expected: []katas.Violation{},
+		},
 	}
 
 	for _, tt := range tests {

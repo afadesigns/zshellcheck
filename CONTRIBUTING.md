@@ -96,15 +96,27 @@ We follow a strict Pull Request (PR) workflow to ensure code quality and maintai
     3.  **Implement Logic:** Write the check function that inspects the node and returns a list of `Violation`s.
     4.  **Add Tests:** Create `pkg/katas/katatests/zcXXXX_test.go` with test cases covering valid and invalid Zsh code.
     
+    ### Severity Levels
+
+    Every Kata must be assigned a severity level:
+
+    | Level | Constant | When to Use |
+    | :--- | :--- | :--- |
+    | **error** | `SeverityError` | Bugs or dangerous constructs causing incorrect behavior |
+    | **warning** | `SeverityWarning` | Risky patterns with subtle issues or security concerns |
+    | **info** | `SeverityInfo` | Suggestions for improved practices and portability |
+    | **style** | `SeverityStyle` | Cosmetic or idiomatic improvements |
+
     ### Example Kata
-    
+
     ```go
     func init() {
         RegisterKata(ast.SimpleCommandNode, Kata{
-            ID: "ZC1099",
-            Title: "Avoid foo command",
+            ID:          "ZC1099",
+            Title:       "Avoid foo command",
             Description: "The foo command is deprecated.",
-            Check: checkZC1099,
+            Severity:    SeverityStyle,
+            Check:       checkZC1099,
         })
     }
     ```
