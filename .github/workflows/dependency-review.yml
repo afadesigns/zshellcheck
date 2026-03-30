@@ -16,7 +16,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.1.7
       - name: Dependency Review
-        uses: actions/dependency-review-action@5b5d36e22ba7a744453a7738621580252c8814bd # v4.3.3
+        uses: actions/dependency-review-action@2031cfc080254a8a887f58cffee85186f0e49e48 # v4
         with:
           # Fail if severity is high or critical
           fail-on-severity: high

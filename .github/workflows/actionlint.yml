@@ -28,5 +28,7 @@ jobs:
         with:
           egress-policy: audit
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.1.7
+      - name: Install actionlint
+        run: bash <(curl -sSL https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash)
       - name: Check workflow files
-        uses: ravsamhq/action-actionlint@1360a27665447978768d0623e6b9903c467946e8 # v0.1.0
+        run: ./actionlint -color
