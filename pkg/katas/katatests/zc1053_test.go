@@ -69,6 +69,23 @@ func TestZC1053(t *testing.T) {
 				},
 			},
 		},
+		{
+			name:  "grep without -q in while condition",
+			input: `while grep pattern file; do echo loop; done`,
+			expected: []katas.Violation{
+				{
+					KataID:  "ZC1053",
+					Message: "Silence `grep` output in conditions. Use `grep -q` or redirect to `/dev/null`.",
+					Line:    1,
+					Column:  7,
+				},
+			},
+		},
+		{
+			name:     "grep -q in while condition",
+			input:    `while grep -q pattern file; do echo loop; done`,
+			expected: []katas.Violation{},
+		},
 	}
 
 	for _, tt := range tests {
