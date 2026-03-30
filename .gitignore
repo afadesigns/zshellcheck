@@ -24,8 +24,11 @@ zshellcheck-windows-amd64.exe
 *~
 .#*
 .#*#
-.genkit/traces_idx/
-
-# Gemini CLI specific private files
+# AI/agent-specific private files
+CLAUDE.md
 GEMINI.md
+.claude/
+.remember/
+.genkit/
+
 bin/
