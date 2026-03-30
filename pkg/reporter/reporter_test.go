@@ -3,6 +3,7 @@ package reporter
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"strings"
 	"testing"
 
@@ -288,6 +289,49 @@ func TestJSONReporter_EmptyViolations(t *testing.T) {
 
 	if len(result) != 0 {
 		t.Errorf("expected empty array, got %d items", len(result))
+	}
+}
+
+type failWriter struct{}
+
+func (w *failWriter) Write(p []byte) (n int, err error) {
+	return 0, fmt.Errorf("write failed")
+}
+
+func TestTextReporter_WriterError(t *testing.T) {
+	violations := []katas.Violation{
+		{KataID: "ZC0001", Message: "test", Level: katas.SeverityError, Line: 1, Column: 1},
+	}
+
+	cfg := config.DefaultConfig()
+	reporter := NewTextReporter(&failWriter{}, "test.zsh", "echo hello", cfg)
+	err := reporter.Report(violations)
+	if err == nil {
+		t.Error("expected error from failing writer")
+	}
+}
+
+func TestJSONReporter_WriterError(t *testing.T) {
+	violations := []katas.Violation{
+		{KataID: "ZC0001", Message: "test", Level: katas.SeverityError, Line: 1, Column: 1},
+	}
+
+	reporter := NewJSONReporter(&failWriter{})
+	err := reporter.Report(violations)
+	if err == nil {
+		t.Error("expected error from failing writer")
+	}
+}
+
+func TestSarifReporter_WriterError(t *testing.T) {
+	violations := []katas.Violation{
+		{KataID: "ZC0001", Message: "test", Level: katas.SeverityError, Line: 1, Column: 1},
+	}
+
+	reporter := NewSarifReporter(&failWriter{}, "test.zsh")
+	err := reporter.Report(violations)
+	if err == nil {
+		t.Error("expected error from failing writer")
 	}
 }
 

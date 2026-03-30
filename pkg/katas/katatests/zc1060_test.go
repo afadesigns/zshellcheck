@@ -35,6 +35,11 @@ func TestZC1060(t *testing.T) {
 				},
 			},
 		},
+		{
+			name:     "ps piped to non-grep command",
+			input:    `ps aux | sort`,
+			expected: []katas.Violation{},
+		},
 	}
 
 	for _, tt := range tests {
