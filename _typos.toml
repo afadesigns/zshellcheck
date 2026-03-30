@@ -1,0 +1,3 @@
+[default.extend-words]
+# DoubleBracketExpression abbreviated as dbe in AST node names
+dbe = "dbe"

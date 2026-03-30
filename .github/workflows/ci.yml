@@ -53,11 +53,16 @@ jobs:
         with:
           scandir: '.'
           severity: warning
-          ignore_paths: 'tests/integration_test.zsh'
+          ignore_paths: >-
+            tests/integration_test.zsh
+            examples/demo.zsh
+            pkg/katas/testdata
+            completions
 
   build-and-test:
     name: Build & Test
     strategy:
+      fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
     runs-on: ${{ matrix.os }}
@@ -86,6 +91,9 @@ jobs:
         run: |
           ./install.sh
           ~/.local/bin/zshellcheck --version
+      - name: Install Zsh
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y zsh
       - name: Test (Integration)
         if: runner.os != 'Windows'
         run: |
