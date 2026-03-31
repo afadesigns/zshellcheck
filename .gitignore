@@ -6,29 +6,22 @@ zshellcheck-windows-amd64.exe
 # Build directory for Go modules
 /build/
 
-# Go module cache
-
 # Test binaries and caches
 *.test
 *.out
 /tests/.tmp/
 
-# Editor specific files
+# Editor and IDE files
 .vscode/
 .idea/
-
-# macOS specific files
-.DS_Store
-
-# IDE and OS generated files
+*.swp
 *~
 .#*
 .#*#
-# AI/agent-specific private files
-CLAUDE.md
-GEMINI.md
-.claude/
-.remember/
-.genkit/
 
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Local tool configuration
 bin/
