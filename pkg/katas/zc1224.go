@@ -1,0 +1,37 @@
+package katas
+
+import (
+	"github.com/afadesigns/zshellcheck/pkg/ast"
+)
+
+func init() {
+	RegisterKata(ast.SimpleCommandNode, Kata{
+		ID:       "ZC1224",
+		Title:    "Avoid parsing `free` output — read `/proc/meminfo` directly",
+		Severity: SeverityStyle,
+		Description: "`free` output format varies across versions and locales. " +
+			"Read `/proc/meminfo` directly for reliable memory information in scripts.",
+		Check: checkZC1224,
+	})
+}
+
+func checkZC1224(node ast.Node) []Violation {
+	cmd, ok := node.(*ast.SimpleCommand)
+	if !ok {
+		return nil
+	}
+
+	ident, ok := cmd.Name.(*ast.Identifier)
+	if !ok || ident.Value != "free" {
+		return nil
+	}
+
+	return []Violation{{
+		KataID: "ZC1224",
+		Message: "Avoid parsing `free` output — its format varies across versions. " +
+			"Read `/proc/meminfo` directly for reliable memory information.",
+		Line:   cmd.Token.Line,
+		Column: cmd.Token.Column,
+		Level:  SeverityStyle,
+	}}
+}
