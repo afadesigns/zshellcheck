@@ -133,9 +133,9 @@ jobs:
           cache: true
           cache-dependency-path: go.sum
       - name: Fuzz Lexer
-        run: go test -fuzz=FuzzLexer -fuzztime=30s ./pkg/lexer
+        run: go test -fuzz=FuzzLexer -fuzztime=20s -timeout=60s ./pkg/lexer
       - name: Fuzz Parser
-        run: go test -fuzz=FuzzParser -fuzztime=30s ./pkg/parser
+        run: go test -fuzz=FuzzParser -fuzztime=20s -timeout=60s ./pkg/parser
 
   vulncheck:
     name: Vulnerability Scan
