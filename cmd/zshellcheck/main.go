@@ -77,9 +77,6 @@ func run() int {
 		fmt.Fprint(os.Stderr, config.Banner)
 	}
 
-	// Start with default config
-	config := config.DefaultConfig()
-
 	configFileXdgConfigPath, _ := xdg.ConfigFile("zshellcheck/config.yaml")
 	configFileHomePath := filepath.Join(xdg.Home, ".zshellcheckrc")
 	config, err := loadConfig(configFileXdgConfigPath, configFileHomePath, ".zshellcheckrc")
