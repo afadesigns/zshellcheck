@@ -77,7 +77,12 @@ func run() int {
 		fmt.Fprint(os.Stderr, config.Banner)
 	}
 
-	configFileXdgConfigPath, _ := xdg.SearchConfigFile("zshellcheck/config.yaml")
+	// Pick either config.yml or config.yaml, but not both
+	configFileXdgConfigPath, err := xdg.SearchConfigFile("zshellcheck/config.yml")
+	if err != nil {
+		configFileXdgConfigPath, _ = xdg.SearchConfigFile("zshellcheck/config.yaml")
+	}
+
 	configFileHomePath := filepath.Join(xdg.Home, ".zshellcheckrc")
 	config, err := loadConfig(configFileXdgConfigPath, configFileHomePath, ".zshellcheckrc")
 	if err != nil {
