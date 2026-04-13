@@ -2,5 +2,5 @@ package version
 
 // Version is the current version of ZShellCheck.
 // It is calculated based on the number of implemented Katas.
-// 282 Katas = 0.2.82
-const Version = "0.2.82"
+// 283 Katas = 0.2.83
+const Version = "0.2.83"
