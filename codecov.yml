@@ -17,7 +17,13 @@ coverage:
         only_pulls: false
     patch:
       default:
-        target: 95%
+        # Patch target is intentionally lower than project target: a
+        # single-kata PR adds ~30 lines of Check function where the
+        # first guard (non-matching node type) is structurally
+        # unreachable via testutil.Check (which filters by node type).
+        # 80 gives room for these guards without accepting real
+        # regressions.
+        target: 80%
         threshold: 2%
         if_ci_failed: error
         informational: false
