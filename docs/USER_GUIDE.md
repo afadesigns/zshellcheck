@@ -2,7 +2,7 @@
 
 This guide covers the configuration, usage, and troubleshooting of ZShellCheck.
 
-ZShellCheck currently implements **166 Katas** (checks) covering syntax errors, security issues, performance improvements, and Zsh best practices.
+ZShellCheck currently implements **335 Katas** (checks) covering syntax errors, security issues, performance improvements, and Zsh best practices.
 
 ## Table of Contents
 
@@ -111,7 +111,7 @@ Add to `.pre-commit-config.yaml`:
 
 ```yaml
 -   repo: https://github.com/afadesigns/zshellcheck
-    rev: v0.1.66
+    rev: v0.3.35
     hooks:
     -   id: zshellcheck
 ```
