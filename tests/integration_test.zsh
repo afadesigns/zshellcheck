@@ -160,7 +160,7 @@ run_test 'sed "-i" "s/foo/bar/" file'	"ZC1052" 'ZC1052: sed "-i"'
 run_test 'if grep foo file; then :; fi'	"ZC1053" 'ZC1053: if grep'
 run_test 'while grep foo file; do :; done'	"ZC1053" 'ZC1053: while grep'
 run_test 'if grep -q foo file; then :; fi'	"" 'ZC1053: grep -q (Valid)'
-run_test 'if grep foo file | wc -l; then :; fi'	"" 'ZC1053: grep piped (Valid)'
+run_test 'if grep foo file | true; then :; fi'	"" 'ZC1053: grep piped (Valid)'
 
 # --- ZC1054: POSIX classes ---
 run_test 'tr "[A-Z]" "[a-z]"'	"ZC1054" 'ZC1054: tr ranges'
