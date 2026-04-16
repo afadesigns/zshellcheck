@@ -1,0 +1,60 @@
+name: Fuzz (nightly)
+
+on:
+  schedule:
+    # Every night — much longer budget than the PR fuzz in ci.yml
+    - cron: '30 2 * * *'
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+jobs:
+  fuzz:
+    name: Extended fuzz (${{ matrix.target }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: Lexer
+            package: ./pkg/lexer
+          - target: Parser
+            package: ./pkg/parser
+    steps:
+      - uses: step-security/harden-runner@fa2e9d605c4eeb9fcad4c99c224cee0c6c7f3594 # v2.16.0
+        with:
+          egress-policy: audit
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.1.7
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5.6.0
+        with:
+          go-version: 'stable'
+          cache: true
+      - name: Restore fuzz corpus
+        uses: actions/cache@1bd1e32a3bdc45362d1e726936510720a7c30a57 # v4.2.0
+        with:
+          path: |
+            ~/.cache/go-build
+            testdata/fuzz
+          key: fuzz-${{ matrix.target }}-${{ github.run_id }}
+          restore-keys: |
+            fuzz-${{ matrix.target }}-
+      - name: Fuzz ${{ matrix.target }}
+        run: |
+          go test -run='^$' -fuzz='Fuzz${{ matrix.target }}' \
+            -fuzztime=300s -timeout=25m \
+            ${{ matrix.package }}
+      - name: Upload failing corpus (on discovery)
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: fuzz-failing-${{ matrix.target }}
+          path: ${{ matrix.package }}/testdata/fuzz/
+          retention-days: 30
