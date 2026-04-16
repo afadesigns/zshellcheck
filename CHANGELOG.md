@@ -5,6 +5,59 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.35] - 2026-04-17
+
+**Public beta.** First release with successfully built, signed, and
+attested binaries. The kata-count formula now maps correctly to the
+`MAJOR.MINOR.PATCH` scheme (335 katas → 0.3.35); prior tag series was
+produced before the release pipeline was functional and contained no
+published artifacts.
+
+### Added
+- **169 new Katas** (ZC1170 through ZC1338) spanning: Zsh built-in
+  preferences over external commands, parameter-expansion
+  alternatives to `cut`/`sed`/`tr`/`sort`, Bash-ism detection for
+  portability, and git/docker/grep flag recommendations.
+- **SBOM workflow**: weekly SPDX + CycloneDX generation, attested on
+  main for SLSA-aligned build metadata.
+- **OSV-Scanner**: daily scheduled scan of Go module dependencies,
+  SARIF uploaded to Security tab.
+- **Nightly fuzz**: 5-minute budget per lexer/parser target with
+  corpus caching and failing-corpus artifact upload.
+- **Release pipeline**: Syft for SBOM in archives, Cosign keyless
+  signing, `actions/attest-build-provenance` for SLSA provenance,
+  locked to goreleaser `~> v2`.
+
+### Changed
+- **Codecov gate**: raised project + patch targets from 80% to 95%.
+- **Release archives**: now include man page, Zsh and Bash shell
+  completions, and CHANGELOG alongside LICENSE and README.
+- **Label taxonomy**: removed duplicates (`documentation`,
+  `enhancement`), renamed `starter` to `good first issue` for
+  GitHub discoverability, added severity/component/topic/status
+  labels.
+
+### Fixed
+- **install.sh** (#311): graceful HTTP error handling when
+  `/releases/latest` returns 404, with `/tags` fallback; explicit
+  error message when no tag can be resolved instead of silent exit.
+- **Release workflow**: installed missing Syft and Cosign on the
+  runner; locked goreleaser-action version syntax to `~> v2` to
+  avoid ambiguous `latest`.
+- **GoReleaser config**: updated `archives.format_overrides.format`
+  to the plural `formats` key per goreleaser v2.
+
+### Known Issues
+Filed during release prep for community resolution:
+- **#341-#345**: duplicate kata detections (ZC1038/ZC1093,
+  ZC1005/ZC1019, ZC1009/ZC1018/ZC1278, ZC1108/ZC1277, and a 10-kata
+  cluster in ZC1022-ZC1029 + ZC1033/ZC1035).
+- **#346**: 11 Style-severity katas likely better categorised as
+  Warning (quoting defects, `rm -rf`, `curl | sh`, `source` with URL).
+- **#347**: parser crashes on common Zsh constructs
+  (`for...in...do...done`, `||`) — reduces detection fidelity on
+  real-world `.zshrc` files.
+
 ## [0.1.66] - 2026-03-30
 
 ### Added
