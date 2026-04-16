@@ -285,16 +285,20 @@ if [ "$BUILD_SUCCESS" = false ]; then
 
     # Download Binary
     if curl -sL -o "$FILENAME" "$URL"; then
-        # Verify
+        # Verify — match the exact filename at end-of-line so sibling
+        # entries (e.g. <archive>.sbom.json) are not selected by substring.
         if [ "$HAS_CHECKSUMS" = true ]; then
-            if command -v sha256sum &> /dev/null; then
-                if grep "$FILENAME" checksums.txt | sha256sum -c - --status; then
+            local_sum_line=$(awk -v f="$FILENAME" '$2 == f {print; exit}' checksums.txt)
+            if [ -z "$local_sum_line" ]; then
+                echo -e "${YELLOW}No checksum entry for $FILENAME in checksums.txt. Skipping verification.${NC}"
+            elif command -v sha256sum &> /dev/null; then
+                if printf '%s\n' "$local_sum_line" | sha256sum -c - --status; then
                     echo -e "${GREEN}Checksum verified.${NC}"
                 else
                     echo -e "${RED}Checksum verification failed!${NC}"; exit 1
                 fi
             elif command -v shasum &> /dev/null; then
-                 if grep "$FILENAME" checksums.txt | shasum -a 256 -c - --status; then
+                if printf '%s\n' "$local_sum_line" | shasum -a 256 -c - --status; then
                     echo -e "${GREEN}Checksum verified.${NC}"
                 else
                     echo -e "${RED}Checksum verification failed!${NC}"; exit 1
