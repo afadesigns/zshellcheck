@@ -31,6 +31,10 @@ archives:
     files:
       - LICENSE
       - README.md
+      - CHANGELOG.md
+      - man/man1/zshellcheck.1
+      - completions/zsh/_zshellcheck
+      - completions/bash/zshellcheck-completion.bash
 
 sboms:
   - artifacts: archive
