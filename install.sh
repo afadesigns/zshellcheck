@@ -203,14 +203,58 @@ if [ "$BUILD_SUCCESS" = false ]; then
 
     echo -e "Detected platform: ${BLUE}$GOOS $GOARCH${NC}"
 
-    # Resolve Version
+    # Resolve Version — handle both "no releases yet" and normal cases gracefully.
+    resolve_latest_tag() {
+        local url="$1"
+        local response
+        # Disable pipefail locally so we can inspect curl/grep failures manually.
+        set +e
+        response=$(curl -sSL -w '\n%{http_code}' "$url" 2>&1)
+        local curl_rc=$?
+        set -e
+        local http_code
+        http_code=$(printf '%s\n' "$response" | tail -n 1)
+        local body
+        body=$(printf '%s\n' "$response" | sed '$d')
+
+        if [ "$curl_rc" -ne 0 ]; then
+            echo -e "${RED}curl failed (exit $curl_rc) while fetching $url${NC}" >&2
+            return 1
+        fi
+        if [ "$http_code" != "200" ]; then
+            echo -e "${YELLOW}GitHub API returned HTTP $http_code for $url${NC}" >&2
+            return 1
+        fi
+
+        # Extract "tag_name" (works for /releases/latest and /tags [0])
+        printf '%s\n' "$body" | grep -m1 '"tag_name"\|"name"' \
+            | sed -E 's/.*"(v[0-9][^"]+)".*/\1/' \
+            | head -n 1
+    }
+
     if [ "$TARGET_VERSION" = "latest" ]; then
-        LATEST_TAG=$(curl -s https://api.github.com/repos/afadesigns/zshellcheck/releases/latest | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
-        if [ -z "$LATEST_TAG" ]; then
-            echo -e "${RED}Failed to fetch latest release info from GitHub.${NC}"
+        RESOLVED_VERSION=""
+
+        # Primary: /releases/latest (the conventional source of truth)
+        RESOLVED_VERSION=$(resolve_latest_tag \
+            "https://api.github.com/repos/afadesigns/zshellcheck/releases/latest" \
+            2>/dev/null || true)
+
+        # Fallback: /tags (used while the project has no published releases yet)
+        if [ -z "$RESOLVED_VERSION" ]; then
+            echo -e "${YELLOW}No published releases found. Falling back to latest git tag.${NC}"
+            RESOLVED_VERSION=$(resolve_latest_tag \
+                "https://api.github.com/repos/afadesigns/zshellcheck/tags" \
+                2>/dev/null || true)
+        fi
+
+        if [ -z "$RESOLVED_VERSION" ]; then
+            echo -e "${RED}Failed to resolve a release tag from GitHub.${NC}"
+            echo -e "${RED}Retry with an explicit version: $0 -v v0.3.35${NC}"
             exit 1
         fi
-        RESOLVED_VERSION="$LATEST_TAG"
+
+        echo -e "${GREEN}Resolved latest version: ${RESOLVED_VERSION}${NC}"
     else
         RESOLVED_VERSION="$TARGET_VERSION"
     fi
