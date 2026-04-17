@@ -39,9 +39,9 @@ func checkZC1379(node ast.Node) []Violation {
 				KataID: "ZC1379",
 				Message: "`PROMPT_COMMAND` is Bash-only. In Zsh define a `precmd` function or use " +
 					"`autoload -Uz add-zsh-hook; add-zsh-hook precmd my_hook`.",
-				Line:    cmd.Token.Line,
-				Column:  cmd.Token.Column,
-				Level:   SeverityWarning,
+				Line:   cmd.Token.Line,
+				Column: cmd.Token.Column,
+				Level:  SeverityWarning,
 			}}
 		}
 	}
