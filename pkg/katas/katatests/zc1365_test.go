@@ -31,8 +31,8 @@ func TestZC1365(t *testing.T) {
 			},
 		},
 		{
-			name:  "invalid — stat --format",
-			input: `stat --format %Y file`,
+			name:  "invalid — stat -c %Y (mtime)",
+			input: `stat -c %Y file`,
 			expected: []katas.Violation{
 				{
 					KataID:  "ZC1365",
