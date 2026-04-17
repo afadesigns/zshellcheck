@@ -24,7 +24,7 @@ func TestZC1514(t *testing.T) {
 			expected: []katas.Violation{
 				{
 					KataID:  "ZC1514",
-					Message: "`useradd -p <hash>` puts the crypted password in ps / /proc / history. Use `chpasswd --crypt-method=SHA512` from stdin.",
+					Message: "`useradd -p <hash>` puts the hashed password in ps / /proc / history. Use `chpasswd --crypt-method=SHA512` from stdin.",
 					Line:    1,
 					Column:  1,
 				},
@@ -36,7 +36,7 @@ func TestZC1514(t *testing.T) {
 			expected: []katas.Violation{
 				{
 					KataID:  "ZC1514",
-					Message: "`usermod -p <hash>` puts the crypted password in ps / /proc / history. Use `chpasswd --crypt-method=SHA512` from stdin.",
+					Message: "`usermod -p <hash>` puts the hashed password in ps / /proc / history. Use `chpasswd --crypt-method=SHA512` from stdin.",
 					Line:    1,
 					Column:  1,
 				},
