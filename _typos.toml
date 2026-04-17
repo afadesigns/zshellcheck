@@ -1,5 +1,7 @@
 [default.extend-words]
 # DoubleBracketExpression abbreviated as dbe in AST node names
 dbe = "dbe"
+
+[default.extend-identifiers]
 # mke2fs is the canonical GNU ext2/3/4 filesystem creation tool
 mke2fs = "mke2fs"
