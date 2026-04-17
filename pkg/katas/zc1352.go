@@ -29,7 +29,10 @@ func checkZC1352(node ast.Node) []Violation {
 
 	for _, arg := range cmd.Arguments {
 		v := arg.String()
-		if v == "-I" || v == "--replace" {
+		// -I, -I{}, -Irepl, --replace, --replace=STR
+		if v == "-I" || v == "--replace" ||
+			(len(v) > 2 && v[:2] == "-I") ||
+			(len(v) > 9 && v[:10] == "--replace=") {
 			return []Violation{{
 				KataID: "ZC1352",
 				Message: "Avoid `xargs -I{}` — iterate with `for x in ${(f)\"$(cmd)\"}; do ...; done` " +

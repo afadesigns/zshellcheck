@@ -31,8 +31,8 @@ func TestZC1352(t *testing.T) {
 			},
 		},
 		{
-			name:  "invalid — xargs --replace",
-			input: `xargs --replace cmd`,
+			name:  "invalid — xargs -Ixx custom replace-string",
+			input: `xargs -Ifile cp file /tmp`,
 			expected: []katas.Violation{
 				{
 					KataID:  "ZC1352",
