@@ -12,7 +12,7 @@ func init() {
 		Description: "`--trusted-host` tells pip to skip TLS certificate verification for the " +
 			"specified host and to allow plain-HTTP URLs from that host. Any MITM on the path " +
 			"can substitute packages on install, and a typo in the host name means every " +
-			"subsequent `install` from the mis-spelled host is unauthenticated. Fix the CA " +
+			"subsequent `install` from the misspelled host is unauthenticated. Fix the CA " +
 			"trust (install the real corporate CA) instead of silencing pip, and keep the " +
 			"default `--index-url https://...` over the TLS-verified endpoint.",
 		Check: checkZC1560,
