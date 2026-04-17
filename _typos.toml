@@ -1,13 +1,13 @@
 [default.extend-words]
 # DoubleBracketExpression abbreviated as dbe in AST node names
 dbe = "dbe"
+# EDE is DES "encrypt-decrypt-encrypt" 3DES mode (openssl cipher name)
+ede = "ede"
+# Hashi is the short form used in vendor name HashiCorp
+Hashi = "Hashi"
 
 [default.extend-identifiers]
 # mke2fs is the canonical GNU ext2/3/4 filesystem creation tool
 mke2fs = "mke2fs"
 # chage is the GNU password-aging utility
 chage = "chage"
-# HashiCorp is the vendor name
-Hashi = "Hashi"
-# EDE is DES "encrypt-decrypt-encrypt" 3DES mode (openssl cipher name)
-ede = "ede"
