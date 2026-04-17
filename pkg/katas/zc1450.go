@@ -44,11 +44,11 @@ func checkZC1450(node ast.Node) []Violation {
 		}
 		if hasInstall && !hasNoConfirm {
 			return []Violation{{
-				KataID: "ZC1450",
+				KataID:  "ZC1450",
 				Message: "`pacman -S` without `--noconfirm` hangs in scripts.",
-				Line:   cmd.Token.Line,
-				Column: cmd.Token.Column,
-				Level:  SeverityWarning,
+				Line:    cmd.Token.Line,
+				Column:  cmd.Token.Column,
+				Level:   SeverityWarning,
 			}}
 		}
 	case "zypper":
@@ -65,11 +65,11 @@ func checkZC1450(node ast.Node) []Violation {
 		}
 		if hasInstall && !hasN {
 			return []Violation{{
-				KataID: "ZC1450",
+				KataID:  "ZC1450",
 				Message: "`zypper install` without `--non-interactive` (`-n`) hangs in scripts.",
-				Line:   cmd.Token.Line,
-				Column: cmd.Token.Column,
-				Level:  SeverityWarning,
+				Line:    cmd.Token.Line,
+				Column:  cmd.Token.Column,
+				Level:   SeverityWarning,
 			}}
 		}
 	}
