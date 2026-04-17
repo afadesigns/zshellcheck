@@ -40,7 +40,7 @@ func checkZC1507(node ast.Node) []Violation {
 	for _, arg := range cmd.Arguments {
 		v := arg.String()
 		if v == "-a" || v == "-l" || v == "--archive" || v == "--links" ||
-			strings.HasPrefix(v, "-a") && strings.ContainsAny(v[1:], "lavxHAX") {
+			strings.HasPrefix(v, "-a") && strings.ContainsAny(v[1:], "lavx") {
 			hasSymlinkMode = true
 		}
 		if v == "--safe-links" || v == "--copy-unsafe-links" || v == "--no-links" ||
