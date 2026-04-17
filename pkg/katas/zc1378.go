@@ -36,11 +36,11 @@ func checkZC1378(node ast.Node) []Violation {
 		v := arg.String()
 		if strings.Contains(v, "DIRSTACK") {
 			return []Violation{{
-				KataID: "ZC1378",
+				KataID:  "ZC1378",
 				Message: "Use lowercase `$dirstack` in Zsh — uppercase `$DIRSTACK` is Bash-only.",
-				Line:   cmd.Token.Line,
-				Column: cmd.Token.Column,
-				Level:  SeverityError,
+				Line:    cmd.Token.Line,
+				Column:  cmd.Token.Column,
+				Level:   SeverityError,
 			}}
 		}
 	}
