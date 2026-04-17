@@ -19,12 +19,12 @@ func TestZC1420(t *testing.T) {
 			expected: []katas.Violation{},
 		},
 		{
-			name:  "invalid — chmod +s",
-			input: `chmod +s binary`,
+			name:  "invalid — chmod 2755 (setgid)",
+			input: `chmod 2755 binary`,
 			expected: []katas.Violation{
 				{
 					KataID:  "ZC1420",
-					Message: "`chmod +s` / `u+s` / `g+s` sets setuid/setgid — privilege-escalation risk. Prefer sudo policy, capabilities, or containerization.",
+					Message: "Numeric mode with leading 4/2/6 sets setuid/setgid — privilege-escalation risk.",
 					Line:    1,
 					Column:  1,
 				},

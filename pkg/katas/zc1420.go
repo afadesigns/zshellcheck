@@ -47,11 +47,11 @@ func checkZC1420(node ast.Node) []Violation {
 		if len(v) == 4 && (v[0] == '4' || v[0] == '2' || v[0] == '6') &&
 			v[1] >= '0' && v[1] <= '7' && v[2] >= '0' && v[2] <= '7' && v[3] >= '0' && v[3] <= '7' {
 			return []Violation{{
-				KataID: "ZC1420",
+				KataID:  "ZC1420",
 				Message: "Numeric mode with leading 4/2/6 sets setuid/setgid — privilege-escalation risk.",
-				Line:   cmd.Token.Line,
-				Column: cmd.Token.Column,
-				Level:  SeverityWarning,
+				Line:    cmd.Token.Line,
+				Column:  cmd.Token.Column,
+				Level:   SeverityWarning,
 			}}
 		}
 	}
