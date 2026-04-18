@@ -5,6 +5,11 @@ dbe = "dbe"
 ede = "ede"
 # Hashi is the short form used in vendor name HashiCorp
 Hashi = "Hashi"
+# passin / passout are openssl password-source flag names
+passin = "passin"
+passout = "passout"
+# unparseable is standard English spelling (alongside "unparsable")
+unparseable = "unparseable"
 
 [default.extend-identifiers]
 # mke2fs is the canonical GNU ext2/3/4 filesystem creation tool
