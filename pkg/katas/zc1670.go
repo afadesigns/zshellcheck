@@ -5,17 +5,17 @@ import (
 )
 
 var zc1670Dangerous = map[string]struct{}{
-	"allow_execstack":           {},
-	"allow_execmod":             {},
-	"allow_execmem":             {},
-	"httpd_execmem":             {},
-	"httpd_unified":             {},
-	"selinuxuser_execmod":       {},
-	"selinuxuser_execstack":     {},
-	"selinuxuser_execheap":      {},
+	"allow_execstack":            {},
+	"allow_execmod":              {},
+	"allow_execmem":              {},
+	"httpd_execmem":              {},
+	"httpd_unified":              {},
+	"selinuxuser_execmod":        {},
+	"selinuxuser_execstack":      {},
+	"selinuxuser_execheap":       {},
 	"domain_kernel_load_modules": {},
-	"deny_ptrace":               {}, // flipping this OFF re-enables ptrace globally
-	"mmap_low_allowed":          {},
+	"deny_ptrace":                {},
+	"mmap_low_allowed":           {},
 }
 
 func init() {
