@@ -23,7 +23,7 @@ func init() {
 		Description: "AWS EC2 destructive actions (`terminate-instances`, `delete-volume`, " +
 			"`delete-snapshot`, `delete-vpc`, and friends) drop cloud state without any " +
 			"automatic backup: instance-store volumes vanish on terminate, EBS volumes and " +
-			"snapshots cannot be restored from the AWS side once deleted, and a mis-typed " +
+			"snapshots cannot be restored from the AWS side once deleted, and a wrong " +
 			"VPC / ENI / security-group ID can take down workloads in the same account. " +
 			"Review the target list with `aws ec2 describe-…`, pair destructive commands " +
 			"with `--dry-run`, and keep the IDs pinned in a file that `aws ... --cli-input-" +
