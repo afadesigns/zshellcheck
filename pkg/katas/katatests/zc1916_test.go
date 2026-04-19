@@ -29,7 +29,7 @@ func TestZC1916(t *testing.T) {
 			expected: []katas.Violation{
 				{
 					KataID:  "ZC1916",
-					Message: "`setopt NULL_GLOB` makes every later unmatched glob silently empty — `cp *.log /dest` mis-targets, `rm *.tmp` errors as argv-too-short. Use per-glob `*(N)`, or scope inside a function with `setopt LOCAL_OPTIONS NULL_GLOB`.",
+					Message: "`setopt NULL_GLOB` makes every later unmatched glob silently empty — `cp *.log /dest` rewrites into `cp /dest`, `rm *.tmp` becomes argv-too-short. Use per-glob `*(N)`, or scope with `setopt LOCAL_OPTIONS NULL_GLOB` in a function.",
 					Line:    1,
 					Column:  1,
 				},
@@ -41,7 +41,7 @@ func TestZC1916(t *testing.T) {
 			expected: []katas.Violation{
 				{
 					KataID:  "ZC1916",
-					Message: "`unsetopt NO_NULL_GLOB` makes every later unmatched glob silently empty — `cp *.log /dest` mis-targets, `rm *.tmp` errors as argv-too-short. Use per-glob `*(N)`, or scope inside a function with `setopt LOCAL_OPTIONS NULL_GLOB`.",
+					Message: "`unsetopt NO_NULL_GLOB` makes every later unmatched glob silently empty — `cp *.log /dest` rewrites into `cp /dest`, `rm *.tmp` becomes argv-too-short. Use per-glob `*(N)`, or scope with `setopt LOCAL_OPTIONS NULL_GLOB` in a function.",
 					Line:    1,
 					Column:  1,
 				},
