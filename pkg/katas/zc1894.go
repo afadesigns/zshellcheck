@@ -1,0 +1,62 @@
+package katas
+
+import (
+	"github.com/afadesigns/zshellcheck/pkg/ast"
+)
+
+func init() {
+	RegisterKata(ast.SimpleCommandNode, Kata{
+		ID:       "ZC1894",
+		Title:    "Error on `conntrack -F` / `--flush` — every tracked connection (including SSH) is reset",
+		Severity: SeverityError,
+		Description: "`conntrack -F` (alias `--flush`) wipes the netfilter connection-tracking " +
+			"table. Every established TCP flow that depended on conntrack (every " +
+			"stateful-NAT connection, every `-m conntrack --ctstate RELATED,ESTABLISHED` " +
+			"allowance, every MASQUERADE session) loses its entry and the next packet is " +
+			"matched from scratch; most firewall rulesets drop it as \"new\" and the " +
+			"session dies. Over SSH, that means the shell running the very command drops. " +
+			"Stage the flush behind `at now + 5 minutes` so the session can re-enter the " +
+			"table via a preceding rule, or narrow the scope with `conntrack -D -s " +
+			"<client-IP>` for a specific hung flow.",
+		Check: checkZC1894,
+	})
+}
+
+func checkZC1894(node ast.Node) []Violation {
+	cmd, ok := node.(*ast.SimpleCommand)
+	if !ok {
+		return nil
+	}
+	ident, ok := cmd.Name.(*ast.Identifier)
+	if !ok {
+		return nil
+	}
+	// Parser caveat: `conntrack --flush <table>` mangles the command name to
+	// `flush`, with `<table>` promoted to arg[0].
+	if ident.Value == "flush" {
+		return zc1894Hit(cmd)
+	}
+	if ident.Value != "conntrack" {
+		return nil
+	}
+	for _, arg := range cmd.Arguments {
+		v := arg.String()
+		if v == "-F" || v == "--flush" {
+			return zc1894Hit(cmd)
+		}
+	}
+	return nil
+}
+
+func zc1894Hit(cmd *ast.SimpleCommand) []Violation {
+	return []Violation{{
+		KataID: "ZC1894",
+		Message: "`conntrack -F` wipes every tracked flow — stateful " +
+			"`ctstate ESTABLISHED` allowances drop, running SSH sessions " +
+			"lose their entry. Gate with `at now + N min` or narrow to " +
+			"one flow with `conntrack -D -s <ip>`.",
+		Line:   cmd.Token.Line,
+		Column: cmd.Token.Column,
+		Level:  SeverityError,
+	}}
+}
