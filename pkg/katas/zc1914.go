@@ -16,7 +16,7 @@ func init() {
 			"forces classic UDP to the listed servers. Both detour around the host's resolver " +
 			"chain — `/etc/hosts`, `systemd-resolved`, `nsswitch`, split-horizon DNS — so the " +
 			"request lands at an IP the operator did not vet. In production scripts that is " +
-			"usually a mis-debug line left in; drop the flag or gate it behind an explicit " +
+			"usually a stray debug line left in; drop the flag or gate it behind an explicit " +
 			"`--doh-insecure` + `--resolve` pinning audit so reviewers can see the intent.",
 		Check: checkZC1914,
 	})
