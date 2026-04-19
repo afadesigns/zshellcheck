@@ -14,7 +14,7 @@ func init() {
 		Description: "With `AUTO_CD` on, any bare word that happens to name an existing directory " +
 			"is executed as `cd <word>` — no command name, no error. This is a pleasant " +
 			"interactive shortcut and an absolute footgun in scripts: a typo in a command " +
-			"name (`doker` → a directory called `doker` that was left lying around) or a " +
+			"name (`dockr` → a directory called `dockr` that was left lying around) or a " +
 			"user-controlled variable that expands to a path silently reshapes `$PWD` for " +
 			"every later relative path. Keep `AUTO_CD` inside `~/.zshrc` where it belongs, " +
 			"not in a `.zsh` script, and never turn it on inside a function that an external " +
