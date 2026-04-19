@@ -75,8 +75,8 @@ func zc1916Hit(cmd *ast.SimpleCommand, form string) []Violation {
 	return []Violation{{
 		KataID: "ZC1916",
 		Message: "`" + form + "` makes every later unmatched glob silently empty — " +
-			"`cp *.log /dest` rewrites into `cp /dest`, `rm *.tmp` becomes argv-too-short. " +
-			"Use per-glob `*(N)`, or scope with `setopt LOCAL_OPTIONS NULL_GLOB` in a function.",
+			"`cp *.log /dest` rewrites to `cp /dest`, `rm *.tmp` becomes argv-too-short. " +
+			"Use per-glob `*(N)`, or `setopt LOCAL_OPTIONS NULL_GLOB` in a function.",
 		Line:   cmd.Token.Line,
 		Column: cmd.Token.Column,
 		Level:  SeverityWarning,
