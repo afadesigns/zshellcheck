@@ -16,3 +16,5 @@ unparseable = "unparseable"
 mke2fs = "mke2fs"
 # chage is the GNU password-aging utility
 chage = "chage"
+# exportfs is the NFS export-management tool (see ZC1976)
+exportfs = "exportfs"
