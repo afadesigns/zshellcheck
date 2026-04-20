@@ -50,6 +50,8 @@ zshellcheck --severity style my_script.zsh
 
 ZShellCheck looks for a file named `.zshellcheckrc` in the current working directory. The file uses **YAML** syntax.
 
+Global settings can be placed in `~/.config/zshellcheck/config.yml` or `${XDG_CONFIG_HOME}/zshellcheck/config.yml`.
+
 ### Disabling Katas
 
 To suppress specific checks (Katas), use the `disabled_katas` list:

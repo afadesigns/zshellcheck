@@ -9,6 +9,7 @@ import (
 	"runtime/pprof"
 	"strings"
 
+	"github.com/adrg/xdg"
 	"github.com/afadesigns/zshellcheck/pkg/ast"
 	"github.com/afadesigns/zshellcheck/pkg/config"
 	"github.com/afadesigns/zshellcheck/pkg/katas"
@@ -76,7 +77,14 @@ func run() int {
 		fmt.Fprint(os.Stderr, config.Banner)
 	}
 
-	config, err := loadConfig(".zshellcheckrc")
+	// Pick either config.yml or config.yaml, but not both
+	configFileXdgConfigPath, err := xdg.SearchConfigFile("zshellcheck/config.yml")
+	if err != nil {
+		configFileXdgConfigPath, _ = xdg.SearchConfigFile("zshellcheck/config.yaml")
+	}
+
+	configFileHomePath := filepath.Join(xdg.Home, ".zshellcheckrc")
+	config, err := loadConfig(configFileXdgConfigPath, configFileHomePath, ".zshellcheckrc")
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error loading config: %s\n", err)
 		return 1
@@ -120,25 +128,32 @@ func run() int {
 	return 0
 }
 
-func loadConfig(path string) (config.Config, error) {
+func loadConfig(paths ...string) (config.Config, error) {
 	cfg := config.DefaultConfig()
 
-	if _, err := os.Stat(path); os.IsNotExist(err) {
-		return cfg, nil
+	for _, path := range paths {
+		if path == "" {
+			continue
+		}
+		if _, err := os.Stat(path); os.IsNotExist(err) {
+			continue
+		}
+
+		data, err := os.ReadFile(path)
+		if err != nil {
+			return cfg, err
+		}
+
+		var fileConfig config.Config
+		err = yaml.Unmarshal(data, &fileConfig)
+		if err != nil {
+			return cfg, err
+		}
+
+		cfg = config.MergeConfig(cfg, fileConfig)
 	}
 
-	data, err := os.ReadFile(path)
-	if err != nil {
-		return cfg, err
-	}
-
-	var fileConfig config.Config
-	err = yaml.Unmarshal(data, &fileConfig)
-	if err != nil {
-		return cfg, err
-	}
-
-	return config.MergeConfig(cfg, fileConfig), nil
+	return cfg, nil
 }
 
 func processPath(path string, out, errOut io.Writer, cfg config.Config, registry *katas.KatasRegistry, format string, allowedSeverities []katas.Severity) int {
