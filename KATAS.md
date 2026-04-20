@@ -7,9 +7,9 @@ Auto-generated list of all 1000 implemented checks. Do not edit by hand — rege
 | Severity | Count |
 | :--- | ---: |
 | `error` | 220 |
-| `warning` | 449 |
+| `warning` | 459 |
 | `info` | 66 |
-| `style` | 265 |
+| `style` | 255 |
 | **total** | **1000** |
 
 ## Table of Contents
@@ -1834,7 +1834,7 @@ Disable by adding `ZC1074` to `disabled_katas` in `.zshellcheckrc`.
 <a id="zc1075"></a>
 ### ZC1075 — Quote variable expansions to prevent globbing
 
-**Severity:** `style`
+**Severity:** `warning`
 
 Unquoted variable expansions in Zsh are subject to globbing (filename generation). If the variable contains characters like `*` or `?`, it might match files unexpectedly. Use quotes `"$var"` to prevent this.
 
@@ -1867,7 +1867,7 @@ Disable by adding `ZC1077` to `disabled_katas` in `.zshellcheckrc`.
 <a id="zc1078"></a>
 ### ZC1078 — Quote `$@` and `$*` when passing arguments
 
-**Severity:** `style`
+**Severity:** `warning`
 
 Using unquoted `$@` or `$*` splits arguments by IFS (usually space). Use `"$@"` to preserve the original argument grouping, or `"$*"` to join them into a single string.
 
@@ -1878,7 +1878,7 @@ Disable by adding `ZC1078` to `disabled_katas` in `.zshellcheckrc`.
 <a id="zc1079"></a>
 ### ZC1079 — Quote RHS of `==` in `[[ ... ]]` to prevent pattern matching
 
-**Severity:** `style`
+**Severity:** `warning`
 
 In `[[ ... ]]`, unquoted variable expansions on the right-hand side of `==` or `!=` are treated as patterns (globbing). If you intend to compare strings literally, quote the variable.
 
@@ -1933,7 +1933,7 @@ Disable by adding `ZC1083` to `disabled_katas` in `.zshellcheckrc`.
 <a id="zc1084"></a>
 ### ZC1084 — Quote globs in `find` commands
 
-**Severity:** `style`
+**Severity:** `warning`
 
 Unquoted globs in `find` commands are expanded by the shell before `find` runs. If files match, `find` receives the list of files instead of the pattern. Quote arguments to `-name`, `-path`, etc.
 
@@ -1944,7 +1944,7 @@ Disable by adding `ZC1084` to `disabled_katas` in `.zshellcheckrc`.
 <a id="zc1085"></a>
 ### ZC1085 — Quote variable expansions in `for` loops
 
-**Severity:** `style`
+**Severity:** `warning`
 
 Unquoted variable expansions in `for` loops are split by IFS (usually spaces). This often leads to iterating over words instead of lines or array elements. Quote the expansion to preserve structure.
 
@@ -1999,7 +1999,7 @@ Disable by adding `ZC1089` to `disabled_katas` in `.zshellcheckrc`.
 <a id="zc1090"></a>
 ### ZC1090 — Quoted regex pattern in `=~`
 
-**Severity:** `style`
+**Severity:** `warning`
 
 Quoting the pattern on the right side of `=~` forces literal string matching in Zsh/Bash. Regex metacharacters inside quotes will be matched literally. Remove quotes to enable regex matching, or use `==` for literal string comparison.
 
@@ -2494,7 +2494,7 @@ Disable by adding `ZC1135` to `disabled_katas` in `.zshellcheckrc`.
 <a id="zc1136"></a>
 ### ZC1136 — Avoid `rm -rf` without safeguard
 
-**Severity:** `style`
+**Severity:** `warning`
 
 `rm -rf` with a variable path is dangerous if the variable is empty. Always validate the path or use `${var:?}` to fail on empty values.
 
@@ -2516,7 +2516,7 @@ Disable by adding `ZC1137` to `disabled_katas` in `.zshellcheckrc`.
 <a id="zc1139"></a>
 ### ZC1139 — Avoid `source` with URL — use local files
 
-**Severity:** `style`
+**Severity:** `warning`
 
 Sourcing scripts from URLs (curl | source) is a security risk. Download, verify, then source local files.
 
@@ -2538,7 +2538,7 @@ Disable by adding `ZC1140` to `disabled_katas` in `.zshellcheckrc`.
 <a id="zc1141"></a>
 ### ZC1141 — Avoid `curl | sh` pattern
 
-**Severity:** `style`
+**Severity:** `warning`
 
 Piping curl output to sh/bash/zsh is a security risk. Download first, verify integrity (checksum or signature), then execute.
 
@@ -3814,7 +3814,7 @@ Disable by adding `ZC1257` to `disabled_katas` in `.zshellcheckrc`.
 <a id="zc1258"></a>
 ### ZC1258 — Consider `rsync --delete` for directory sync
 
-**Severity:** `style`
+**Severity:** `warning`
 
 `rsync` without `--delete` keeps files on the destination that were removed from the source. Use `--delete` for true directory mirroring.
 

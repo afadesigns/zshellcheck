@@ -10,7 +10,7 @@ func init() {
 		Title: "Quote RHS of `==` in `[[ ... ]]` to prevent pattern matching",
 		Description: "In `[[ ... ]]`, unquoted variable expansions on the right-hand side of `==` or `!=` " +
 			"are treated as patterns (globbing). If you intend to compare strings literally, quote the variable.",
-		Severity: SeverityStyle,
+		Severity: SeverityWarning,
 		Check:    checkZC1079,
 	})
 }
@@ -76,7 +76,7 @@ func checkZC1079(node ast.Node) []Violation {
 				Message: "Unquoted RHS matches as pattern. Quote to force string comparison: `\"$var\"`.",
 				Line:    tokenNode.TokenLiteralNode().Line,
 				Column:  tokenNode.TokenLiteralNode().Column,
-				Level:   SeverityStyle,
+				Level:   SeverityWarning,
 			})
 		}
 	}
