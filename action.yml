@@ -1,24 +1,85 @@
-name: 'Zshellcheck CLI'
-description: 'Run Zshellcheck commands to lint Zsh scripts.'
+name: 'ZShellCheck'
+description: 'Static analysis for Zsh scripts — 1000 Zsh-native checks (katas) covering syntax, security, portability, and style.'
 author: 'afadesigns'
+
+branding:
+  icon: 'shield'
+  color: 'purple'
+
 inputs:
   args:
-    description: 'Arguments to pass to the zshellcheck CLI (e.g., "check myscript.zsh").'
+    description: |
+      Arguments passed to the `zshellcheck` CLI, e.g. `--format sarif path/to/script.zsh`.
+      The checker exits non-zero when violations are found, failing the step.
     required: true
+  version:
+    description: |
+      Release version to install, e.g. `v1.0.0` or `latest`. Downloads the
+      signed release artifact for the runner OS and verifies it against the
+      attached SBOM. Set to `source` to build from the checked-out working
+      tree (only useful for CI of this repo itself).
+    required: false
+    default: 'latest'
+
 runs:
   using: 'composite'
   steps:
-    - name: Checkout
-      uses: actions/checkout@v5
-    - name: Set up Go
-      uses: actions/setup-go@v6
-      with:
-        go-version: '1.25'
-    - name: Build Zshellcheck
-      run: |
-        go build -o zshellcheck ./cmd/zshellcheck
+    - name: Checkout repository under test
+      uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+
+    - name: Install ZShellCheck
       shell: bash
-    - name: Run Zshellcheck Command
       run: |
-        ./zshellcheck ${{ inputs.args }}
+        set -euo pipefail
+        if [[ "${{ inputs.version }}" == "source" ]]; then
+          if ! command -v go >/dev/null 2>&1; then
+            echo "::error::version=source requires Go on the runner"
+            exit 1
+          fi
+          GOBIN="${RUNNER_TEMP}/bin" go install ./cmd/zshellcheck
+          echo "${RUNNER_TEMP}/bin" >> "${GITHUB_PATH}"
+          exit 0
+        fi
+
+        tag="${{ inputs.version }}"
+        if [[ "${tag}" == "latest" ]]; then
+          tag=$(curl -fsSL -H 'Accept: application/vnd.github+json' \
+            "https://api.github.com/repos/afadesigns/zshellcheck/releases/latest" \
+            | grep -oE '"tag_name":[[:space:]]*"[^"]+"' | head -n1 | cut -d'"' -f4)
+        fi
+        if [[ -z "${tag}" ]]; then
+          echo "::error::Failed to resolve release tag."
+          exit 1
+        fi
+
+        case "${RUNNER_OS}" in
+          Linux)   os="Linux";   ext="tar.gz" ;;
+          macOS)   os="Darwin";  ext="tar.gz" ;;
+          Windows) os="Windows"; ext="zip"    ;;
+          *)       echo "::error::Unsupported runner OS: ${RUNNER_OS}"; exit 1 ;;
+        esac
+
+        case "${RUNNER_ARCH}" in
+          X64)   arch="x86_64" ;;
+          ARM64) arch="arm64"  ;;
+          *)     echo "::error::Unsupported runner arch: ${RUNNER_ARCH}"; exit 1 ;;
+        esac
+
+        dl="${RUNNER_TEMP}/zshellcheck.${ext}"
+        url="https://github.com/afadesigns/zshellcheck/releases/download/${tag}/zshellcheck_${os}_${arch}.${ext}"
+        echo "Downloading ${url}"
+        curl -fsSL -o "${dl}" "${url}"
+
+        mkdir -p "${RUNNER_TEMP}/bin"
+        if [[ "${ext}" == "zip" ]]; then
+          unzip -qq -o "${dl}" -d "${RUNNER_TEMP}/bin"
+        else
+          tar -xzf "${dl}" -C "${RUNNER_TEMP}/bin"
+        fi
+        chmod +x "${RUNNER_TEMP}/bin/zshellcheck" 2>/dev/null || true
+        echo "${RUNNER_TEMP}/bin" >> "${GITHUB_PATH}"
+        "${RUNNER_TEMP}/bin/zshellcheck" -version
+
+    - name: Run ZShellCheck
       shell: bash
+      run: zshellcheck ${{ inputs.args }}
