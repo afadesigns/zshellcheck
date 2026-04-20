@@ -289,6 +289,72 @@ func TestLoadConfig_InvalidYAML(t *testing.T) {
 	}
 }
 
+func TestLoadConfig_EmptyPathSkipped(t *testing.T) {
+	// xdg.SearchConfigFile returns "" when no XDG config is found — the
+	// loader must skip the empty path rather than stat("") (portability).
+	cfg, err := loadConfig("", "", "/nonexistent/path/.zshellcheckrc")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if cfg.ErrorColor != config.ColorRed {
+		t.Errorf("expected default ErrorColor, got %q", cfg.ErrorColor)
+	}
+}
+
+func TestLoadConfig_MergeOrderLocalWins(t *testing.T) {
+	// Ensure later paths override earlier ones: xdg < ~/.zshellcheckrc <
+	// ./.zshellcheckrc (highest).
+	dir := t.TempDir()
+	xdgPath := filepath.Join(dir, "xdg.yml")
+	homePath := filepath.Join(dir, ".zshellcheckrc")
+	localPath := filepath.Join(dir, "local.yml")
+
+	if err := os.WriteFile(xdgPath, []byte("disabled_katas:\n  - ZC1001\nno_color: false\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(homePath, []byte("disabled_katas:\n  - ZC1002\nno_color: false\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(localPath, []byte("no_color: true\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	cfg, err := loadConfig(xdgPath, homePath, localPath)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !cfg.NoColor {
+		t.Error("expected local no_color=true to win")
+	}
+	// Disabled katas from earlier paths should still merge through.
+	if len(cfg.DisabledKatas) == 0 {
+		t.Error("expected DisabledKatas to carry through earlier layers")
+	}
+}
+
+func TestLoadConfig_XDGPathOnly(t *testing.T) {
+	// When only the xdg layer exists, its values apply.
+	dir := t.TempDir()
+	xdgPath := filepath.Join(dir, "xdg.yml")
+	if err := os.WriteFile(xdgPath, []byte("disabled_katas:\n  - ZC1007\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	cfg, err := loadConfig(xdgPath, "/nonexistent/home/.zshellcheckrc", "/nonexistent/local/.zshellcheckrc")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	found := false
+	for _, k := range cfg.DisabledKatas {
+		if k == "ZC1007" {
+			found = true
+		}
+	}
+	if !found {
+		t.Errorf("expected ZC1007 in DisabledKatas, got %v", cfg.DisabledKatas)
+	}
+}
+
 func TestProcessFile_TextFormat(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "test.zsh")
