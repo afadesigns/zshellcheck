@@ -24,16 +24,9 @@ func TestZC1978(t *testing.T) {
 			expected: []katas.Violation{},
 		},
 		{
-			name:  "invalid — `ftp $HOST`",
-			input: `ftp $HOST`,
-			expected: []katas.Violation{
-				{
-					KataID:  "ZC1978",
-					Message: "`ftp` transfers in plaintext — creds and payload visible on the wire. Use `sftp`/`scp`/`rsync -e ssh` or a signed-payload `curl` over HTTPS instead.",
-					Line:    1,
-					Column:  1,
-				},
-			},
+			name:     "valid — `ftp $HOST` (owned by ZC1200)",
+			input:    `ftp $HOST`,
+			expected: []katas.Violation{},
 		},
 		{
 			name:  "invalid — `tftp $HOST`",
@@ -41,7 +34,7 @@ func TestZC1978(t *testing.T) {
 			expected: []katas.Violation{
 				{
 					KataID:  "ZC1978",
-					Message: "`tftp` transfers in plaintext — creds and payload visible on the wire. Use `sftp`/`scp`/`rsync -e ssh` or a signed-payload `curl` over HTTPS instead.",
+					Message: "`tftp` transfers over plaintext UDP/69 with no authentication — capture the payload, or push a crafted file under the expected name. Use a signed-payload `curl` over HTTPS and verify the signature before use.",
 					Line:    1,
 					Column:  1,
 				},

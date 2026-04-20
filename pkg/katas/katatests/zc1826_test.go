@@ -24,24 +24,29 @@ func TestZC1826(t *testing.T) {
 			expected: []katas.Violation{},
 		},
 		{
-			name:  "invalid — `install -m 4755 src /usr/local/bin/myapp`",
-			input: `install -m 4755 src /usr/local/bin/myapp`,
+			name:     "valid — `install -m 4755 …` (numeric setuid is owned by ZC1892)",
+			input:    `install -m 4755 src /usr/local/bin/app`,
+			expected: []katas.Violation{},
+		},
+		{
+			name:  "invalid — `install -m u+s src /usr/local/bin/app`",
+			input: `install -m u+s src /usr/local/bin/app`,
 			expected: []katas.Violation{
 				{
 					KataID:  "ZC1826",
-					Message: "`install -m 4755` drops a setuid/setgid binary in one step. If DEST is on `$PATH`, every local user can invoke the elevated binary. Only install trusted builds, and prefer narrow `setcap` capabilities over setuid.",
+					Message: "`install -m u+s` applies a symbolic setuid/setgid bit — easy to miss in review. Use `0755` and grant narrow caps with `setcap` instead.",
 					Line:    1,
 					Column:  1,
 				},
 			},
 		},
 		{
-			name:  "invalid — `install -m 2755 src /usr/local/bin/myapp`",
-			input: `install -m 2755 src /usr/local/bin/myapp`,
+			name:  "invalid — `install -m ug+s src /usr/local/bin/app`",
+			input: `install -m ug+s src /usr/local/bin/app`,
 			expected: []katas.Violation{
 				{
 					KataID:  "ZC1826",
-					Message: "`install -m 2755` drops a setuid/setgid binary in one step. If DEST is on `$PATH`, every local user can invoke the elevated binary. Only install trusted builds, and prefer narrow `setcap` capabilities over setuid.",
+					Message: "`install -m ug+s` applies a symbolic setuid/setgid bit — easy to miss in review. Use `0755` and grant narrow caps with `setcap` instead.",
 					Line:    1,
 					Column:  1,
 				},

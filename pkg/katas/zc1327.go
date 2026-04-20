@@ -29,7 +29,10 @@ func checkZC1327(node ast.Node) []Violation {
 
 	for _, arg := range cmd.Arguments {
 		val := arg.String()
-		if val == "-c" || val == "-w" || val == "-r" || val == "-a" {
+		// `-c` / `-d` are the destructive / anti-forensics flags and are
+		// owned by ZC1487; this kata narrows to the Bash-only write/read
+		// portability flags (`-w` / `-r` / `-a`).
+		if val == "-w" || val == "-r" || val == "-a" {
 			return []Violation{{
 				KataID:  "ZC1327",
 				Message: "Avoid `history " + val + "` in Zsh — Bash history flags differ. Use `fc` commands for Zsh history management.",

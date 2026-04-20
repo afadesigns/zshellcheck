@@ -24,12 +24,29 @@ func TestZC1327(t *testing.T) {
 			expected: []katas.Violation{},
 		},
 		{
-			name:  "invalid history -c usage",
-			input: `history -c`,
+			name:     "valid — `history -c` is owned by ZC1487",
+			input:    `history -c`,
+			expected: []katas.Violation{},
+		},
+		{
+			name:  "invalid — `history -w` (Bash-only write)",
+			input: `history -w`,
 			expected: []katas.Violation{
 				{
 					KataID:  "ZC1327",
-					Message: "Avoid `history -c` in Zsh — Bash history flags differ. Use `fc` commands for Zsh history management.",
+					Message: "Avoid `history -w` in Zsh — Bash history flags differ. Use `fc` commands for Zsh history management.",
+					Line:    1,
+					Column:  1,
+				},
+			},
+		},
+		{
+			name:  "invalid — `history -a`",
+			input: `history -a`,
+			expected: []katas.Violation{
+				{
+					KataID:  "ZC1327",
+					Message: "Avoid `history -a` in Zsh — Bash history flags differ. Use `fc` commands for Zsh history management.",
 					Line:    1,
 					Column:  1,
 				},

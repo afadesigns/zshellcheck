@@ -34,6 +34,7 @@ func checkZC1441(node ast.Node) []Violation {
 	seenPrune := false
 	seenA := false
 	seenF := false
+	seenVolumes := false
 	for _, arg := range cmd.Arguments {
 		v := arg.String()
 		switch v {
@@ -46,9 +47,12 @@ func checkZC1441(node ast.Node) []Violation {
 		case "-af", "-fa":
 			seenA = true
 			seenF = true
+		case "--volumes":
+			seenVolumes = true
 		}
 	}
-	if seenPrune && seenA && seenF {
+	// `--volumes` is the stricter superset handled by ZC1545; avoid double-firing.
+	if seenPrune && seenA && seenF && !seenVolumes {
 		return []Violation{{
 			KataID: "ZC1441",
 			Message: "`docker prune -af` / `-a --force` deletes all unused resources without " +

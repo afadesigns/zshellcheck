@@ -6,8 +6,8 @@ Auto-generated list of all 1000 implemented checks. Do not edit by hand — rege
 
 | Severity | Count |
 | :--- | ---: |
-| `error` | 219 |
-| `warning` | 450 |
+| `error` | 220 |
+| `warning` | 449 |
 | `info` | 66 |
 | `style` | 265 |
 | **total** | **1000** |
@@ -836,7 +836,7 @@ Auto-generated list of all 1000 implemented checks. Do not edit by hand — rege
 - [ZC1823: Warn on `keytool -import -noprompt` — Java trust store imports without fingerprint check](#zc1823)
 - [ZC1824: Warn on `kubectl drain --disable-eviction` — bypasses PodDisruptionBudget via raw DELETE](#zc1824)
 - [ZC1825: Warn on `scp -O` — forces legacy SCP wire protocol exposed to filename-injection CVEs](#zc1825)
-- [ZC1826: Warn on `install -m 4xxx/2xxx/6xxx` — drops a setuid / setgid binary in one step](#zc1826)
+- [ZC1826: Warn on `install -m u+s` / `g+s` — symbolic setuid/setgid bit applied at install time](#zc1826)
 - [ZC1827: Error on `npm unpublish` — breaks every downstream that pinned the version](#zc1827)
 - [ZC1828: Warn on `gcore PID` / `strace -p PID` — live ptrace attach dumps target memory](#zc1828)
 - [ZC1829: Warn on `tailscale down` / `wg-quick down` / `nmcli con down` — drops the VPN that may carry the SSH session](#zc1829)
@@ -988,7 +988,7 @@ Auto-generated list of all 1000 implemented checks. Do not edit by hand — rege
 - [ZC1975: Warn on `unsetopt EXEC` / `setopt NO_EXEC` — parser keeps scanning, commands stop running](#zc1975)
 - [ZC1976: Error on `exportfs -au` / `exportfs -u` — unexports live NFS shares, clients get `ESTALE`](#zc1976)
 - [ZC1977: Warn on `setopt CHASE_DOTS` — `cd ..` physically resolves before walking up, breaking logical paths](#zc1977)
-- [ZC1978: Warn on `ftp` / `tftp` — cleartext transfer, credentials and payload exposed on the wire](#zc1978)
+- [ZC1978: Warn on `tftp` — cleartext, unauthenticated UDP transfer](#zc1978)
 - [ZC1979: Warn on `setopt HIST_FCNTL_LOCK` — `fcntl()` lock on NFS `$HISTFILE` stalls or deadlocks](#zc1979)
 - [ZC1980: Error on `udevadm trigger --action=remove` — replays `remove` uevents, detaches live devices](#zc1980)
 - [ZC1981: Warn on `exec -a NAME cmd` — replaces `argv\[0\]`, hides the real binary from `ps`](#zc1981)
@@ -1009,7 +1009,7 @@ Auto-generated list of all 1000 implemented checks. Do not edit by hand — rege
 - [ZC1996: Warn on `unshare -U` / `-r` — unprivileged user namespace maps caller to root inside the NS](#zc1996)
 - [ZC1997: Warn on `setopt HIST_NO_FUNCTIONS` — function definitions skipped from `$HISTFILE`, breaks forensic trail](#zc1997)
 - [ZC1998: Error on `tpm2_clear` / `tpm2 clear` — wipes TPM storage hierarchy, kills every sealed key](#zc1998)
-- [ZC1999: Warn on `setopt AUTO_NAMED_DIRS` — every scalar holding a directory path becomes `~name`](#zc1999)
+- [ZC1999: Error on `setopt AUTO_NAMED_DIRS` — unknown option, typo of `AUTO_NAME_DIRS`](#zc1999)
 - [ZC2000: Error on `kubectl taint nodes $NODE key=value:NoExecute` — evicts every non-tolerating pod off the node](#zc2000)
 - [ZC2001: Warn on `unsetopt EVAL_LINENO` — `$LINENO` inside `eval` stops tracking source, stack traces go blank](#zc2001)
 - [ZC2002: Error on `crictl rmi -a` / `crictl rm -af` — wipes every image/container on the Kubernetes node](#zc2002)
@@ -10060,11 +10060,11 @@ Disable by adding `ZC1825` to `disabled_katas` in `.zshellcheckrc`.
 ---
 
 <a id="zc1826"></a>
-### ZC1826 — Warn on `install -m 4xxx/2xxx/6xxx` — drops a setuid / setgid binary in one step
+### ZC1826 — Warn on `install -m u+s` / `g+s` — symbolic setuid/setgid bit applied at install time
 
 **Severity:** `warning`
 
-`install -m MODE SRC DEST` applies MODE atomically at copy time. A four-digit mode whose leading digit is `4` (setuid), `2` (setgid), or `6` (both) places a setuid / setgid binary into the destination path in a single operation — no intermediate `chmod` step where a privilege-tripwire would fire, no time window where the file exists without the special bit. If DEST is on `$PATH` (`/usr/local/bin`, `/usr/bin`), every user can invoke the elevated binary. Only install setuid / setgid binaries from trusted builds you have reviewed, and prefer narrow capabilities (`setcap cap_net_bind_service+ep`) over broad setuid.
+`install -m u+s SRC DEST` (or `g+s` / `ug+s` / `u=rwxs` etc.) applies the setuid / setgid bit atomically at copy time — no intermediate `chmod` step where a tripwire would fire, no time window where the file exists without the special bit. Symbolic forms are easy to miss in review because they don't carry the tell-tale leading `4`/`2`/`6` digit that numeric-mode detection (see ZC1892) keys off. If DEST is on `$PATH`, every local user can invoke the elevated binary. Install setuid / setgid binaries only from trusted builds you have reviewed, and prefer narrow capabilities (`setcap cap_net_bind_service+ep`) over broad setuid.
 
 Disable by adding `ZC1826` to `disabled_katas` in `.zshellcheckrc`.
 
@@ -11732,11 +11732,11 @@ Disable by adding `ZC1977` to `disabled_katas` in `.zshellcheckrc`.
 ---
 
 <a id="zc1978"></a>
-### ZC1978 — Warn on `ftp` / `tftp` — cleartext transfer, credentials and payload exposed on the wire
+### ZC1978 — Warn on `tftp` — cleartext, unauthenticated UDP transfer
 
 **Severity:** `warning`
 
-`ftp HOST` negotiates USER/PASS and moves the payload over plaintext TCP (port 21) — every credential and byte is visible to anything between the caller and the server. `tftp` has no auth at all and runs over UDP/69, so any packet capture recovers the full transfer. Both are also routinely mishandled by NAT/firewall gear because of their dual-channel design. Replace with `curl -u USER: https://…` / `sftp` / `scp` / `rsync -e ssh` for authenticated transfers, and with a signed-payload pull over HTTPS for PXE-style provisioning that used to rely on `tftp`.
+`tftp` has no authentication at all and moves the payload in plaintext over UDP/69 — any packet capture on the path recovers the full transfer and an attacker at the server can push an arbitrary file under the expected name without noticing a lack of credentials. The dual-channel design is also routinely mishandled by NAT/firewall gear. For PXE-style provisioning that historically used `tftp`, fetch a signed payload over HTTPS with `curl` and verify the signature locally before use. (See ZC1200 for `ftp`, the authenticated-but-plaintext sibling.)
 
 Disable by adding `ZC1978` to `disabled_katas` in `.zshellcheckrc`.
 
@@ -11963,11 +11963,11 @@ Disable by adding `ZC1998` to `disabled_katas` in `.zshellcheckrc`.
 ---
 
 <a id="zc1999"></a>
-### ZC1999 — Warn on `setopt AUTO_NAMED_DIRS` — every scalar holding a directory path becomes `~name`
+### ZC1999 — Error on `setopt AUTO_NAMED_DIRS` — unknown option, typo of `AUTO_NAME_DIRS`
 
-**Severity:** `warning`
+**Severity:** `error`
 
-Off by default, Zsh only treats `~USER` / explicit `hash -d` entries as named directories. `setopt AUTO_NAMED_DIRS` auto-registers any scalar whose value is an existing directory — so `release=/srv/app/releases` suddenly makes `~release/config` a valid path, and `ls ~release` lists `/srv/app/releases`. That silently collides with real usernames (`alice` in `/etc/passwd` vs. an `alice=$HOME/stage` scalar the script happens to set) and turns every unquoted `~$var` inside a heredoc or `cd` arg into a parameter that the prompt expander happily replaces with the wrong path. Keep the option off; when a script legitimately wants a named dir, register it explicitly with `hash -d NAME=PATH`.
+`AUTO_NAMED_DIRS` (with the trailing `D`) is not a real Zsh option — `setopt AUTO_NAMED_DIRS` fails with `no such option` and the dir-to-`~name` auto-registration the author likely wanted is never enabled. The canonical spelling is `AUTO_NAME_DIRS` (see ZC1934 for its semantics and why flipping it on is usually wrong). Drop the typo and, if you actually want the behaviour, reach for `hash -d NAME=PATH` explicitly or scope `setopt LOCAL_OPTIONS AUTO_NAME_DIRS` inside the single helper that needs named-directory expansion.
 
 Disable by adding `ZC1999` to `disabled_katas` in `.zshellcheckrc`.
 

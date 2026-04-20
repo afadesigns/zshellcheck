@@ -14,34 +14,34 @@ func TestZC1999(t *testing.T) {
 		expected []katas.Violation
 	}{
 		{
-			name:     "valid — `unsetopt AUTO_NAMED_DIRS` (default)",
-			input:    `unsetopt AUTO_NAMED_DIRS`,
+			name:     "valid — `setopt AUTO_NAME_DIRS` (canonical name; handled by ZC1934)",
+			input:    `setopt AUTO_NAME_DIRS`,
 			expected: []katas.Violation{},
 		},
 		{
-			name:     "valid — `setopt NO_AUTO_NAMED_DIRS`",
-			input:    `setopt NO_AUTO_NAMED_DIRS`,
+			name:     "valid — `unsetopt AUTO_NAME_DIRS`",
+			input:    `unsetopt AUTO_NAME_DIRS`,
 			expected: []katas.Violation{},
 		},
 		{
-			name:  "invalid — `setopt AUTO_NAMED_DIRS`",
+			name:  "invalid — `setopt AUTO_NAMED_DIRS` (typo)",
 			input: `setopt AUTO_NAMED_DIRS`,
 			expected: []katas.Violation{
 				{
 					KataID:  "ZC1999",
-					Message: "`setopt AUTO_NAMED_DIRS` auto-registers every dir-valued scalar as `~name` — collisions with real usernames and stray `~$var` expansions. Register named dirs explicitly with `hash -d NAME=PATH`.",
+					Message: "`setopt AUTO_NAMED_DIRS` is a typo — the real Zsh option is `AUTO_NAME_DIRS` (no trailing `D`, see ZC1934). Fix the spelling or drop the toggle; `hash -d NAME=PATH` is the explicit alternative.",
 					Line:    1,
 					Column:  1,
 				},
 			},
 		},
 		{
-			name:  "invalid — `unsetopt NO_AUTO_NAMED_DIRS`",
+			name:  "invalid — `unsetopt NO_AUTO_NAMED_DIRS` (typo)",
 			input: `unsetopt NO_AUTO_NAMED_DIRS`,
 			expected: []katas.Violation{
 				{
 					KataID:  "ZC1999",
-					Message: "`unsetopt NO_AUTO_NAMED_DIRS` auto-registers every dir-valued scalar as `~name` — collisions with real usernames and stray `~$var` expansions. Register named dirs explicitly with `hash -d NAME=PATH`.",
+					Message: "`unsetopt NO_AUTO_NAMED_DIRS` is a typo — the real Zsh option is `AUTO_NAME_DIRS` (no trailing `D`, see ZC1934). Fix the spelling or drop the toggle; `hash -d NAME=PATH` is the explicit alternative.",
 					Line:    1,
 					Column:  1,
 				},

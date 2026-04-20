@@ -7,16 +7,16 @@ import (
 func init() {
 	RegisterKata(ast.SimpleCommandNode, Kata{
 		ID:       "ZC1978",
-		Title:    "Warn on `ftp` / `tftp` — cleartext transfer, credentials and payload exposed on the wire",
+		Title:    "Warn on `tftp` — cleartext, unauthenticated UDP transfer",
 		Severity: SeverityWarning,
-		Description: "`ftp HOST` negotiates USER/PASS and moves the payload over plaintext TCP " +
-			"(port 21) — every credential and byte is visible to anything between the " +
-			"caller and the server. `tftp` has no auth at all and runs over UDP/69, so " +
-			"any packet capture recovers the full transfer. Both are also routinely " +
-			"mishandled by NAT/firewall gear because of their dual-channel design. " +
-			"Replace with `curl -u USER: https://…` / `sftp` / `scp` / `rsync -e ssh` " +
-			"for authenticated transfers, and with a signed-payload pull over HTTPS for " +
-			"PXE-style provisioning that used to rely on `tftp`.",
+		Description: "`tftp` has no authentication at all and moves the payload in plaintext " +
+			"over UDP/69 — any packet capture on the path recovers the full transfer " +
+			"and an attacker at the server can push an arbitrary file under the " +
+			"expected name without noticing a lack of credentials. The dual-channel " +
+			"design is also routinely mishandled by NAT/firewall gear. For PXE-style " +
+			"provisioning that historically used `tftp`, fetch a signed payload over " +
+			"HTTPS with `curl` and verify the signature locally before use. (See " +
+			"ZC1200 for `ftp`, the authenticated-but-plaintext sibling.)",
 		Check: checkZC1978,
 	})
 }
@@ -30,18 +30,20 @@ func checkZC1978(node ast.Node) []Violation {
 	if !ok {
 		return nil
 	}
-	if ident.Value != "ftp" && ident.Value != "tftp" {
+	// `ftp` is owned by ZC1200; ZC1978 narrows to tftp (no auth, UDP).
+	if ident.Value != "tftp" {
 		return nil
 	}
-	// Require at least one arg so bare `ftp` at a prompt isn't flagged.
+	// Require at least one arg so bare `tftp` at a prompt isn't flagged.
 	if len(cmd.Arguments) == 0 {
 		return nil
 	}
 	return []Violation{{
 		KataID: "ZC1978",
-		Message: "`" + ident.Value + "` transfers in plaintext — creds and payload " +
-			"visible on the wire. Use `sftp`/`scp`/`rsync -e ssh` or a signed-" +
-			"payload `curl` over HTTPS instead.",
+		Message: "`tftp` transfers over plaintext UDP/69 with no authentication — " +
+			"capture the payload, or push a crafted file under the expected " +
+			"name. Use a signed-payload `curl` over HTTPS and verify the " +
+			"signature before use.",
 		Line:   cmd.Token.Line,
 		Column: cmd.Token.Column,
 		Level:  SeverityWarning,
