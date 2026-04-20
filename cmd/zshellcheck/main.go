@@ -132,6 +132,9 @@ func loadConfig(paths ...string) (config.Config, error) {
 	cfg := config.DefaultConfig()
 
 	for _, path := range paths {
+		if path == "" {
+			continue
+		}
 		if _, err := os.Stat(path); os.IsNotExist(err) {
 			continue
 		}
