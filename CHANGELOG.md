@@ -5,6 +5,61 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.1] - 2026-04-20
+
+Hotfix rollup for every fix merged between the v1.0.0 tag and the
+GitHub Marketplace debut. No new katas — kata count stays at 1000; the
+`scripts/HOTFIX` offset bumps PATCH to `1`.
+
+### Added
+- **Inline `# zshellcheck disable=…` directives** — suppress katas
+  per-line (trailing comment), per-next-line (standalone comment above
+  code), or file-wide (standalone comment with no following code).
+  Multiple IDs may be comma- or whitespace-separated. Merges with the
+  config-level `disabled_katas` list. (#127)
+- **XDG Base Directory support** — `$XDG_CONFIG_HOME/zshellcheck/config.{yml,yaml}`
+  is now merged with `~/.zshellcheckrc` and `./.zshellcheckrc`, with the
+  project-local file winning. (#309)
+- **`scripts/HOTFIX` offset file** — tracks monotonic patch-release
+  bumps so hotfix releases can ship between kata additions without
+  colliding with the kata-count formula.
+
+### Fixed
+- **Parser panic on `dd if=src of=dst`** — the lexer now demotes
+  keyword tokens to `IDENT` when immediately followed by `=`, so
+  `if=`, `of=`, etc. parse as ordinary key=value argument pairs. (#435)
+- **`elif` chain mis-nesting** — `parseIfStatement` now terminates the
+  consequence block on `ELIF` and builds a right-nested `IfStatement`
+  chain, fixing false-positives on multi-branch conditionals. (#126)
+- **Parser crash on `/dev/sdX` literals** in arithmetic and redirection
+  positions. (#347)
+- **14 duplicate katas retired** as no-op stubs (ZC1022–1029, 1033,
+  1035, 1018, 1019, 1277, 1278). Canonical detections remain in the
+  surviving sibling IDs; retired IDs still parse in `.zshellcheckrc`
+  so legacy configs keep working. (#341–#345)
+- **5 overlapping kata pairs narrowed** — ZC1441 skips when
+  `--volumes` is present (ZC1545 owns that case); ZC1978 narrows to
+  `tftp` (ZC1200 owns `ftp`); ZC1327 drops `-c`/`-d` (ZC1487 owns);
+  ZC1826 drops numeric modes (ZC1892 owns); ZC1999 rewritten as a
+  typo-detector pointing at ZC1934 `AUTO_NAME_DIRS`.
+- **10 Style katas rebalanced to Warning** — ZC1075, 1078, 1079, 1084,
+  1085, 1090, 1136, 1139, 1141, 1258. These flag patterns with real
+  correctness or safety impact, not cosmetic preference. (#346)
+
+### CI
+- **OSV-Scanner** workflow drops the removed `--skip-git` flag that
+  OSV-Scanner v2 rejects; PRs no longer pre-fail on the vulnerability
+  scan step.
+- **`golangci-lint-action` pinned at v6.5.2** until the v1→v2 config
+  migration lands — avoids surfacing ~20 pre-existing `staticcheck`
+  QF1001-QF1003 findings that block unrelated Dependabot bumps.
+
+### Documentation
+- USER_GUIDE gains an **Inline Disable Directives** section covering
+  the three directive forms.
+- Author identity corrected across CITATION.cff, SECURITY.md, and
+  CODE_OF_CONDUCT.md — contact email is now `github@afadesign.co`.
+
 ## [1.0.0] - 2026-04-20
 
 **1000 Katas milestone.** The kata-count formula (MAJOR = count/1000,
