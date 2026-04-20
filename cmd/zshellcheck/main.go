@@ -156,7 +156,7 @@ func loadConfig(paths ...string) (config.Config, error) {
 	return cfg, nil
 }
 
-func processPath(path string, out, errOut io.Writer, config config.Config, registry *katas.KatasRegistry, format string, allowedSeverities []katas.Severity) int {
+func processPath(path string, out, errOut io.Writer, cfg config.Config, registry *katas.KatasRegistry, format string, allowedSeverities []katas.Severity) int {
 	info, err := os.Stat(path)
 	if err != nil {
 		fmt.Fprintf(errOut, "Error stating path %s: %s\n", path, err)
@@ -186,19 +186,19 @@ func processPath(path string, out, errOut io.Writer, config config.Config, regis
 			// For now, let's try to parse everything, or maybe filter by extension/shebang if it gets too noisy.
 			// Shellcheck defaults to checking all files passed, but for recursive it might filter.
 			// Let's assume user wants to check all files in the dir if they passed the dir.
-			count += processFile(p, out, errOut, config, registry, format, allowedSeverities)
+			count += processFile(p, out, errOut, cfg, registry, format, allowedSeverities)
 			return nil
 		})
 		if err != nil {
 			fmt.Fprintf(errOut, "Error walking directory %s: %s\n", path, err)
 		}
 	} else {
-		count += processFile(path, out, errOut, config, registry, format, allowedSeverities)
+		count += processFile(path, out, errOut, cfg, registry, format, allowedSeverities)
 	}
 	return count
 }
 
-func processFile(filename string, out, errOut io.Writer, config config.Config, registry *katas.KatasRegistry, format string, allowedSeverities []katas.Severity) int {
+func processFile(filename string, out, errOut io.Writer, cfg config.Config, registry *katas.KatasRegistry, format string, allowedSeverities []katas.Severity) int {
 	data, err := os.ReadFile(filename)
 	if err != nil {
 		fmt.Fprintf(errOut, "Error reading file %s: %s\n", filename, err)
@@ -220,11 +220,29 @@ func processFile(filename string, out, errOut io.Writer, config config.Config, r
 		return 1
 	}
 
+	directives := config.ParseDirectives(string(data))
+	disabled := cfg.DisabledKatas
+	if len(directives.File) > 0 {
+		disabled = append(append([]string(nil), disabled...), directives.File...)
+	}
+
 	violations := []katas.Violation{}
 	ast.Walk(program, func(node ast.Node) bool {
-		violations = append(violations, registry.Check(node, config.DisabledKatas)...)
+		violations = append(violations, registry.Check(node, disabled)...)
 		return true // Continue walking
 	})
+
+	// Drop violations silenced by a per-line `# zshellcheck disable=…` directive.
+	if len(directives.PerLine) > 0 {
+		kept := violations[:0]
+		for _, v := range violations {
+			if directives.IsDisabledOn(v.KataID, v.Line) {
+				continue
+			}
+			kept = append(kept, v)
+		}
+		violations = kept
+	}
 
 	// Filter violations by severity
 	var filteredViolations []katas.Violation
@@ -248,7 +266,7 @@ func processFile(filename string, out, errOut io.Writer, config config.Config, r
 		case "sarif":
 			r = reporter.NewSarifReporter(out, filename)
 		default:
-			r = reporter.NewTextReporter(out, filename, string(data), config)
+			r = reporter.NewTextReporter(out, filename, string(data), cfg)
 		}
 		if err := r.Report(violations); err != nil {
 			fmt.Fprintf(errOut, "Error reporting violations: %s\n", err)

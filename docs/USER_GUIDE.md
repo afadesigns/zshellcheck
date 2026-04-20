@@ -65,6 +65,24 @@ disabled_katas:
 
 Refer to `KATAS.md` for the list of IDs.
 
+### Inline Disable Directives
+
+Silence katas directly inside a script without touching `.zshellcheckrc`. Comments are recognised in three forms:
+
+```zsh
+# Trailing — silence only this line:
+rm -rf /tmp/noise  # zshellcheck disable=ZC1136,ZC1075
+
+# Preceding — silence only the next non-blank code line:
+# zshellcheck disable=ZC1030
+echo "ok"
+
+# File-tail — a directive with no code after it disables the IDs file-wide:
+# zshellcheck disable=ZC1092
+```
+
+Multiple IDs may be separated by commas or whitespace. IDs disabled inline are merged with any `disabled_katas` from `.zshellcheckrc`.
+
 ---
 
 ## Integrations
