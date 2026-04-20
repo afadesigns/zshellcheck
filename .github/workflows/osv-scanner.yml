@@ -43,7 +43,6 @@ jobs:
         with:
           scan-args: |-
             --recursive
-            --skip-git
             --format=sarif
             --output=osv-results.sarif
             ./
