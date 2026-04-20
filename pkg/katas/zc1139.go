@@ -10,7 +10,7 @@ func init() {
 		Title: "Avoid `source` with URL — use local files",
 		Description: "Sourcing scripts from URLs (curl | source) is a security risk. " +
 			"Download, verify, then source local files.",
-		Severity: SeverityStyle,
+		Severity: SeverityWarning,
 		Check:    checkZC1139,
 	})
 }
@@ -39,7 +39,7 @@ func checkZC1139(node ast.Node) []Violation {
 					"then source from a local path to prevent supply-chain attacks.",
 				Line:   cmd.Token.Line,
 				Column: cmd.Token.Column,
-				Level:  SeverityStyle,
+				Level:  SeverityWarning,
 			}}
 		}
 	}

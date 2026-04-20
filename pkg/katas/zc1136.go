@@ -10,7 +10,7 @@ func init() {
 		Title: "Avoid `rm -rf` without safeguard",
 		Description: "`rm -rf` with a variable path is dangerous if the variable is empty. " +
 			"Always validate the path or use `${var:?}` to fail on empty values.",
-		Severity: SeverityStyle,
+		Severity: SeverityWarning,
 		Check:    checkZC1136,
 	})
 }
@@ -49,7 +49,7 @@ func checkZC1136(node ast.Node) []Violation {
 					"to abort if the variable is empty, preventing accidental deletion.",
 				Line:   cmd.Token.Line,
 				Column: cmd.Token.Column,
-				Level:  SeverityStyle,
+				Level:  SeverityWarning,
 			}}
 		}
 	}

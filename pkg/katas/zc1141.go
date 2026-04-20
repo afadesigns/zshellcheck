@@ -10,7 +10,7 @@ func init() {
 		Title: "Avoid `curl | sh` pattern",
 		Description: "Piping curl output to sh/bash/zsh is a security risk. Download first, " +
 			"verify integrity (checksum or signature), then execute.",
-		Severity: SeverityStyle,
+		Severity: SeverityWarning,
 		Check:    checkZC1141,
 	})
 }
@@ -45,6 +45,6 @@ func checkZC1141(node ast.Node) []Violation {
 			"then execute. Piping directly from the internet is a supply-chain risk.",
 		Line:   cmd.Token.Line,
 		Column: cmd.Token.Column,
-		Level:  SeverityStyle,
+		Level:  SeverityWarning,
 	}}
 }
