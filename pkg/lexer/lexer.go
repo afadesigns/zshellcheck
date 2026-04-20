@@ -315,6 +315,15 @@ func (l *Lexer) NextToken() token.Token {
 			line, col := l.line, l.column
 			tok.Literal = l.readIdentifier()
 			tok.Type = token.LookupIdent(tok.Literal)
+			// An identifier that happens to match a keyword but is immediately
+			// followed by `=` is a flag/argument assignment (e.g. `if=foo`
+			// inside `dd if=foo of=bar`), not the keyword itself. Demote it
+			// to a plain identifier so the parser treats the following `=`
+			// as part of the same word rather than trying to open an
+			// if-statement.
+			if tok.Type != token.IDENT && l.ch == '=' {
+				tok.Type = token.IDENT
+			}
 			tok.Line = line
 			tok.Column = col
 			tok.HasPrecedingSpace = hasSpace

@@ -623,3 +623,61 @@ func TestNextToken_LineAndColumnTracking(t *testing.T) {
 		t.Errorf("second token line expected 2, got %d", tok2.Line)
 	}
 }
+
+// TestNextToken_KeywordFollowedByEquals exercises the regression fix for
+// https://github.com/afadesigns/zshellcheck/issues/435: when an identifier
+// that happens to match a Zsh keyword (`if`, `of`, `while`, `do`, etc.) is
+// immediately followed by `=`, it is a flag-style assignment token (as in
+// `dd if=foo of=bar`), not the keyword. The lexer must return IDENT so the
+// parser treats the whole run as a single word.
+func TestNextToken_KeywordFollowedByEquals(t *testing.T) {
+	cases := []struct {
+		input  string
+		expect []struct {
+			t token.Type
+			l string
+		}
+	}{
+		{
+			input: `dd if=src of=dst`,
+			expect: []struct {
+				t token.Type
+				l string
+			}{
+				{token.IDENT, "dd"},
+				{token.IDENT, "if"},
+				{token.ASSIGN, "="},
+				{token.IDENT, "src"},
+				{token.IDENT, "of"},
+				{token.ASSIGN, "="},
+				{token.IDENT, "dst"},
+			},
+		},
+		{
+			input: `while=10 do=go`,
+			expect: []struct {
+				t token.Type
+				l string
+			}{
+				{token.IDENT, "while"},
+				{token.ASSIGN, "="},
+				{token.INT, "10"},
+				{token.IDENT, "do"},
+				{token.ASSIGN, "="},
+				{token.IDENT, "go"},
+			},
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.input, func(t *testing.T) {
+			l := New(c.input)
+			for i, exp := range c.expect {
+				tok := l.NextToken()
+				if tok.Type != exp.t || tok.Literal != exp.l {
+					t.Fatalf("token[%d]: expected {%s %q}, got {%s %q}", i, exp.t, exp.l, tok.Type, tok.Literal)
+				}
+			}
+		})
+	}
+}
