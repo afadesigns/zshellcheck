@@ -1,16 +1,15 @@
+version: "2"
+
 run:
   tests: true
 
 linters:
-  disable-all: true
+  default: none
   enable:
     - errcheck
-    - gosimple
     - govet
     - ineffassign
     - staticcheck
-    - unused
-    - gofumpt
     - gosec
     - gocritic
     - revive
@@ -18,31 +17,34 @@ linters:
     - funlen
     - lll
     - misspell
+  settings:
+    misspell:
+      ignore-rules:
+        - exportfs
+    lll:
+      line-length: 250
+    funlen:
+      lines: 300
+      statements: 300
+    gocognit:
+      min-complexity: 100
+    revive:
+      rules:
+        - name: var-naming
+          disabled: true
+        - name: increment-decrement
+          disabled: true
+        - name: unused-parameter
+          disabled: true
+        - name: indent-error-flow
+          disabled: true
+        - name: empty-block
+          disabled: true
+        - name: exported
+          disabled: true
+        - name: if-return
+          disabled: true
 
-linters-settings:
-  misspell:
-    ignore-words:
-      - exportfs
-  lll:
-    line-length: 250
-  funlen:
-    lines: 300
-    statements: 300
-  gocognit:
-    min-complexity: 100
-  revive:
-    rules:
-      - name: var-naming
-        disabled: true
-      - name: increment-decrement
-        disabled: true
-      - name: unused-parameter
-        disabled: true
-      - name: indent-error-flow
-        disabled: true
-      - name: empty-block
-        disabled: true
-      - name: exported
-        disabled: true
-      - name: if-return
-        disabled: true
+formatters:
+  enable:
+    - gofumpt
