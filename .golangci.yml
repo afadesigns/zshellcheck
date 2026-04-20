@@ -20,6 +20,9 @@ linters:
     - misspell
 
 linters-settings:
+  misspell:
+    ignore-words:
+      - exportfs
   lll:
     line-length: 250
   funlen:
