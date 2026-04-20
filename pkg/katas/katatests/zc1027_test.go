@@ -7,26 +7,18 @@ import (
 	"github.com/afadesigns/zshellcheck/pkg/testutil"
 )
 
+// ZC1027 was retired as a duplicate of ZC1022 (see issue #345). It is
+// kept as a no-op stub so legacy `disabled_katas` lists that reference
+// it keep parsing; the canonical `let` → `$((...))` guidance fires
+// under ZC1022 now.
+
 func TestCheckZC1027(t *testing.T) {
 	tests := []struct {
 		input    string
 		expected []katas.Violation
 	}{
-		{
-			input: `let x=1+1`,
-			expected: []katas.Violation{
-				{
-					KataID:  "ZC1027",
-					Message: "Use `$((...))` for arithmetic expansion instead of `let`.",
-					Line:    1,
-					Column:  1,
-				},
-			},
-		},
-		{
-			input:    `x=$((1+1))`,
-			expected: []katas.Violation{},
-		},
+		{input: "let x=1+1", expected: []katas.Violation{}},
+		{input: "x=$((1+1))", expected: []katas.Violation{}},
 	}
 
 	for _, tt := range tests {
