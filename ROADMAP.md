@@ -20,16 +20,18 @@ ZShellCheck is an evolving static analysis tool for Zsh. Our mission is to provi
 - [x] Add source code context to violation output.
 - [x] Enhanced installer with auto-sudo, CI detection, man pages, and completions.
 - [x] Reach 166 Katas (ZC1001 - ZC1169).
-- [ ] Reach 250 Katas covering core Zsh idioms and common anti-patterns.
-- [ ] Reach 500 Katas as the halfway milestone to 1.0.
+- [x] Reach 250 Katas covering core Zsh idioms and common anti-patterns.
+- [x] Reach 500 Katas as the halfway milestone to 1.0.
 
-### Version 1.0.0 - The 1000 Kata Milestone
-- [ ] **Goal:** Implement 1000 Katas (ZC1000 - ZC2000) covering:
+### Version 1.0.0 - The 1000 Kata Milestone (Complete)
+- [x] **Goal:** Implement 1000 Katas (ZC1001 - ZC2003) covering:
     - Syntax errors
     - Portability issues
     - Performance bottlenecks
     - Security vulnerabilities
     - Best practices
+
+### Version 1.x - Beyond the Milestone
 - [ ] **Language Server Protocol (LSP)**: Build an official LSP implementation to support VS Code, Neovim, and other editors natively with inline diagnostics and "Quick Fix" actions.
 - [ ] **Auto-Fixer**: Implement `zshellcheck --fix` to automatically apply corrections for common violations (e.g., changing `[ ]` to `[[ ]]`).
 - [ ] **Plugin System**: Allow users to write their own custom checks in Lua or Wasm.
@@ -40,10 +42,10 @@ ZShellCheck is an evolving static analysis tool for Zsh. Our mission is to provi
 
 ## Progress Tracking
 
-**Current Progress:** Version 0.3.35 (335/1000 Katas -- 33.5%).
+**Current Progress:** Version 1.0.0 (1000/1000 Katas -- 100%).
 
 ```
-[===================================>                                                ] 335/1000
+[================================================================================] 1000/1000
 ```
 
 For the list of currently implemented Katas, please refer to [KATAS.md](KATAS.md).

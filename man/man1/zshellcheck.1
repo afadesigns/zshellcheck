@@ -1,4 +1,4 @@
-.TH ZSHELLCHECK 1 "November 2025" "v0.0.72" "ZShellCheck Manual"
+.TH ZSHELLCHECK 1 "April 2026" "v1.0.0" "ZShellCheck Manual"
 .SH NAME
 zshellcheck \- Static analysis tool for Zsh scripts
 .SH SYNOPSIS
@@ -24,7 +24,22 @@ Specify the output format.
 .TP
 .B json
 Machine-readable JSON output.
+.TP
+.B sarif
+SARIF 2.1.0 output for GitHub Security integration.
 .RE
+.TP
+.BR \-severity \ \fIlevel\fR
+Minimum severity to report: \fBerror\fR, \fBwarning\fR, \fBinfo\fR, or \fBstyle\fR. Default: \fBstyle\fR (all levels).
+.TP
+.BR \-\-no\-color
+Disable ANSI color in the text formatter. Useful for CI logs and file redirects.
+.TP
+.BR \-\-verbose
+Emit additional diagnostic output alongside the results.
+.TP
+.BR \-version
+Print the ZShellCheck version and exit.
 .TP
 .BR \-help
 Display help message and exit.
@@ -54,6 +69,12 @@ Check a directory recursively:
 .TP
 Output in JSON format:
 .B zshellcheck -format json script.zsh
+.TP
+Only errors and warnings, no color:
+.B zshellcheck --severity warning --no-color script.zsh
+.TP
+SARIF output for GitHub code-scanning:
+.B zshellcheck -format sarif script.zsh
 
 .SH EXIT STATUS
 .TP

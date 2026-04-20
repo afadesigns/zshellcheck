@@ -5,6 +5,48 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.0] - 2026-04-20
+
+**1000 Katas milestone.** The kata-count formula (MAJOR = count/1000,
+MINOR = (count%1000)/100, PATCH = count%100) now resolves to exactly
+`1.0.0`. This is the first stable release of ZShellCheck, targeted at
+the GitHub Marketplace launch.
+
+### Added
+- **665 new Katas** bringing the total from 335 (v0.3.35) to **1000**
+  (ZC1339 through ZC2003). Highlights:
+  - **Zsh semantics & `setopt` subtleties** — `PROMPT_SUBST`,
+    `GLOBAL_RCS`, `POSIX_IDENTIFIERS`, `CHASE_DOTS`, `SH_FILE_EXPANSION`,
+    `CSH_JUNKIE_QUOTES`, `REMATCH_PCRE`, `KSH_TYPESET`, `BRACE_CCL`,
+    `CSH_NULLCMD`, `AUTO_NAMED_DIRS`, `EVAL_LINENO`, `KSH_ZERO_SUBSCRIPT`,
+    `HIST_NO_FUNCTIONS`, `HIST_FCNTL_LOCK`, `BG_NICE`, and many more.
+  - **Storage & filesystem safety** — `zpool import -f`/`export -f`,
+    `dmsetup remove_all`, `losetup -P`/`kpartx -a`/`partprobe`,
+    `sgdisk -Z`/`-o`, `lvreduce -f`/`-y`, `exportfs -au`.
+  - **Kernel/devices** — `udevadm trigger --action=remove`,
+    `tpm2_clear`, `ipcrm -a`, `unshare -U`/`-r`.
+  - **Platform ops** — `crictl rmi -a`/`rm -af`,
+    `kubectl taint nodes …:NoExecute`, `dnf/yum versionlock add`.
+  - **Shell hygiene** — `zsh -f`/`-d` bypassing startup files,
+    `exec -a NAME` masking `argv[0]`, `touch -d`/`-t`/`-r` timestamp
+    rewrite, `nsupdate -y` TSIG-in-argv, `openssl passwd -crypt`/`-1`/`-apr1`,
+    `ftp`/`tftp` plaintext, `pkexec` script elevation.
+- **Test triplet per kata** — `pkg/katas/katatests/zc####_test.go` with
+  valid + invalid cases across every new ID.
+- **Misspell ignore-words entry for `exportfs`** — prevents false
+  positives on legitimate NFS-tool references.
+
+### Changed
+- README, USER_GUIDE, REFERENCE, ROADMAP, CITATION.cff, and the
+  `zshellcheck(1)` man page updated for v1.0.0 and the 1000-kata total.
+- `-severity`, `--no-color`, `--version`, and `-format sarif` now
+  documented in the man page.
+
+### Documentation
+- CHANGELOG gains this 1.0.0 section covering the ZC1339–ZC2003 range.
+- ROADMAP marks the 250, 500, and 1000-kata milestones complete and
+  advances the LSP / auto-fixer / plugin work into the 1.x bucket.
+
 ## [0.3.35] - 2026-04-17
 
 **Public beta.** First release with successfully built, signed, and
