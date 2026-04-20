@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.11] - 2026-04-20
+
+### Changed
+- `action.yml` — rename `name` from `ZShellCheck` to `ZshellCheck` (lowercase `h`). Marketplace requires a unique action name; the original capitalization collided with an existing registry entry. The action identifier (`afadesigns/zshellcheck@vX.Y.Z`) is unchanged.
+
 ## [1.0.10] - 2026-04-20
 
 **Versioning switch.** The kata-count formula (MAJOR = count/1000,

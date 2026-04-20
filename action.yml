@@ -1,4 +1,4 @@
-name: 'ZShellCheck'
+name: 'ZshellCheck'
 description: 'Static analysis for Zsh scripts — 1000 Zsh-native checks (katas) covering syntax, security, portability, and style.'
 author: 'afadesigns'
 
