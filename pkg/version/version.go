@@ -1,6 +1,6 @@
 package version
 
-// Version is the current version of ZShellCheck.
-// It is derived from the kata count plus the scripts/HOTFIX offset.
-// 1000 Katas + 1 hotfix = 1.0.1
-const Version = "1.0.1"
+// Version is the current ZShellCheck release. Bump manually when cutting
+// a new tag; semver rules apply (MAJOR.MINOR.PATCH). Never derived from
+// repo state — the string below is the single source of truth.
+const Version = "1.0.9"

@@ -5,11 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.0.1] - 2026-04-20
+## [1.0.9] - 2026-04-20
 
 Hotfix rollup for every fix merged between the v1.0.0 tag and the
-GitHub Marketplace debut. No new katas — kata count stays at 1000; the
-`scripts/HOTFIX` offset bumps PATCH to `1`.
+GitHub Marketplace debut. No new katas — kata count stays at 1000.
+
+**Versioning switch.** Starting with this release the kata-count formula
+(MAJOR = count/1000, MINOR = (count%1000)/100, PATCH = count%100) is
+retired in favor of standard [semantic versioning](https://semver.org).
+`pkg/version/version.go` is now hand-maintained and bumped explicitly on
+each release; `scripts/update-version.sh`, `scripts/HOTFIX`, and the
+`update-version` pre-commit hook are removed. The `tag-release`
+workflow no longer auto-bumps PATCH on every main push; tags are cut
+manually or via explicit `#patch`/`#minor`/`#major` keywords.
 
 ### Added
 - **Inline `# zshellcheck disable=…` directives** — suppress katas

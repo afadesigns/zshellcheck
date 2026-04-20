@@ -30,4 +30,7 @@ jobs:
           # (GITHUB_TOKEN-created events don't trigger downstream workflows)
           GITHUB_TOKEN: ${{ secrets.REDTEAMX_PAT }}
           WITH_V: true
-          DEFAULT_BUMP: patch
+          # No implicit version bumps. Releases are manual: tag explicitly,
+          # or put `#patch` / `#minor` / `#major` in a commit message to
+          # opt into a bump. Default behavior is to do nothing.
+          DEFAULT_BUMP: none
