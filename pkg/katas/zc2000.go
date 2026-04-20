@@ -13,7 +13,7 @@ func init() {
 		Severity: SeverityError,
 		Description: "A `NoExecute` taint kicks every existing pod off the node unless the pod " +
 			"spec explicitly tolerates it. Draining one node during a rolling upgrade " +
-			"is one thing; a script that types the taint wrong (mis-keying the " +
+			"is one thing; a script that types the taint wrong (typoed " +
 			"toleration value, applying to `--all` nodes, or iterating a node list " +
 			"without a pause) can empty a whole cluster in seconds and trigger " +
 			"cascade reschedules that overwhelm the scheduler. Prefer `kubectl drain " +

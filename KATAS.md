@@ -11978,7 +11978,7 @@ Disable by adding `ZC1999` to `disabled_katas` in `.zshellcheckrc`.
 
 **Severity:** `error`
 
-A `NoExecute` taint kicks every existing pod off the node unless the pod spec explicitly tolerates it. Draining one node during a rolling upgrade is one thing; a script that types the taint wrong (mis-keying the toleration value, applying to `--all` nodes, or iterating a node list without a pause) can empty a whole cluster in seconds and trigger cascade reschedules that overwhelm the scheduler. Prefer `kubectl drain $NODE` (which respects PodDisruptionBudget and runs PreStop hooks) or a `NoSchedule` taint for gentle drain; reserve `NoExecute` for genuine incident response with a runbook and a safety countdown.
+A `NoExecute` taint kicks every existing pod off the node unless the pod spec explicitly tolerates it. Draining one node during a rolling upgrade is one thing; a script that types the taint wrong (typoed toleration value, applying to `--all` nodes, or iterating a node list without a pause) can empty a whole cluster in seconds and trigger cascade reschedules that overwhelm the scheduler. Prefer `kubectl drain $NODE` (which respects PodDisruptionBudget and runs PreStop hooks) or a `NoSchedule` taint for gentle drain; reserve `NoExecute` for genuine incident response with a runbook and a safety countdown.
 
 Disable by adding `ZC2000` to `disabled_katas` in `.zshellcheckrc`.
 
