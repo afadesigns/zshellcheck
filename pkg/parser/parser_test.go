@@ -2818,3 +2818,60 @@ func TestCaseStatementSemicolonsInBody(t *testing.T) {
 		t.Fatalf("expected 1 clause, got %d", len(stmt.Clauses))
 	}
 }
+
+// TestParser_DDCommandWithIfOfKeywords is the regression test for
+// https://github.com/afadesigns/zshellcheck/issues/435. `dd if=foo of=bar`
+// contains identifiers that happen to match the `if`/`of` keyword prefix
+// — the lexer must demote them to IDENT when `=` follows so the parser
+// does not try to open an if-statement.
+func TestParser_DDCommandWithIfOfKeywords(t *testing.T) {
+	inputs := []string{
+		`dd if=src of=dst`,
+		`dd if=/tmp/x of=/tmp/y bs=4M`,
+		`some_tool if=arg`,
+	}
+	for _, input := range inputs {
+		t.Run(input, func(t *testing.T) {
+			l := lexer.New(input)
+			p := New(l)
+			p.ParseProgram()
+			if errs := p.Errors(); len(errs) > 0 {
+				t.Fatalf("unexpected parser errors on %q: %v", input, errs)
+			}
+		})
+	}
+}
+
+// TestParser_ForLoopAndOr is the regression test for
+// https://github.com/afadesigns/zshellcheck/issues/347. `for ... in ...;
+// do ...; done` and `||` previously raised parser errors; both must
+// parse cleanly now.
+func TestParser_ForLoopAndOr(t *testing.T) {
+	inputs := []string{
+		`for x in a b c; do echo $x; done`,
+		`true || echo fail`,
+		`cmd1 || cmd2 || cmd3`,
+	}
+	for _, input := range inputs {
+		t.Run(input, func(t *testing.T) {
+			l := lexer.New(input)
+			p := New(l)
+			p.ParseProgram()
+			if errs := p.Errors(); len(errs) > 0 {
+				t.Fatalf("unexpected parser errors on %q: %v", input, errs)
+			}
+		})
+	}
+}
+
+// TestParser_IfElifElseFi is the regression test for the elif branch of
+// https://github.com/afadesigns/zshellcheck/issues/126.
+func TestParser_IfElifElseFi(t *testing.T) {
+	input := "if [[ $a == 1 ]]; then\n  echo one\nelif [[ $a == 2 ]]; then\n  echo two\nelse\n  echo other\nfi\n"
+	l := lexer.New(input)
+	p := New(l)
+	p.ParseProgram()
+	if errs := p.Errors(); len(errs) > 0 {
+		t.Fatalf("unexpected parser errors: %v", errs)
+	}
+}

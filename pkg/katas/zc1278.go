@@ -4,33 +4,21 @@ import (
 	"github.com/afadesigns/zshellcheck/pkg/ast"
 )
 
+// Issue #343: ZC1278 fires on the same input as the canonical
+// ZC1009 with overlapping advice. Stubbed to a no-op so legacy
+// `disabled_katas` lists keep parsing; the detection now lives in
+// ZC1009.
+
 func init() {
 	RegisterKata(ast.SimpleCommandNode, Kata{
-		ID:       "ZC1278",
-		Title:    "Use `$(( ))` instead of `expr` for arithmetic",
-		Severity: SeverityStyle,
-		Description: "`expr` is an external command for arithmetic. Zsh has native arithmetic " +
-			"expansion `$(( ))` which is faster and more readable.",
-		Check: checkZC1278,
+		ID:          "ZC1278",
+		Title:       "Superseded by ZC1009 — retired duplicate",
+		Severity:    SeverityStyle,
+		Description: "Retained as a no-op stub so legacy `.zshellcheckrc` files that disable this ID keep parsing. See https://github.com/afadesigns/zshellcheck/issues/343 for context; the canonical detection lives in ZC1009.",
+		Check:       checkZC1278,
 	})
 }
 
-func checkZC1278(node ast.Node) []Violation {
-	cmd, ok := node.(*ast.SimpleCommand)
-	if !ok {
-		return nil
-	}
-
-	ident, ok := cmd.Name.(*ast.Identifier)
-	if !ok || ident.Value != "expr" {
-		return nil
-	}
-
-	return []Violation{{
-		KataID:  "ZC1278",
-		Message: "Use Zsh arithmetic expansion `$(( ))` instead of `expr`. It is built-in and avoids forking.",
-		Line:    cmd.Token.Line,
-		Column:  cmd.Token.Column,
-		Level:   SeverityStyle,
-	}}
+func checkZC1278(ast.Node) []Violation {
+	return nil
 }

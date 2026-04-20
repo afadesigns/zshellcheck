@@ -4,29 +4,24 @@ import (
 	"github.com/afadesigns/zshellcheck/pkg/ast"
 )
 
+// Per issue #345: ZC1023–ZC1029, ZC1033, ZC1035 were identical copies of
+// the canonical ZC1022 `let` detection, each emitting the same violation
+// on the same input. Ten fires per `let` line inflated user-visible noise.
+// Project rule ("once committed, fix — don't remove") keeps the IDs alive
+// as no-op stubs so existing `disabled_katas` lists that reference them
+// keep parsing, but the duplicate detection is retired in favour of
+// ZC1022.
+
 func init() {
 	RegisterKata(ast.LetStatementNode, Kata{
-		ID:    "ZC1028",
-		Title: "Use `$((...))` for arithmetic expansion",
-		Description: "The `$((...))` syntax is the modern, recommended way to perform arithmetic expansion. " +
-			"It is more readable and can be nested easily, unlike `let`.",
-		Severity: SeverityStyle,
-		Check:    checkZC1028,
+		ID:          "ZC1028",
+		Title:       "Superseded by ZC1022 — retired duplicate `let` detector",
+		Severity:    SeverityStyle,
+		Description: "Retained as a no-op stub so legacy `.zshellcheckrc` files that disable this ID keep parsing. The canonical `let` → `$((...))` guidance lives in ZC1022; see https://github.com/afadesigns/zshellcheck/issues/345.",
+		Check:       checkZC1028,
 	})
 }
 
-func checkZC1028(node ast.Node) []Violation {
-	violations := []Violation{}
-
-	if let, ok := node.(*ast.LetStatement); ok {
-		violations = append(violations, Violation{
-			KataID:  "ZC1028",
-			Message: "Use `$((...))` for arithmetic expansion instead of `let`.",
-			Line:    let.Token.Line,
-			Column:  let.Token.Column,
-			Level:   SeverityStyle,
-		})
-	}
-
-	return violations
+func checkZC1028(ast.Node) []Violation {
+	return nil
 }

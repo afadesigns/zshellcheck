@@ -8,8 +8,8 @@ Auto-generated list of all 1000 implemented checks. Do not edit by hand — rege
 | :--- | ---: |
 | `error` | 220 |
 | `warning` | 459 |
-| `info` | 66 |
-| `style` | 255 |
+| `info` | 64 |
+| `style` | 257 |
 | **total** | **1000** |
 
 ## Table of Contents
@@ -31,24 +31,24 @@ Auto-generated list of all 1000 implemented checks. Do not edit by hand — rege
 - [ZC1015: Use `$(...)` for command substitution instead of backticks](#zc1015)
 - [ZC1016: Use `read -s` when reading sensitive information](#zc1016)
 - [ZC1017: Use `print -r` to print strings literally](#zc1017)
-- [ZC1018: Use `((...))` for C-style arithmetic instead of `expr`](#zc1018)
-- [ZC1019: Use `whence` instead of `which`](#zc1019)
+- [ZC1018: Superseded by ZC1009 — retired duplicate](#zc1018)
+- [ZC1019: Superseded by ZC1005 — retired duplicate](#zc1019)
 - [ZC1020: Use `\[\[ ... \]\]` for tests instead of `test`](#zc1020)
 - [ZC1021: Use symbolic permissions with `chmod` instead of octal](#zc1021)
 - [ZC1022: Use `$((...))` for arithmetic expansion](#zc1022)
-- [ZC1023: Use `$((...))` for arithmetic expansion](#zc1023)
-- [ZC1024: Use `$((...))` for arithmetic expansion](#zc1024)
-- [ZC1025: Use `$((...))` for arithmetic expansion](#zc1025)
-- [ZC1026: Use `$((...))` for arithmetic expansion](#zc1026)
-- [ZC1027: Use `$((...))` for arithmetic expansion](#zc1027)
-- [ZC1028: Use `$((...))` for arithmetic expansion](#zc1028)
-- [ZC1029: Use `$((...))` for arithmetic expansion](#zc1029)
+- [ZC1023: Superseded by ZC1022 — retired duplicate `let` detector](#zc1023)
+- [ZC1024: Superseded by ZC1022 — retired duplicate `let` detector](#zc1024)
+- [ZC1025: Superseded by ZC1022 — retired duplicate `let` detector](#zc1025)
+- [ZC1026: Superseded by ZC1022 — retired duplicate `let` detector](#zc1026)
+- [ZC1027: Superseded by ZC1022 — retired duplicate `let` detector](#zc1027)
+- [ZC1028: Superseded by ZC1022 — retired duplicate `let` detector](#zc1028)
+- [ZC1029: Superseded by ZC1022 — retired duplicate `let` detector](#zc1029)
 - [ZC1030: Use `printf` instead of `echo`](#zc1030)
 - [ZC1031: Use `#!/usr/bin/env zsh` for portability](#zc1031)
 - [ZC1032: Use `((...))` for C-style incrementing](#zc1032)
-- [ZC1033: Use `$((...))` for arithmetic expansion](#zc1033)
+- [ZC1033: Superseded by ZC1022 — retired duplicate `let` detector](#zc1033)
 - [ZC1034: Use `command -v` instead of `which`](#zc1034)
-- [ZC1035: Use `$((...))` for arithmetic expansion](#zc1035)
+- [ZC1035: Superseded by ZC1022 — retired duplicate `let` detector](#zc1035)
 - [ZC1036: Prefer `\[\[ ... \]\]` over `test` command](#zc1036)
 - [ZC1037: Use 'print -r --' for variable expansion](#zc1037)
 - [ZC1038: Avoid useless use of cat](#zc1038)
@@ -106,7 +106,7 @@ Auto-generated list of all 1000 implemented checks. Do not edit by hand — rege
 - [ZC1090: Quoted regex pattern in `=~`](#zc1090)
 - [ZC1091: Use `((...))` for arithmetic comparisons in `\[\[...\]\]`](#zc1091)
 - [ZC1092: Prefer `print` or `printf` over `echo` in Zsh](#zc1092)
-- [ZC1093: Avoid useless `cat`](#zc1093)
+- [ZC1093: Superseded by ZC1038 — retired duplicate](#zc1093)
 - [ZC1094: Use parameter expansion instead of `sed` for simple substitutions](#zc1094)
 - [ZC1095: Use `repeat N` for simple repetition](#zc1095)
 - [ZC1096: Warn on `bc` for simple arithmetic](#zc1096)
@@ -287,8 +287,8 @@ Auto-generated list of all 1000 implemented checks. Do not edit by hand — rege
 - [ZC1274: Use Zsh `${var:t}` instead of `basename`](#zc1274)
 - [ZC1275: Use Zsh `${var:h}` instead of `dirname`](#zc1275)
 - [ZC1276: Use Zsh `{start..end}` instead of `seq`](#zc1276)
-- [ZC1277: Use Zsh `${var:l}` / `${var:u}` instead of `tr` for case conversion](#zc1277)
-- [ZC1278: Use `$(( ))` instead of `expr` for arithmetic](#zc1278)
+- [ZC1277: Superseded by ZC1108 — retired duplicate](#zc1277)
+- [ZC1278: Superseded by ZC1009 — retired duplicate](#zc1278)
 - [ZC1279: Use `realpath` instead of `readlink -f` for canonical paths](#zc1279)
 - [ZC1280: Use `Zsh ${var:e}` instead of shell expansion to extract file extension](#zc1280)
 - [ZC1281: Use `sort -u` instead of `sort \| uniq` for deduplication](#zc1281)
@@ -1205,22 +1205,22 @@ Disable by adding `ZC1017` to `disabled_katas` in `.zshellcheckrc`.
 ---
 
 <a id="zc1018"></a>
-### ZC1018 — Use `((...))` for C-style arithmetic instead of `expr`
+### ZC1018 — Superseded by ZC1009 — retired duplicate
 
-**Severity:** `info`
+**Severity:** `style`
 
-The `((...))` construct in Zsh allows for C-style arithmetic. It is generally more efficient and readable than using `expr` or other external commands for arithmetic.
+Retained as a no-op stub so legacy `.zshellcheckrc` files that disable this ID keep parsing. See https://github.com/afadesigns/zshellcheck/issues/343 for context; the canonical detection lives in ZC1009.
 
 Disable by adding `ZC1018` to `disabled_katas` in `.zshellcheckrc`.
 
 ---
 
 <a id="zc1019"></a>
-### ZC1019 — Use `whence` instead of `which`
+### ZC1019 — Superseded by ZC1005 — retired duplicate
 
-**Severity:** `info`
+**Severity:** `style`
 
-The `which` command is an external command and may not be available on all systems. The `whence` command is a built-in Zsh command that provides a more reliable and consistent way to find the location of a command.
+Retained as a no-op stub so legacy `.zshellcheckrc` files that disable this ID keep parsing. See https://github.com/afadesigns/zshellcheck/issues/342 for context; the canonical detection lives in ZC1005.
 
 Disable by adding `ZC1019` to `disabled_katas` in `.zshellcheckrc`.
 
@@ -1260,77 +1260,77 @@ Disable by adding `ZC1022` to `disabled_katas` in `.zshellcheckrc`.
 ---
 
 <a id="zc1023"></a>
-### ZC1023 — Use `$((...))` for arithmetic expansion
+### ZC1023 — Superseded by ZC1022 — retired duplicate `let` detector
 
 **Severity:** `style`
 
-The `$((...))` syntax is the modern, recommended way to perform arithmetic expansion. It is more readable and can be nested easily, unlike `let`.
+Retained as a no-op stub so legacy `.zshellcheckrc` files that disable this ID keep parsing. The canonical `let` → `$((...))` guidance lives in ZC1022; see https://github.com/afadesigns/zshellcheck/issues/345.
 
 Disable by adding `ZC1023` to `disabled_katas` in `.zshellcheckrc`.
 
 ---
 
 <a id="zc1024"></a>
-### ZC1024 — Use `$((...))` for arithmetic expansion
+### ZC1024 — Superseded by ZC1022 — retired duplicate `let` detector
 
 **Severity:** `style`
 
-The `$((...))` syntax is the modern, recommended way to perform arithmetic expansion. It is more readable and can be nested easily, unlike `let`.
+Retained as a no-op stub so legacy `.zshellcheckrc` files that disable this ID keep parsing. The canonical `let` → `$((...))` guidance lives in ZC1022; see https://github.com/afadesigns/zshellcheck/issues/345.
 
 Disable by adding `ZC1024` to `disabled_katas` in `.zshellcheckrc`.
 
 ---
 
 <a id="zc1025"></a>
-### ZC1025 — Use `$((...))` for arithmetic expansion
+### ZC1025 — Superseded by ZC1022 — retired duplicate `let` detector
 
 **Severity:** `style`
 
-The `$((...))` syntax is the modern, recommended way to perform arithmetic expansion. It is more readable and can be nested easily, unlike `let`.
+Retained as a no-op stub so legacy `.zshellcheckrc` files that disable this ID keep parsing. The canonical `let` → `$((...))` guidance lives in ZC1022; see https://github.com/afadesigns/zshellcheck/issues/345.
 
 Disable by adding `ZC1025` to `disabled_katas` in `.zshellcheckrc`.
 
 ---
 
 <a id="zc1026"></a>
-### ZC1026 — Use `$((...))` for arithmetic expansion
+### ZC1026 — Superseded by ZC1022 — retired duplicate `let` detector
 
 **Severity:** `style`
 
-The `$((...))` syntax is the modern, recommended way to perform arithmetic expansion. It is more readable and can be nested easily, unlike `let`.
+Retained as a no-op stub so legacy `.zshellcheckrc` files that disable this ID keep parsing. The canonical `let` → `$((...))` guidance lives in ZC1022; see https://github.com/afadesigns/zshellcheck/issues/345.
 
 Disable by adding `ZC1026` to `disabled_katas` in `.zshellcheckrc`.
 
 ---
 
 <a id="zc1027"></a>
-### ZC1027 — Use `$((...))` for arithmetic expansion
+### ZC1027 — Superseded by ZC1022 — retired duplicate `let` detector
 
 **Severity:** `style`
 
-The `$((...))` syntax is the modern, recommended way to perform arithmetic expansion. It is more readable and can be nested easily, unlike `let`.
+Retained as a no-op stub so legacy `.zshellcheckrc` files that disable this ID keep parsing. The canonical `let` → `$((...))` guidance lives in ZC1022; see https://github.com/afadesigns/zshellcheck/issues/345.
 
 Disable by adding `ZC1027` to `disabled_katas` in `.zshellcheckrc`.
 
 ---
 
 <a id="zc1028"></a>
-### ZC1028 — Use `$((...))` for arithmetic expansion
+### ZC1028 — Superseded by ZC1022 — retired duplicate `let` detector
 
 **Severity:** `style`
 
-The `$((...))` syntax is the modern, recommended way to perform arithmetic expansion. It is more readable and can be nested easily, unlike `let`.
+Retained as a no-op stub so legacy `.zshellcheckrc` files that disable this ID keep parsing. The canonical `let` → `$((...))` guidance lives in ZC1022; see https://github.com/afadesigns/zshellcheck/issues/345.
 
 Disable by adding `ZC1028` to `disabled_katas` in `.zshellcheckrc`.
 
 ---
 
 <a id="zc1029"></a>
-### ZC1029 — Use `$((...))` for arithmetic expansion
+### ZC1029 — Superseded by ZC1022 — retired duplicate `let` detector
 
 **Severity:** `style`
 
-The `$((...))` syntax is the modern, recommended way to perform arithmetic expansion. It is more readable and can be nested easily, unlike `let`.
+Retained as a no-op stub so legacy `.zshellcheckrc` files that disable this ID keep parsing. The canonical `let` → `$((...))` guidance lives in ZC1022; see https://github.com/afadesigns/zshellcheck/issues/345.
 
 Disable by adding `ZC1029` to `disabled_katas` in `.zshellcheckrc`.
 
@@ -1370,11 +1370,11 @@ Disable by adding `ZC1032` to `disabled_katas` in `.zshellcheckrc`.
 ---
 
 <a id="zc1033"></a>
-### ZC1033 — Use `$((...))` for arithmetic expansion
+### ZC1033 — Superseded by ZC1022 — retired duplicate `let` detector
 
 **Severity:** `style`
 
-The `$((...))` syntax is the modern, recommended way to perform arithmetic expansion. It is more readable and can be nested easily, unlike `let`.
+Retained as a no-op stub so legacy `.zshellcheckrc` files that disable this ID keep parsing. The canonical `let` → `$((...))` guidance lives in ZC1022; see https://github.com/afadesigns/zshellcheck/issues/345.
 
 Disable by adding `ZC1033` to `disabled_katas` in `.zshellcheckrc`.
 
@@ -1392,11 +1392,11 @@ Disable by adding `ZC1034` to `disabled_katas` in `.zshellcheckrc`.
 ---
 
 <a id="zc1035"></a>
-### ZC1035 — Use `$((...))` for arithmetic expansion
+### ZC1035 — Superseded by ZC1022 — retired duplicate `let` detector
 
 **Severity:** `style`
 
-The `$((...))` syntax is the modern, recommended way to perform arithmetic expansion. It is more readable and can be nested easily, unlike `let`.
+Retained as a no-op stub so legacy `.zshellcheckrc` files that disable this ID keep parsing. The canonical `let` → `$((...))` guidance lives in ZC1022; see https://github.com/afadesigns/zshellcheck/issues/345.
 
 Disable by adding `ZC1035` to `disabled_katas` in `.zshellcheckrc`.
 
@@ -2030,11 +2030,11 @@ Disable by adding `ZC1092` to `disabled_katas` in `.zshellcheckrc`.
 ---
 
 <a id="zc1093"></a>
-### ZC1093 — Avoid useless `cat`
+### ZC1093 — Superseded by ZC1038 — retired duplicate
 
 **Severity:** `style`
 
-`cat file | command` spawns an unnecessary process. Use `command < file` or pass the file as an argument directly.
+Retained as a no-op stub so legacy `.zshellcheckrc` files that disable this ID keep parsing. See https://github.com/afadesigns/zshellcheck/issues/341 for context; the canonical detection lives in ZC1038.
 
 Disable by adding `ZC1093` to `disabled_katas` in `.zshellcheckrc`.
 
@@ -4021,22 +4021,22 @@ Disable by adding `ZC1276` to `disabled_katas` in `.zshellcheckrc`.
 ---
 
 <a id="zc1277"></a>
-### ZC1277 — Use Zsh `${var:l}` / `${var:u}` instead of `tr` for case conversion
+### ZC1277 — Superseded by ZC1108 — retired duplicate
 
 **Severity:** `style`
 
-Zsh provides the `:l` (lowercase) and `:u` (uppercase) modifiers for parameter expansion, avoiding the overhead of piping through `tr` for case conversion.
+Retained as a no-op stub so legacy `.zshellcheckrc` files that disable this ID keep parsing. See https://github.com/afadesigns/zshellcheck/issues/344 for context; the canonical detection lives in ZC1108.
 
 Disable by adding `ZC1277` to `disabled_katas` in `.zshellcheckrc`.
 
 ---
 
 <a id="zc1278"></a>
-### ZC1278 — Use `$(( ))` instead of `expr` for arithmetic
+### ZC1278 — Superseded by ZC1009 — retired duplicate
 
 **Severity:** `style`
 
-`expr` is an external command for arithmetic. Zsh has native arithmetic expansion `$(( ))` which is faster and more readable.
+Retained as a no-op stub so legacy `.zshellcheckrc` files that disable this ID keep parsing. See https://github.com/afadesigns/zshellcheck/issues/343 for context; the canonical detection lives in ZC1009.
 
 Disable by adding `ZC1278` to `disabled_katas` in `.zshellcheckrc`.
 

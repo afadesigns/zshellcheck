@@ -330,11 +330,39 @@ func (p *Parser) parseIfStatement() *ast.IfStatement {
 	}
 
 	p.nextToken() // consume "then"
-	stmt.Consequence = p.parseBlockStatement(token.ELSE, token.Fi)
+	stmt.Consequence = p.parseBlockStatement(token.ELSE, token.ELIF, token.Fi)
+
+	// Collapse any chain of `elif CONDITION; then BODY` clauses into a
+	// right-nested IfStatement stored on the outer `Alternative`. We
+	// thread the latest elif so the next one can attach to it.
+	var tailElif *ast.IfStatement
+	for p.curTokenIs(token.ELIF) {
+		elifToken := p.curToken
+		p.nextToken() // consume "elif"
+		elif := &ast.IfStatement{Token: elifToken}
+		elif.Condition = p.parseBlockStatement(token.THEN)
+		if !p.curTokenIs(token.THEN) {
+			return nil
+		}
+		p.nextToken() // consume "then"
+		elif.Consequence = p.parseBlockStatement(token.ELSE, token.ELIF, token.Fi)
+
+		if tailElif == nil {
+			stmt.Alternative = elif
+		} else {
+			tailElif.Alternative = elif
+		}
+		tailElif = elif
+	}
 
 	if p.curTokenIs(token.ELSE) {
 		p.nextToken() // consume "else"
-		stmt.Alternative = p.parseBlockStatement(token.Fi)
+		tail := p.parseBlockStatement(token.Fi)
+		if tailElif == nil {
+			stmt.Alternative = tail
+		} else {
+			tailElif.Alternative = tail
+		}
 	}
 	if !p.curTokenIs(token.Fi) {
 		p.peekError(token.Fi)
