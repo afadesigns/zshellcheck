@@ -1,9 +1,10 @@
 cff-version: 1.2.0
 message: "If you use this software, please cite it as below."
 authors:
-- family-names: "Designs"
-  given-names: "Afa"
+- family-names: "Fahl"
+  given-names: "Andreas"
   alias: "afadesigns"
+  email: "github@afadesign.co"
 title: "ZShellCheck"
 version: 1.0.0
 date-released: 2026-04-20

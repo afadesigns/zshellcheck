@@ -16,7 +16,7 @@ We take security seriously. If you have discovered a vulnerability in ZShellChec
 ### Process
 
 1.  **Do NOT open a public GitHub issue.** This allows us to assess the risk and fix the issue before it can be exploited.
-2.  **Email**: Please email the maintainer directly at `afadesign.official@gmail.com` (or contact **@afadesigns** via GitHub private (if available) or other social channels linked on the profile).
+2.  **Email**: Please email the maintainer directly at `github@afadesign.co` (or contact **@afadesigns** via GitHub private (if available) or other social channels linked on the profile).
 3.  **Details**: Please include as much information as possible:
     - The type of vulnerability.
     - Full steps to reproduce.
