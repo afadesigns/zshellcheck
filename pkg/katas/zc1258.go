@@ -10,7 +10,7 @@ func init() {
 	RegisterKata(ast.SimpleCommandNode, Kata{
 		ID:       "ZC1258",
 		Title:    "Consider `rsync --delete` for directory sync",
-		Severity: SeverityStyle,
+		Severity: SeverityWarning,
 		Description: "`rsync` without `--delete` keeps files on the destination that were " +
 			"removed from the source. Use `--delete` for true directory mirroring.",
 		Check: checkZC1258,
@@ -48,7 +48,7 @@ func checkZC1258(node ast.Node) []Violation {
 				"files removed from source remain on the destination.",
 			Line:   cmd.Token.Line,
 			Column: cmd.Token.Column,
-			Level:  SeverityStyle,
+			Level:  SeverityWarning,
 		}}
 	}
 
