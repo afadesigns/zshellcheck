@@ -14,8 +14,8 @@ func init() {
 		Description: "`uvx PKG`, `uv tool run PKG`, and `pipx run PKG` each resolve the package " +
 			"against PyPI and execute its entry point. Without a version constraint " +
 			"(`pkg==1.2.3` or `pkg@1.2.3` for uv), every run takes whatever the registry " +
-			"currently serves — a squatted typo (`reqeusts`, `djanggo`), a compromised " +
-			"maintainer release, or a sudden major-version bump lands untested code in the " +
+			"currently serves — a typosquatted lookalike, a compromised maintainer " +
+			"release, or a sudden major-version bump lands untested code in the " +
 			"pipeline. Pin the version at the call site or use `uv tool install pkg==X.Y.Z` + " +
 			"`uv tool run pkg` so the lockfile is the source of truth.",
 		Check: checkZC1964,
