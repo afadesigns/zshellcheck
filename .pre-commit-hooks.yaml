@@ -2,5 +2,5 @@
     name: ZShellCheck
     description: Static analysis tool for Zsh scripts.
     entry: zshellcheck
-    language: go
+    language: golang
     files: \.zsh$
