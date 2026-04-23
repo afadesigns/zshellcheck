@@ -131,7 +131,7 @@ Add to `.pre-commit-config.yaml`:
 
 ```yaml
 -   repo: https://github.com/afadesigns/zshellcheck
-    rev: v1.0.0
+    rev: v1.0.13
     hooks:
     -   id: zshellcheck
 ```

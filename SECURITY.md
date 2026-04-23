@@ -2,12 +2,12 @@
 
 ## Supported Versions
 
-Only the latest major version of ZShellCheck is officially supported with security updates.
+| Version | Supported |
+| ------- | --------- |
+| `v1.0.x` (latest minor) | Yes |
+| `< v1.0.0` | No |
 
-| Version | Supported          |
-| ------- | ------------------ |
-| Latest  | :white_check_mark: |
-| < 0.0.x | :x:                |
+Only the latest `v1.0.x` release receives security fixes. Upgrade to the latest tag before reporting — fixes land as new patch releases, not as backports.
 
 ## Reporting a Vulnerability
 
@@ -25,7 +25,7 @@ We take security seriously. If you have discovered a vulnerability in ZShellChec
 
 ### Response
 
-We will acknowledge your report within **48 hours** and provide an estimated timeline for the fix.
+Acknowledgement target: **7 days**. ZShellCheck is maintained by a solo developer; critical issues will be triaged sooner, but please do not assume a same-day response.
 
 ## Vulnerability Categories
 

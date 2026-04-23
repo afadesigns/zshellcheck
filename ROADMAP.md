@@ -42,10 +42,12 @@ ZShellCheck is an evolving static analysis tool for Zsh. Our mission is to provi
 
 ## Progress Tracking
 
-**Current Progress:** Version 1.0.0 (1000/1000 Katas -- 100%).
+**Current release:** v1.0.13 — 1000 katas.
 
 ```
 [================================================================================] 1000/1000
 ```
+
+v1.x hotfixes (parser, dedup, severity rebalance, XDG config, inline disable directives, Marketplace action rename) shipped between v1.0.0 and the current tag. See `CHANGELOG.md` for the full per-release history.
 
 For the list of currently implemented Katas, please refer to [KATAS.md](KATAS.md).
