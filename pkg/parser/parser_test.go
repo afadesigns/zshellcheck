@@ -1008,6 +1008,56 @@ func TestArithmeticCommand(t *testing.T) {
 	}
 }
 
+func TestArithmeticParamExistenceBare(t *testing.T) {
+	// `(( $+name ))` and `(( $+name[key] ))` — bare `$+...` inside arithmetic.
+	// Regression test for issue #1047.
+	cases := []string{
+		`(( $+commands[ls] ))`,
+		`(( $+foo ))`,
+		`(( $+arr[key] ))`,
+	}
+	for _, input := range cases {
+		l := lexer.New(input)
+		p := New(l)
+		_ = p.ParseProgram()
+		if errs := p.Errors(); len(errs) != 0 {
+			t.Errorf("%s: unexpected parser errors: %v", input, errs)
+		}
+	}
+}
+
+func TestArithmeticLogicalChain(t *testing.T) {
+	// `(( A )) && (( B ))`, `(( A )) || (( B ))`, and mixed chains.
+	// Regression test for issue #1047.
+	cases := []string{
+		`(( 1 )) && (( 2 ))`,
+		`(( 1 )) || (( 2 ))`,
+		`(( $+commands[ls] )) && (( $+commands[eza] ))`,
+		`(( 1 )) && (( 2 )) || (( 3 ))`,
+	}
+	for _, input := range cases {
+		l := lexer.New(input)
+		p := New(l)
+		_ = p.ParseProgram()
+		if errs := p.Errors(); len(errs) != 0 {
+			t.Errorf("%s: unexpected parser errors: %v", input, errs)
+		}
+	}
+}
+
+func TestArithmeticInsideIfWithLogicalChain(t *testing.T) {
+	// The original repro from #1047.
+	input := `if (( $+commands[ls] )) && (( $+commands[eza] )); then
+  echo "ok"
+fi`
+	l := lexer.New(input)
+	p := New(l)
+	_ = p.ParseProgram()
+	if errs := p.Errors(); len(errs) != 0 {
+		t.Errorf("unexpected parser errors: %v", errs)
+	}
+}
+
 func TestSubshellStatement(t *testing.T) {
 	input := "(echo hello)"
 	l := lexer.New(input)

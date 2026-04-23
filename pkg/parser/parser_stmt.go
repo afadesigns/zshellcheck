@@ -45,6 +45,28 @@ func (p *Parser) parseStatement() ast.Statement {
 		if cmd == nil {
 			return nil
 		}
+		// Chain with `&&` / `||` when the arithmetic command is followed
+		// by a logical operator: `(( A )) && (( B )) || other-command`.
+		if p.peekTokenIs(token.AND) || p.peekTokenIs(token.OR) {
+			var left ast.Expression = cmd
+			for p.peekTokenIs(token.AND) || p.peekTokenIs(token.OR) {
+				p.nextToken()
+				op := p.curToken
+				p.nextToken() // move to start of right command
+				right := p.parseCommandPipeline()
+				left = &ast.InfixExpression{
+					Token:    op,
+					Operator: op.Literal,
+					Left:     left,
+					Right:    right,
+				}
+			}
+			stmt := &ast.ExpressionStatement{Token: cmd.Token, Expression: left}
+			if p.peekTokenIs(token.SEMICOLON) {
+				p.nextToken()
+			}
+			return stmt
+		}
 		return cmd
 	case token.COLON, token.DOT, token.LBRACKET,
 		token.GT, token.LT, token.GTGT, token.LTLT, token.GTAMP, token.LTAMP, token.AMPERSAND, token.SLASH:
