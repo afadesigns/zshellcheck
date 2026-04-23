@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.13] - 2026-04-22
+
+### Fixed
+- **Parser**: bare `$+name` / `$+name[key]` inside `(( … ))` no longer errors with `expected next token to be IDENT, got + instead`. Equivalent shape to the working `${+name[key]}` path. (#1047)
+- **Parser**: `(( A )) && (( B ))` / `||` chains (and mixed) no longer error with `no prefix parse function for && found`. Logical operators after an arithmetic command now parse into a normal `InfixExpression`. (#1047)
+
+### Changed
+- `.pre-commit-hooks.yaml` — `language: go` → `language: golang`, the canonical pre-commit language identifier. Fixes installation under `prek`. (#1046)
+
 ## [1.0.12] - 2026-04-20
 
 ### Changed
