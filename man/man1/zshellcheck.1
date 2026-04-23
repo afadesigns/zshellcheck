@@ -1,4 +1,4 @@
-.TH ZSHELLCHECK 1 "April 2026" "v1.0.0" "ZShellCheck Manual"
+.TH ZSHELLCHECK 1 "April 2026" "v1.0.13" "ZShellCheck Manual"
 .SH NAME
 zshellcheck \- Static analysis tool for Zsh scripts
 .SH SYNOPSIS
@@ -45,9 +45,19 @@ Print the ZShellCheck version and exit.
 Display help message and exit.
 
 .SH CONFIGURATION
-ZShellCheck looks for a configuration file named
-.B .zshellcheckrc
-in the current directory. The file format is YAML.
+ZShellCheck merges configuration from the following paths, with the project-local file winning on conflict:
+.RS
+.IP \(bu 2
+\fB$XDG_CONFIG_HOME/zshellcheck/config.yml\fR (or \fB.yaml\fR)
+.IP \(bu 2
+\fB~/.config/zshellcheck/config.yml\fR (or \fB.yaml\fR)
+.IP \(bu 2
+\fB~/.zshellcheckrc\fR
+.IP \(bu 2
+\fB./.zshellcheckrc\fR
+.RE
+
+All files are YAML.
 
 .SS Example .zshellcheckrc
 .nf
@@ -55,6 +65,13 @@ disabled_katas:
   - ZC1001
   - ZC1005
 .fi
+
+.SS Inline directives
+Silence a kata from inside a script with a comment:
+.nf
+rm -rf /tmp/noisy  # zshellcheck disable=ZC1136
+.fi
+A directive on its own line above code applies to the next code line; placed at the file tail with no code after it, it applies file-wide.
 
 .SH EXAMPLES
 .TP
@@ -92,4 +109,4 @@ Project Homepage: <https://github.com/afadesigns/zshellcheck>
 Full Documentation: <https://github.com/afadesigns/zshellcheck/blob/main/KATAS.md>
 
 .SH AUTHOR
-Maintained by the ZShellCheck Community.
+Andreas Fahl (@afadesigns) <github@afadesign.co>.
