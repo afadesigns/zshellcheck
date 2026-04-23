@@ -1,3 +1,5 @@
+<div align="center">
+
 ```
  mmmmmm  mmmm  #             ""#    ""#      mmm  #                    #
      #" #"   " # mm    mmm     #      #    m"   " # mm    mmm    mmm   #   m
@@ -6,195 +8,115 @@
  ##mmmm "mmm#" #   #  "#mm"    "mm    "mm   "mmm" #   #  "#mm"  "#mm"  #  "m
 ```
 
-![CI](https://github.com/afadesigns/zshellcheck/actions/workflows/ci.yml/badge.svg)
-[![Go Report Card](https://goreportcard.com/badge/github.com/afadesigns/zshellcheck)](https://goreportcard.com/report/github.com/afadesigns/zshellcheck)
-[![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/afadesigns/zshellcheck/badge)](https://securityscorecards.dev/viewer/?uri=github.com/afadesigns/zshellcheck)
+**Native static analysis for Zsh.** 1000 Zsh-specific checks covering syntax, security, portability, and style — the counterpart to ShellCheck for code that uses Zsh-only features.
+
+[![CI](https://github.com/afadesigns/zshellcheck/actions/workflows/ci.yml/badge.svg)](https://github.com/afadesigns/zshellcheck/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/afadesigns/zshellcheck?color=blue)](https://github.com/afadesigns/zshellcheck/releases/latest)
+[![Marketplace](https://img.shields.io/badge/Marketplace-ZshellCheck%20v1-2ea44f?logo=githubactions&logoColor=white)](https://github.com/marketplace/actions/zshellcheck-v1)
+[![Go Report](https://goreportcard.com/badge/github.com/afadesigns/zshellcheck)](https://goreportcard.com/report/github.com/afadesigns/zshellcheck)
 [![codecov](https://codecov.io/gh/afadesigns/zshellcheck/graph/badge.svg)](https://codecov.io/gh/afadesigns/zshellcheck)
+[![Scorecard](https://api.securityscorecards.dev/projects/github.com/afadesigns/zshellcheck/badge)](https://securityscorecards.dev/viewer/?uri=github.com/afadesigns/zshellcheck)
 [![SLSA](https://img.shields.io/badge/SLSA-Level%203-brightgreen)](https://slsa.dev)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-![Release](https://img.shields.io/github/v/release/afadesigns/zshellcheck)
+[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-**ZShellCheck** is a native static analyser for Zsh — 1000 Zsh-specific checks ("katas") covering syntax, security, portability, and style. Treat it as ShellCheck's counterpart for scripts that rely on Zsh-only features (parameter-expansion flags, glob qualifiers, `print`, `[[`, array semantics, modifiers).
+</div>
 
-## Inspiration
+---
 
-ZShellCheck draws significant inspiration from the esteemed `ShellCheck` project, a powerful static analysis tool for `sh`/`bash` scripts. While `ZShellCheck` is an independent development with a native focus on Zsh's unique syntax and semantics, `ShellCheck`'s commitment to improving shell script quality served as a guiding principle in our mission to provide an equally robust and tailored solution for the Zsh community.
+## At a glance
 
-## Comparison
+- **1000** Zsh-specific katas (checks) — `error` / `warning` / `info` / `style`
+- **3** output formats — text (coloured), JSON, SARIF (GitHub Code Scanning)
+- **Zero** runtime dependencies — single static Go binary
+- **Signed** releases — cosign keyless + SBOM + SLSA Level 3 provenance
+- **Cross-platform** — Linux / macOS / Windows × x86_64 / arm64 / i386
 
-Why use ZShellCheck over ShellCheck? See our **[Detailed Comparison](docs/REFERENCE.md#comparison-vs-shellcheck)**.
+## Quick start
 
-**TL;DR**: Use **ShellCheck** for portable scripts (`sh`/`bash`). Use **ZShellCheck** for native **Zsh** scripts, plugins, and configuration.
-
-## Table of Contents
-
-- [Inspiration](#inspiration)
-- [Comparison](docs/REFERENCE.md#comparison-vs-shellcheck)
-- [Features](#features)
-- [Severity Levels](#severity-levels)
-- [Installation](#installation)
-- [Usage](#usage)
-- [Configuration](docs/USER_GUIDE.md#configuration)
-- [Integrations](docs/USER_GUIDE.md#integrations)
-- [Shell Completions](#shell-completions)
-- [Architecture](docs/DEVELOPER.md#architecture-overview)
-- [Troubleshooting](docs/USER_GUIDE.md#troubleshooting)
-- [Developer Guide](docs/DEVELOPER.md)
-- [Documentation](#documentation)
-- [Changelog](#changelog)
-- [Contributing](#contributing)
-- [Governance](docs/REFERENCE.md#governance)
-- [License](#license)
-
-## Features
-
-*   **Zsh-Native Parsing:** Full understanding and handling of Zsh's unique constructs, including `[[ ... ]]`, `(( ... ))`, advanced arrays, associative arrays, and parameter expansion modifiers, applicable across scripts, functions, and configuration files.
-*   **Extensible Katas:** A modular system where rules are implemented as independent "Katas," allowing for easy expansion, customization, and precise control over checks.
-*   **Highly Configurable:** Tailor ZShellCheck's behavior to your project's needs by enabling or disabling specific checks via a flexible `.zshellcheckrc` configuration file.
-*   **Seamless Integration:** Designed for effortless integration into modern development workflows, supporting `pre-commit` hooks and continuous integration (CI) pipelines to enforce quality at every stage.
-
-## Severity Levels
-
-Four levels: `error`, `warning`, `info`, `style`. Filter with `--severity <level>`. See the [Severity Levels reference](docs/USER_GUIDE.md#severity-levels) for the full rubric and examples.
-
-## Installation
-
-The easiest way to install ZShellCheck is via the automated installer script. It supports **Linux** and **macOS**.
-
-### Automatic Install (Recommended)
-
-This will install the binary, man pages, and shell completions. It detects if you have Go installed; if not, it downloads the latest pre-built binary.
+**Install**
 
 ```bash
-# Clone the repository or download the script
+# Automatic — downloads signed binary, or builds if Go is present
 ./install.sh
-```
 
-**Features:**
-*   **Binary Fallback:** No Go environment required. Downloads binaries automatically.
-*   **Interactive:** GUIDes you through adding `zshellcheck` to your `PATH` and `fpath`.
-*   **Automated:** Use `./install.sh -y` for non-interactive/CI environments.
-*   **Version Control:** Install a specific version with `./install.sh -v v0.1.0`.
-*   **Uninstall:** Remove cleanly with `./install.sh --uninstall`.
-
-### From Go Modules
-
-If you prefer standard Go tools:
-
-```bash
+# Or via Go toolchain
 go install github.com/afadesigns/zshellcheck/cmd/zshellcheck@latest
 ```
 
-### Building from Source
-
-For contributors:
-
-1.  Clone the repository.
-2.  Run `./install.sh` (it detects the source repo and builds locally).
-
-## Usage
-
-After installation, run ZShellCheck against your Zsh files:
+**Run**
 
 ```bash
-zshellcheck my_script.zsh
+zshellcheck path/to/script.zsh
+zshellcheck -severity warning -format sarif ./scripts > zshellcheck.sarif
 ```
 
-### Output Formats
+**GitHub Actions**
 
-*   **Text (default)**: Human-readable with ANSI colors.
-*   **JSON**: `zshellcheck -format json file.zsh`
-*   **SARIF**: `zshellcheck -format sarif file.zsh` (Github Security integration)
+```yaml
+- uses: afadesigns/zshellcheck@v1.0.13
+  with:
+    args: -format sarif -severity warning ./scripts
+```
 
-### Pre-commit Hook
-
-Add this to your `.pre-commit-config.yaml`:
+**Pre-commit**
 
 ```yaml
 -   repo: https://github.com/afadesigns/zshellcheck
     rev: v1.0.13
     hooks:
-    -   id: zshellcheck
+      - id: zshellcheck
 ```
 
-### GitHub Actions
+## Example output
 
-The action is published on the [GitHub Marketplace](https://github.com/marketplace/actions/zshellcheck-v1). Add a step to any workflow:
+```text
+scripts/backup.zsh:14:5: warning: [ZC1136] Avoid `rm -rf $path` without a guard — an empty `$path` deletes `/`.
+  rm -rf $path
+      ^
 
-```yaml
-- name: Lint Zsh
-  uses: afadesigns/zshellcheck@v1.0.13
-  with:
-    args: -format sarif -severity warning ./scripts
+scripts/backup.zsh:22:1: style: [ZC1030] Prefer `print -r --` over `echo` for predictable output.
+  echo "done"
+  ^
+
+Found 2 violations.
 ```
 
-SARIF output surfaces under **Security → Code scanning** when the job has `security-events: write` permission. Pin to a full version tag; `@v1` floating tags are not published.
+## Severity
 
-## Configuration
+Four levels: `error`, `warning`, `info`, `style`. Filter with `--severity <level>`. Full rubric with examples: [docs/USER_GUIDE.md#severity-levels](docs/USER_GUIDE.md#severity-levels).
 
-Customize checks via `.zshellcheckrc`. See the [Configuration Guide](docs/USER_GUIDE.md#configuration).
+## Why ZShellCheck, not ShellCheck?
 
-## Integrations
-
-See our [Integrations Guide](docs/USER_GUIDE.md#integrations) for VS Code, Vim, and Neovim setup.
-
-## Shell Completions
-
-The `./install.sh` script installs completions automatically for Zsh and Bash.
-
-**Manual Setup (Zsh):**
-If you installed manually, add the `completions/zsh` directory to your `$fpath`:
-```zsh
-fpath+=/path/to/zshellcheck/completions/zsh
-autoload -Uz compinit && compinit
-```
-
-**Manual Setup (Bash):**
-Source the script in your `.bashrc`:
-```bash
-source /path/to/zshellcheck/completions/bash/zshellcheck-completion.bash
-```
-
-## Architecture
-
-Curious about how ZShellCheck works under the hood? Check out our [Architecture Guide](docs/DEVELOPER.md#architecture-overview) to learn about the Lexer, Parser, AST, and Kata Registry.
-
-## Troubleshooting
-
-Encountering issues? Check our **[Troubleshooting Guide](docs/USER_GUIDE.md#troubleshooting)** for solutions to common problems like "command not found" or parser errors.
-
-## Developer Guide
-
-Want to contribute code? Read our [Developer Guide](docs/DEVELOPER.md) and [AST Reference](docs/DEVELOPER.md#ast-reference) to get started with building, testing, and understanding the codebase.
+Run **ShellCheck** for portable `sh` / `bash`. Run **ZShellCheck** for native Zsh — parameter-expansion flags (`${(U)x}`, `${(f)x}`), glob qualifiers (`*.zsh(.)`), `[[`, `(( ))`, `print -r --`, modifiers (`:t`, `:h`, `:r`), associative arrays, `setopt` options, hook functions. Full table: [docs/REFERENCE.md#comparison-vs-shellcheck](docs/REFERENCE.md#comparison-vs-shellcheck).
 
 ## Documentation
 
-For a comprehensive list of all implemented Katas (checks), including detailed descriptions, **good/bad code examples**, and configuration options, please refer to:
-
-👉 **[KATAS.md](KATAS.md)**
-
-Unsure about a term? Check the **[Glossary](docs/REFERENCE.md#glossary)**.
-
-## Changelog
-
-See [CHANGELOG.md](CHANGELOG.md) for a history of changes and releases.
-
-## Support
-
-Need help? Have a question? Check out our [Support Guide](docs/USER_GUIDE.md#support).
+| Doc | What's inside |
+| --- | --- |
+| [USER_GUIDE.md](docs/USER_GUIDE.md) | CLI reference, configuration, inline directives, integrations, FAQ |
+| [DEVELOPER.md](docs/DEVELOPER.md) | Architecture, AST reference, kata authoring, release process |
+| [REFERENCE.md](docs/REFERENCE.md) | Governance, glossary, ShellCheck comparison table |
+| [KATAS.md](KATAS.md) | Every kata with description and severity |
+| [CHANGELOG.md](CHANGELOG.md) | Per-release history |
+| [SECURITY.md](SECURITY.md) | Vulnerability disclosure |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | PR workflow, local checks, conventions |
+| [ROADMAP.md](ROADMAP.md) | What's next (LSP, auto-fixer, plugins) |
 
 ## Contributing
 
-We welcome contributions! Whether it's adding new Katas, improving the parser, or fixing bugs, your help is appreciated. For detailed instructions, please see [CONTRIBUTING.md](CONTRIBUTING.md).
-
-See our [Governance Model](docs/REFERENCE.md#governance) for information on how this project is managed.
+PRs welcome. Start with [CONTRIBUTING.md](CONTRIBUTING.md). Issues and discussions live on GitHub: [issues](https://github.com/afadesigns/zshellcheck/issues), [discussions](https://github.com/afadesigns/zshellcheck/discussions).
 
 ## License
 
-Distributed under the MIT License. See `LICENSE` for more information.
+MIT. See [LICENSE](LICENSE).
 
-## Contributors
+## Credits
 
-<a href="https://github.com/afadesigns/zshellcheck/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=afadesigns/zshellcheck" />
-</a>
+- Andreas Fahl (**@afadesigns**) — author and maintainer.
+- Inspired by [ShellCheck](https://www.shellcheck.net/) — independent implementation focused on Zsh-specific semantics.
+
+<div align="center">
+  <a href="https://github.com/afadesigns/zshellcheck/graphs/contributors">
+    <img src="https://contrib.rocks/image?repo=afadesigns/zshellcheck" alt="Contributors" />
+  </a>
+</div>
