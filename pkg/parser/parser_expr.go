@@ -179,6 +179,29 @@ func (p *Parser) parseInvalidArrayAccessPrefix() ast.Expression {
 		return &ast.PrefixExpression{Token: dollarToken, Operator: "$", Right: ident}
 	}
 
+	// `$+name` / `$+name[key]` — parameter-existence test, equivalent to
+	// `${+name}` / `${+name[key]}`. Commonly used inside `(( ... ))`.
+	if p.peekTokenIs(token.PLUS) {
+		p.nextToken() // move to '+'
+		plusToken := p.curToken
+		if !p.expectPeek(token.IDENT) {
+			return nil
+		}
+		ident := &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
+		plus := &ast.PrefixExpression{Token: plusToken, Operator: "+", Right: ident}
+		if !p.peekTokenIs(token.LBRACKET) {
+			return &ast.PrefixExpression{Token: dollarToken, Operator: "$", Right: plus}
+		}
+		p.nextToken() // consume [
+		exp := &ast.InvalidArrayAccess{Token: dollarToken, Left: plus}
+		p.nextToken()
+		exp.Index = p.parseExpression(LOWEST)
+		if !p.expectPeek(token.RBRACKET) {
+			return nil
+		}
+		return exp
+	}
+
 	if !p.expectPeek(token.IDENT) {
 		return nil
 	}
