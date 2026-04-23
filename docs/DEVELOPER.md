@@ -120,16 +120,7 @@ We use the standard Go testing framework.
 
 ### Severity Levels
 
-Every Kata must be assigned a severity level. The severity is defined in `pkg/katas/katas.go`:
-
-| Level | Constant | When to Use |
-| :--- | :--- | :--- |
-| **error** | `SeverityError` | Bugs or dangerous constructs that will likely cause incorrect behavior (e.g., redirection overwrites input, brace expansion with variables) |
-| **warning** | `SeverityWarning` | Risky patterns that may cause subtle issues or security concerns (e.g., `rm -rf` without safeguard, subshell state isolation) |
-| **info** | `SeverityInfo` | Suggestions for improved practices and platform compatibility (e.g., use signal names, avoid `set -e`) |
-| **style** | `SeverityStyle` | Cosmetic or idiomatic improvements for cleaner Zsh code (e.g., prefer `[[ ]]` over `test`, use built-in variables) |
-
-Users can filter violations by severity using the `--severity` flag on the CLI.
+Every kata must declare a severity via the Go constants `SeverityError`, `SeverityWarning`, `SeverityInfo`, `SeverityStyle` (defined in `pkg/katas/katas.go`). See the [Severity Levels reference](USER_GUIDE.md#severity-levels) for the rubric and when to pick each level.
 
 ---
 

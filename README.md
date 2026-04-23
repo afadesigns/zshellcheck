@@ -55,22 +55,7 @@ Why use ZShellCheck over ShellCheck? See our **[Detailed Comparison](docs/REFERE
 
 ## Severity Levels
 
-Every Kata is assigned a severity level that indicates the impact of the issue it detects. Use the `--severity` flag to filter violations by minimum severity.
-
-| Level | Description | Example |
-| :--- | :--- | :--- |
-| **error** | Bugs or dangerous constructs that will likely cause incorrect behavior | Redirection overwrites input file, brace expansion with variables |
-| **warning** | Risky patterns that may cause subtle issues or security concerns | `rm -rf` without safeguard, `chown -R` following symlinks |
-| **info** | Suggestions for improved practices and platform compatibility | Use signal names instead of numbers, avoid `set -e` |
-| **style** | Cosmetic or idiomatic improvements for cleaner Zsh code | Prefer `[[ ]]` over `test`, use built-in variables |
-
-```bash
-# Show only errors and warnings
-zshellcheck --severity warning my_script.zsh
-
-# Show everything including style suggestions
-zshellcheck --severity style my_script.zsh
-```
+Four levels: `error`, `warning`, `info`, `style`. Filter with `--severity <level>`. See the [Severity Levels reference](docs/USER_GUIDE.md#severity-levels) for the full rubric and examples.
 
 ## Installation
 
@@ -131,6 +116,19 @@ Add this to your `.pre-commit-config.yaml`:
     hooks:
     -   id: zshellcheck
 ```
+
+### GitHub Actions
+
+The action is published on the [GitHub Marketplace](https://github.com/marketplace/actions/zshellcheck-v1). Add a step to any workflow:
+
+```yaml
+- name: Lint Zsh
+  uses: afadesigns/zshellcheck@v1.0.13
+  with:
+    args: -format sarif -severity warning ./scripts
+```
+
+SARIF output surfaces under **Security → Code scanning** when the job has `security-events: write` permission. Pin to a full version tag; `@v1` floating tags are not published.
 
 ## Configuration
 

@@ -6,24 +6,66 @@ ZShellCheck currently implements **1000 Katas** (checks) covering syntax errors,
 
 ## Table of Contents
 
+- [CLI Reference](#cli-reference)
 - [Severity Levels](#severity-levels)
 - [Configuration](#configuration)
 - [Integrations](#integrations)
 - [Troubleshooting](#troubleshooting)
+- [FAQ](#faq)
 - [Support](#support)
+
+---
+
+## CLI Reference
+
+```
+zshellcheck [flags] <path> [<path> ...]
+```
+
+Paths may be files or directories. Directories are walked recursively; `.go`, `.md`, `.json`, `.yml`, `.yaml`, `.txt`, and hidden directories (anything starting with `.`) are skipped.
+
+| Flag | Default | Purpose |
+| --- | --- | --- |
+| `-format <text\|json\|sarif>` | `text` | Output format. `sarif` is for GitHub Security / Code Scanning ingestion. |
+| `-severity <level[,level...]>` | (all) | Comma-separated filter. Accepts `error`, `warning`, `info`, `style`. |
+| `-verbose` | off | Emit full kata descriptions in text output. |
+| `-no-color` | off | Disable ANSI colours. Also implied when stdout is not a TTY. |
+| `-cpuprofile <path>` | — | Write a Go `pprof` CPU profile to `<path>` for benchmarking. |
+| `-version` | — | Print the version and exit. |
+| `-h` / `--help` | — | Print usage and exit. |
+
+### Exit Codes
+
+| Code | Meaning |
+| --- | --- |
+| `0` | No violations. |
+| `1` | One or more violations found, or a parse error, or a usage error. |
+
+### Examples
+
+```bash
+# Lint a single script, text output
+zshellcheck ./install.sh
+
+# Lint a tree, silence style-level findings
+zshellcheck -severity error,warning,info ./scripts
+
+# Emit SARIF for CI upload
+zshellcheck -format sarif -severity warning ./scripts > zshellcheck.sarif
+```
 
 ---
 
 ## Severity Levels
 
-Every check is assigned a severity level. Use the `--severity` flag to filter output by minimum severity.
+Every kata declares a severity. Canonical rubric:
 
-| Level | Description |
-| :--- | :--- |
-| **error** | Bugs or dangerous constructs that will likely cause incorrect behavior |
-| **warning** | Risky patterns that may cause subtle issues or security concerns |
-| **info** | Suggestions for improved practices and platform compatibility |
-| **style** | Cosmetic or idiomatic improvements for cleaner Zsh code |
+| Level | Go constant | When to use | Example kata |
+| --- | --- | --- | --- |
+| `error` | `SeverityError` | Code is broken or will crash under Zsh. Output is wrong. | `ZC2000` — `kubectl taint nodes …:NoExecute` |
+| `warning` | `SeverityWarning` | Dangerous behaviour; data loss, security risk, or silent subtle bug. | `ZC1136` — `rm -rf $var` without guard |
+| `info` | `SeverityInfo` | Works, but brittle or non-portable. Heads-up, not a must-fix. | `ZC1075` — implicit word-splitting reliance |
+| `style` | `SeverityStyle` | Convention / idiomatic Zsh. Cosmetic. | `ZC1030` — `echo` vs `print -r --` |
 
 ### Filtering by Severity
 
@@ -104,26 +146,35 @@ Install the **Run on Save** extension and add to `settings.json`:
 }
 ```
 
-### Neovim (null-ls)
+### Neovim (nvim-lint)
+
+`null-ls` is archived; use [mfussenegger/nvim-lint](https://github.com/mfussenegger/nvim-lint) instead. It knows how to parse ZShellCheck's JSON output natively via a small parser:
 
 ```lua
-local null_ls = require("null-ls")
-local zshellcheck = {
-    name = "zshellcheck",
-    method = null_ls.methods.DIAGNOSTICS,
-    filetypes = { "zsh" },
-    generator = null_ls.generator({
-        command = "zshellcheck",
-        args = { "-format", "json", "$FILENAME" },
-        format = "json",
-        check_exit_code = function(c) return c <= 1 end,
-        on_output = function(params) 
-             -- parsing logic here
-        end,
-    }),
+require("lint").linters.zshellcheck = {
+    cmd = "zshellcheck",
+    stdin = false,
+    args = { "-format", "json" },
+    stream = "stdout",
+    ignore_exitcode = true,
+    parser = require("lint.parser").from_errorformat(
+        -- fallback to regex on stderr if JSON isn't available
+        "%f:%l:%c: %t%m",
+        { source = "zshellcheck" }
+    ),
 }
-null_ls.register(zshellcheck)
+
+require("lint").linters_by_ft.zsh = { "zshellcheck" }
+
+vim.api.nvim_create_autocmd({ "BufWritePost", "BufReadPost" }, {
+    pattern = { "*.zsh", ".zshrc", ".zshenv" },
+    callback = function() require("lint").try_lint() end,
+})
 ```
+
+### Neovim (conform.nvim + LSP — future)
+
+An official LSP is on the roadmap but not yet shipped. Track [ROADMAP.md](../ROADMAP.md) for status.
 
 ### Pre-commit Hook
 
@@ -152,8 +203,41 @@ Add to `.pre-commit-config.yaml`:
 
 ---
 
+## FAQ
+
+### Why does ZShellCheck error on `${var:-default}`?
+
+The parser doesn't yet handle Zsh / POSIX parameter-expansion modifiers (`:-`, `:=`, `:+`, `:?`, `##`, `%%`, `/pat/rep`, `:offset:length`). Tracked in [#129](https://github.com/afadesigns/zshellcheck/issues/129). Until that lands, wrap the expansion in a guard block or refactor to a temporary variable.
+
+### Should I use ZShellCheck or ShellCheck?
+
+Both. Run ShellCheck for anything targeting `sh` / `bash` portability. Run ZShellCheck for anything using Zsh-only features: parameter-expansion flags (`${(U)x}`, `${(f)x}`), glob qualifiers (`*.zsh(.)`), `[[`, `(( ))`, `print -r --`, modifiers (`:t`, `:h`, `:r`), associative arrays, `setopt` flags, hook functions. See [REFERENCE.md#comparison-vs-shellcheck](REFERENCE.md#comparison-vs-shellcheck).
+
+### How do I exempt one line without editing the whole file?
+
+Add a trailing comment: `some-command # zshellcheck disable=ZC1234`. See [Inline Disable Directives](#inline-disable-directives) above.
+
+### Is there an auto-fixer (`--fix`)?
+
+Not yet — tracked as a 1.x item in [ROADMAP.md](../ROADMAP.md). Several katas have enough detection context to make a fixer possible; a formatter + fixer would likely ship together.
+
+### The SARIF output is empty after a parse error. Why?
+
+When the parser rejects a file, ZShellCheck exits before katas run — so there is nothing to emit. Fix the syntax first (`zsh -n file.zsh` is a fast sanity check) or open an issue if valid Zsh is being rejected.
+
+### Where does ZShellCheck look for config?
+
+In order, merged with project-local winning:
+
+1. `$XDG_CONFIG_HOME/zshellcheck/config.yml` (or `.yaml`)
+2. `~/.config/zshellcheck/config.yml` (or `.yaml`)
+3. `~/.zshellcheckrc`
+4. `./.zshellcheckrc`
+
+---
+
 ## Support
 
--   **Discussions**: For Q&A and ideas.
--   **Issues**: For bugs and feature requests.
--   **Security**: Report vulnerabilities privately. See `SECURITY.md`.
+- **Discussions**: https://github.com/afadesigns/zshellcheck/discussions — questions and ideas.
+- **Issues**: https://github.com/afadesigns/zshellcheck/issues — bugs, feature requests.
+- **Security**: report vulnerabilities privately per [SECURITY.md](../SECURITY.md).

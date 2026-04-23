@@ -12,16 +12,24 @@ This document contains the glossary, governance model, and comparison with other
 
 ## Governance
 
-### Overview
-ZShellCheck is a community-maintained project led by the founder (**@afadesigns**).
+ZShellCheck is led by **@afadesigns** (Andreas Fahl), the lead maintainer and sole current committer. Everything below describes how community contribution is expected to work as the project grows.
 
 ### Roles
--   **Lead Maintainer**: Final say on roadmap.
--   **Maintainers**: Merge PRs, triage issues.
--   **Contributors**: Submit PRs and issues.
+
+- **Lead Maintainer** — final say on roadmap, release cadence, and architectural direction. Currently @afadesigns.
+- **Maintainers** — review and merge PRs, triage issues. No additional maintainers at time of writing; CODEOWNERS routes all reviews to @afadesigns.
+- **Contributors** — anyone who opens an issue or PR.
 
 ### Decision Making
-Decisions are made by consensus. The Lead Maintainer has the casting vote in deadlocks.
+
+Non-trivial direction is discussed on GitHub issues or PRs. Consensus preferred; the lead maintainer has the casting vote in deadlocks. Breaking changes and major features require a design-discussion issue before implementation.
+
+### Review Requirements (enforced)
+
+- Every PR to `main` needs one approving review from the CODEOWNERS set.
+- Commits must be GPG-signed.
+- Required status checks (`test`, `security`, `sbom`) must pass.
+- No force-push, no branch deletion, no unsigned merges.
 
 ---
 
