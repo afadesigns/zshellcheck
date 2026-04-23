@@ -14,7 +14,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 ![Release](https://img.shields.io/github/v/release/afadesigns/zshellcheck)
 
-**ZShellCheck** (`v1.0.0` -- 1000 Katas) is the definitive static analysis and comprehensive development suite for the entire Zsh ecosystem, meticulously engineered as the full Zsh equivalent of ShellCheck for Bash. It offers intelligent automatic fixes (planned), advanced formatting capabilities, and deep code analysis to deliver unparalleled quality, performance, and reliability for Zsh scripts, functions, and configurations.
+**ZShellCheck** is a native static analyser for Zsh — 1000 Zsh-specific checks ("katas") covering syntax, security, portability, and style. Treat it as ShellCheck's counterpart for scripts that rely on Zsh-only features (parameter-expansion flags, glob qualifiers, `print`, `[[`, array semantics, modifiers).
 
 ## Inspiration
 
@@ -127,7 +127,7 @@ Add this to your `.pre-commit-config.yaml`:
 
 ```yaml
 -   repo: https://github.com/afadesigns/zshellcheck
-    rev: v1.0.0
+    rev: v1.0.13
     hooks:
     -   id: zshellcheck
 ```

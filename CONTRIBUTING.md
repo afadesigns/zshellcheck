@@ -1,144 +1,102 @@
 # Contributing to ZShellCheck
 
-We welcome contributions! Whether it's adding new Katas, improving the parser, or fixing bugs, your help is appreciated.
+Thanks for helping improve ZShellCheck. This guide covers the PR workflow, how to add a kata, and the local checks you should run before pushing.
+
+For deeper internals (lexer/parser/AST design, release process, architecture diagrams), see the [Developer Guide](docs/DEVELOPER.md).
 
 ## Quick Start
 
-To set up your development environment and install the binary locally:
-
 ```bash
-# This will build from source and install to your local bin
+git clone https://github.com/afadesigns/zshellcheck.git
+cd zshellcheck
 ./install.sh
 ```
 
-For detailed instructions, see the [Developer Guide](docs/DEVELOPER.md).
+The installer builds from source when run inside the repo, or downloads the signed release binary otherwise. See [Developer Guide — Getting Started](docs/DEVELOPER.md#getting-started) for prerequisites.
 
-## Fuzz Testing
+## Pull Request Workflow
 
-We use native Go fuzzing to ensure the stability of our lexer and parser.
-To run the fuzz tests locally:
+1. **Sync `main`**
+   ```bash
+   git switch main
+   git pull origin main
+   ```
+2. **Branch** with a conventional prefix (`feat/`, `fix/`, `docs/`, `chore/`, `refactor/`, `perf/`, `test/`, `ci/`):
+   ```bash
+   git switch -c fix/short-description
+   ```
+3. **Implement + test locally.** See [Local Checks](#local-checks) below.
+4. **Commit** using [Conventional Commits](https://www.conventionalcommits.org/):
+   - `feat: ZC#### — detect <pattern>`
+   - `fix: ZC#### false positive on <case>`
+   - `docs: update USER_GUIDE for inline directives`
+   - `ci: tighten golangci timeout`
+   - `chore: bump go-release action pin`
+   - Commits are **GPG-signed**. `commit.gpgsign=true` or append `-S`.
+5. **Push + PR:**
+   ```bash
+   git push -u origin <branch>
+   gh pr create --fill
+   ```
+6. **Review:** CODEOWNERS (@afadesigns) must approve. All required checks (`test`, `security`, `sbom`) must pass. CI will reject unsigned commits.
+7. **Merge:** maintainer squash-merges on green.
+
+### Link issues
+Use `Closes #N` / `Fixes #N` in the PR body so the issue auto-closes on merge.
+
+## Local Checks
+
+Before pushing, run:
+
+```bash
+go test -count=1 ./...
+/srv/tools/go/bin/golangci-lint run ./...
+go vet ./...
+```
+
+Or run `pre-commit run --all-files` if you have `pre-commit` installed — the project ships `.pre-commit-config.yaml` and `.pre-commit-hooks.yaml` covering lint, format, tests, and a trace scan.
+
+Fuzz tests are time-boxed; run them when touching lexer/parser:
 
 ```bash
 go test -fuzz=FuzzLexer -fuzztime=10s ./pkg/lexer
 go test -fuzz=FuzzParser -fuzztime=10s ./pkg/parser
 ```
 
-## Security Reporting
+## Adding a New Kata
 
-Please refer to [SECURITY.md](SECURITY.md) for our security policy and how to report vulnerabilities.
+A kata is a Zsh-specific detection rule. Full scaffold + conventions live in the [Developer Guide — Creating a New Kata](docs/DEVELOPER.md#creating-a-new-kata). Short form:
 
+1. Pick the next ID: `ls pkg/katas/zc*.go | sort | tail -1`
+2. Create `pkg/katas/zc<NNNN>.go` registering the kata.
+3. Create `pkg/katas/katatests/zc<NNNN>_test.go` with valid + invalid fixtures.
+4. Once committed, **fix — don't remove** a kata. Retire duplicates as no-op stubs (pattern: `ZC1018`, `ZC1022`).
 
+### Kata Conventions
 
-We follow a strict Pull Request (PR) workflow to ensure code quality and maintain a clear history. This workflow is designed to facilitate smooth collaboration and maintain an organized project.
+- **Zsh-specific only.** Reject generic POSIX-sh anti-patterns — ShellCheck covers those.
+- **Severity required.** One of `SeverityError`, `SeverityWarning`, `SeverityInfo`, `SeverityStyle`. See [Severity Levels](docs/USER_GUIDE.md#severity-levels).
+- **Never `panic()` in `Check`.** Use `ok`-checked type assertions. A kata panic kills the linter.
+- **No duplicates.** Grep existing katas before writing a new one.
+- **Backtick-quote shell syntax** in titles, descriptions, and messages. End sentences with a period.
 
-1.  **Sync `main`**: Before starting new work, ensure your local `main` branch is up-to-date with the remote `main`.
-    ```bash
-    git checkout main
-    git pull origin main
-    ```
-2.  **Create a Branch**: Always create a new, descriptive branch for your changes. Use a prefix that indicates the type of change (e.g., `feat/`, `fix/`, `docs/`, `chore/`).
-    ```bash
-    git checkout -b feat/your-feature-name
-    ```
-3.  **Implement & Test**: Make your changes, adhering to coding style and conventions.
-    *   **Unit Tests:** `go test -v -coverprofile=coverage.out ./...`
-    *   **Integration Tests:** `./tests/integration_test.zsh`
-    *   **Linting:** `golangci-lint run ./...` (or use `pre-commit run --all-files`)
-    *   **Formatting:** `gofumpt -w .`
-    *   **Spell Check:** `typos` (if installed) or rely on CI.
-4.  **Commit**: Commit your changes using [Conventional Commits](https://www.conventionalcommits.org/) for clear history. Examples:
-    *   `feat: Implement new Kata ZCXXXX (Short description)`
-    *   `fix: Resolve parser bug in arithmetic expressions`
-    *   `docs: Update wiki links`
-    *   `chore: Upgrade npm dependencies`
-5.  **Push**: Push your local branch to the remote repository.
-    ```bash
-    git push origin your-branch-name
-    ```
-6.  **Create Pull Request**: Use the GitHub CLI to create a Pull Request from your branch to `main`.
-    ```bash
-    gh pr create --title "feat: Your feature title" --body "A detailed description of your changes." --base main
-    ```
-    *   Provide a clear title and body explaining the *why* and *what* of your changes.
-    *   Link any relevant issues (e.g., `Closes #123`, `Fixes #45`).
-        *   **Labels**: Apply [appropriate labels](#project-labels) to your PR.
-    7.  **Review & Merge**: Address any review comments. Once approved and all CI checks pass, an administrator will merge the PR. We use squash merges to maintain a clean Git history.
-    
-    ## Documentation
-    
-    For comprehensive documentation, including detailed usage, configuration, and a full list of implemented Katas, please refer to [KATAS.md](KATAS.md).
-    
-    For developers, please refer to:
-    *   [Developer Guide](docs/DEVELOPER.md) - How to build, test, and debug.
-    *   [AST Reference](docs/DEVELOPER.md#ast-reference) - Detailed documentation of the Abstract Syntax Tree nodes.
-    *   [Architecture](docs/DEVELOPER.md#architecture-overview) - High-level overview of the system.
-    
-    ## Coding Style        *   We use `gofmt` for Go code formatting.
-    *   We follow the standard Go coding conventions.
-    *   Please ensure that your code is well-documented and easy to understand.
-    
-    ### Running Linters and Formatters
-    
-    Before submitting a Pull Request, please ensure your code passes all linting and formatting checks:
-    
-    ```bash
-    go fmt ./...       # Format Go code
-    go vet ./...       # Run Go vet (static analysis)
-    golangci-lint run  # Run golangci-lint (if installed)
-    ```
-    
-    ## Adding a New Kata
-    
-    Katas are the core rules of `zshellcheck`. To add one:
-    
-    1.  **Define the Kata:** Create a new file `pkg/katas/zcXXXX.go`.
-    2.  **Register:** In the `init()` function, register the Kata with the `RegisterKata` function, specifying the AST node type it targets.
-    3.  **Implement Logic:** Write the check function that inspects the node and returns a list of `Violation`s.
-    4.  **Add Tests:** Create `pkg/katas/katatests/zcXXXX_test.go` with test cases covering valid and invalid Zsh code.
-    
-    ### Severity Levels
+## Security
 
-    Every Kata must be assigned a severity level:
+Do not file vulnerabilities as public issues. See [SECURITY.md](SECURITY.md) for the reporting process.
 
-    | Level | Constant | When to Use |
-    | :--- | :--- | :--- |
-    | **error** | `SeverityError` | Bugs or dangerous constructs causing incorrect behavior |
-    | **warning** | `SeverityWarning` | Risky patterns with subtle issues or security concerns |
-    | **info** | `SeverityInfo` | Suggestions for improved practices and portability |
-    | **style** | `SeverityStyle` | Cosmetic or idiomatic improvements |
+## Labels
 
-    ### Example Kata
-
-    ```go
-    func init() {
-        RegisterKata(ast.SimpleCommandNode, Kata{
-            ID:          "ZC1099",
-            Title:       "Avoid foo command",
-            Description: "The foo command is deprecated.",
-            Severity:    SeverityStyle,
-            Check:       checkZC1099,
-        })
-    }
-    ```
-    
-    ## Project Labels
-    
-    We use a specific set of labels to categorize issues and pull requests, helping us organize and prioritize work effectively. Please use them appropriately.
-    
-    | Label | Description |
-    | :--- | :--- |
-    | **`feat`** | New features or significant enhancements. |
-    | **`fix`** | Bug fixes. |
-    | **`docs`** | Documentation changes or improvements. |
-    | **`ci`** | Updates to CI/CD configurations or workflows. |
-    | **`deps`** | Dependency updates. |
-    | **`refactor`** | Code restructuring without behavior changes. |
-    | **`test`** | Additions or corrections to tests. |
-    | **`chore`** | Routine maintenance tasks (e.g., updating build scripts, `.gitignore`). |
-    | **`starter`** | Good entry-level tasks for new contributors. |
-    | **`help`** | Requires extra attention or assistance. |
-    | **`question`** | Seeking further information or clarification. |
-    | **`nofix`** | The issue or request will not be addressed. |
-    | **`duplicate`** | This issue or PR is a duplicate. |
-    | **`invalid`** | The issue or PR is invalid or not applicable. |
-    
+| Label | Meaning |
+|---|---|
+| `feat` | New feature or significant enhancement |
+| `fix` | Bug fix |
+| `docs` | Documentation change |
+| `ci` | CI/CD change |
+| `deps` | Dependency bump |
+| `refactor` | Restructuring without behavior change |
+| `perf` | Performance improvement |
+| `test` | Test additions or fixes |
+| `chore` | Maintenance |
+| `starter` | Good first issue |
+| `help wanted` | Needs community input |
+| `duplicate` | Supersedes another issue/PR |
