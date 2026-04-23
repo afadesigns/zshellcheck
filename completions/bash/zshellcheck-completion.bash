@@ -7,13 +7,23 @@ _zshellcheck()
 
     case $prev in
         -format)
-            COMPREPLY=( $(compgen -W "text json" -- "$cur") )
+            COMPREPLY=( $(compgen -W "text json sarif" -- "$cur") )
+            return
+            ;;
+        -severity)
+            COMPREPLY=( $(compgen -W "error warning info style" -- "$cur") )
+            return
+            ;;
+        -cpuprofile)
+            _filedir
             return
             ;;
     esac
 
     if [[ "$cur" == -* ]]; then
-        COMPREPLY=( $(compgen -W "-format -help" -- "$cur") )
+        COMPREPLY=( $(compgen -W \
+            "-format -severity --no-color --verbose -cpuprofile -version -h --help" \
+            -- "$cur") )
         return
     fi
 

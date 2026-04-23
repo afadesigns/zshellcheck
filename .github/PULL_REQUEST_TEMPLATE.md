@@ -1,33 +1,37 @@
 ## Description
 
 <!--
-Please include a summary of the change and which issue is fixed.
-If this PR adds a new Kata, please describe the check briefly.
+Summarise the change. If this PR adds a new kata, describe the pattern
+it detects and the Zsh semantics behind it.
 -->
 
-Fixes # (issue)
+Closes # (issue)
 
 ## Type of change
 
-- [ ] `feat`: New feature (non-breaking change which adds functionality)
-- [ ] `fix`: Bug fix (non-breaking change which fixes an issue)
-- [ ] `docs`: Documentation update
-- [ ] `chore`: Maintenance (deps, build, etc.)
-- [ ] `refactor`: Code restructuring
-- [ ] `test`: Adding missing tests
+- [ ] `feat`: new feature or enhancement
+- [ ] `fix`: bug fix
+- [ ] `docs`: documentation
+- [ ] `ci`: CI/CD
+- [ ] `deps`: dependency bump
+- [ ] `refactor`: restructuring without behavior change
+- [ ] `perf`: performance
+- [ ] `test`: test additions or fixes
+- [ ] `chore`: maintenance
 
 ## Checklist
 
-- [ ] I have read the [CONTRIBUTING.md](CONTRIBUTING.md) guide.
-- [ ] I have read the [DEVELOPMENT.md](DEVELOPMENT.md) guide.
-- [ ] **Linting**: My code passes `go fmt` and `go vet`.
-- [ ] **Tests**: I have added tests for my changes (especially for new Katas).
-- [ ] **Integration**: I have run `./tests/integration_test.zsh` and it passes.
-- [ ] **Documentation**: I have updated relevant documentation (if applicable).
+- [ ] Read [CONTRIBUTING.md](../CONTRIBUTING.md).
+- [ ] `go test -count=1 ./...` passes locally.
+- [ ] `golangci-lint run ./...` clean.
+- [ ] Relevant documentation updated (`README.md`, `docs/USER_GUIDE.md`, `docs/DEVELOPER.md`, `CHANGELOG.md`).
+- [ ] Commits are GPG-signed.
 
-## For New Katas (If Applicable)
+## For new katas
 
-- [ ] Added `pkg/katas/zcXXXX.go`
-- [ ] Registered in `pkg/katas/katas.go`
-- [ ] Added tests in `pkg/katas/katatests/zcXXXX_test.go`
-- [ ] Verified that the ID (`ZCXXXX`) is unique and sequential.
+- [ ] Detection file at `pkg/katas/zc<NNNN>.go` (self-registers via `init()` — no central file edit needed).
+- [ ] Test file at `pkg/katas/katatests/zc<NNNN>_test.go` with both a violation case and a no-violation case.
+- [ ] `Severity` set on the `Kata{…}` literal (`SeverityError` / `Warning` / `Info` / `Style`).
+- [ ] Pattern is **Zsh-specific** — generic POSIX-sh anti-patterns belong in ShellCheck.
+- [ ] Grepped existing katas for overlap: `grep -rn 'Title:' pkg/katas/ | grep -i '<keyword>'`.
+- [ ] `Check` function uses `ok`-checked type assertions; never calls `panic()`.

@@ -3,8 +3,15 @@
 _zshellcheck() {
     local -a arguments
     arguments=(
-        '-format[Specify output format]:format:(text json)'
-        '*:filename:_files -g "*.zsh *.zsh-theme *.sh"'
+        '-format[Output format]:format:(text json sarif)'
+        '-severity[Comma-separated severity filter]:levels:_values -s , "severity" error warning info style'
+        '--no-color[Disable ANSI colours in text output]'
+        '--verbose[Emit full kata descriptions]'
+        '-cpuprofile[Write Go CPU profile to file]:file:_files'
+        '-version[Print version and exit]'
+        '-h[Show help]'
+        '--help[Show help]'
+        '*:target:_files -g "*.zsh *.zsh-theme *.sh" -/'
     )
     _arguments -s $arguments
 }
