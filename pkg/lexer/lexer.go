@@ -239,50 +239,10 @@ func (l *Lexer) NextToken() token.Token {
 			tok = newToken(token.RBRACKET, l.ch, l.line, l.column)
 		}
 	case '$':
-		switch l.peekChar() {
-		case '{':
-			tok.Type = token.DollarLbrace
-			tok.Literal = "${"
-			tok.Line = l.line
-			tok.Column = l.column
-			l.readChar()
-		case '(':
-			tok.Type = token.DOLLAR_LPAREN
-			tok.Literal = "$("
-			tok.Line = l.line
-			tok.Column = l.column
-			l.readChar()
-		default:
-			if isLetter(l.peekChar()) {
-				col := l.column
-				l.readChar() // consume '$'
-				tok.Type = token.VARIABLE
-				tok.Literal = "$" + l.readIdentifier()
-				tok.Line = l.line
-				tok.Column = col
-				tok.HasPrecedingSpace = hasSpace
-				return tok
-			}
-			// Zsh single-character special parameters. These are
-			// atomic variable names: $? (exit status), $@ (all
-			// positional), $$ (PID), $_ (last arg). $#, $*, $!, $-
-			// already reach the parser as DOLLAR + separate token and
-			// are recombined there; these three were leaking through
-			// as DOLLAR + ILLEGAL or DOLLAR + QUESTION, breaking real
-			// scripts that use `retval=$?` or similar.
-			if c := l.peekChar(); c == '?' || c == '@' || c == '$' || c == '_' {
-				col := l.column
-				l.readChar() // consume '$'
-				tok.Type = token.VARIABLE
-				tok.Literal = "$" + string(l.ch)
-				tok.Line = l.line
-				tok.Column = col
-				tok.HasPrecedingSpace = hasSpace
-				l.readChar() // consume the special char
-				return tok
-			}
-			tok = newToken(token.DOLLAR, l.ch, l.line, l.column)
+		if dollarTok, ok := l.readDollarToken(hasSpace); ok {
+			return dollarTok
 		}
+		tok = newToken(token.DOLLAR, l.ch, l.line, l.column)
 
 	case '&':
 		if l.peekChar() == '&' {
@@ -362,6 +322,91 @@ func (l *Lexer) NextToken() token.Token {
 	l.readChar()
 	tok.HasPrecedingSpace = hasSpace
 	return tok
+}
+
+// readDollarToken dispatches the specialised forms that follow a
+// leading `$`. It returns (tok, true) when it has consumed a recognised
+// form — parameter expansion opener (${ or $(), ANSI-C / gettext string
+// ($'…' or $"…"), a named variable ($name), or a single-character
+// special parameter ($? / $@ / $$ / $_). Otherwise it returns
+// (zero, false) and the caller falls back to emitting a bare DOLLAR
+// token.
+func (l *Lexer) readDollarToken(hasSpace bool) (token.Token, bool) {
+	var tok token.Token
+	switch l.peekChar() {
+	case '{':
+		tok.Type = token.DollarLbrace
+		tok.Literal = "${"
+		tok.Line = l.line
+		tok.Column = l.column
+		l.readChar() // consume '$'
+		l.readChar() // step past the shared tail; advances past '{'
+		tok.HasPrecedingSpace = hasSpace
+		return tok, true
+	case '(':
+		tok.Type = token.DOLLAR_LPAREN
+		tok.Literal = "$("
+		tok.Line = l.line
+		tok.Column = l.column
+		l.readChar() // consume '$'
+		l.readChar() // advance past '('
+		tok.HasPrecedingSpace = hasSpace
+		return tok, true
+	case '\'':
+		// Zsh ANSI-C quoting: $'…' processes backslash escapes like
+		// \n, \t etc. Emit one STRING token spanning the $' opener
+		// through the matching closing quote so the parser sees a
+		// literal value rather than DOLLAR + bare quoted string.
+		col := l.column
+		l.readChar() // consume '$'
+		body := l.readString('\'')
+		tok.Type = token.STRING
+		tok.Literal = "$" + body
+		tok.Line = l.line
+		tok.Column = col
+		tok.HasPrecedingSpace = hasSpace
+		l.readChar() // step past the closing quote
+		return tok, true
+	case '"':
+		// Zsh gettext quoting: $"…" marks a string for translation.
+		// The payload is otherwise a regular double-quoted string.
+		col := l.column
+		l.readChar() // consume '$'
+		body := l.readString('"')
+		tok.Type = token.STRING
+		tok.Literal = "$" + body
+		tok.Line = l.line
+		tok.Column = col
+		tok.HasPrecedingSpace = hasSpace
+		l.readChar() // step past the closing quote
+		return tok, true
+	}
+	if isLetter(l.peekChar()) {
+		col := l.column
+		l.readChar() // consume '$'
+		tok.Type = token.VARIABLE
+		tok.Literal = "$" + l.readIdentifier()
+		tok.Line = l.line
+		tok.Column = col
+		tok.HasPrecedingSpace = hasSpace
+		return tok, true
+	}
+	// Zsh single-character special parameters: $? (exit status),
+	// $@ (all positional), $$ (PID), $_ (last arg). The other
+	// single-char specials ($#, $*, $!, $-) are assembled by the
+	// parser from DOLLAR + the following punctuation token.
+	if c := l.peekChar(); c == '?' || c == '@' || c == '$' || c == '_' {
+		col := l.column
+		l.readChar() // consume '$'
+		tok.Type = token.VARIABLE
+		tok.Literal = "$" + string(l.ch)
+		tok.Line = l.line
+		tok.Column = col
+		tok.HasPrecedingSpace = hasSpace
+		l.readChar() // consume the special char
+		return tok, true
+	}
+	return token.Token{}, false
 }
 
 func (l *Lexer) readIdentifier() string {
