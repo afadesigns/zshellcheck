@@ -947,6 +947,23 @@ func (p *Parser) parseForLoopStatement() *ast.ForLoopStatement {
 		return stmt
 	}
 
+	// Zsh shortest body form: `for x in items <NL> body` where
+	// the body is a single statement on the next line, no `do` /
+	// `done`. Detected by peek being on a different line and not
+	// being DO / SEMICOLON / EOF.
+	if !p.peekTokenIs(token.DO) && !p.peekTokenIs(token.EOF) && !p.peekOnSameLogicalLine() {
+		p.nextToken() // onto body head
+		body := p.parseStatement()
+		if body != nil {
+			if block, ok := body.(*ast.BlockStatement); ok {
+				stmt.Body = block
+			} else {
+				stmt.Body = &ast.BlockStatement{Token: stmt.Token, Statements: []ast.Statement{body}}
+			}
+		}
+		return stmt
+	}
+
 	if !p.expectPeek(token.DO) {
 		return nil
 	}
