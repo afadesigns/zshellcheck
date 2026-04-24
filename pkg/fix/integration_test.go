@@ -84,6 +84,26 @@ func TestFixIntegration_NestedKatas_OuterWins(t *testing.T) {
 	}
 }
 
+func TestFixIntegration_ZC1004_ExitToReturn(t *testing.T) {
+	src := `foo() {
+  if [[ -z "$1" ]]; then
+    exit 1
+  fi
+  exit
+}
+`
+	want := `foo() {
+  if [[ -z "$1" ]]; then
+    return 1
+  fi
+  return
+}
+`
+	if got := runFix(t, src); got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}
+
 func TestFixIntegration_SecondPass_ResolvesInner(t *testing.T) {
 	src := "result=`which git`\n"
 	first := runFix(t, src)
