@@ -87,6 +87,14 @@ func (p *Parser) parseExpression(precedence int) ast.Expression {
 		if p.inDoubleBracket && p.peekTokenIs(token.LPAREN) {
 			break
 		}
+		// `cmd (subshell)` with space between `cmd` and `(` is a
+		// command followed by a subshell argument, not a function
+		// call (`cmd(args)` with no space). The caller's
+		// parseSingleCommand handles argument gathering; bail out
+		// here so LPAREN doesn't get treated as a CALL infix.
+		if p.peekTokenIs(token.LPAREN) && p.peekToken.HasPrecedingSpace {
+			break
+		}
 
 		infix := p.infixParseFns[p.peekToken.Type]
 		if infix == nil {
@@ -200,6 +208,27 @@ func (p *Parser) parseGroupedExpression() ast.Expression {
 			return nil
 		}
 		return &ast.GroupedExpression{Token: tok, Expression: exp}
+	}
+
+	// When the group opens with a statement keyword (FOR, WHILE,
+	// IF, CASE, LBRACE, DoubleLparen, LDBRACKET, BANG, TYPESET,
+	// DECLARE, LOCAL, LET, SELECT, COPROC), the `( … )` is a
+	// subshell body, not an array literal. Dispatch through
+	// parseStatement so loops and conditionals inside subshells
+	// like `time (for x in a; do …; done)` parse correctly.
+	switch p.curToken.Type {
+	case token.FOR, token.WHILE, token.If, token.CASE,
+		token.DoubleLparen, token.LDBRACKET, token.BANG, token.TYPESET,
+		token.DECLARE, token.LET, token.SELECT, token.COPROC:
+		statements := []ast.Statement{}
+		for !p.curTokenIs(token.RPAREN) && !p.curTokenIs(token.EOF) {
+			stmt := p.parseStatement()
+			if stmt != nil {
+				statements = append(statements, stmt)
+			}
+			p.nextToken()
+		}
+		return &ast.GroupedExpression{Token: tok, Expression: &ast.BlockStatement{Statements: statements}}
 	}
 
 	// Array Literal / glob alternation mode. Inside `[[ ]]` a
