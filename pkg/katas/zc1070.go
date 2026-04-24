@@ -21,6 +21,9 @@ func checkZC1070(node ast.Node) []Violation {
 	if !ok {
 		return nil
 	}
+	if funcDef.Name == nil || funcDef.Body == nil {
+		return nil
+	}
 
 	name := funcDef.Name.String()
 
@@ -51,6 +54,9 @@ func checkZC1070(node ast.Node) []Violation {
 		}
 
 		if cmd, ok := n.(*ast.SimpleCommand); ok {
+			if cmd.Name == nil {
+				return true
+			}
 			cmdName := cmd.Name.String()
 			if cmdName == name {
 				// Found self-call.

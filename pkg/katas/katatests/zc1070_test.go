@@ -79,6 +79,13 @@ func TestZC1070(t *testing.T) {
 			input:    `fib() { fib $(($1-1)); }`,
 			expected: []katas.Violation{}, // Should NOT warn for generic recursion?
 		},
+		{
+			// Regression for #1226 — anonymous function (nil Name) must
+			// not panic even when the check walks its body.
+			name:     "anonymous function is safe",
+			input:    `() { cd /tmp } "$@"`,
+			expected: []katas.Violation{},
+		},
 	}
 
 	for _, tt := range tests {
