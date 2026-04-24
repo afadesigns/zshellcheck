@@ -204,6 +204,30 @@ func TestFixIntegration_ZC1031_AlreadyEnv(t *testing.T) {
 	}
 }
 
+func TestFixIntegration_ZC1055_EmptyCheckToDashZ(t *testing.T) {
+	src := `[[ $x == "" ]]` + "\n"
+	want := `[[ -z $x ]]` + "\n"
+	if got := runFix(t, src); got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}
+
+func TestFixIntegration_ZC1055_NonEmptyCheckToDashN(t *testing.T) {
+	src := `[[ $x != "" ]]` + "\n"
+	want := `[[ -n $x ]]` + "\n"
+	if got := runFix(t, src); got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}
+
+func TestFixIntegration_ZC1055_LeftEmpty(t *testing.T) {
+	src := `[[ "" == $x ]]` + "\n"
+	want := `[[ -z $x ]]` + "\n"
+	if got := runFix(t, src); got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}
+
 func TestFixIntegration_SecondPass_ResolvesInner(t *testing.T) {
 	src := "result=`which git`\n"
 	first := runFix(t, src)
