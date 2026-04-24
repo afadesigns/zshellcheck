@@ -417,6 +417,25 @@ func (l *Lexer) NextToken() (tok token.Token) {
 			return tok
 		case l.ch == '\\':
 			tok = l.readBackslashEscape()
+		case l.ch >= 0x80:
+			// Non-ASCII byte (UTF-8 continuation or any
+			// multibyte char). Treat as part of an identifier
+			// word so prompt strings and theme code that include
+			// emoji / accented chars don't crash with ILLEGAL.
+			line, col := l.line, l.column
+			start := l.position
+			for l.ch >= 0x80 || isLetter(l.ch) || isDigit(l.ch) {
+				l.readChar()
+			}
+			literal := l.input[start:l.position]
+			tok = token.Token{
+				Type:    token.IDENT,
+				Literal: literal,
+				Line:    line,
+				Column:  col,
+			}
+			tok.HasPrecedingSpace = hasSpace
+			return tok
 		default:
 			tok = newToken(token.ILLEGAL, l.ch, l.line, l.column)
 		}
