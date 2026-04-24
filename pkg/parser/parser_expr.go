@@ -748,10 +748,26 @@ func (p *Parser) parseProcessSubstitution() ast.Expression {
 	exp := &ast.ProcessSubstitution{Token: p.curToken}
 	p.nextToken()
 
-	// Process substitution contains a command list
-	exp.Command = p.parseCommandList()
-
-	if !p.expectPeek(token.RPAREN) {
+	// Process substitution body can be a multi-statement command
+	// list: `<( cmd1; cmd2; cmd3 )` or a multi-line block. Parse
+	// statements until we reach the matching RPAREN. parseCommandList
+	// alone only handles a single pipeline + logical chain, so
+	// subsequent `;` separators were crashing as "expected ), got ;".
+	statements := []ast.Statement{}
+	for !p.curTokenIs(token.RPAREN) && !p.curTokenIs(token.EOF) {
+		stmt := p.parseStatement()
+		if stmt != nil {
+			statements = append(statements, stmt)
+		}
+		p.nextToken()
+	}
+	if len(statements) == 1 {
+		if es, ok := statements[0].(*ast.ExpressionStatement); ok {
+			exp.Command = es.Expression
+		}
+	}
+	if !p.curTokenIs(token.RPAREN) {
+		p.peekError(token.RPAREN)
 		return nil
 	}
 	return exp
