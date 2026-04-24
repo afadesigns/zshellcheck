@@ -59,10 +59,18 @@ func checkZC1043(node ast.Node) []Violation {
 			if assign, ok := exprStmt.Expression.(*ast.InfixExpression); ok && assign.Operator == "=" {
 				if ident, ok := assign.Left.(*ast.Identifier); ok {
 					if !locals[ident.Value] {
+						// Empty RHS (`VAR=` at end of line) is valid Zsh
+						// and the parser records it with Right == nil.
+						// Fall back to an empty string so the message
+						// builder doesn't deref nil.
+						rhs := ""
+						if assign.Right != nil {
+							rhs = assign.Right.String()
+						}
 						violations = append(violations, Violation{
 							KataID: "ZC1043",
 							Message: "Variable '" + ident.Value + "' is assigned without 'local'. It will be global. " +
-								"Use `local " + ident.Value + "=" + assign.Right.String() + "`.",
+								"Use `local " + ident.Value + "=" + rhs + "`.",
 							Line:   ident.Token.Line,
 							Column: ident.Token.Column,
 							Level:  SeverityStyle,
