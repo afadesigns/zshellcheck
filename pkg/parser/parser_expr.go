@@ -26,6 +26,15 @@ func (p *Parser) parseExpression(precedence int) ast.Expression {
 	}
 	prefix := p.prefixParseFns[p.curToken.Type]
 	if prefix == nil {
+		// Inside a `[[ … ]]` conditional, tokens without a prefix
+		// (`--`, `++`, `,`, bare punctuation words) routinely
+		// appear as literal test arguments: `[[ $1 == -- ]]`,
+		// `[[ $x != ++ ]]`. Treat them as identifiers rather than
+		// errroring so the bracket expression closes cleanly.
+		if p.inDoubleBracket {
+			tok := p.curToken
+			return &ast.Identifier{Token: tok, Value: tok.Literal}
+		}
 		p.noPrefixParseFnError(p.curToken.Type)
 		return nil
 	}
