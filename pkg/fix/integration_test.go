@@ -189,6 +189,21 @@ func TestFixIntegration_ZC1012_ReadDashRLeftAlone(t *testing.T) {
 	}
 }
 
+func TestFixIntegration_ZC1031_ShebangEnv(t *testing.T) {
+	src := "#!/bin/zsh\nx=1\n"
+	want := "#!/usr/bin/env zsh\nx=1\n"
+	if got := runFix(t, src); got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}
+
+func TestFixIntegration_ZC1031_AlreadyEnv(t *testing.T) {
+	src := "#!/usr/bin/env zsh\nx=1\n"
+	if got := runFix(t, src); got != src {
+		t.Errorf("already-portable shebang should be left alone, got %q", got)
+	}
+}
+
 func TestFixIntegration_SecondPass_ResolvesInner(t *testing.T) {
 	src := "result=`which git`\n"
 	first := runFix(t, src)
