@@ -598,7 +598,24 @@ func (p *Parser) parseExpressionStatement() *ast.ExpressionStatement {
 func (p *Parser) parseIfStatement() *ast.IfStatement {
 	stmt := &ast.IfStatement{Token: p.curToken}
 	p.nextToken()
-	stmt.Condition = p.parseBlockStatement(token.THEN)
+	stmt.Condition = p.parseBlockStatement(token.THEN, token.LBRACE)
+
+	// Zsh short form `if cond { body } [else { body }]` uses brace
+	// blocks instead of `then … fi`. Detect by curToken being
+	// LBRACE after the condition.
+	if p.curTokenIs(token.LBRACE) {
+		p.nextToken() // into body
+		stmt.Consequence = p.parseBlockStatement(token.RBRACE)
+		if p.peekTokenIs(token.ELSE) {
+			p.nextToken() // onto else
+			p.nextToken() // expect {
+			if p.curTokenIs(token.LBRACE) {
+				p.nextToken() // into else body
+				stmt.Alternative = p.parseBlockStatement(token.RBRACE)
+			}
+		}
+		return stmt
+	}
 
 	if !p.curTokenIs(token.THEN) {
 		return nil
