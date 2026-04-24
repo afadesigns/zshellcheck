@@ -199,6 +199,32 @@ func (p *Parser) parseDoubleBracketExpression() ast.Expression {
 	return &ast.DoubleBracketExpression{Token: bracketToken, Elements: expressions}
 }
 
+// parseTernaryExpression handles Zsh arithmetic ternary
+// `cond ? then : else`. Builds an InfixExpression `?` whose Right
+// is itself an InfixExpression `:` between the then- and else-
+// branches — keeps the AST shape simple while letting katas walk
+// either branch via Left / Right traversal.
+func (p *Parser) parseTernaryExpression(left ast.Expression) ast.Expression {
+	tok := p.curToken
+	p.nextToken() // past `?`
+	thenExpr := p.parseExpression(LOWEST)
+	// expectPeek consumes `:` if present; otherwise return the
+	// partial ternary so the parser can recover.
+	if p.peekTokenIs(token.COLON) {
+		p.nextToken()
+		colonTok := p.curToken
+		p.nextToken()
+		elseExpr := p.parseExpression(LOWEST)
+		thenExpr = &ast.InfixExpression{
+			Token:    colonTok,
+			Operator: ":",
+			Left:     thenExpr,
+			Right:    elseExpr,
+		}
+	}
+	return &ast.InfixExpression{Token: tok, Operator: "?", Left: left, Right: thenExpr}
+}
+
 func (p *Parser) parseInfixExpression(left ast.Expression) ast.Expression {
 	expression := &ast.InfixExpression{
 		Token:    p.curToken,

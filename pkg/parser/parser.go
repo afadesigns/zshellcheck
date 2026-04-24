@@ -51,6 +51,11 @@ var precedences = map[token.Type]int{
 	token.INC:           POSTFIX,
 	token.DEC:           POSTFIX,
 	token.PIPE:          LOWEST + 1,
+	// Zsh arithmetic ternary `cond ? a : b`. QUESTION uses LOGICAL
+	// precedence; COLON is consumed inside parseInfixExpression's
+	// right-hand parse so it doesn't need its own infix entry (and
+	// adding one regressed several files outside arithmetic).
+	token.QUESTION: LOGICAL,
 }
 
 type (
@@ -153,6 +158,7 @@ func New(l *lexer.Lexer) *Parser {
 	p.registerInfix(token.SLASH, p.parseInfixExpression)
 	p.registerInfix(token.ASTERISK, p.parseInfixExpression)
 	p.registerInfix(token.PERCENT, p.parseInfixExpression)
+	p.registerInfix(token.QUESTION, p.parseTernaryExpression)
 	p.registerInfix(token.AND, p.parseInfixExpression)
 	p.registerInfix(token.OR, p.parseInfixExpression)
 	p.registerInfix(token.EQ, p.parseInfixExpression)
