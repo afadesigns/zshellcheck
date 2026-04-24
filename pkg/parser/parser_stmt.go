@@ -708,9 +708,34 @@ func (p *Parser) parseBlockStatement(terminators ...token.Type) *ast.BlockStatem
 			continue
 		}
 
+		// Clear the consumedParenTerminator signal before each
+		// statement so it reflects only the statement we're about
+		// to parse. Without this, an inner `$(cmd)` inside a
+		// different construct (e.g. `(( x = $(cmd) ))`) leaves the
+		// flag set and a later iteration misfires the RPAREN skip.
+		p.consumedParenTerminator = false
+
 		stmt := p.parseStatement()
 		if stmt != nil {
 			block.Statements = append(block.Statements, stmt)
+		}
+
+		// An inner expression consumed its own RPAREN (e.g.
+		// `HOST=$(cmd)` ends with curToken on the `$(…)`'s `)`).
+		// That RPAREN is not this block's terminator even when
+		// RPAREN is in our terminator set. Skip the RPAREN and the
+		// usual nextToken so the block keeps parsing the real next
+		// statement. When the flag is set but curToken is not a
+		// bare `)` (the inner `$()` was wrapped by `((…))` or a
+		// larger construct), the outer wrapper already accounted
+		// for the `)`, so clear the flag and fall through to the
+		// normal advance.
+		if p.consumedParenTerminator {
+			p.consumedParenTerminator = false
+			if p.curTokenIs(token.RPAREN) {
+				p.nextToken()
+				continue
+			}
 		}
 
 		// A statement whose natural terminator is the block

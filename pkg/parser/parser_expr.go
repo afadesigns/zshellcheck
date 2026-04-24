@@ -803,6 +803,12 @@ func (p *Parser) parseDollarParenExpression() ast.Expression {
 	if !p.expectPeek(token.RPAREN) {
 		return nil
 	}
+	// Signal that an inner expression consumed its own closing `)`.
+	// parseBlockStatement uses the flag to skip RPAREN as its own
+	// terminator and advance past it instead, so an enclosing
+	// `( … )` subshell body doesn't end at the inner `)` of
+	// `HOST=$(cmd)`.
+	p.consumedParenTerminator = true
 	return exp
 }
 

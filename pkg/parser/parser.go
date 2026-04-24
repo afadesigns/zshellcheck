@@ -90,6 +90,16 @@ type Parser struct {
 	// nextToken so we don't overshoot the following statement's
 	// head. parseBlockStatement clears the flag after honouring it.
 	consumedBraceTerminator bool
+
+	// consumedParenTerminator mirrors consumedBraceTerminator for
+	// `$(cmd)` / `` `cmd` `` endings. When an inner expression
+	// consumed its own RPAREN, an enclosing `( … )` subshell body
+	// would otherwise see curToken=RPAREN and mistake it for its
+	// own terminator. Set by parseDollarParenExpression /
+	// parseCommandSubstitution after they advance past the closing
+	// token; parseBlockStatement skips the RPAREN-as-terminator
+	// check and its follow-up nextToken when set.
+	consumedParenTerminator bool
 }
 
 func New(l *lexer.Lexer) *Parser {
