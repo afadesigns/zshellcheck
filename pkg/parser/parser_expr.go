@@ -356,6 +356,35 @@ func (p *Parser) parseFunctionLiteral() ast.Expression {
 	if p.peekTokenIs(token.IDENT) {
 		p.nextToken()
 		lit.Name = &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
+
+		// Composite function names like `function name"${1:-}"suffix() {}`
+		// appear in gitstatus and other Zsh modules that scope the
+		// function to a caller-provided suffix. Absorb any adjacent
+		// (no preceding whitespace) word-forming tokens into the name
+		// so the trailing `()` and `{` position correctly.
+		for !p.peekToken.HasPrecedingSpace && p.peekToken.Line == lit.Token.Line {
+			switch {
+			case p.peekTokenIs(token.IDENT),
+				p.peekTokenIs(token.STRING),
+				p.peekTokenIs(token.VARIABLE):
+				p.nextToken()
+			case p.peekTokenIs(token.DollarLbrace):
+				p.nextToken() // onto ${
+				depth := 1
+				for depth > 0 && !p.peekTokenIs(token.EOF) {
+					p.nextToken()
+					switch {
+					case p.curTokenIs(token.DollarLbrace) || p.curTokenIs(token.LBRACE):
+						depth++
+					case p.curTokenIs(token.RBRACE):
+						depth--
+					}
+				}
+			default:
+				goto fnNameDone
+			}
+		}
+	fnNameDone:
 	}
 
 	// Zsh/Bash allows `function name { ... }` without parens.
