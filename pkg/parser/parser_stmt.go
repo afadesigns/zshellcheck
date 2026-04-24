@@ -605,6 +605,22 @@ func (p *Parser) parseCaseStatement() *ast.CaseStatement {
 			p.nextToken()
 		}
 	}
+	// Consume the closing ESAC so a caller parsing a nested case
+	// (`case x in a) case y in …;; esac ;; esac`) doesn't see the
+	// inner `esac` as the outer's terminator. Without this advance
+	// parseBlockStatement's terminator check would fire on the
+	// inner ESAC and collapse the outer case body.
+	if p.curTokenIs(token.ESAC) {
+		// Leave at-ESAC if we're the outermost call (no advance
+		// necessary — parseBlockStatement will re-check peek);
+		// but always leave curToken pointing at ESAC's successor
+		// when there is one so the outer DSEMI check works.
+		// Peek past ESAC only if there's a trailing `;;` pattern
+		// terminator or ;/newline.
+		if p.peekTokenIs(token.DSEMI) || p.peekTokenIs(token.SEMICOLON) {
+			p.nextToken()
+		}
+	}
 	return stmt
 }
 
