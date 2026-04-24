@@ -12,7 +12,34 @@ func init() {
 		Description: "`$COMP_LINE` is a Bash completion variable containing the full command " +
 			"line. Zsh completion uses `$BUFFER` for the current command line content.",
 		Check: checkZC1308,
+		Fix:   fixZC1308,
 	})
+}
+
+// fixZC1308 renames the Bash `$COMP_LINE` identifier to the Zsh
+// `$BUFFER` completion variable.
+func fixZC1308(node ast.Node, v Violation, source []byte) []FixEdit {
+	ident, ok := node.(*ast.Identifier)
+	if !ok {
+		return nil
+	}
+	switch ident.Value {
+	case "$COMP_LINE":
+		return []FixEdit{{
+			Line:    v.Line,
+			Column:  v.Column,
+			Length:  len("$COMP_LINE"),
+			Replace: "$BUFFER",
+		}}
+	case "COMP_LINE":
+		return []FixEdit{{
+			Line:    v.Line,
+			Column:  v.Column,
+			Length:  len("COMP_LINE"),
+			Replace: "BUFFER",
+		}}
+	}
+	return nil
 }
 
 func checkZC1308(node ast.Node) []Violation {

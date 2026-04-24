@@ -12,7 +12,35 @@ func init() {
 		Description: "`$COMP_WORDS` is a Bash completion variable containing the words on " +
 			"the command line. Zsh completion uses `$words` array for the same purpose.",
 		Check: checkZC1305,
+		Fix:   fixZC1305,
 	})
+}
+
+// fixZC1305 renames the Bash `$COMP_WORDS` identifier to the Zsh
+// `$words` completion array. Handles both dollar-prefixed and bare
+// forms.
+func fixZC1305(node ast.Node, v Violation, source []byte) []FixEdit {
+	ident, ok := node.(*ast.Identifier)
+	if !ok {
+		return nil
+	}
+	switch ident.Value {
+	case "$COMP_WORDS":
+		return []FixEdit{{
+			Line:    v.Line,
+			Column:  v.Column,
+			Length:  len("$COMP_WORDS"),
+			Replace: "$words",
+		}}
+	case "COMP_WORDS":
+		return []FixEdit{{
+			Line:    v.Line,
+			Column:  v.Column,
+			Length:  len("COMP_WORDS"),
+			Replace: "words",
+		}}
+	}
+	return nil
 }
 
 func checkZC1305(node ast.Node) []Violation {
