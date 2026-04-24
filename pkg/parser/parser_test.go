@@ -1045,6 +1045,29 @@ func TestArithmeticLogicalChain(t *testing.T) {
 	}
 }
 
+func TestZeroArgCommandFollowedByPipeChain(t *testing.T) {
+	// A zero-argument command followed by a pipe or logical chain
+	// must route through the command-statement path so the chain
+	// is parsed at the command layer. Previously `cmd1 |<NL>cmd2`
+	// left cmd1 as a bare Identifier expression and the block loop
+	// tried to start a new statement at `|`.
+	inputs := []string{
+		"cmd1 |\n  cmd2",
+		"cmd1 ||\n  cmd2",
+		"cmd1 &&\n  cmd2",
+		"ls | wc",
+		"ls | wc | cat",
+	}
+	for _, input := range inputs {
+		l := lexer.New(input)
+		p := New(l)
+		_ = p.ParseProgram()
+		if errs := p.Errors(); len(errs) != 0 {
+			t.Errorf("%q:\n  unexpected parser errors: %v", input, errs)
+		}
+	}
+}
+
 func TestBareDollarAsIdentifier(t *testing.T) {
 	// `echo $` prints a literal dollar. A `$` at end-of-statement
 	// or before a pipe/redirect should lex as DOLLAR and parse as
