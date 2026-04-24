@@ -37,6 +37,21 @@ func (p *Parser) parseStatement() ast.Statement {
 		p.nextToken()
 		block := p.parseBlockStatement(token.RBRACE)
 		block.Token = tok
+		// A brace group can head a pipeline or logical chain:
+		// `{ cmd1; cmd2 } | sort`, `{ a || b } | awk`. Consume any
+		// trailing pipeline / logical continuations opaquely so
+		// parseStatement doesn't choke on the leading `|` / `&&`
+		// / `||` as an unknown prefix. The AST keeps the block as
+		// the statement; detection katas that care about the full
+		// pipeline can walk source.
+		for p.peekTokenIs(token.PIPE) || p.peekTokenIs(token.AND) || p.peekTokenIs(token.OR) {
+			p.nextToken() // onto op
+			p.nextToken() // onto RHS head
+			_ = p.parseCommandPipeline()
+		}
+		if p.peekTokenIs(token.SEMICOLON) {
+			p.nextToken()
+		}
 		return block
 	case token.LPAREN:
 		return p.parseSubshellStatement()
