@@ -729,6 +729,30 @@ func TestFixIntegration_ZC1267_DfAddPortable(t *testing.T) {
 	}
 }
 
+func TestFixIntegration_ZC1305_CompWordsToWords(t *testing.T) {
+	src := "w=$COMP_WORDS\n"
+	want := "w=$words\n"
+	if got := runFix(t, src); got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}
+
+func TestFixIntegration_ZC1306_CompCwordToCurrent(t *testing.T) {
+	src := "c=$COMP_CWORD\n"
+	want := "c=$CURRENT\n"
+	if got := runFix(t, src); got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}
+
+func TestFixIntegration_ZC1308_CompLineToBuffer(t *testing.T) {
+	src := "b=$COMP_LINE\n"
+	want := "b=$BUFFER\n"
+	if got := runFix(t, src); got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}
+
 func TestFixIntegration_ZC1298_FuncnameToFuncstack(t *testing.T) {
 	src := "name=$FUNCNAME\n"
 	want := "name=$funcstack\n"
