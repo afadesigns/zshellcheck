@@ -245,6 +245,20 @@ func (p *Parser) parseArrayAccess() ast.Expression {
 
 func (p *Parser) parseInvalidArrayAccessPrefix() ast.Expression {
 	dollarToken := p.curToken
+
+	// A bare `$` followed by a command terminator or EOF is a
+	// literal dollar character. Real code in the oh-my-zsh corpus
+	// writes `echo $` (print a literal `$`) or splits long
+	// expressions with `= $` at end of line. Return a $ identifier
+	// so downstream walkers see a well-formed expression rather
+	// than the "expected next token to be IDENT" path below.
+	if p.peekTokenIs(token.SEMICOLON) || p.peekTokenIs(token.EOF) ||
+		p.peekTokenIs(token.PIPE) || p.peekTokenIs(token.AMPERSAND) ||
+		p.peekTokenIs(token.AND) || p.peekTokenIs(token.OR) ||
+		p.peekTokenIs(token.RPAREN) || p.peekTokenIs(token.RBRACE) {
+		return &ast.Identifier{Token: dollarToken, Value: "$"}
+	}
+
 	if p.peekTokenIs(token.HASH) || p.peekTokenIs(token.INT) || p.peekTokenIs(token.ASTERISK) || p.peekTokenIs(token.BANG) || p.peekTokenIs(token.MINUS) {
 		p.nextToken()
 		opToken := p.curToken

@@ -1045,6 +1045,30 @@ func TestArithmeticLogicalChain(t *testing.T) {
 	}
 }
 
+func TestBareDollarAsIdentifier(t *testing.T) {
+	// `echo $` prints a literal dollar. A `$` at end-of-statement
+	// or before a pipe/redirect should lex as DOLLAR and parse as
+	// an Identifier with value "$" rather than falling into the
+	// "expected next token to be IDENT" error path. Real code in
+	// oh-my-zsh's tjkirch theme uses `echo $` in a prompt-char
+	// branch.
+	inputs := []string{
+		`echo $`,
+		`echo $; echo other`,
+		`x=$`,
+		`cmd $ | other`,
+		`cmd $ && other`,
+	}
+	for _, input := range inputs {
+		l := lexer.New(input)
+		p := New(l)
+		_ = p.ParseProgram()
+		if errs := p.Errors(); len(errs) != 0 {
+			t.Errorf("%s:\n  unexpected parser errors: %v", input, errs)
+		}
+	}
+}
+
 func TestForLoopShortForm(t *testing.T) {
 	// Zsh `for NAME ( items ) body` is the paren-delimited short
 	// form that needs no do/done. Prezto init.zsh uses it to iterate
