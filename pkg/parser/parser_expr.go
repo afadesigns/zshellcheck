@@ -366,7 +366,7 @@ func (p *Parser) parseFunctionLiteral() ast.Expression {
 		// function to a caller-provided suffix. Absorb any adjacent
 		// (no preceding whitespace) word-forming tokens into the name
 		// so the trailing `()` and `{` position correctly.
-		for !p.peekToken.HasPrecedingSpace && p.peekToken.Line == lit.Token.Line {
+		for !p.peekToken.HasPrecedingSpace {
 			switch {
 			case p.peekTokenIs(token.IDENT),
 				p.peekTokenIs(token.STRING),
@@ -389,6 +389,16 @@ func (p *Parser) parseFunctionLiteral() ast.Expression {
 			}
 		}
 	fnNameDone:
+	}
+
+	// Multi-name definitions: `function a b c { ... }` declares the
+	// same body for each of a/b/c. oh-my-zsh's prompt_info_functions
+	// uses this pattern to stub out optional prompt hooks. Swallow
+	// any additional space-separated identifiers before the body so
+	// the parser reaches the opening `{` (or `(`) correctly; the AST
+	// keeps only the first name, which is enough for kata detection.
+	for p.peekTokenIs(token.IDENT) {
+		p.nextToken()
 	}
 
 	// Zsh/Bash allows `function name { ... }` without parens.
