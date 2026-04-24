@@ -216,7 +216,25 @@ func (p *Parser) parseInvalidArrayAccessPrefix() ast.Expression {
 	dollarToken := p.curToken
 	if p.peekTokenIs(token.HASH) || p.peekTokenIs(token.INT) || p.peekTokenIs(token.ASTERISK) || p.peekTokenIs(token.BANG) || p.peekTokenIs(token.MINUS) {
 		p.nextToken()
-		ident := &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
+		opToken := p.curToken
+		// `$#name` is Zsh's length-of operator. When the special char
+		// is followed by an identifier, the identifier names the
+		// parameter being measured and belongs to the same expression
+		// — don't leak it back into the caller's token stream.
+		if opToken.Type == token.HASH && p.peekTokenIs(token.IDENT) {
+			p.nextToken()
+			name := &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
+			return &ast.PrefixExpression{
+				Token:    dollarToken,
+				Operator: "$",
+				Right: &ast.PrefixExpression{
+					Token:    opToken,
+					Operator: "#",
+					Right:    name,
+				},
+			}
+		}
+		ident := &ast.Identifier{Token: opToken, Value: opToken.Literal}
 		return &ast.PrefixExpression{Token: dollarToken, Operator: "$", Right: ident}
 	}
 

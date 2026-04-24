@@ -263,6 +263,24 @@ func (l *Lexer) NextToken() token.Token {
 				tok.HasPrecedingSpace = hasSpace
 				return tok
 			}
+			// Zsh single-character special parameters. These are
+			// atomic variable names: $? (exit status), $@ (all
+			// positional), $$ (PID), $_ (last arg). $#, $*, $!, $-
+			// already reach the parser as DOLLAR + separate token and
+			// are recombined there; these three were leaking through
+			// as DOLLAR + ILLEGAL or DOLLAR + QUESTION, breaking real
+			// scripts that use `retval=$?` or similar.
+			if c := l.peekChar(); c == '?' || c == '@' || c == '$' || c == '_' {
+				col := l.column
+				l.readChar() // consume '$'
+				tok.Type = token.VARIABLE
+				tok.Literal = "$" + string(l.ch)
+				tok.Line = l.line
+				tok.Column = col
+				tok.HasPrecedingSpace = hasSpace
+				l.readChar() // consume the special char
+				return tok
+			}
 			tok = newToken(token.DOLLAR, l.ch, l.line, l.column)
 		}
 
