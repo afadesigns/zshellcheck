@@ -729,6 +729,14 @@ func TestFixIntegration_ZC1267_DfAddPortable(t *testing.T) {
 	}
 }
 
+func TestFixIntegration_ZC1301_PipestatusLowercase(t *testing.T) {
+	src := "status=$PIPESTATUS\n"
+	want := "status=$pipestatus\n"
+	if got := runFix(t, src); got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}
+
 func TestFixIntegration_ZC1265_SystemctlEnableNow(t *testing.T) {
 	src := "systemctl enable nginx\n"
 	want := "systemctl enable --now nginx\n"

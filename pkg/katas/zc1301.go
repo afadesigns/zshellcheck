@@ -13,7 +13,36 @@ func init() {
 			"pipeline. Zsh uses `$pipestatus` (lowercase) for the same purpose. " +
 			"The uppercase form is undefined in Zsh.",
 		Check: checkZC1301,
+		Fix:   fixZC1301,
 	})
+}
+
+// fixZC1301 rewrites the uppercase Bash `$PIPESTATUS` / `PIPESTATUS`
+// identifier to the lowercase Zsh `$pipestatus` / `pipestatus`
+// form. Span covers only the name itself — subscripts and surrounding
+// context stay in place.
+func fixZC1301(node ast.Node, v Violation, source []byte) []FixEdit {
+	ident, ok := node.(*ast.Identifier)
+	if !ok {
+		return nil
+	}
+	switch ident.Value {
+	case "$PIPESTATUS":
+		return []FixEdit{{
+			Line:    v.Line,
+			Column:  v.Column,
+			Length:  len("$PIPESTATUS"),
+			Replace: "$pipestatus",
+		}}
+	case "PIPESTATUS":
+		return []FixEdit{{
+			Line:    v.Line,
+			Column:  v.Column,
+			Length:  len("PIPESTATUS"),
+			Replace: "pipestatus",
+		}}
+	}
+	return nil
 }
 
 func checkZC1301(node ast.Node) []Violation {
