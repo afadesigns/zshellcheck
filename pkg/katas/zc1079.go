@@ -12,7 +12,74 @@ func init() {
 			"are treated as patterns (globbing). If you intend to compare strings literally, quote the variable.",
 		Severity: SeverityWarning,
 		Check:    checkZC1079,
+		Fix:      fixZC1079,
 	})
+}
+
+// fixZC1079 wraps an unquoted RHS variable reference inside `[[ … ]]`
+// with double-quotes. Two edits: one `"` before the RHS token, one
+// after. RHS span is measured from source so `${arr[$i]}` and
+// `${var:-default}` stay whole. When the sibling LHS is an empty
+// string literal, ZC1055's `-z` / `-n` rewrite takes priority and
+// this fix no-ops to avoid overlapping edits.
+func fixZC1079(node ast.Node, v Violation, source []byte) []FixEdit {
+	if dbe, ok := node.(*ast.DoubleBracketExpression); ok {
+		for _, el := range dbe.Elements {
+			infix, ok := el.(*ast.InfixExpression)
+			if !ok {
+				continue
+			}
+			if infix.Operator != "==" && infix.Operator != "=" && infix.Operator != "!=" {
+				continue
+			}
+			if isEmptyStringLiteral(infix.Left) || isEmptyStringLiteral(infix.Right) {
+				// ZC1055 owns this rewrite; skip.
+				return nil
+			}
+		}
+	}
+	start := LineColToByteOffset(source, v.Line, v.Column)
+	if start < 0 || start >= len(source) {
+		return nil
+	}
+	argLen := unquotedArgLen(source, start)
+	if argLen == 0 {
+		return nil
+	}
+	endOff := start + argLen
+	endLine, endCol := offsetLineColZC1079(source, endOff)
+	if endLine < 0 {
+		return nil
+	}
+	return []FixEdit{
+		{Line: v.Line, Column: v.Column, Length: 0, Replace: `"`},
+		{Line: endLine, Column: endCol, Length: 0, Replace: `"`},
+	}
+}
+
+func isEmptyStringLiteral(n ast.Node) bool {
+	str, ok := n.(*ast.StringLiteral)
+	if !ok {
+		return false
+	}
+	return str.Value == `""` || str.Value == `''`
+}
+
+func offsetLineColZC1079(source []byte, offset int) (int, int) {
+	if offset < 0 || offset > len(source) {
+		return -1, -1
+	}
+	line := 1
+	col := 1
+	for i := 0; i < offset; i++ {
+		if source[i] == '\n' {
+			line++
+			col = 1
+			continue
+		}
+		col++
+	}
+	return line, col
 }
 
 func checkZC1079(node ast.Node) []Violation {
