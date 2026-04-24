@@ -726,7 +726,17 @@ func (p *Parser) parseCaseStatement() *ast.CaseStatement {
 			break
 		}
 		clause := &ast.CaseClause{Token: p.curToken}
-		if p.curTokenIs(token.LPAREN) {
+		// Leading `(` is the optional case-label opener
+		// (`( pat )`) UNLESS the rest of the line carries another
+		// `)` after the matching close — in which case it's a
+		// glob alternation pattern (`(darwin|freebsd)*)` where
+		// the `*)` carries the actual label terminator). The
+		// look-ahead is impractical without rewinding the lexer,
+		// so use a lighter heuristic: consume the `(` only when
+		// the next-next non-pipe token is `)` (classic single-
+		// pattern form). For glob-alternation patterns leave the
+		// `(` for parseCommandWord to absorb via parseGroupedExpression.
+		if p.curTokenIs(token.LPAREN) && p.lookaheadCaseLabelOpener() {
 			p.nextToken()
 		}
 		for {
@@ -739,8 +749,14 @@ func (p *Parser) parseCaseStatement() *ast.CaseStatement {
 				break
 			}
 		}
-		if !p.expectPeek(token.RPAREN) {
-			return nil
+		// curToken may already be on `)` when parseCommandWord
+		// absorbed an inline glob group like `(a|b)*` whose close
+		// IS the label terminator. Otherwise expectPeek(RPAREN)
+		// to advance onto the label close.
+		if !p.curTokenIs(token.RPAREN) {
+			if !p.expectPeek(token.RPAREN) {
+				return nil
+			}
 		}
 		p.nextToken()
 		clause.Body = p.parseBlockStatement(token.DSEMI, token.ESAC)

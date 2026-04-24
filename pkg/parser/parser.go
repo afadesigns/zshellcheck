@@ -259,6 +259,20 @@ func (p *Parser) registerInfix(tokenType token.Type, fn infixParseFn) {
 	p.infixParseFns[tokenType] = fn
 }
 
+// lookaheadCaseLabelOpener reports true when the leading `(` at
+// curToken is the optional case-label opener (classic `( pat ) body
+// ;;` form) rather than the start of a glob-alternation pattern
+// (`(a|b)*) body ;;`). The reliable signal is whether peek after
+// `(` has space before it — `( pat )` always has whitespace between
+// `(` and the pattern, while glob `(pat|pat)` does not. Default to
+// TRUE; the curToken=`)` recovery branch in parseCaseStatement
+// handles classification mistakes.
+func (p *Parser) lookaheadCaseLabelOpener() bool {
+	// `( pat …` (with space) is the case-label opener.
+	// `(pat|…` (no space) is glob alternation.
+	return p.peekToken.HasPrecedingSpace
+}
+
 // peekOnSameLogicalLine reports whether the peek token is part of the
 // same logical command as the current one. A Zsh `\<NL>` pair joins
 // two physical lines into one command; the lexer marks the first token
