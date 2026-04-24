@@ -572,6 +572,25 @@ func (p *Parser) parseInvalidArrayAccessPrefix() ast.Expression {
 
 func (p *Parser) parseFunctionLiteral() ast.Expression {
 	lit := &ast.FunctionLiteral{Token: p.curToken}
+	// Variable / expansion as the function name:
+	// `function ${=X} { … }` declares functions named by the
+	// split words of `$X`. Skip past the matching `}` and treat
+	// the expansion as the (opaque) name.
+	if p.peekTokenIs(token.DollarLbrace) {
+		nameTok := p.peekToken
+		p.nextToken() // onto ${
+		depth := 1
+		for depth > 0 && !p.peekTokenIs(token.EOF) {
+			p.nextToken()
+			switch {
+			case p.curTokenIs(token.DollarLbrace), p.curTokenIs(token.LBRACE):
+				depth++
+			case p.curTokenIs(token.RBRACE):
+				depth--
+			}
+		}
+		lit.Name = &ast.Identifier{Token: nameTok, Value: nameTok.Literal}
+	}
 	if p.peekTokenIs(token.IDENT) {
 		p.nextToken()
 		lit.Name = &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
