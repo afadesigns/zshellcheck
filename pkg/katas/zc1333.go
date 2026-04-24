@@ -12,7 +12,36 @@ func init() {
 		Description: "`$TIMEFORMAT` is the Bash variable for customizing `time` output. " +
 			"Zsh uses `$TIMEFMT` for the same purpose, with different format specifiers.",
 		Check: checkZC1333,
+		Fix:   fixZC1333,
 	})
+}
+
+// fixZC1333 renames the Bash `$TIMEFORMAT` identifier to the Zsh
+// `$TIMEFMT` variable. Format specifiers differ between the two
+// shells; the rename preserves the identifier itself but authors
+// should still review the format string after conversion.
+func fixZC1333(node ast.Node, v Violation, source []byte) []FixEdit {
+	ident, ok := node.(*ast.Identifier)
+	if !ok {
+		return nil
+	}
+	switch ident.Value {
+	case "$TIMEFORMAT":
+		return []FixEdit{{
+			Line:    v.Line,
+			Column:  v.Column,
+			Length:  len("$TIMEFORMAT"),
+			Replace: "$TIMEFMT",
+		}}
+	case "TIMEFORMAT":
+		return []FixEdit{{
+			Line:    v.Line,
+			Column:  v.Column,
+			Length:  len("TIMEFORMAT"),
+			Replace: "TIMEFMT",
+		}}
+	}
+	return nil
 }
 
 func checkZC1333(node ast.Node) []Violation {
