@@ -680,16 +680,25 @@ func (p *Parser) parseDeclarationStatement() *ast.DeclarationStatement {
 			}
 			// Peek the =/+= before consuming the name so we can decide
 			// whether to stay on the name token (bare declaration) or
-			// move onto the operator (value follows).
+			// move onto the operator (value follows). An empty RHS
+			// (`typeset -g VAR=` at end-of-line) is valid Zsh and sets
+			// the variable to the empty string — do NOT try to parse
+			// the next-line token as the value, that over-consumes
+			// into the following statement exactly like the pre-
+			// declaration fix handled for bare declarations.
 			if p.peekTokenIs(token.PLUSEQ) {
 				p.nextToken() // onto +=
 				assign.IsAppend = true
-				p.nextToken() // onto value token
-				assign.Value = p.parseDeclarationValue()
+				if p.peekToken.Line == startLine && !p.peekTokenIs(token.SEMICOLON) && !p.peekTokenIs(token.EOF) {
+					p.nextToken() // onto value token
+					assign.Value = p.parseDeclarationValue()
+				}
 			} else if p.peekTokenIs(token.ASSIGN) {
 				p.nextToken() // onto =
-				p.nextToken() // onto value token
-				assign.Value = p.parseDeclarationValue()
+				if p.peekToken.Line == startLine && !p.peekTokenIs(token.SEMICOLON) && !p.peekTokenIs(token.EOF) {
+					p.nextToken() // onto value token
+					assign.Value = p.parseDeclarationValue()
+				}
 			}
 			stmt.Assignments = append(stmt.Assignments, assign)
 
