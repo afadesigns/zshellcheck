@@ -729,6 +729,14 @@ func TestFixIntegration_ZC1267_DfAddPortable(t *testing.T) {
 	}
 }
 
+func TestFixIntegration_ZC1300_BashVersionToZsh(t *testing.T) {
+	src := "v=$BASH_VERSION\n"
+	want := "v=$ZSH_VERSION\n"
+	if got := runFix(t, src); got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}
+
 func TestFixIntegration_ZC1313_BashAliasesToAliases(t *testing.T) {
 	src := "a=$BASH_ALIASES\n"
 	want := "a=$aliases\n"
