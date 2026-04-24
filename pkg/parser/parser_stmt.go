@@ -478,6 +478,24 @@ func (p *Parser) parseBlockStatement(terminators ...token.Type) *ast.BlockStatem
 			block.Statements = append(block.Statements, stmt)
 		}
 
+		// A statement whose natural terminator is the block
+		// terminator itself (e.g. bare `return` / `break` right
+		// before `fi`, `done`, `esac`) leaves curToken sitting on
+		// that terminator because parseExpression/LOWEST yields nil
+		// on block keywords. Advancing unconditionally here would
+		// step past it and the outer if/loop/case would then see
+		// EOF and report "expected FI got EOF".
+		curIsTerm := false
+		for _, t := range terminators {
+			if p.curTokenIs(t) {
+				curIsTerm = true
+				break
+			}
+		}
+		if curIsTerm {
+			break
+		}
+
 		p.nextToken()
 	}
 	return block
