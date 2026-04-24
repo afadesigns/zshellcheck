@@ -666,6 +666,16 @@ func (p *Parser) parseForLoopStatement() *ast.ForLoopStatement {
 	}
 	stmt.Name = &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
 
+	// Zsh multi-variable for loop: `for k v in …` / `for a b c in …`
+	// pairs each element of the item list against the declared
+	// variables in turn. The AST currently only models a single
+	// Name, so skip extra names forward until we hit IN / LPAREN /
+	// SEMICOLON / DO. Detection katas that need the full name list
+	// can read source directly.
+	for p.peekTokenIs(token.IDENT) {
+		p.nextToken()
+	}
+
 	// Zsh short form: `for NAME ( items ) body`. The item list is
 	// wrapped in parentheses and the body is a single command (or
 	// block) with no `do`/`done`. Real-world example in prezto
