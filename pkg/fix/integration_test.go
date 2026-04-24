@@ -582,6 +582,22 @@ func TestFixIntegration_ZC1144_MultipleSignalsRewritten(t *testing.T) {
 	}
 }
 
+func TestFixIntegration_ZC1162_CpRecursiveToArchive(t *testing.T) {
+	src := "cp -r src dest\n"
+	want := "cp -a src dest\n"
+	if got := runFix(t, src); got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}
+
+func TestFixIntegration_ZC1162_CpCapitalRToArchive(t *testing.T) {
+	src := "cp -R src dest\n"
+	want := "cp -a src dest\n"
+	if got := runFix(t, src); got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}
+
 func TestFixIntegration_SecondPass_ResolvesInner(t *testing.T) {
 	src := "result=`which git`\n"
 	first := runFix(t, src)

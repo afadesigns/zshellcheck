@@ -12,7 +12,42 @@ func init() {
 		Description: "`cp -r` copies recursively but may not preserve permissions, timestamps, " +
 			"or symlinks. Use `cp -a` (archive mode) to preserve all attributes.",
 		Check: checkZC1162,
+		Fix:   fixZC1162,
 	})
+}
+
+// fixZC1162 rewrites `cp -r` / `cp -R` to `cp -a`. Single-edit
+// replacement of the recursive flag; surrounding args stay put.
+func fixZC1162(node ast.Node, _ Violation, source []byte) []FixEdit {
+	cmd, ok := node.(*ast.SimpleCommand)
+	if !ok {
+		return nil
+	}
+	ident, ok := cmd.Name.(*ast.Identifier)
+	if !ok || ident.Value != "cp" {
+		return nil
+	}
+	for _, arg := range cmd.Arguments {
+		val := arg.String()
+		if val != "-r" && val != "-R" {
+			continue
+		}
+		tok := arg.TokenLiteralNode()
+		off := LineColToByteOffset(source, tok.Line, tok.Column)
+		if off < 0 || off+2 > len(source) {
+			return nil
+		}
+		if string(source[off:off+2]) != val {
+			return nil
+		}
+		return []FixEdit{{
+			Line:    tok.Line,
+			Column:  tok.Column,
+			Length:  2,
+			Replace: "-a",
+		}}
+	}
+	return nil
 }
 
 func checkZC1162(node ast.Node) []Violation {
