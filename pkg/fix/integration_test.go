@@ -729,6 +729,14 @@ func TestFixIntegration_ZC1267_DfAddPortable(t *testing.T) {
 	}
 }
 
+func TestFixIntegration_ZC1331_BashRematchToMatch(t *testing.T) {
+	src := "m=$BASH_REMATCH\n"
+	want := "m=$match\n"
+	if got := runFix(t, src); got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}
+
 func TestFixIntegration_ZC1300_BashVersionToZsh(t *testing.T) {
 	src := "v=$BASH_VERSION\n"
 	want := "v=$ZSH_VERSION\n"

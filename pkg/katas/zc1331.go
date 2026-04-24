@@ -13,7 +13,34 @@ func init() {
 			"regex matches in the `$match` array (and `$MATCH` for the full match) " +
 			"when using `=~` with `setopt BASH_REMATCH` disabled.",
 		Check: checkZC1331,
+		Fix:   fixZC1331,
 	})
+}
+
+// fixZC1331 renames the Bash `$BASH_REMATCH` identifier to the Zsh
+// `$match` regex-capture array.
+func fixZC1331(node ast.Node, v Violation, source []byte) []FixEdit {
+	ident, ok := node.(*ast.Identifier)
+	if !ok {
+		return nil
+	}
+	switch ident.Value {
+	case "$BASH_REMATCH":
+		return []FixEdit{{
+			Line:    v.Line,
+			Column:  v.Column,
+			Length:  len("$BASH_REMATCH"),
+			Replace: "$match",
+		}}
+	case "BASH_REMATCH":
+		return []FixEdit{{
+			Line:    v.Line,
+			Column:  v.Column,
+			Length:  len("BASH_REMATCH"),
+			Replace: "match",
+		}}
+	}
+	return nil
 }
 
 func checkZC1331(node ast.Node) []Violation {
