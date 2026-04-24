@@ -220,6 +220,22 @@ func (l *Lexer) NextToken() token.Token {
 			l.readChar()
 			literal := string(ch) + string(l.ch)
 			tok = token.Token{Type: token.GT_LPAREN, Literal: literal, Line: l.line, Column: l.column}
+		case '|':
+			// Zsh `>|file` and `>!file` force-clobber a file even
+			// when `NO_CLOBBER` is set. The trailing `|` / `!`
+			// belongs to the redirection, not to a pipeline or
+			// negation that follows. Emit the pair as a plain GT
+			// so parseCommandPipeline's redirection path handles
+			// it unchanged — the AST form is identical to `>file`.
+			ch := l.ch
+			l.readChar()
+			literal := string(ch) + string(l.ch)
+			tok = token.Token{Type: token.GT, Literal: literal, Line: l.line, Column: l.column}
+		case '!':
+			ch := l.ch
+			l.readChar()
+			literal := string(ch) + string(l.ch)
+			tok = token.Token{Type: token.GT, Literal: literal, Line: l.line, Column: l.column}
 		default:
 			tok = newToken(token.GT, l.ch, l.line, l.column)
 		}
