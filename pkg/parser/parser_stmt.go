@@ -231,6 +231,25 @@ func (p *Parser) parseExpressionOrFunctionDefinition() ast.Statement {
 	return stmt
 }
 
+// keywordStmtToExpression wraps a Statement returned by parseStatement
+// (typically an IfStatement / ForLoopStatement / CaseStatement /
+// SelectStatement) as an Expression so it can flow through pipeline
+// chaining where parseCommandPipeline expects an ast.Expression.
+// Detection katas that walk the statement type still see the original
+// node when traversing the wrapper.
+func keywordStmtToExpression(stmt ast.Statement) ast.Expression {
+	if stmt == nil {
+		return nil
+	}
+	if es, ok := stmt.(*ast.ExpressionStatement); ok {
+		return es.Expression
+	}
+	// Wrap in a stub Identifier so callers see a non-nil expression.
+	// The Token preserves the head keyword for kata-side walks of
+	// containing CallExpression / DollarParenExpression bodies.
+	return &ast.Identifier{Token: stmt.TokenLiteralNode(), Value: stmt.TokenLiteral()}
+}
+
 // consumePipelineTail drains trailing `| cmd` / `&& cmd` / `|| cmd`
 // continuations that follow a block-shaped statement (if/for/while/
 // case). These structures can head pipelines in Zsh
@@ -328,6 +347,15 @@ func (p *Parser) parseCommandPipeline() ast.Expression {
 		left = p.parseDoubleBracketExpression()
 	case token.DoubleLparen:
 		left = p.parseArithmeticCommand()
+	case token.If, token.FOR, token.CASE, token.SELECT:
+		// Keyword-headed compound commands inside `$(…)` /
+		// pipelines need their dedicated parser. Without this the
+		// generic parseSingleCommand path treated the keyword as
+		// the command name and exploded on the body's structural
+		// tokens. Returns the statement-as-expression via
+		// keywordStatementAsExpression.
+		stmt := p.parseStatement()
+		return keywordStmtToExpression(stmt)
 	default:
 		left = p.parseSingleCommand()
 	}
