@@ -6,6 +6,26 @@ import (
 	"github.com/afadesigns/zshellcheck/pkg/token"
 )
 
+func TestBackslashEscapedMeta(t *testing.T) {
+	// Zsh glob escapes (`\(`, `\)`, `\*`, `\?`, etc.) and generic
+	// metacharacter quoting appeared as ILLEGAL tokens, breaking
+	// oh-my-zsh themes that use patterns like `*\(foo\)*`. The
+	// lexer now emits each commonly-escaped metacharacter pair as
+	// a single IDENT token so parseCommandWord folds it into the
+	// surrounding word.
+	cases := []string{`\(`, `\)`, `\*`, `\?`, `\[`, `\]`, `\|`, `\$`}
+	for _, in := range cases {
+		l := New(in)
+		tok := l.NextToken()
+		if tok.Type != token.IDENT {
+			t.Errorf("%q: want IDENT, got %s (literal %q)", in, tok.Type, tok.Literal)
+		}
+		if tok.Literal != in {
+			t.Errorf("%q: literal = %q, want %q", in, tok.Literal, in)
+		}
+	}
+}
+
 func TestNestedSubscriptClose(t *testing.T) {
 	// `arr[$m[i]]` has two consecutive `]` that must lex as two
 	// RBRACKET tokens, not a single RDBRACKET. The lexer now
