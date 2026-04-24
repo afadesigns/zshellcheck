@@ -95,6 +95,24 @@ func (p *Parser) parseStatement() ast.Statement {
 	case token.COLON, token.DOT, token.LBRACKET,
 		token.GT, token.LT, token.GTGT, token.LTLT, token.GTAMP, token.LTAMP, token.AMPERSAND, token.SLASH:
 		return p.parseSimpleCommandStatement()
+	case token.BANG:
+		// Shell `!` negates the exit status of the following
+		// pipeline: `! cmd 2>/dev/null | grep`. Route through the
+		// command-pipeline path so redirects and pipes on the
+		// right chain correctly. Keep the expression-level prefix
+		// behaviour for C-style inputs like `!5` / `!true` by
+		// checking peek: IDENT / LPAREN / LBRACKET / LDBRACKET /
+		// DoubleLparen / VARIABLE / DollarLbrace / BACKTICK /
+		// DOLLAR_LPAREN are command starts; anything else falls
+		// back to the expression parser.
+		if p.peekTokenIs(token.IDENT) || p.peekTokenIs(token.LPAREN) ||
+			p.peekTokenIs(token.LBRACKET) || p.peekTokenIs(token.LDBRACKET) ||
+			p.peekTokenIs(token.DoubleLparen) || p.peekTokenIs(token.VARIABLE) ||
+			p.peekTokenIs(token.DollarLbrace) || p.peekTokenIs(token.BACKTICK) ||
+			p.peekTokenIs(token.DOLLAR_LPAREN) {
+			return p.parseSimpleCommandStatement()
+		}
+		return p.parseExpressionOrFunctionDefinition()
 	case token.BACKTICK, token.DOLLAR_LPAREN, token.VARIABLE, token.DollarLbrace:
 		// A command-producing expression (`cmd`, $(cmd), $name,
 		// ${name}) can stand on its own as a statement, but can
