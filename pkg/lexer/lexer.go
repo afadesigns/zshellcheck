@@ -11,6 +11,13 @@ type Lexer struct {
 	ch           byte // current char under examination
 	line         int  // current line number
 	column       int  // current column number
+
+	// dbracketDepth tracks nesting of `[[ … ]]` conditional blocks.
+	// Without this we cannot distinguish a conditional close (the
+	// fused `]]` token) from two consecutive single-bracket closes
+	// in `arr[$m[i]]`. When depth is zero the lexer emits two
+	// RBRACKETs instead of RDBRACKET.
+	dbracketDepth int
 }
 
 func New(input string) *Lexer {
@@ -226,15 +233,21 @@ func (l *Lexer) NextToken() token.Token {
 			l.readChar()
 			literal := string(ch) + string(l.ch)
 			tok = token.Token{Type: token.LDBRACKET, Literal: literal, Line: l.line, Column: l.column}
+			l.dbracketDepth++
 		} else {
 			tok = newToken(token.LBRACKET, l.ch, l.line, l.column)
 		}
 	case ']':
-		if l.peekChar() == ']' {
+		// `]]` only means RDBRACKET when there is a pending
+		// `[[` to close. In array-subscript contexts like
+		// `arr[$m[i]]` the two brackets close two independent
+		// subscripts and must lex as two RBRACKET tokens.
+		if l.peekChar() == ']' && l.dbracketDepth > 0 {
 			ch := l.ch
 			l.readChar()
 			literal := string(ch) + string(l.ch)
 			tok = token.Token{Type: token.RDBRACKET, Literal: literal, Line: l.line, Column: l.column}
+			l.dbracketDepth--
 		} else {
 			tok = newToken(token.RBRACKET, l.ch, l.line, l.column)
 		}
