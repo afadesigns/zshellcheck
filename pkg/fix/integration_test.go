@@ -460,6 +460,31 @@ func TestFixIntegration_ZC1040_AlreadyQualifiedUnchanged(t *testing.T) {
 	}
 }
 
+func TestFixIntegration_ZC1091_BracketCmpToArith(t *testing.T) {
+	src := "[[ x -lt 10 ]]\n"
+	want := "(( x < 10 ))\n"
+	if got := runFix(t, src); got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}
+
+func TestFixIntegration_ZC1091_GeBracketCmp(t *testing.T) {
+	src := "[[ a -ge b ]]\n"
+	want := "(( a >= b ))\n"
+	if got := runFix(t, src); got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}
+
+func TestFixIntegration_ZC1091_MultipleOpsLeftAlone(t *testing.T) {
+	// Ambiguous: two comparison operators — fix yields to avoid
+	// corrupting the expression.
+	src := "[[ a -lt b && c -gt d ]]\n"
+	if got := runFix(t, src); got != src {
+		t.Errorf("multi-op bracket should be left alone, got %q", got)
+	}
+}
+
 func TestFixIntegration_SecondPass_ResolvesInner(t *testing.T) {
 	src := "result=`which git`\n"
 	first := runFix(t, src)
