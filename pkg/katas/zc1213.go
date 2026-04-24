@@ -12,7 +12,58 @@ func init() {
 		Description: "`apt-get install` without `-y` prompts for confirmation which hangs scripts. " +
 			"Use `-y` or set `DEBIAN_FRONTEND=noninteractive` for unattended installs.",
 		Check: checkZC1213,
+		Fix:   fixZC1213,
 	})
+}
+
+// fixZC1213 inserts ` -y` after `apt-get` so install / upgrade /
+// dist-upgrade run without interactive confirmation. Detector
+// already guards the shape (install-class subcommand + no -y).
+func fixZC1213(node ast.Node, v Violation, source []byte) []FixEdit {
+	cmd, ok := node.(*ast.SimpleCommand)
+	if !ok {
+		return nil
+	}
+	ident, ok := cmd.Name.(*ast.Identifier)
+	if !ok || ident.Value != "apt-get" {
+		return nil
+	}
+	nameOff := LineColToByteOffset(source, v.Line, v.Column)
+	if nameOff < 0 {
+		return nil
+	}
+	nameLen := IdentLenAt(source, nameOff)
+	if nameLen != len("apt-get") {
+		return nil
+	}
+	insertAt := nameOff + nameLen
+	insLine, insCol := offsetLineColZC1213(source, insertAt)
+	if insLine < 0 {
+		return nil
+	}
+	return []FixEdit{{
+		Line:    insLine,
+		Column:  insCol,
+		Length:  0,
+		Replace: " -y",
+	}}
+}
+
+func offsetLineColZC1213(source []byte, offset int) (int, int) {
+	if offset < 0 || offset > len(source) {
+		return -1, -1
+	}
+	line := 1
+	col := 1
+	for i := 0; i < offset; i++ {
+		if source[i] == '\n' {
+			line++
+			col = 1
+			continue
+		}
+		col++
+	}
+	return line, col
 }
 
 func checkZC1213(node ast.Node) []Violation {
