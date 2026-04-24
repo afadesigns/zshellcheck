@@ -1143,9 +1143,13 @@ func (p *Parser) parseDeclarationValue() ast.Expression {
 		}
 	arrDone:
 		val += " )"
-		if p.curTokenIs(token.RPAREN) {
-			p.nextToken()
-		}
+		// Leave curToken on the closing `)` rather than advancing
+		// past it. The caller's declaration loop checks
+		// `curToken.Line == startLine`; if we step past `)` onto
+		// the next line's first token, the loop drops out and
+		// parseProgram then re-advances, double-skipping the next
+		// statement (e.g. `typeset -g X=(a b)\ntypeset -g Y=…`
+		// dropped the second TYPESET).
 		return &ast.StringLiteral{Token: paren, Value: val}
 	}
 
