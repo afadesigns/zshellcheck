@@ -228,6 +228,21 @@ func TestFixIntegration_ZC1055_LeftEmpty(t *testing.T) {
 	}
 }
 
+func TestFixIntegration_ZC1017_PrintAddR(t *testing.T) {
+	src := `print "hello"` + "\n"
+	want := `print -r "hello"` + "\n"
+	if got := runFix(t, src); got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}
+
+func TestFixIntegration_ZC1017_PrintRLeftAlone(t *testing.T) {
+	src := `print -r "hello"` + "\n"
+	if got := runFix(t, src); got != src {
+		t.Errorf("already-fixed input should be idempotent, got %q", got)
+	}
+}
+
 func TestFixIntegration_SecondPass_ResolvesInner(t *testing.T) {
 	src := "result=`which git`\n"
 	first := runFix(t, src)
