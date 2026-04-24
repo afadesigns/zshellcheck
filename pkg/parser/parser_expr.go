@@ -114,7 +114,20 @@ func (p *Parser) parseExpression(precedence int) ast.Expression {
 }
 
 func (p *Parser) parseIdentifier() ast.Expression {
-	return &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
+	tok := p.curToken
+	value := tok.Literal
+	// Inside arithmetic, Zsh concatenates an IDENT with a glued
+	// VARIABLE / INT to form a dynamic variable name:
+	// `(( X_$y == 2 ))` reads as the value of `X_<expanded y>`.
+	// Absorb the glued tokens so the closing `))` lines up.
+	if p.inArithmetic {
+		for !p.peekToken.HasPrecedingSpace &&
+			(p.peekTokenIs(token.VARIABLE) || p.peekTokenIs(token.INT)) {
+			p.nextToken()
+			value += p.curToken.Literal
+		}
+	}
+	return &ast.Identifier{Token: tok, Value: value}
 }
 
 // parseKeywordAsCommand wraps a Zsh keyword (currently RETURN) as a
