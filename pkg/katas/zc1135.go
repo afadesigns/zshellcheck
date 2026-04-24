@@ -14,7 +14,40 @@ func init() {
 			"Avoid spawning `env` for simple variable-prefixed command execution.",
 		Severity: SeverityStyle,
 		Check:    checkZC1135,
+		Fix:      fixZC1135,
 	})
+}
+
+// fixZC1135 strips the `env ` prefix from `env VAR=val cmd`. Detector
+// already forbids `env` flags, so the remaining args form a valid
+// inline-assignment command.
+func fixZC1135(node ast.Node, v Violation, source []byte) []FixEdit {
+	cmd, ok := node.(*ast.SimpleCommand)
+	if !ok {
+		return nil
+	}
+	ident, ok := cmd.Name.(*ast.Identifier)
+	if !ok || ident.Value != "env" {
+		return nil
+	}
+	nameOff := LineColToByteOffset(source, v.Line, v.Column)
+	if nameOff < 0 || nameOff+len("env") > len(source) {
+		return nil
+	}
+	if string(source[nameOff:nameOff+len("env")]) != "env" {
+		return nil
+	}
+	// Span covers `env` plus the whitespace that follows it.
+	end := nameOff + len("env")
+	for end < len(source) && (source[end] == ' ' || source[end] == '\t') {
+		end++
+	}
+	return []FixEdit{{
+		Line:    v.Line,
+		Column:  v.Column,
+		Length:  end - nameOff,
+		Replace: "",
+	}}
 }
 
 func checkZC1135(node ast.Node) []Violation {
