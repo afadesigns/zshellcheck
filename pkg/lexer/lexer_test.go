@@ -6,6 +6,32 @@ import (
 	"github.com/afadesigns/zshellcheck/pkg/token"
 )
 
+func TestLineContinuation(t *testing.T) {
+	// `\<newline>` outside a string is Zsh's line-continuation
+	// sequence: the lexer should skip both characters so downstream
+	// parsing treats `cmd \<NL>arg` as a single logical line. Real
+	// oh-my-zsh themes (bureau, many others) use this to split long
+	// pipelines across lines.
+	src := "cmd arg1 arg2 \\\nmore args\n"
+	l := New(src)
+	var literals []string
+	for {
+		tok := l.NextToken()
+		if tok.Type == token.EOF {
+			break
+		}
+		literals = append(literals, tok.Literal)
+		if len(literals) > 20 {
+			t.Fatalf("too many tokens; line continuation did not collapse input")
+		}
+	}
+	for _, lit := range literals {
+		if lit == "\\" || lit == "ILLEGAL" {
+			t.Errorf("stray backslash token in stream: %v", literals)
+		}
+	}
+}
+
 func TestDollarQuotedStrings(t *testing.T) {
 	// Zsh ANSI-C quoting `$'…'` and gettext quoting `$"…"` must lex
 	// as single STRING tokens. Previously the `$` was emitted as
