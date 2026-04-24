@@ -300,17 +300,38 @@ func (p *Parser) parseArrayAccess() ast.Expression {
 		exp.Left = nil
 	} else {
 		p.nextToken() // move to subject
-		// When the subject IDENT already contains a `/` (the lexer
-		// treats `/` as a letter-class byte, so a pattern-
-		// substitution head like `line//` is absorbed into the
-		// identifier) the `[` that follows is the start of a glob
-		// bracket class, not an array subscript. Skip the
-		// parseExpression path so LBRACKET doesn't fire the index
-		// infix — the modifier tail scanner below consumes the
-		// rest opaquely.
-		if p.curTokenIs(token.IDENT) && strings.Contains(p.curToken.Literal, "/") {
+		// Parse the subject narrowly. Using parseExpression(LOWEST)
+		// pulls modifier operators (`%`, `#`, `/`) into an infix
+		// chain, which then misreads patterns like `${a%%[[:space:]]*}`
+		// (PERCENT then `[` → LBRACKET prefix calls parseSingleCommand
+		// on the bracket class). The modifier-tail scanner below is
+		// the right home for that body. Limit the subject to the
+		// minimal shapes it can be — IDENT (with optional adjacent
+		// subscript), VARIABLE, INT — and let the opaque scanner
+		// consume the rest.
+		switch {
+		case p.curTokenIs(token.IDENT) && strings.Contains(p.curToken.Literal, "/"):
+			// Pattern-substitution head like `line//` already
+			// absorbed the slashes; bracket that follows is a
+			// glob class, not a subscript.
 			exp.Left = &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
-		} else {
+		case p.curTokenIs(token.IDENT):
+			id := &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
+			exp.Left = id
+			// Allow a single adjacent subscript so `${arr[i]}` keeps
+			// its IndexExpression shape that katas walk for array
+			// access. The subscript closes at the matching `]`; the
+			// modifier tail (if any) starts after it.
+			if p.peekTokenIs(token.LBRACKET) && !p.peekToken.HasPrecedingSpace {
+				p.nextToken() // onto [
+				if idx, ok := p.parseIndexExpression(id).(*ast.IndexExpression); ok {
+					exp.Left = idx.Left
+					exp.Index = idx.Index
+				}
+			}
+		case p.curTokenIs(token.VARIABLE), p.curTokenIs(token.INT):
+			exp.Left = &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
+		default:
 			expr := p.parseExpression(LOWEST)
 			if idxExpr, ok := expr.(*ast.IndexExpression); ok {
 				exp.Left = idxExpr.Left
