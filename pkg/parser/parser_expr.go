@@ -418,6 +418,28 @@ func (p *Parser) parseIndexExpression(left ast.Expression) ast.Expression {
 
 	p.nextToken()
 
+	// Zsh subscript flags: `arr[(R)value]`, `arr[(r)pat]`, `arr[(I)i]`,
+	// `arr[(ri)pat]`, etc. The `(flags)` tuple precedes the actual
+	// index subject and modifies how the match is performed. Consume
+	// the tuple opaquely before handing the remainder to the generic
+	// expression parser. Without this guard the `(…)` was parsed as a
+	// grouped expression, after which the subject IDENT had nowhere
+	// to land and `expectPeek(RBRACKET)` fired on that token.
+	if p.curTokenIs(token.LPAREN) {
+		depth := 1
+		for depth > 0 && !p.peekTokenIs(token.EOF) {
+			p.nextToken()
+			switch {
+			case p.curTokenIs(token.LPAREN):
+				depth++
+			case p.curTokenIs(token.RPAREN):
+				depth--
+			}
+		}
+		// Advance onto the subject after the closing paren.
+		p.nextToken()
+	}
+
 	prevInArithmetic := p.inArithmetic
 	p.inArithmetic = true
 	exp.Index = p.parseExpression(LOWEST)

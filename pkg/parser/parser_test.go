@@ -1045,6 +1045,34 @@ func TestArithmeticLogicalChain(t *testing.T) {
 	}
 }
 
+func TestArraySubscriptFlags(t *testing.T) {
+	// Zsh subscript flags before the index value: arr[(R)value]
+	// (reverse match), arr[(r)pat] (key match), arr[(I)i] (integer),
+	// arr[(ri)pat] (composed). These let code search arrays by
+	// content; every Zsh plugin in the curated corpus uses at least
+	// one form. Before this fix the `(…)` was consumed as a grouped
+	// expression and the subject IDENT was rejected with
+	// "expected next token to be ], got VARIABLE".
+	inputs := []string{
+		"a=${arr[(R)val]}",
+		"b=${arr[(r)pat]}",
+		"c=${arr[(I)i]}",
+		"d=${arr[(ri)pat]}",
+		"e=${arr[(R)$~pattern]}",
+		"f=${history_match_keys[1]}",
+		"g=${arr[1]}",
+		"h=${arr[(R)${nested}]}",
+	}
+	for _, input := range inputs {
+		l := lexer.New(input)
+		p := New(l)
+		_ = p.ParseProgram()
+		if errs := p.Errors(); len(errs) != 0 {
+			t.Errorf("%s:\n  unexpected parser errors: %v", input, errs)
+		}
+	}
+}
+
 func TestBraceParamExpansionModifiersAreOpaque(t *testing.T) {
 	// Every Zsh parameter-expansion modifier that comes after the
 	// subject is accepted without a structured AST yet (tracked in
