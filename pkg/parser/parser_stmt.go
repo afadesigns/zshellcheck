@@ -360,6 +360,25 @@ func (p *Parser) parseCommandPipeline() ast.Expression {
 }
 
 func (p *Parser) parseSingleCommand() ast.Expression {
+	// When the head is a command-producing expression (`$(cmd)`,
+	// `` `cmd` ``, `$VAR`, `${name}`), let the prefix parser run
+	// so DollarParenExpression / CommandSubstitution / Identifier
+	// is captured properly. Without this, the head was forced into
+	// an Identifier whose Value was the literal `$(` and the
+	// trailing `)` of the substitution leaked back to the dispatch
+	// loop. parseSimpleCommand still wraps the result so downstream
+	// argument gathering and pipeline chaining keep working.
+	if p.curTokenIs(token.DOLLAR_LPAREN) || p.curTokenIs(token.BACKTICK) ||
+		p.curTokenIs(token.VARIABLE) || p.curTokenIs(token.DollarLbrace) {
+		startTok := p.curToken
+		head := p.parseExpression(LOWEST)
+		cmd := &ast.SimpleCommand{Token: startTok, Name: head, Arguments: []ast.Expression{}}
+		for !p.isCommandDelimiter(p.peekToken) && p.peekOnSameLogicalLine() {
+			p.nextToken()
+			cmd.Arguments = append(cmd.Arguments, p.parseCommandWord())
+		}
+		return cmd
+	}
 	cmd := &ast.SimpleCommand{
 		Token: p.curToken,
 		Name:  &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal},
