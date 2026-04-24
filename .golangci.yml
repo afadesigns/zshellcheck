@@ -1,6 +1,14 @@
 run:
   tests: true
 
+issues:
+  exclude-rules:
+    - path: pkg/config/config.go
+      linters:
+        - lll
+      source: "^\t\""
+
+
 linters:
   disable-all: true
   enable:

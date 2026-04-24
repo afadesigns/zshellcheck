@@ -2,9 +2,9 @@
 
 <img src="docs/assets/banner.png" alt="zshellcheck" width="100%" />
 
-### Native static analysis for Zsh
+### The quiet linter for a quiet shell.
 
-1000 Zsh-specific checks covering syntax, security, portability, and style — the counterpart to ShellCheck for code that relies on Zsh-only features.
+Static analysis and auto-fix for the setopts, hooks, and globs Bash never learned.
 
 [![CI](https://github.com/afadesigns/zshellcheck/actions/workflows/ci.yml/badge.svg)](https://github.com/afadesigns/zshellcheck/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/v/release/afadesigns/zshellcheck?color=blue)](https://github.com/afadesigns/zshellcheck/releases/latest)
@@ -18,20 +18,11 @@
 
 ---
 
-## Katas at a glance
+## See it in action
 
-<div align="center">
-
-| ![error](https://img.shields.io/badge/error-220-d73a49?style=flat-square) | ![warning](https://img.shields.io/badge/warning-459-f9a825?style=flat-square) | ![info](https://img.shields.io/badge/info-64-0366d6?style=flat-square) | ![style](https://img.shields.io/badge/style-257-6f42c1?style=flat-square) |
-|:---:|:---:|:---:|:---:|
-
-</div>
-
-- **Single static Go binary** — zero runtime dependencies.
-- **Three output formats** — coloured text, JSON, SARIF (GitHub Code Scanning).
-- **Signed releases** — cosign keyless + SBOM + SLSA Level 3 provenance on every tag.
-- **Cross-platform** — Linux / macOS / Windows × x86_64 / arm64 / i386.
-- **Inline suppression** — `# zshellcheck disable=ZC####` per line, per-next-line, or file-wide.
+<p align="center">
+  <img src="docs/assets/demo.gif" alt="zshellcheck demo" width="100%" />
+</p>
 
 ## Install
 
@@ -43,11 +34,15 @@
 go install github.com/afadesigns/zshellcheck/cmd/zshellcheck@latest
 ```
 
+The installer drops the binary into `~/.local/bin` (or `/usr/local/bin` when run as root) — both already on the standard `$PATH`, so `zshellcheck` is callable from any directory after install.
+
 ## Run
 
 ```bash
 zshellcheck path/to/script.zsh
 zshellcheck -severity warning -format sarif ./scripts > zshellcheck.sarif
+zshellcheck -diff path/to/script.zsh    # preview the auto-fix
+zshellcheck -fix  path/to/script.zsh    # apply it
 ```
 
 ### GitHub Actions
