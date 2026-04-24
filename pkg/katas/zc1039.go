@@ -31,17 +31,27 @@ func checkZC1039(node ast.Node) []Violation {
 	violations := []Violation{}
 
 	for _, arg := range cmd.Arguments {
-		if str, ok := arg.(*ast.StringLiteral); ok {
-			val := strings.Trim(str.Value, "\"'")
-			if val == "/" {
-				violations = append(violations, Violation{
-					KataID:  "ZC1039",
-					Message: "Avoid `rm` on the root directory `/`. This is highly dangerous.",
-					Line:    str.Token.Line,
-					Column:  str.Token.Column,
-					Level:   SeverityWarning,
-				})
-			}
+		// Bare `/` argument arrives as an Identifier with Value "/"
+		// after the SLASH prefix registration; quoted forms arrive
+		// as StringLiteral. Cover both shapes.
+		var val string
+		var line, col int
+		switch n := arg.(type) {
+		case *ast.StringLiteral:
+			val = strings.Trim(n.Value, "\"'")
+			line, col = n.Token.Line, n.Token.Column
+		case *ast.Identifier:
+			val = n.Value
+			line, col = n.Token.Line, n.Token.Column
+		}
+		if val == "/" {
+			violations = append(violations, Violation{
+				KataID:  "ZC1039",
+				Message: "Avoid `rm` on the root directory `/`. This is highly dangerous.",
+				Line:    line,
+				Column:  col,
+				Level:   SeverityWarning,
+			})
 		}
 	}
 

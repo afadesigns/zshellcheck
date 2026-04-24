@@ -98,6 +98,12 @@ func New(l *lexer.Lexer) *Parser {
 	// parseCommandWord. Without this, every prompt-style argument
 	// produced "no prefix parse function for %".
 	p.registerPrefix(token.PERCENT, p.parseIdentifier)
+	// SLASH as a prefix covers path-literal arguments like `/`,
+	// `/tmp`, `/usr/bin/*`, where the leading slash starts a
+	// command-word. Without this the test `[[ "$dir" != / ]]`
+	// fired "no prefix parse function for /". SLASH has no infix
+	// entry so this only widens prefix acceptance.
+	p.registerPrefix(token.SLASH, p.parseIdentifier)
 	p.registerPrefix(token.INT, p.parseIntegerLiteral)
 	p.registerPrefix(token.BANG, p.parsePrefixExpression)
 	p.registerPrefix(token.MINUS, p.parsePrefixExpression)
