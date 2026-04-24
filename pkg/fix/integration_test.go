@@ -134,6 +134,24 @@ func TestFixIntegration_ZC1004_ExitToReturn(t *testing.T) {
 	}
 }
 
+func TestFixIntegration_ZC1003_TestToArith(t *testing.T) {
+	src := `if [ $count -eq 0 ]; then
+  :
+fi
+[ "$n" -lt 10 ] && :
+[ "$a" -ge "$b" ] || :
+`
+	want := `if (( $count == 0 )); then
+  :
+fi
+(( "$n" < 10 )) && :
+(( "$a" >= "$b" )) || :
+`
+	if got := runFix(t, src); got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}
+
 func TestFixIntegration_SecondPass_ResolvesInner(t *testing.T) {
 	src := "result=`which git`\n"
 	first := runFix(t, src)
