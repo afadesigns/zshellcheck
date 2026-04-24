@@ -13,7 +13,24 @@ func init() {
 			"`declare` is a Bash compatibility alias. Using `typeset` is more idiomatic " +
 			"and signals that the script is Zsh-native.",
 		Check: checkZC1288,
+		Fix:   fixZC1288,
 	})
+}
+
+// fixZC1288 rewrites the `declare` keyword to `typeset`. Arguments,
+// flags and assignments carry over unchanged because the two
+// builtins share the same Zsh interface.
+func fixZC1288(node ast.Node, v Violation, source []byte) []FixEdit {
+	decl, ok := node.(*ast.DeclarationStatement)
+	if !ok || decl.Command != "declare" {
+		return nil
+	}
+	return []FixEdit{{
+		Line:    v.Line,
+		Column:  v.Column,
+		Length:  len("declare"),
+		Replace: "typeset",
+	}}
 }
 
 func checkZC1288(node ast.Node) []Violation {

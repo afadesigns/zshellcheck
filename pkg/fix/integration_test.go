@@ -729,6 +729,14 @@ func TestFixIntegration_ZC1267_DfAddPortable(t *testing.T) {
 	}
 }
 
+func TestFixIntegration_ZC1288_DeclareToTypeset(t *testing.T) {
+	src := "declare -i counter=0\n"
+	want := "typeset -i counter=0\n"
+	if got := runFix(t, src); got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}
+
 func TestFixIntegration_ZC1192_SleepZeroToColon(t *testing.T) {
 	src := "sleep 0\n"
 	want := ":\n"
