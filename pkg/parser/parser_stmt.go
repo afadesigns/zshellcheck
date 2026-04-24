@@ -592,6 +592,40 @@ func (p *Parser) parseForLoopStatement() *ast.ForLoopStatement {
 	}
 	stmt.Name = &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
 
+	// Zsh short form: `for NAME ( items ) body`. The item list is
+	// wrapped in parentheses and the body is a single command (or
+	// block) with no `do`/`done`. Real-world example in prezto
+	// init.zsh: `for zmodule ("$zmodules[@]") zmodload "zsh/…"`.
+	if p.peekTokenIs(token.LPAREN) {
+		p.nextToken() // consume (
+		stmt.Items = []ast.Expression{}
+		for !p.peekTokenIs(token.RPAREN) && !p.peekTokenIs(token.EOF) {
+			p.nextToken()
+			if p.curTokenIs(token.RPAREN) {
+				break
+			}
+			arg := p.parseCommandWord()
+			stmt.Items = append(stmt.Items, arg)
+		}
+		if !p.expectPeek(token.RPAREN) {
+			return nil
+		}
+		// Body is a single statement on the same line (usually a
+		// command) or a braced block. Wrap non-block statements in
+		// a BlockStatement so the Body field stays homogeneous.
+		p.nextToken()
+		body := p.parseStatement()
+		if block, ok := body.(*ast.BlockStatement); ok {
+			stmt.Body = block
+		} else if body != nil {
+			stmt.Body = &ast.BlockStatement{
+				Token:      stmt.Token,
+				Statements: []ast.Statement{body},
+			}
+		}
+		return stmt
+	}
+
 	if p.peekTokenIs(token.IN) {
 		p.nextToken()
 		stmt.Items = []ast.Expression{}

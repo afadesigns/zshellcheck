@@ -1045,6 +1045,27 @@ func TestArithmeticLogicalChain(t *testing.T) {
 	}
 }
 
+func TestForLoopShortForm(t *testing.T) {
+	// Zsh `for NAME ( items ) body` is the paren-delimited short
+	// form that needs no do/done. Prezto init.zsh uses it to iterate
+	// zmodules. The parser previously expected DO after the name and
+	// failed with "expected next token to be DO, got (".
+	inputs := []string{
+		`for x ("a" "b" "c") echo $x`,
+		`for mod ("$arr[@]") zmodload "zsh/${mod}"`,
+		`for f (*.zsh) source $f`,
+		`for i (1 2 3) { echo $i }`,
+	}
+	for _, input := range inputs {
+		l := lexer.New(input)
+		p := New(l)
+		_ = p.ParseProgram()
+		if errs := p.Errors(); len(errs) != 0 {
+			t.Errorf("%s:\n  unexpected parser errors: %v", input, errs)
+		}
+	}
+}
+
 func TestReturnAsLogicalRhs(t *testing.T) {
 	// `cmd || return`, `cmd && return 0`, etc. are idiomatic guards.
 	// When OR/AND got folded into an expression InfixExpression the
