@@ -63,12 +63,14 @@ func TestFixIntegration_ZC1092_Echo(t *testing.T) {
 	}
 }
 
-func TestFixIntegration_EchoFlag_LeftAlone(t *testing.T) {
-	// ZC1092 Fix skips flagged forms — `echo -n` translates to a
-	// different print invocation than `print -r --`.
+func TestFixIntegration_EchoFlag_HandledByZC1118(t *testing.T) {
+	// ZC1092 skips flagged `echo` because `print -r --` is the wrong
+	// rewrite for `-n`. ZC1118 picks it up and rewrites to the
+	// matching `print -rn` form instead.
 	src := "echo -n keep\n"
-	if got := runFix(t, src); got != src {
-		t.Errorf("flagged echo should not be auto-fixed, got %q", got)
+	want := "print -rn keep\n"
+	if got := runFix(t, src); got != want {
+		t.Errorf("got %q, want %q", got, want)
 	}
 }
 
@@ -506,6 +508,14 @@ func TestFixIntegration_ZC1126_UniqCountUnchanged(t *testing.T) {
 	src := "sort | uniq -c\n"
 	if got := runFix(t, src); got != src {
 		t.Errorf("uniq with flags should be left alone, got %q", got)
+	}
+}
+
+func TestFixIntegration_ZC1118_EchoDashNToPrintRN(t *testing.T) {
+	src := "echo -n hello\n"
+	want := "print -rn hello\n"
+	if got := runFix(t, src); got != want {
+		t.Errorf("got %q, want %q", got, want)
 	}
 }
 
