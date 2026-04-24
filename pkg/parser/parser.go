@@ -91,6 +91,13 @@ func New(l *lexer.Lexer) *Parser {
 	// tokens in; without this, every dot in a conditional or
 	// subscript expression fired "no prefix parse function for .".
 	p.registerPrefix(token.DOT, p.parseIdentifier)
+	// PERCENT as a prefix handles the prompt-escape words `%F{…}`,
+	// `%B`, `%~`, `%n`, `%m` etc. that appear as bare argument
+	// tokens in theme files across oh-my-zsh. Treat the percent as
+	// a literal word; surrounding tokens concatenate via
+	// parseCommandWord. Without this, every prompt-style argument
+	// produced "no prefix parse function for %".
+	p.registerPrefix(token.PERCENT, p.parseIdentifier)
 	p.registerPrefix(token.INT, p.parseIntegerLiteral)
 	p.registerPrefix(token.BANG, p.parsePrefixExpression)
 	p.registerPrefix(token.MINUS, p.parsePrefixExpression)
