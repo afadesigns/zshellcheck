@@ -641,6 +641,14 @@ func TestFixIntegration_ZC1209_SystemctlNoPager(t *testing.T) {
 	}
 }
 
+func TestFixIntegration_ZC1210_JournalctlNoPager(t *testing.T) {
+	src := "journalctl -u nginx\n"
+	want := "journalctl --no-pager -u nginx\n"
+	if got := runFix(t, src); got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}
+
 func TestFixIntegration_SecondPass_ResolvesInner(t *testing.T) {
 	src := "result=`which git`\n"
 	first := runFix(t, src)
