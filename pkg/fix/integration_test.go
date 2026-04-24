@@ -84,6 +84,22 @@ func TestFixIntegration_NestedKatas_OuterWins(t *testing.T) {
 	}
 }
 
+func TestFixIntegration_ZC1010_TestToDoubleBracket(t *testing.T) {
+	src := `if [ -f /tmp/foo ]; then
+  :
+fi
+[ "$x" = "y" ] && :
+`
+	want := `if [[ -f /tmp/foo ]]; then
+  :
+fi
+[[ "$x" = "y" ]] && :
+`
+	if got := runFix(t, src); got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}
+
 func TestFixIntegration_ZC1013_LetToArith(t *testing.T) {
 	src := `let x=5
 let y=$((x + 1))
