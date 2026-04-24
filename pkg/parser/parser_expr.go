@@ -11,11 +11,13 @@ import (
 func (p *Parser) parseExpression(precedence int) ast.Expression {
 	// Inside a `[[ … ]]` conditional, the infix chain may recurse
 	// into parseInfixExpression's right-hand side just before the
-	// closing `]]`. A glob pattern like `.*` or `*.zsh` leaves the
-	// trailing `]]` as the next token, and an ASTERISK/DOT infix
-	// recursion would try to parse it as a prefix. Return nil
-	// silently so the caller's infix result is still well-formed.
-	if p.curTokenIs(token.RDBRACKET) {
+	// closing `]]` or a logical connector (`&&`, `||`). A glob
+	// pattern like `"foo"*` leaves one of these as the next token
+	// and an ASTERISK/DOT infix recursion would try to parse it as
+	// a prefix. Return nil silently so the caller's infix result
+	// is well-formed and the conditional parser resumes at the
+	// connector.
+	if p.curTokenIs(token.RDBRACKET) || p.curTokenIs(token.AND) || p.curTokenIs(token.OR) {
 		return nil
 	}
 	prefix := p.prefixParseFns[p.curToken.Type]
