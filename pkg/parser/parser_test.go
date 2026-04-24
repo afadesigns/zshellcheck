@@ -1045,6 +1045,40 @@ func TestArithmeticLogicalChain(t *testing.T) {
 	}
 }
 
+func TestDeclarationFollowedByIfOnNextLine(t *testing.T) {
+	// Regression: `typeset -g A` directly followed by an `if … then …
+	// fi` on the next line used to swallow the `if` keyword, leaving
+	// the parser unable to consume the subsequent `then` / `fi`. The
+	// body of any well-formed Zsh script inside common plugins hits
+	// this pattern (zsh-autosuggestions src/async.zsh among others).
+	inputs := []string{
+		`foo() {
+  typeset -g A B
+  if [[ -n "$x" ]]; then echo ok; fi
+}`,
+		`foo() {
+  typeset A
+  if [[ 1 -eq 1 ]]; then print hi; fi
+}`,
+		`foo() {
+  local VAR=value
+  if [[ -n "$VAR" ]]; then echo set; fi
+}`,
+		`foo() {
+  readonly FLAG
+  if true; then echo go; fi
+}`,
+	}
+	for _, input := range inputs {
+		l := lexer.New(input)
+		p := New(l)
+		_ = p.ParseProgram()
+		if errs := p.Errors(); len(errs) != 0 {
+			t.Errorf("%s:\n  unexpected parser errors: %v", input, errs)
+		}
+	}
+}
+
 func TestArithmeticInsideIfWithLogicalChain(t *testing.T) {
 	// The original repro from #1047.
 	input := `if (( $+commands[ls] )) && (( $+commands[eza] )); then

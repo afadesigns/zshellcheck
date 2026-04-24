@@ -639,44 +639,69 @@ func (p *Parser) parseCoprocStatement() *ast.CoprocStatement {
 
 func (p *Parser) parseDeclarationStatement() *ast.DeclarationStatement {
 	stmt := &ast.DeclarationStatement{Token: p.curToken, Command: p.curToken.Literal}
+	startLine := stmt.Token.Line
 	p.nextToken()
 
-	for !p.curTokenIs(token.SEMICOLON) && !p.curTokenIs(token.EOF) && p.curToken.Line == stmt.Token.Line {
-		// Check for flags
+	// Consume flags and assignments until the statement's line ends or a
+	// terminator fires. advanceOrStop is the key helper: it only moves
+	// past the current token when the next token is still part of this
+	// declaration (same line, not a terminator). When the next token is
+	// on a new line the declaration ends with curToken on its last real
+	// token so the outer block's unconditional nextToken() advances to
+	// the following statement's first token — without this guard, a
+	// declaration immediately followed by an `if` (or any statement) on
+	// the next line caused the parser to swallow the statement's leading
+	// token. Reported against oh-my-zsh / zsh-autosuggestions bodies.
+	advanceOrStop := func() bool {
+		if p.peekTokenIs(token.SEMICOLON) || p.peekTokenIs(token.EOF) {
+			return false
+		}
+		if p.peekToken.Line != startLine {
+			return false
+		}
+		p.nextToken()
+		return true
+	}
+
+	for !p.curTokenIs(token.SEMICOLON) && !p.curTokenIs(token.EOF) && p.curToken.Line == startLine {
+		// Flags (e.g. -g, -A, -r, --).
 		if p.curTokenIs(token.MINUS) || (p.curTokenIs(token.IDENT) && len(p.curToken.Literal) > 0 && p.curToken.Literal[0] == '-') {
-			// It's a flag (e.g., -A, -r, --)
 			stmt.Flags = append(stmt.Flags, p.curToken.Literal)
-			p.nextToken()
-			continue
-		} else if p.curTokenIs(token.MINUS) {
-			// Standalone minus?
-			stmt.Flags = append(stmt.Flags, "-")
-			p.nextToken()
+			if !advanceOrStop() {
+				break
+			}
 			continue
 		}
 
-		// Expect Identifier
+		// Identifier (optionally followed by = or += value).
 		if p.curTokenIs(token.IDENT) {
 			assign := &ast.DeclarationAssignment{
 				Name: &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal},
 			}
-			p.nextToken() // consume Name
-
-			// Check for = or +=
-			if p.curTokenIs(token.PLUSEQ) {
+			// Peek the =/+= before consuming the name so we can decide
+			// whether to stay on the name token (bare declaration) or
+			// move onto the operator (value follows).
+			if p.peekTokenIs(token.PLUSEQ) {
+				p.nextToken() // onto +=
 				assign.IsAppend = true
-				p.nextToken() // consume +=
+				p.nextToken() // onto value token
 				assign.Value = p.parseDeclarationValue()
-			} else if p.curTokenIs(token.ASSIGN) {
-				p.nextToken() // consume =
+			} else if p.peekTokenIs(token.ASSIGN) {
+				p.nextToken() // onto =
+				p.nextToken() // onto value token
 				assign.Value = p.parseDeclarationValue()
 			}
-
 			stmt.Assignments = append(stmt.Assignments, assign)
-		} else {
-			// Unexpected token in declaration
-			p.nextToken()
+
+			if !advanceOrStop() {
+				break
+			}
+			continue
 		}
+
+		// Unknown token inside a declaration — stop the loop so we do
+		// not skip tokens belonging to the next statement.
+		break
 	}
 
 	if p.peekTokenIs(token.SEMICOLON) {
