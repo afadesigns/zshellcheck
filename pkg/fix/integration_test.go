@@ -729,6 +729,16 @@ func TestFixIntegration_ZC1267_DfAddPortable(t *testing.T) {
 	}
 }
 
+func TestFixIntegration_ZC1356_ReadArrayFlagUppercase(t *testing.T) {
+	// ZC1012 fires simultaneously (missing raw flag) so the combined
+	// rewrite adds the raw flag as well.
+	src := "read -a arr\n"
+	want := "read -r -A arr\n"
+	if got := runFix(t, src); got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}
+
 func TestFixIntegration_ZC1333_TimeformatToTimefmt(t *testing.T) {
 	src := "fmt=$TIMEFORMAT\n"
 	want := "fmt=$TIMEFMT\n"
