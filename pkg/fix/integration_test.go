@@ -527,6 +527,21 @@ func TestFixIntegration_ZC1124_CatDevNullTruncate(t *testing.T) {
 	}
 }
 
+func TestFixIntegration_ZC1128_TouchToEmptyRedirect(t *testing.T) {
+	src := "touch file\n"
+	want := "> file\n"
+	if got := runFix(t, src); got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}
+
+func TestFixIntegration_ZC1128_TouchWithFlagsUnchanged(t *testing.T) {
+	src := "touch -t 202504240000 file\n"
+	if got := runFix(t, src); got != src {
+		t.Errorf("flagged touch should stay, got %q", got)
+	}
+}
+
 func TestFixIntegration_SecondPass_ResolvesInner(t *testing.T) {
 	src := "result=`which git`\n"
 	first := runFix(t, src)
