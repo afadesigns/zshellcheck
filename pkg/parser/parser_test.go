@@ -1045,6 +1045,30 @@ func TestArithmeticLogicalChain(t *testing.T) {
 	}
 }
 
+func TestBareAppendAssignment(t *testing.T) {
+	// `var+=value` is the bare append-assignment form. Prior to this
+	// fix the parser handled the bare `=` assignment but rejected
+	// `+=` with "no prefix parse function for += found" because the
+	// token was not registered as an infix operator. Real oh-my-zsh
+	// themes (bureau, agnoster) and a long tail of plugins rely on
+	// this pattern to build up prompt strings incrementally.
+	inputs := []string{
+		`result+="a"`,
+		`result+="$ZSH_THEME_GIT_PROMPT_STAGED"`,
+		`x=a
+x+=b`,
+		`arr+=(item)`,
+	}
+	for _, input := range inputs {
+		l := lexer.New(input)
+		p := New(l)
+		_ = p.ParseProgram()
+		if errs := p.Errors(); len(errs) != 0 {
+			t.Errorf("%s:\n  unexpected parser errors: %v", input, errs)
+		}
+	}
+}
+
 func TestSpecialParametersAndLengthOperator(t *testing.T) {
 	// Zsh single-char special parameters: $?, $@, $$, $_. Previously
 	// they lexed as DOLLAR + ILLEGAL (or DOLLAR + QUESTION) and the
