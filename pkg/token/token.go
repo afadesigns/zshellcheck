@@ -7,6 +7,13 @@ type Token struct {
 	Literal           string
 	Line              int
 	Column            int
+	// EndLine records the source line where the token ended.
+	// Most tokens are single-line (EndLine == Line), but
+	// multi-line strings (`'…\n…\n…'`, `"…\n…"`) and heredoc
+	// bodies span lines; the parser's "same-line" arg-gathering
+	// checks should consult EndLine of the just-consumed token
+	// when comparing against peek.Line. Zero means "use Line".
+	EndLine           int
 	HasPrecedingSpace bool
 	// HasPrecedingContinuation is set when the lexer consumed a
 	// `\<NL>` pair immediately before this token. The Line / Column

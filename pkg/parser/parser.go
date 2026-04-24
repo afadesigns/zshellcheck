@@ -263,9 +263,15 @@ func (p *Parser) registerInfix(tokenType token.Type, fn infixParseFn) {
 // same logical command as the current one. A Zsh `\<NL>` pair joins
 // two physical lines into one command; the lexer marks the first token
 // after such a pair with HasPrecedingContinuation so argument-gathering
-// loops don't terminate at the newline.
+// loops don't terminate at the newline. Multi-line tokens (strings,
+// heredocs) report their closing line via EndLine; falling back to
+// Line when EndLine is zero.
 func (p *Parser) peekOnSameLogicalLine() bool {
-	return p.peekToken.Line == p.curToken.Line || p.peekToken.HasPrecedingContinuation
+	curEnd := p.curToken.EndLine
+	if curEnd == 0 {
+		curEnd = p.curToken.Line
+	}
+	return p.peekToken.Line == curEnd || p.peekToken.HasPrecedingContinuation
 }
 
 func (p *Parser) peekPrecedence() int {

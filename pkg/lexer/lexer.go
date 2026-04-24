@@ -376,11 +376,13 @@ func (l *Lexer) NextToken() (tok token.Token) {
 		tok.Line = l.line
 		tok.Column = l.column
 		tok.Literal = l.readString('"')
+		tok.EndLine = l.line
 	case '\'':
 		tok.Type = token.STRING
 		tok.Line = l.line
 		tok.Column = l.column
 		tok.Literal = l.readString('\'')
+		tok.EndLine = l.line
 	case 0:
 		tok.Literal = ""
 		tok.Type = token.EOF
