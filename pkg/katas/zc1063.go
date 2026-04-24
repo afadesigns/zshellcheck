@@ -11,7 +11,27 @@ func init() {
 		Description: "`fgrep` is deprecated. Use `grep -F` instead.",
 		Severity:    SeverityInfo,
 		Check:       checkZC1063,
+		Fix:         fixZC1063,
 	})
+}
+
+// fixZC1063 rewrites `fgrep` to `grep -F` at the command name
+// position. Single replacement — arguments stay untouched.
+func fixZC1063(node ast.Node, v Violation, source []byte) []FixEdit {
+	cmd, ok := node.(*ast.SimpleCommand)
+	if !ok {
+		return nil
+	}
+	ident, ok := cmd.Name.(*ast.Identifier)
+	if !ok || ident.Value != "fgrep" {
+		return nil
+	}
+	return []FixEdit{{
+		Line:    v.Line,
+		Column:  v.Column,
+		Length:  len("fgrep"),
+		Replace: "grep -F",
+	}}
 }
 
 func checkZC1063(node ast.Node) []Violation {

@@ -258,6 +258,22 @@ func TestFixIntegration_ZC1051_RmQuotedStaysIdempotent(t *testing.T) {
 	}
 }
 
+func TestFixIntegration_ZC1062_EgrepToGrepE(t *testing.T) {
+	src := "egrep pattern file\n"
+	want := "grep -E pattern file\n"
+	if got := runFix(t, src); got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}
+
+func TestFixIntegration_ZC1063_FgrepToGrepF(t *testing.T) {
+	src := "fgrep pattern file\n"
+	want := "grep -F pattern file\n"
+	if got := runFix(t, src); got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}
+
 func TestFixIntegration_SecondPass_ResolvesInner(t *testing.T) {
 	src := "result=`which git`\n"
 	first := runFix(t, src)
