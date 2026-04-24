@@ -430,6 +430,21 @@ func TestFixIntegration_ZC1078_AlreadyQuotedUnchanged(t *testing.T) {
 	}
 }
 
+func TestFixIntegration_ZC1076_AutoloadAddUZ(t *testing.T) {
+	src := "autoload compinit\n"
+	want := "autoload -Uz compinit\n"
+	if got := runFix(t, src); got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}
+
+func TestFixIntegration_ZC1076_AutoloadWithUZUnchanged(t *testing.T) {
+	src := "autoload -Uz compinit\n"
+	if got := runFix(t, src); got != src {
+		t.Errorf("already-flagged autoload should be idempotent, got %q", got)
+	}
+}
+
 func TestFixIntegration_SecondPass_ResolvesInner(t *testing.T) {
 	src := "result=`which git`\n"
 	first := runFix(t, src)
