@@ -1045,6 +1045,40 @@ func TestArithmeticLogicalChain(t *testing.T) {
 	}
 }
 
+func TestBraceParamExpansionModifiersAreOpaque(t *testing.T) {
+	// Every Zsh parameter-expansion modifier that comes after the
+	// subject is accepted without a structured AST yet (tracked in
+	// issue #129). The parser walks through the modifier body with
+	// brace-depth tracking so the closing `}` is found correctly,
+	// unblocking common plugin code (oh-my-zsh, zsh-autosuggestions,
+	// prezto) until the richer parameter-expansion node ships.
+	inputs := []string{
+		"a=${var#prefix}",
+		"b=${var##longest}",
+		"c=${var%suffix}",
+		"d=${var%%longest}",
+		"e=${var/old/new}",
+		"f=${var//all/repl}",
+		"g=${var:-default}",
+		"h=${var:=default}",
+		"i=${var:+alt}",
+		"j=${var:?err}",
+		"k=${var:3}",
+		"l=${var:3:5}",
+		"m=${var:#glob}",
+		"n=${nested:-${other:-fallback}}",
+		"o=${arr[1]#*:}",
+	}
+	for _, input := range inputs {
+		l := lexer.New(input)
+		p := New(l)
+		_ = p.ParseProgram()
+		if errs := p.Errors(); len(errs) != 0 {
+			t.Errorf("%s:\n  unexpected parser errors: %v", input, errs)
+		}
+	}
+}
+
 func TestBraceParamExpansionSingleCharFlags(t *testing.T) {
 	// Zsh single-char pre-flags inside `${X name}` that modify the
 	// expansion: `=` (split), `~` (glob interpret), `^` (rc-style).
