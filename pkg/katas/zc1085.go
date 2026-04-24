@@ -12,7 +12,48 @@ func init() {
 			"This often leads to iterating over words instead of lines or array elements. Quote the expansion to preserve structure.",
 		Severity: SeverityWarning,
 		Check:    checkZC1085,
+		Fix:      fixZC1085,
 	})
+}
+
+// fixZC1085 wraps an unquoted expansion in a `for` loop item list
+// with double-quotes. Two-edit insertion at the span start and end.
+// Span uses the shared unquotedArgLen scanner so `${arr[@]}`,
+// `$(cmd args)`, `${var:-default}` all stay whole.
+func fixZC1085(_ ast.Node, v Violation, source []byte) []FixEdit {
+	start := LineColToByteOffset(source, v.Line, v.Column)
+	if start < 0 || start >= len(source) {
+		return nil
+	}
+	argLen := unquotedArgLen(source, start)
+	if argLen == 0 {
+		return nil
+	}
+	endLine, endCol := offsetLineColZC1085(source, start+argLen)
+	if endLine < 0 {
+		return nil
+	}
+	return []FixEdit{
+		{Line: v.Line, Column: v.Column, Length: 0, Replace: `"`},
+		{Line: endLine, Column: endCol, Length: 0, Replace: `"`},
+	}
+}
+
+func offsetLineColZC1085(source []byte, offset int) (int, int) {
+	if offset < 0 || offset > len(source) {
+		return -1, -1
+	}
+	line := 1
+	col := 1
+	for i := 0; i < offset; i++ {
+		if source[i] == '\n' {
+			line++
+			col = 1
+			continue
+		}
+		col++
+	}
+	return line, col
 }
 
 func checkZC1085(node ast.Node) []Violation {

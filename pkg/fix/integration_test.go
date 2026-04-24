@@ -322,8 +322,10 @@ func TestFixIntegration_ZC1064_TypeToCommandV(t *testing.T) {
 }
 
 func TestFixIntegration_ZC1061_SeqSingleArg(t *testing.T) {
+	// ZC1085 also fires and wraps the for-loop item in quotes; the
+	// combined output shows both rewrites applied in one pass.
 	src := "for i in $(seq 5); do :; done\n"
-	want := "for i in $({1..5}); do :; done\n"
+	want := `for i in "$({1..5})"; do :; done` + "\n"
 	if got := runFix(t, src); got != want {
 		t.Errorf("got %q, want %q", got, want)
 	}
@@ -331,7 +333,7 @@ func TestFixIntegration_ZC1061_SeqSingleArg(t *testing.T) {
 
 func TestFixIntegration_ZC1061_SeqTwoArgs(t *testing.T) {
 	src := "for i in $(seq 3 8); do :; done\n"
-	want := "for i in $({3..8}); do :; done\n"
+	want := `for i in "$({3..8})"; do :; done` + "\n"
 	if got := runFix(t, src); got != want {
 		t.Errorf("got %q, want %q", got, want)
 	}
@@ -339,7 +341,7 @@ func TestFixIntegration_ZC1061_SeqTwoArgs(t *testing.T) {
 
 func TestFixIntegration_ZC1061_SeqThreeArgs(t *testing.T) {
 	src := "for i in $(seq 1 2 10); do :; done\n"
-	want := "for i in $({1..10..2}); do :; done\n"
+	want := `for i in "$({1..10..2})"; do :; done` + "\n"
 	if got := runFix(t, src); got != want {
 		t.Errorf("got %q, want %q", got, want)
 	}
@@ -364,6 +366,29 @@ func TestFixIntegration_ZC1079_AlreadyQuotedRhsUnchanged(t *testing.T) {
 	src := `[[ $x == "$y" ]]` + "\n"
 	if got := runFix(t, src); got != src {
 		t.Errorf("quoted RHS should be idempotent, got %q", got)
+	}
+}
+
+func TestFixIntegration_ZC1085_QuoteForLoopExpansion(t *testing.T) {
+	src := "for f in $files; do :; done\n"
+	want := `for f in "$files"; do :; done` + "\n"
+	if got := runFix(t, src); got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}
+
+func TestFixIntegration_ZC1085_ArrayExpansionQuoted(t *testing.T) {
+	src := "for f in ${files[@]}; do :; done\n"
+	want := `for f in "${files[@]}"; do :; done` + "\n"
+	if got := runFix(t, src); got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}
+
+func TestFixIntegration_ZC1085_AlreadyQuotedUnchanged(t *testing.T) {
+	src := `for f in "$files"; do :; done` + "\n"
+	if got := runFix(t, src); got != src {
+		t.Errorf("quoted input should be idempotent, got %q", got)
 	}
 }
 
