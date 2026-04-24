@@ -573,6 +573,18 @@ func (p *Parser) parseIndexExpression(left ast.Expression) ast.Expression {
 	exp.Index = p.parseExpression(LOWEST)
 	p.inArithmetic = prevInArithmetic
 
+	// Array slices: `${arr[1,8]}`, `${arr[$a,$b]}`. The comma is
+	// the Zsh range separator and the second index is the slice
+	// endpoint. Skip it opaquely and consume the rest of the
+	// subscript body so expectPeek(RBRACKET) lands on the closing
+	// bracket. The AST keeps the first index in Index; detection
+	// katas that need slice info can walk source directly.
+	for p.peekTokenIs(token.COMMA) {
+		p.nextToken() // onto ,
+		p.nextToken() // onto second index token
+		_ = p.parseExpression(LOWEST)
+	}
+
 	if !p.expectPeek(token.RBRACKET) {
 		return nil
 	}
