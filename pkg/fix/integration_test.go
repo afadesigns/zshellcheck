@@ -649,6 +649,14 @@ func TestFixIntegration_ZC1210_JournalctlNoPager(t *testing.T) {
 	}
 }
 
+func TestFixIntegration_ZC1213_AptGetAddYes(t *testing.T) {
+	src := "apt-get install curl\n"
+	want := "apt-get -y install curl\n"
+	if got := runFix(t, src); got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}
+
 func TestFixIntegration_SecondPass_ResolvesInner(t *testing.T) {
 	src := "result=`which git`\n"
 	first := runFix(t, src)
