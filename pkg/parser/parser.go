@@ -69,6 +69,13 @@ type Parser struct {
 
 	inBackticks  int
 	inArithmetic bool
+	// inDoubleBracket is set while parsing the body of a `[[ … ]]`
+	// conditional. Inside that context `(pat|pat)` is a glob
+	// alternation, not a call expression, and adjacent groups like
+	// `(a|b)(c|d)` should concatenate as a pattern — not become
+	// `(a|b) called with (c|d)`. The flag gates the LPAREN infix
+	// so parseCallExpression doesn't fire on pattern groups.
+	inDoubleBracket bool
 }
 
 func New(l *lexer.Lexer) *Parser {

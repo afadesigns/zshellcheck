@@ -46,6 +46,14 @@ func (p *Parser) parseExpression(precedence int) ast.Expression {
 		if p.peekTokenIs(token.RDBRACKET) {
 			break
 		}
+		// Inside a `[[ … ]]` conditional, adjacent `(…)` groups are
+		// glob alternations being concatenated — not function calls
+		// on the left-hand expression. Stop the infix loop from
+		// picking up the LPAREN as a CALL so parseGroupedExpression
+		// handles the pattern group on its own.
+		if p.inDoubleBracket && p.peekTokenIs(token.LPAREN) {
+			break
+		}
 
 		infix := p.infixParseFns[p.peekToken.Type]
 		if infix == nil {
@@ -117,6 +125,9 @@ func (p *Parser) parsePostfixExpression(left ast.Expression) ast.Expression {
 func (p *Parser) parseDoubleBracketExpression() ast.Expression {
 	bracketToken := p.curToken
 	p.nextToken()
+	prevInDB := p.inDoubleBracket
+	p.inDoubleBracket = true
+	defer func() { p.inDoubleBracket = prevInDB }()
 	expressions := []ast.Expression{}
 	for !p.curTokenIs(token.RDBRACKET) && !p.curTokenIs(token.EOF) {
 		exp := p.parseExpression(LOWEST)
@@ -158,9 +169,21 @@ func (p *Parser) parseGroupedExpression() ast.Expression {
 		return &ast.GroupedExpression{Token: tok, Expression: exp}
 	}
 
-	// Array Literal Mode (e.g., x=(a b c))
+	// Array Literal / glob alternation mode. Inside `[[ ]]` a
+	// parenthesised group `(a|b|c)` is a glob alternation where `|`
+	// is the pattern separator, not a pipe. Skip bare PIPE tokens
+	// between elements so patterns like `(wip|WIP)` and the richer
+	// p10k forms `(|*[^[:alnum:]])(wip|WIP)(|[^[:alnum:]]*)` parse
+	// as a sequence of alternatives rather than erroring on the
+	// first `|`. Outside `[[ ]]` a `|` inside `( )` would be unusual
+	// — array literals never contain pipe-separated elements — so
+	// swallowing the token there is safe.
 	elements := []ast.Expression{}
 	for !p.curTokenIs(token.RPAREN) && !p.curTokenIs(token.EOF) {
+		if p.curTokenIs(token.PIPE) {
+			p.nextToken()
+			continue
+		}
 		elem := p.parseCommandWord()
 		elements = append(elements, elem)
 		p.nextToken()
