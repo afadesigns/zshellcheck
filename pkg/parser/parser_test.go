@@ -1045,6 +1045,37 @@ func TestArithmeticLogicalChain(t *testing.T) {
 	}
 }
 
+func TestSpecialParametersAndLengthOperator(t *testing.T) {
+	// Zsh single-char special parameters: $?, $@, $$, $_. Previously
+	// they lexed as DOLLAR + ILLEGAL (or DOLLAR + QUESTION) and the
+	// parser's prefix table rejected the tail. They now lex as a
+	// single VARIABLE token.
+	//
+	// $#name is the length-of-parameter operator; the identifier
+	// after the `#` is part of the expression, not a fresh token
+	// to be left for the caller to stumble over. Real code like
+	// `(( $#BUFFER > 0 ))` from zsh-autosuggestions widgets.zsh
+	// required both fixes to parse without errors.
+	inputs := []string{
+		"x=$?",
+		"y=$@",
+		"z=$$",
+		"w=$_",
+		"retval=$?",
+		"if (( $#BUFFER )); then echo yes; fi",
+		"if (( $#BUFFER > 0 )); then echo yes; fi",
+		"len=$#ARRAY",
+	}
+	for _, input := range inputs {
+		l := lexer.New(input)
+		p := New(l)
+		_ = p.ParseProgram()
+		if errs := p.Errors(); len(errs) != 0 {
+			t.Errorf("%s:\n  unexpected parser errors: %v", input, errs)
+		}
+	}
+}
+
 func TestArraySubscriptFlags(t *testing.T) {
 	// Zsh subscript flags before the index value: arr[(R)value]
 	// (reverse match), arr[(r)pat] (key match), arr[(I)i] (integer),
