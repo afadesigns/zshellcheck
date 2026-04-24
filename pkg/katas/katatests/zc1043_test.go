@@ -30,6 +30,22 @@ func TestZC1043(t *testing.T) {
 			input:    "myfunc() { local x=1; }",
 			expected: []katas.Violation{},
 		},
+		{
+			// Regression for #1229 — empty-RHS assignment must not
+			// panic during message build. Hint still emitted with an
+			// empty RHS rendered in the template.
+			name:  "empty-RHS assignment does not panic",
+			input: "myfunc() { empty= }",
+			expected: []katas.Violation{
+				{
+					KataID: "ZC1043",
+					Message: "Variable 'empty' is assigned without 'local'. It will be global. " +
+						"Use `local empty=`.",
+					Line:   1,
+					Column: 12,
+				},
+			},
+		},
 	}
 
 	for _, tt := range tests {
