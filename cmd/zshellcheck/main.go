@@ -129,10 +129,18 @@ func run() int {
 		fixOpts.enabled = true
 		fixOpts.dryRun = true
 	}
+	if fixOpts.enabled {
+		fixOpts.stats = &fixStats{}
+	}
 
 	totalViolations := 0
 	for _, filename := range flag.Args() {
 		totalViolations += processPath(filename, os.Stdout, os.Stderr, config, kataRegistry, *format, allowedSeverities, fixOpts)
+	}
+
+	if fixOpts.stats != nil && fixOpts.stats.filesScanned > 1 {
+		fmt.Fprintf(os.Stderr, "\nfix summary: %d edit(s) across %d file(s) (scanned %d)\n",
+			fixOpts.stats.totalEdits, fixOpts.stats.filesModified, fixOpts.stats.filesScanned)
 	}
 
 	if totalViolations > 0 {
@@ -177,6 +185,18 @@ type fixOptions struct {
 	diff      bool
 	dryRun    bool
 	maxPasses int
+	// stats tracks per-run aggregate fix activity so processPath
+	// can print a one-line summary footer when -fix runs over a
+	// directory tree. nil when -fix is disabled.
+	stats *fixStats
+}
+
+// fixStats accumulates fix activity across all files visited in one
+// run. Updated by processFile when an in-place rewrite lands.
+type fixStats struct {
+	filesScanned  int
+	filesModified int
+	totalEdits    int
 }
 
 // applyFixesUntilStable runs fix.Apply repeatedly, re-parsing and
@@ -409,8 +429,15 @@ func processFile(filename string, out, errOut io.Writer, cfg config.Config, regi
 					fmt.Fprintf(errOut, "fix: write failed for %s: %s\n", filename, werr)
 				} else {
 					fmt.Fprintf(errOut, "fixed %d edit(s) in %s\n", totalEdits, filename)
+					if fixOpts.stats != nil {
+						fixOpts.stats.filesModified++
+						fixOpts.stats.totalEdits += totalEdits
+					}
 				}
 			}
+		}
+		if fixOpts.stats != nil {
+			fixOpts.stats.filesScanned++
 		}
 	}
 
