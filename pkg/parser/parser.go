@@ -76,6 +76,14 @@ func New(l *lexer.Lexer) *Parser {
 
 	p.prefixParseFns = make(map[token.Type]prefixParseFn)
 	p.registerPrefix(token.IDENT, p.parseIdentifier)
+	// Zsh `return` can legitimately appear as the right-hand side
+	// of a logical chain (`cmd || return`, `[[ … ]] && return 0`).
+	// Top-level statement parsing of the RETURN keyword still wins
+	// via the parseStatement switch because that runs before
+	// expression dispatch. Registering it as a prefix only matters
+	// when the parser is already mid-expression (OR/AND folded as
+	// infix into an expression chain with `return` on the RHS).
+	p.registerPrefix(token.RETURN, p.parseKeywordAsCommand)
 	p.registerPrefix(token.INT, p.parseIntegerLiteral)
 	p.registerPrefix(token.BANG, p.parsePrefixExpression)
 	p.registerPrefix(token.MINUS, p.parsePrefixExpression)

@@ -35,6 +35,25 @@ func (p *Parser) parseIdentifier() ast.Expression {
 	return &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
 }
 
+// parseKeywordAsCommand wraps a Zsh keyword (currently RETURN) as a
+// SimpleCommand so it can appear as the right-hand side of a logical
+// expression chain like `cmd || return 0`. Any arguments on the same
+// line are collected via parseCommandWord so `return 1` or
+// `break 2` (when BREAK/CONTINUE get their own tokens) round-trip
+// through the expression layer.
+func (p *Parser) parseKeywordAsCommand() ast.Expression {
+	tok := p.curToken
+	cmd := &ast.SimpleCommand{
+		Token: tok,
+		Name:  &ast.Identifier{Token: tok, Value: tok.Literal},
+	}
+	for !p.isCommandDelimiter(p.peekToken) && p.peekToken.Line == tok.Line {
+		p.nextToken()
+		cmd.Arguments = append(cmd.Arguments, p.parseCommandWord())
+	}
+	return cmd
+}
+
 func (p *Parser) parseIntegerLiteral() ast.Expression {
 	lit := &ast.IntegerLiteral{Token: p.curToken}
 	value, err := strconv.ParseInt(p.curToken.Literal, 0, 64)
