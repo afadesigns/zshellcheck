@@ -3,6 +3,7 @@ package parser
 import (
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/afadesigns/zshellcheck/pkg/ast"
 	"github.com/afadesigns/zshellcheck/pkg/token"
@@ -259,12 +260,24 @@ func (p *Parser) parseArrayAccess() ast.Expression {
 		exp.Left = nil
 	} else {
 		p.nextToken() // move to subject
-		expr := p.parseExpression(LOWEST)
-		if idxExpr, ok := expr.(*ast.IndexExpression); ok {
-			exp.Left = idxExpr.Left
-			exp.Index = idxExpr.Index
+		// When the subject IDENT already contains a `/` (the lexer
+		// treats `/` as a letter-class byte, so a pattern-
+		// substitution head like `line//` is absorbed into the
+		// identifier) the `[` that follows is the start of a glob
+		// bracket class, not an array subscript. Skip the
+		// parseExpression path so LBRACKET doesn't fire the index
+		// infix — the modifier tail scanner below consumes the
+		// rest opaquely.
+		if p.curTokenIs(token.IDENT) && strings.Contains(p.curToken.Literal, "/") {
+			exp.Left = &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
 		} else {
-			exp.Left = expr
+			expr := p.parseExpression(LOWEST)
+			if idxExpr, ok := expr.(*ast.IndexExpression); ok {
+				exp.Left = idxExpr.Left
+				exp.Index = idxExpr.Index
+			} else {
+				exp.Left = expr
+			}
 		}
 	}
 
