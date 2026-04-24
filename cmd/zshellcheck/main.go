@@ -119,9 +119,10 @@ func run() int {
 	kataRegistry := katas.Registry
 
 	fixOpts := fixOptions{
-		enabled: *fixMode || *diffMode,
-		diff:    *diffMode,
-		dryRun:  *dryRun,
+		enabled:   *fixMode || *diffMode,
+		diff:      *diffMode,
+		dryRun:    *dryRun,
+		maxPasses: 5,
 	}
 	if fixOpts.diff {
 		// -diff is equivalent to -fix -dry-run with diff rendering.
@@ -172,9 +173,102 @@ func loadConfig(paths ...string) (config.Config, error) {
 }
 
 type fixOptions struct {
-	enabled bool
-	diff    bool
-	dryRun  bool
+	enabled   bool
+	diff      bool
+	dryRun    bool
+	maxPasses int
+}
+
+// applyFixesUntilStable runs fix.Apply repeatedly, re-parsing and
+// re-collecting edits between passes, until no new edits are produced
+// or maxPasses is reached. Returns the final source, the total
+// number of edits applied across all passes, and any apply error.
+//
+// Multi-pass is needed because some fixes expose other fixes:
+// `result=`which git“ first becomes `result=$(which git)` (ZC1002),
+// which a second pass then rewrites to `result=$(whence git)`
+// (ZC1005). A single pass would leave the inner stale.
+func applyFixesUntilStable(src string, initialEdits []katas.FixEdit, registry *katas.KatasRegistry, disabled []string, cfg config.Config, allowedSeverities []katas.Severity, maxPasses int) (string, int, error) {
+	if maxPasses < 1 {
+		maxPasses = 5
+	}
+	current := src
+	totalEdits := 0
+	edits := initialEdits
+	for pass := 0; pass < maxPasses; pass++ {
+		if len(edits) == 0 {
+			break
+		}
+		next, err := fix.Apply(current, edits)
+		if err != nil {
+			return current, totalEdits, err
+		}
+		if next == current {
+			break
+		}
+		totalEdits += len(edits)
+		current = next
+		// Re-collect edits from the new source.
+		edits = collectEdits(current, registry, disabled, cfg, allowedSeverities)
+	}
+	return current, totalEdits, nil
+}
+
+// collectEdits parses src and returns the auto-fix edits the registry
+// would emit for it under the given disabled / severity filters.
+// Used by the multi-pass loop in applyFixesUntilStable.
+func collectEdits(src string, registry *katas.KatasRegistry, disabled []string, cfg config.Config, allowedSeverities []katas.Severity) []katas.FixEdit {
+	l := lexer.New(src)
+	p := parser.New(l)
+	program := p.ParseProgram()
+	if len(p.Errors()) != 0 {
+		return nil
+	}
+	directives := config.ParseDirectives(src)
+	allDisabled := disabled
+	if len(directives.File) > 0 {
+		allDisabled = append(append([]string(nil), disabled...), directives.File...)
+	}
+	var violations []katas.Violation
+	var edits []katas.FixEdit
+	ast.Walk(program, func(node ast.Node) bool {
+		vs, es := registry.CheckAndFix(node, allDisabled, []byte(src))
+		violations = append(violations, vs...)
+		edits = append(edits, es...)
+		return true
+	})
+	if len(directives.PerLine) > 0 {
+		keptV := violations[:0]
+		keptE := edits[:0]
+		for i, v := range violations {
+			if directives.IsDisabledOn(v.KataID, v.Line) {
+				continue
+			}
+			keptV = append(keptV, v)
+			if i < len(edits) {
+				keptE = append(keptE, edits[i])
+			}
+		}
+		violations = keptV
+		edits = keptE
+	}
+	if len(allowedSeverities) > 0 {
+		filtered := edits[:0]
+		filteredV := violations[:0]
+		for i, v := range violations {
+			for _, s := range allowedSeverities {
+				if v.Level == s {
+					filteredV = append(filteredV, v)
+					if i < len(edits) {
+						filtered = append(filtered, edits[i])
+					}
+					break
+				}
+			}
+		}
+		edits = filtered
+	}
+	return edits
 }
 
 func processPath(path string, out, errOut io.Writer, cfg config.Config, registry *katas.KatasRegistry, format string, allowedSeverities []katas.Severity, fixOpts fixOptions) int {
@@ -298,13 +392,15 @@ func processFile(filename string, out, errOut io.Writer, cfg config.Config, regi
 				fmt.Fprint(out, diff)
 			}
 		} else if !fixOpts.dryRun {
-			fixed, ferr := fix.Apply(string(data), edits)
-			if ferr != nil {
-				fmt.Fprintf(errOut, "fix: apply failed for %s: %s\n", filename, ferr)
+			// Multi-pass fix: apply edits, re-parse, re-collect, re-apply
+			// until the source stops changing or a small iteration cap is
+			// hit. Many fixes resolve nested patterns (e.g. backtick →
+			// $() exposes a `which` inside that ZC1005 then rewrites to
+			// `whence`); a single Apply leaves them stranded.
+			fixed, totalEdits, perr := applyFixesUntilStable(string(data), edits, registry, disabled, cfg, allowedSeverities, fixOpts.maxPasses)
+			if perr != nil {
+				fmt.Fprintf(errOut, "fix: apply failed for %s: %s\n", filename, perr)
 			} else if fixed != string(data) {
-				// Preserve the original file permissions so in-place
-				// rewrites do not change execute bits or group/other
-				// visibility.
 				mode := os.FileMode(0o600)
 				if info, statErr := os.Stat(filename); statErr == nil {
 					mode = info.Mode().Perm()
@@ -312,7 +408,7 @@ func processFile(filename string, out, errOut io.Writer, cfg config.Config, regi
 				if werr := os.WriteFile(filename, []byte(fixed), mode); werr != nil {
 					fmt.Fprintf(errOut, "fix: write failed for %s: %s\n", filename, werr)
 				} else {
-					fmt.Fprintf(errOut, "fixed %d edit(s) in %s\n", len(edits), filename)
+					fmt.Fprintf(errOut, "fixed %d edit(s) in %s\n", totalEdits, filename)
 				}
 			}
 		}
