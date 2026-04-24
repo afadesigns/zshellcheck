@@ -175,6 +175,36 @@ func (p *Parser) parseArrayAccess() ast.Expression {
 		}
 	}
 
+	// Modifier tail: `${var#glob}`, `${var##glob}`, `${var%glob}`,
+	// `${var%%glob}`, `${var/pat/repl}`, `${var:-default}`,
+	// `${var:+alt}`, `${var:?err}`, `${var:=default}`,
+	// `${var:offset:length}` and the composed forms all introduce
+	// operator tokens that parseExpression does not yet model (see
+	// issue #129 for the richer design). Until that lands we walk
+	// through the remaining tokens, tracking matching brace/paren
+	// depth, so the closing `}` is found correctly. The AST still
+	// exposes the subject — katas that only care about the variable
+	// name keep working — but the modifier body is opaque.
+	if !p.peekTokenIs(token.RBRACE) {
+		depth := 0
+		for !p.peekTokenIs(token.EOF) {
+			switch {
+			case p.peekTokenIs(token.DollarLbrace) || p.peekTokenIs(token.LBRACE):
+				depth++
+				p.nextToken()
+			case p.peekTokenIs(token.RBRACE):
+				if depth == 0 {
+					goto done
+				}
+				depth--
+				p.nextToken()
+			default:
+				p.nextToken()
+			}
+		}
+	done:
+	}
+
 	if !p.expectPeek(token.RBRACE) {
 		return nil
 	}
