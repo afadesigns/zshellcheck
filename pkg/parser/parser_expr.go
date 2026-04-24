@@ -630,6 +630,30 @@ func (p *Parser) parseIndexExpression(left ast.Expression) ast.Expression {
 		_ = p.parseExpression(LOWEST)
 	}
 
+	// Zsh associative-array keys accept arbitrary tokens — keys
+	// starting with a digit (`emoji[1st_place_medal]`) tokenise as
+	// INT + IDENT, and keys with punctuation (`arr[foo-bar]`,
+	// `arr[x.y]`) split across multiple tokens. The arithmetic
+	// parse above only consumed the first piece, so if peek isn't
+	// RBRACKET yet, fall through to an opaque scan that tracks
+	// bracket depth and stops at the matching `]`.
+	if !p.peekTokenIs(token.RBRACKET) {
+		bdepth := 0
+		for !p.peekTokenIs(token.EOF) {
+			p.nextToken()
+			switch {
+			case p.curTokenIs(token.LBRACKET):
+				bdepth++
+			case p.curTokenIs(token.RBRACKET):
+				if bdepth == 0 {
+					return exp
+				}
+				bdepth--
+			}
+		}
+		return exp
+	}
+
 	if !p.expectPeek(token.RBRACKET) {
 		return nil
 	}
