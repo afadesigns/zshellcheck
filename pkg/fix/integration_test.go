@@ -689,6 +689,14 @@ func TestFixIntegration_ZC1231_GitCloneShallow(t *testing.T) {
 	}
 }
 
+func TestFixIntegration_ZC1241_XargsAddNullSep(t *testing.T) {
+	src := "xargs rm\n"
+	want := "xargs -0 rm\n"
+	if got := runFix(t, src); got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}
+
 func TestFixIntegration_SecondPass_ResolvesInner(t *testing.T) {
 	src := "result=`which git`\n"
 	first := runFix(t, src)
