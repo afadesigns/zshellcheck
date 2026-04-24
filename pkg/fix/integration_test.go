@@ -297,6 +297,22 @@ func TestFixIntegration_ZC1086_NoFunctionKeywordUnchanged(t *testing.T) {
 	}
 }
 
+func TestFixIntegration_ZC1073_DropDollarInArith(t *testing.T) {
+	src := "(( $x > 0 ))\n"
+	want := "(( x > 0 ))\n"
+	if got := runFix(t, src); got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}
+
+func TestFixIntegration_ZC1073_MultipleDollarsAllDropped(t *testing.T) {
+	src := "(( $a + $b ))\n"
+	want := "(( a + b ))\n"
+	if got := runFix(t, src); got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}
+
 func TestFixIntegration_SecondPass_ResolvesInner(t *testing.T) {
 	src := "result=`which git`\n"
 	first := runFix(t, src)

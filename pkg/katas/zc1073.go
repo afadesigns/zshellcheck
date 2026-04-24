@@ -11,7 +11,25 @@ func init() {
 		Description: "Variables in `((...))` do not need `$` prefix. Use `(( var > 0 ))` instead of `(( $var > 0 ))`.",
 		Severity:    SeverityStyle,
 		Check:       checkZC1073,
+		Fix:         fixZC1073,
 	})
+}
+
+// fixZC1073 deletes the leading `$` from a variable used inside
+// `(( … ))`. The violation coordinates already point at the `$`
+// byte, so a single zero-replacement edit removes it. A second pass
+// won't re-trigger because the identifier no longer carries `$`.
+func fixZC1073(_ ast.Node, v Violation, source []byte) []FixEdit {
+	off := LineColToByteOffset(source, v.Line, v.Column)
+	if off < 0 || off >= len(source) || source[off] != '$' {
+		return nil
+	}
+	return []FixEdit{{
+		Line:    v.Line,
+		Column:  v.Column,
+		Length:  1,
+		Replace: "",
+	}}
 }
 
 func checkZC1073(node ast.Node) []Violation {
