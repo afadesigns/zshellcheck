@@ -1045,6 +1045,31 @@ func TestArithmeticLogicalChain(t *testing.T) {
 	}
 }
 
+func TestDoubleBracketLogicalChain(t *testing.T) {
+	// `[[ … ]] && cmd` and `[[ … ]] || cmd` are idiomatic short-
+	// circuit guards. The parser used to let the generic expression
+	// loop treat `||` / `&&` as internal infix operators, swallowing
+	// the right-hand command; RHSes like `return 0` or `break` then
+	// produced "no prefix parse function for RETURN". Now handled
+	// explicitly at statement level via chainLogical.
+	inputs := []string{
+		`[[ -n "$x" ]] || return 0`,
+		`[[ -z "$x" ]] && return 1`,
+		`[[ -n "$x" ]] && echo y || echo n`,
+		`foo() {
+  [[ -n "$x" ]] || return 0
+}`,
+	}
+	for _, input := range inputs {
+		l := lexer.New(input)
+		p := New(l)
+		_ = p.ParseProgram()
+		if errs := p.Errors(); len(errs) != 0 {
+			t.Errorf("%s:\n  unexpected parser errors: %v", input, errs)
+		}
+	}
+}
+
 func TestBareAppendAssignment(t *testing.T) {
 	// `var+=value` is the bare append-assignment form. Prior to this
 	// fix the parser handled the bare `=` assignment but rejected

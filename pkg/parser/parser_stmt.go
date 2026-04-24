@@ -45,29 +45,38 @@ func (p *Parser) parseStatement() ast.Statement {
 		if cmd == nil {
 			return nil
 		}
-		// Chain with `&&` / `||` when the arithmetic command is followed
-		// by a logical operator: `(( A )) && (( B )) || other-command`.
-		if p.peekTokenIs(token.AND) || p.peekTokenIs(token.OR) {
-			var left ast.Expression = cmd
-			for p.peekTokenIs(token.AND) || p.peekTokenIs(token.OR) {
-				p.nextToken()
-				op := p.curToken
-				p.nextToken() // move to start of right command
-				right := p.parseCommandPipeline()
-				left = &ast.InfixExpression{
-					Token:    op,
-					Operator: op.Literal,
-					Left:     left,
-					Right:    right,
-				}
-			}
-			stmt := &ast.ExpressionStatement{Token: cmd.Token, Expression: left}
-			if p.peekTokenIs(token.SEMICOLON) {
-				p.nextToken()
-			}
-			return stmt
+		if chained := p.chainLogical(cmd, cmd.Token); chained != nil {
+			return chained
 		}
 		return cmd
+	case token.LDBRACKET:
+		// `[[ … ]]` is a prefix expression by default. As a statement
+		// we need to capture the bracketed expression AND the `&&` /
+		// `||` continuations without letting the generic
+		// parseExpression loop pick OR/AND up as internal infix
+		// operators — that swallows the continuation's right-hand
+		// command (e.g. `|| return 0`) into a single expression
+		// whose RHS starts at `return`, which has no prefix parse
+		// entry and errors out.
+		//
+		// Call the prefix function directly so the expression stops
+		// exactly at `]]`, then route post-`]]` logical chains
+		// through chainLogical, which uses parseCommandPipeline for
+		// the RHS — the command-aware path that knows how to handle
+		// `return`, builtins, simple commands, and so on.
+		startTok := p.curToken
+		expr := p.parseDoubleBracketExpression()
+		if expr == nil {
+			return nil
+		}
+		if chained := p.chainLogical(expr, startTok); chained != nil {
+			return chained
+		}
+		stmt := &ast.ExpressionStatement{Token: startTok, Expression: expr}
+		if p.peekTokenIs(token.SEMICOLON) {
+			p.nextToken()
+		}
+		return stmt
 	case token.COLON, token.DOT, token.LBRACKET,
 		token.GT, token.LT, token.GTGT, token.LTLT, token.GTAMP, token.LTAMP, token.AMPERSAND, token.SLASH:
 		return p.parseSimpleCommandStatement()
@@ -89,6 +98,35 @@ func (p *Parser) parseStatement() ast.Statement {
 	default:
 		return p.parseExpressionOrFunctionDefinition()
 	}
+}
+
+// chainLogical threads `&&` / `||` continuations onto an arbitrary
+// left-hand expression, returning a wrapped ExpressionStatement. The
+// helper exists because `(( … ))` and `[[ … ]]` are both legitimate
+// starts of a logical chain but live on different parse paths; both
+// now funnel through here. Returns nil when the peek is not a logical
+// operator so the caller can emit its native shape untouched.
+func (p *Parser) chainLogical(left ast.Expression, startTok token.Token) ast.Statement {
+	if !p.peekTokenIs(token.AND) && !p.peekTokenIs(token.OR) {
+		return nil
+	}
+	for p.peekTokenIs(token.AND) || p.peekTokenIs(token.OR) {
+		p.nextToken()
+		op := p.curToken
+		p.nextToken() // move to start of right-hand command
+		right := p.parseCommandPipeline()
+		left = &ast.InfixExpression{
+			Token:    op,
+			Operator: op.Literal,
+			Left:     left,
+			Right:    right,
+		}
+	}
+	stmt := &ast.ExpressionStatement{Token: startTok, Expression: left}
+	if p.peekTokenIs(token.SEMICOLON) {
+		p.nextToken()
+	}
+	return stmt
 }
 
 func (p *Parser) parseExpressionOrFunctionDefinition() ast.Statement {
