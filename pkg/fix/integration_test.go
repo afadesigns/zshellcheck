@@ -84,6 +84,20 @@ func TestFixIntegration_NestedKatas_OuterWins(t *testing.T) {
 	}
 }
 
+func TestFixIntegration_ZC1013_LetToArith(t *testing.T) {
+	src := `let x=5
+let y=$((x + 1))
+let counter=counter+1
+`
+	want := `(( x = 5 ))
+(( y = $((x + 1)) ))
+(( counter = counter+1 ))
+`
+	if got := runFix(t, src); got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}
+
 func TestFixIntegration_ZC1004_ExitToReturn(t *testing.T) {
 	src := `foo() {
   if [[ -z "$1" ]]; then
