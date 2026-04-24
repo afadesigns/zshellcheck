@@ -12,7 +12,87 @@ func init() {
 			"Use `sort -u` to deduplicate sorted output efficiently.",
 		Severity: SeverityStyle,
 		Check:    checkZC1126,
+		Fix:      fixZC1126,
 	})
+}
+
+// fixZC1126 collapses `sort ... | uniq` into `sort -u ...`. Uses a
+// single span-replacement from just after the `sort` command name
+// through the end of `uniq`, rewriting the region to ` -u` +
+// whatever sort args sit between the name and the pipe. Only fires
+// when `uniq` has no flags (ZC1126's detector already guards that).
+func fixZC1126(node ast.Node, v Violation, source []byte) []FixEdit {
+	pipe, ok := node.(*ast.InfixExpression)
+	if !ok || pipe.Operator != "|" {
+		return nil
+	}
+	sortCmd, ok := pipe.Left.(*ast.SimpleCommand)
+	if !ok {
+		return nil
+	}
+	uniqCmd, ok := pipe.Right.(*ast.SimpleCommand)
+	if !ok {
+		return nil
+	}
+	sortTok := sortCmd.TokenLiteralNode()
+	sortNameOff := LineColToByteOffset(source, sortTok.Line, sortTok.Column)
+	if sortNameOff < 0 {
+		return nil
+	}
+	sortNameLen := IdentLenAt(source, sortNameOff)
+	if sortNameLen == 0 {
+		return nil
+	}
+	spanStart := sortNameOff + sortNameLen
+
+	// Find the pipe byte and walk back past trailing whitespace.
+	pipeOff := LineColToByteOffset(source, pipe.Token.Line, pipe.Token.Column)
+	if pipeOff < 0 || source[pipeOff] != '|' {
+		return nil
+	}
+	argsEnd := pipeOff
+	for argsEnd > spanStart && (source[argsEnd-1] == ' ' || source[argsEnd-1] == '\t') {
+		argsEnd--
+	}
+	middle := string(source[spanStart:argsEnd])
+
+	// End of uniq: the identifier itself; detector forbids flags.
+	uniqTok := uniqCmd.TokenLiteralNode()
+	uniqOff := LineColToByteOffset(source, uniqTok.Line, uniqTok.Column)
+	uniqLen := IdentLenAt(source, uniqOff)
+	if uniqOff < 0 || uniqLen == 0 {
+		return nil
+	}
+	spanEnd := uniqOff + uniqLen
+
+	replace := " -u" + middle
+	startLine, startCol := offsetLineColZC1126(source, spanStart)
+	if startLine < 0 {
+		return nil
+	}
+	return []FixEdit{{
+		Line:    startLine,
+		Column:  startCol,
+		Length:  spanEnd - spanStart,
+		Replace: replace,
+	}}
+}
+
+func offsetLineColZC1126(source []byte, offset int) (int, int) {
+	if offset < 0 || offset > len(source) {
+		return -1, -1
+	}
+	line := 1
+	col := 1
+	for i := 0; i < offset; i++ {
+		if source[i] == '\n' {
+			line++
+			col = 1
+			continue
+		}
+		col++
+	}
+	return line, col
 }
 
 func checkZC1126(node ast.Node) []Violation {
