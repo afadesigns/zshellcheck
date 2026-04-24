@@ -407,6 +407,29 @@ func TestFixIntegration_ZC1084_FindAlreadyQuotedUnchanged(t *testing.T) {
 	}
 }
 
+func TestFixIntegration_ZC1078_QuoteDollarAt(t *testing.T) {
+	src := "cmd $@\n"
+	want := `cmd "$@"` + "\n"
+	if got := runFix(t, src); got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}
+
+func TestFixIntegration_ZC1078_QuoteDollarStar(t *testing.T) {
+	src := "cmd $*\n"
+	want := `cmd "$*"` + "\n"
+	if got := runFix(t, src); got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}
+
+func TestFixIntegration_ZC1078_AlreadyQuotedUnchanged(t *testing.T) {
+	src := `cmd "$@"` + "\n"
+	if got := runFix(t, src); got != src {
+		t.Errorf("quoted input should be idempotent, got %q", got)
+	}
+}
+
 func TestFixIntegration_SecondPass_ResolvesInner(t *testing.T) {
 	src := "result=`which git`\n"
 	first := runFix(t, src)
