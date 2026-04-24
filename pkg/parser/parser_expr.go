@@ -325,7 +325,8 @@ func (p *Parser) parseInvalidArrayAccessPrefix() ast.Expression {
 	if p.peekTokenIs(token.SEMICOLON) || p.peekTokenIs(token.EOF) ||
 		p.peekTokenIs(token.PIPE) || p.peekTokenIs(token.AMPERSAND) ||
 		p.peekTokenIs(token.AND) || p.peekTokenIs(token.OR) ||
-		p.peekTokenIs(token.RPAREN) || p.peekTokenIs(token.RBRACE) {
+		p.peekTokenIs(token.RPAREN) || p.peekTokenIs(token.RBRACE) ||
+		p.peekTokenIs(token.RDBRACKET) || p.peekTokenIs(token.RBRACKET) {
 		return &ast.Identifier{Token: dollarToken, Value: "$"}
 	}
 
