@@ -243,6 +243,21 @@ func TestFixIntegration_ZC1017_PrintRLeftAlone(t *testing.T) {
 	}
 }
 
+func TestFixIntegration_ZC1051_RmUnquotedVar(t *testing.T) {
+	src := "rm $FILE\n"
+	want := `rm "$FILE"` + "\n"
+	if got := runFix(t, src); got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}
+
+func TestFixIntegration_ZC1051_RmQuotedStaysIdempotent(t *testing.T) {
+	src := `rm "$FILE"` + "\n"
+	if got := runFix(t, src); got != src {
+		t.Errorf("quoted input should be idempotent, got %q", got)
+	}
+}
+
 func TestFixIntegration_SecondPass_ResolvesInner(t *testing.T) {
 	src := "result=`which git`\n"
 	first := runFix(t, src)
