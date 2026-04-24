@@ -12,7 +12,27 @@ func init() {
 			"`command -v` is quieter and standard.",
 		Severity: SeverityInfo,
 		Check:    checkZC1064,
+		Fix:      fixZC1064,
 	})
+}
+
+// fixZC1064 rewrites `type` to `command -v` at the command name
+// position. Single replacement — arguments stay untouched.
+func fixZC1064(node ast.Node, v Violation, source []byte) []FixEdit {
+	cmd, ok := node.(*ast.SimpleCommand)
+	if !ok {
+		return nil
+	}
+	ident, ok := cmd.Name.(*ast.Identifier)
+	if !ok || ident.Value != "type" {
+		return nil
+	}
+	return []FixEdit{{
+		Line:    v.Line,
+		Column:  v.Column,
+		Length:  len("type"),
+		Replace: "command -v",
+	}}
 }
 
 func checkZC1064(node ast.Node) []Violation {
