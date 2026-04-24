@@ -5,6 +5,38 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **Auto-fix coverage jumped from 3 → 67 katas.** Each fix is deterministic, idempotent, and preserves surrounding source byte-for-byte outside the rewritten span. Coverage by category:
+  - Flag insertions: `read -r` (ZC1012), `print -r` (ZC1017), `mkdir -p` (ZC1147), `autoload -Uz` (ZC1076), `pushd/popd -q` (ZC1170), `systemctl --no-pager` (ZC1209), `journalctl --no-pager` (ZC1210), `apt-get -y` (ZC1213), `dmesg -T` (ZC1226), `curl -f` (ZC1227), `xargs -0` (ZC1241), `df -P` (ZC1267).
+  - Subcommand-level insertions: `docker run --rm` (ZC1234), `git clone --depth 1` (ZC1231), `docker build --no-cache` (ZC1253), `systemctl enable --now` (ZC1265).
+  - Command renames: `egrep` / `fgrep` → `grep -E/-F` (ZC1062/ZC1063), `type` → `command -v` (ZC1064), `hash` → `command -v` (ZC1140), `apt` → `apt-get` (ZC1263), `yum` → `dnf` (ZC1264), `cp -r` → `cp -a` (ZC1162), `declare` → `typeset` (ZC1288).
+  - Span rewrites: `seq N [S N]` → brace range (ZC1061), `set -o OPT` → `setopt OPT` (ZC1283), `sleep 0` → `:` (ZC1192), `cat /dev/null > file` → `: > file` (ZC1124), `touch file` → `> file` (ZC1128), `env VAR=val cmd` → strip prefix (ZC1135), `echo -n` → `print -rn` (ZC1118), `echo -e` → `print` (ZC1171), `echo -E` → `print -r` (ZC1355).
+  - Syntax rewrites: `#!/bin/zsh` → `#!/usr/bin/env zsh` (ZC1031), `$arr[i]` → `${arr[i]}` (ZC1001), `[ ]` → `(( … ))` (ZC1003), `[[ -eq ]]` → `(( … ))` (ZC1091), `[[ $x == "" ]]` → `-z` / `-n` (ZC1055), `function f { }` → `f() { }` (ZC1086), `$((x++))` statement → `((…))` (ZC1056), `for f in *.txt` → `*.txt(N)` (ZC1040).
+  - Quoting rewrites: unquoted `rm $VAR` (ZC1051), unquoted `[[ == $x ]]` RHS (ZC1079), unquoted `for` items (ZC1085), unquoted `find -name` globs (ZC1084), `$@` / `$*` (ZC1078).
+  - Pipeline collapses: `sort | uniq` → `sort -u` (ZC1126).
+  - Arithmetic cleanup: drop redundant `$` inside `(( … ))` (ZC1073).
+  - Read array flag: Bash lowercase `read -a` → Zsh uppercase `read -A` (ZC1356) — critical because the lowercase form silently means something different in Zsh.
+  - Bash-to-Zsh identifier renames: `$PIPESTATUS` → `$pipestatus` (ZC1301), `$DIRSTACK` → `$dirstack` (ZC1307), `$BASH_SUBSHELL` → `$ZSH_SUBSHELL` (ZC1304), `$FUNCNAME` → `$funcstack` (ZC1298), `$COMP_WORDS/$COMP_CWORD/$COMP_LINE` → `$words/$CURRENT/$BUFFER` (ZC1305/ZC1306/ZC1308), `$BASH_CMDS` → `$commands` (ZC1318), `$BASH_ALIASES` → `$aliases` (ZC1313), `$BASH_VERSION` / `$BASH_VERSINFO` → `$ZSH_VERSION` (ZC1300), `$BASH_REMATCH` → `$match` (ZC1331), `$TIMEFORMAT` → `$TIMEFMT` (ZC1333).
+- **Parser compatibility pass** — the external-corpus parse-error count dropped from 16 to 10 across oh-my-zsh, powerlevel10k, prezto, zsh-autosuggestions, zsh-syntax-highlighting, zsh-completions, and spaceship-prompt. Key improvements:
+  - `cmd --flag arg` now routes through `parseSimpleCommandStatement` so the command name stays on `cmd` and long flags become arguments. 23 mangled-name kata workarounds were retired in favour of a new `FlagArgPosition` helper that reports violation coordinates at the flag token itself.
+  - `[[ (a|b) ]]` glob-alt groups keep keyword-named elements as literal pattern atoms (`[[ $x == (select|cont) ]]`).
+  - Inner `$(cmd)` RPAREN containment: enclosing `( … )` subshell bodies no longer mistake an inner `)` for their own terminator.
+  - Multi-line `$( … )` command substitution bodies drain on implicit newline separators, not only `;`.
+  - Case-pattern glob-alt labels advance past the inner `)` when the label terminator is a second `)` (e.g. `plugin::(disable|enable))`).
+  - `for 1 2 3; do` implicit-list form accepts numeric positional names.
+- **KATAS.md** now lists auto-fix coverage per kata and carries a fix-coverage header summary. The generator (`internal/tools/gen-katas-md`) was extended so this stays in sync with the registry.
+- **README / ROADMAP / docs refreshed** — fix-coverage badge on the README, `-fix` / `-diff` examples in the Run section, auto-fixer status updated in USER_GUIDE and REFERENCE, coverage note in ROADMAP.
+
+### Changed
+
+- `parseDeclarationStatement` accepts `STRING` / `VARIABLE` / `DollarLbrace` as the declared name (supports `typeset -g "$1"="$2"`).
+- Prefix `DEC` registered for `(( --x ))` arithmetic; `parseCommandWord` treats `DEC` / `INC` as literal bytes in argument position so long-flag args stay whole.
+- Brace-form `if cond { body }` advances past its closing `}` so an enclosing brace-scoped body doesn't terminate early. New `consumedBraceTerminator` / `consumedParenTerminator` flags on `Parser` signal post-statement delimiter consumption.
+- `=cmd` path-substitution form registered as a statement-head prefix.
+
 ## [1.0.14] - 2026-04-24
 
 ### Added

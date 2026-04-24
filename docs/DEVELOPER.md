@@ -118,6 +118,60 @@ We use the standard Go testing framework.
 
 6.  **Once committed, fix — don't remove.** Retire duplicates as no-op stubs (see `ZC1018`, `ZC1022` for the pattern).
 
+### Adding an Auto-Fix
+
+When a kata's rewrite is deterministic and context-free, declare a `Fix` alongside `Check`:
+
+```go
+RegisterKata(ast.SimpleCommandNode, Kata{
+    ID:       "ZC1234",
+    Title:    "…",
+    Severity: SeverityStyle,
+    Check:    checkZC1234,
+    Fix:      fixZC1234,
+})
+
+func fixZC1234(node ast.Node, v Violation, source []byte) []FixEdit {
+    cmd, ok := node.(*ast.SimpleCommand)
+    if !ok {
+        return nil
+    }
+    // Return nil on any shape the rewrite can't safely handle.
+    return []FixEdit{{
+        Line:    v.Line,
+        Column:  v.Column,
+        Length:  len("old"),
+        Replace: "new",
+    }}
+}
+```
+
+Helpers in `pkg/katas/fixutil.go`:
+
+- `LineColToByteOffset(source, line, col)` — 1-based (line, column) → byte offset, `-1` on out-of-range.
+- `IdentLenAt(source, offset)` — length of the identifier at `offset` (alnum + `_`-`-`).
+- `FlagArgPosition(cmd, needles)` — coordinates of the first argument whose `String()` is in the needle set. Used by long-flag katas to anchor the violation at the flag token, not the host command.
+
+Rules:
+
+- **Idempotent on re-run.** Run `zshellcheck -fix` twice in a row; the second pass must be a no-op.
+- **Byte-exact outside the span.** Source bytes outside the `Length`-sized window stay unchanged.
+- **Detector gates the shape.** Narrow the detection so the Fix never fires on an arg shape it can't rewrite (e.g. ZC1128 only fires on single-arg `touch`).
+- **Conflict-aware.** When two katas fire at the same position, `pkg/fix.Apply` keeps the earlier-start, longer-length edit and drops the other; design detectors so the survivor is correct, or have one kata yield when its sibling's shape is present.
+- **Integration test mandatory.** Add a case in `pkg/fix/integration_test.go` using `runFix(t, src)`. Cover the positive rewrite and at least one idempotent already-fixed input.
+- **Regenerate `KATAS.md`.** `go run ./internal/tools/gen-katas-md` picks up the new `Fix` and updates the fix-coverage summary + per-kata label.
+
+The currently shipped fixers live in `pkg/katas/zc*.go` under these patterns:
+
+- **Single-edit command rename:** ZC1005 (`which` → `whence`), ZC1062/1063, ZC1288.
+- **Flag insertion:** ZC1012, ZC1017, ZC1076, ZC1147, ZC1170, ZC1209 — all insert ` -x` right after the command name.
+- **Subcommand-level insertion:** ZC1234 (`docker run --rm`), ZC1231 (`git clone --depth 1`), ZC1265 (`systemctl enable --now`).
+- **Span replacement:** ZC1061 (`seq N` → `{1..N}`), ZC1118 (`echo -n` → `print -rn`), ZC1124 (`cat /dev/null` → `:`), ZC1192 (`sleep 0` → `:`).
+- **Two-edit wrap:** ZC1051 (quote `rm $VAR`), ZC1078 (quote `$@`), ZC1084 (quote `find -name` glob).
+- **Bash-to-Zsh identifier rename:** ZC1298, ZC1300, ZC1301, ZC1304, ZC1305, ZC1306, ZC1307, ZC1308, ZC1313, ZC1318, ZC1331, ZC1333.
+
+Use these as templates when adding a new fix.
+
 ### Severity Levels
 
 Every kata must declare a severity via the Go constants `SeverityError`, `SeverityWarning`, `SeverityInfo`, `SeverityStyle` (defined in `pkg/katas/katas.go`). See the [Severity Levels reference](USER_GUIDE.md#severity-levels) for the rubric and when to pick each level.

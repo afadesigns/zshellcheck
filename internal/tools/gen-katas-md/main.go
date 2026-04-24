@@ -49,18 +49,31 @@ func main() {
 	fmt.Fprintf(w, "## Summary\n\n")
 	fmt.Fprintf(w, "| Severity | Count |\n| :--- | ---: |\n")
 	sevCount := map[katas.Severity]int{}
+	fixCount := 0
 	for _, id := range ids {
-		sevCount[registry.KatasByID[id].Severity]++
+		k := registry.KatasByID[id]
+		sevCount[k.Severity]++
+		if k.Fix != nil {
+			fixCount++
+		}
 	}
 	for _, sev := range []katas.Severity{katas.SeverityError, katas.SeverityWarning, katas.SeverityInfo, katas.SeverityStyle} {
 		fmt.Fprintf(w, "| `%s` | %d |\n", sev, sevCount[sev])
 	}
 	fmt.Fprintf(w, "| **total** | **%d** |\n\n", count)
 
+	fmt.Fprintf(w, "## Auto-fix coverage\n\n")
+	fmt.Fprintf(w, "`%d / %d` katas ship a deterministic rewrite that `-fix` applies in place. ", fixCount, count)
+	fmt.Fprintf(w, "The remaining detections stay lint-only because the idiomatic rewrite depends on context, risks changing runtime semantics, or is advisory rather than mechanical.\n\n")
+
 	fmt.Fprintf(w, "## Table of Contents\n\n")
 	for _, id := range ids {
 		k := registry.KatasByID[id]
-		fmt.Fprintf(w, "- [%s: %s](#%s)\n", k.ID, escapeTitle(k.Title), strings.ToLower(k.ID))
+		marker := ""
+		if k.Fix != nil {
+			marker = " [fix]"
+		}
+		fmt.Fprintf(w, "- [%s: %s](#%s)%s\n", k.ID, escapeTitle(k.Title), strings.ToLower(k.ID), marker)
 	}
 	fmt.Fprintf(w, "\n---\n\n")
 
@@ -69,6 +82,11 @@ func main() {
 		fmt.Fprintf(w, "<a id=\"%s\"></a>\n", strings.ToLower(k.ID))
 		fmt.Fprintf(w, "### %s — %s\n\n", k.ID, k.Title)
 		fmt.Fprintf(w, "**Severity:** `%s`\n\n", k.Severity)
+		if k.Fix != nil {
+			fmt.Fprintf(w, "**Auto-fix:** yes — `zshellcheck -fix` rewrites this pattern deterministically.\n\n")
+		} else {
+			fmt.Fprintf(w, "**Auto-fix:** no — detection only.\n\n")
+		}
 		fmt.Fprintf(w, "%s\n\n", k.Description)
 		fmt.Fprintf(w, "Disable by adding `%s` to `disabled_katas` in `.zshellcheckrc`.\n\n", k.ID)
 		fmt.Fprintf(w, "---\n\n")

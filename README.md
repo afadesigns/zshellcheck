@@ -28,13 +28,14 @@
 
 <div align="center">
 
-| ![error](https://img.shields.io/badge/error-220-d73a49?style=flat-square) | ![warning](https://img.shields.io/badge/warning-459-f9a825?style=flat-square) | ![info](https://img.shields.io/badge/info-64-0366d6?style=flat-square) | ![style](https://img.shields.io/badge/style-257-6f42c1?style=flat-square) |
-|:---:|:---:|:---:|:---:|
+| ![error](https://img.shields.io/badge/error-220-d73a49?style=flat-square) | ![warning](https://img.shields.io/badge/warning-459-f9a825?style=flat-square) | ![info](https://img.shields.io/badge/info-64-0366d6?style=flat-square) | ![style](https://img.shields.io/badge/style-257-6f42c1?style=flat-square) | ![autofix](https://img.shields.io/badge/autofix-67%20katas-2ea44f?style=flat-square) |
+|:---:|:---:|:---:|:---:|:---:|
 
 </div>
 
 - **Single static Go binary** — zero runtime dependencies.
 - **Three output formats** — coloured text, JSON, SARIF (GitHub Code Scanning).
+- **Auto-fixer** — `-fix`, `-diff`, `-dry-run` apply deterministic rewrites for 67 katas and counting.
 - **Signed releases** — cosign keyless + SBOM + SLSA Level 3 provenance on every tag.
 - **Cross-platform** — Linux / macOS / Windows × x86_64 / arm64 / i386.
 - **Inline suppression** — `# zshellcheck disable=ZC####` per line, per-next-line, or file-wide.
@@ -54,6 +55,10 @@ go install github.com/afadesigns/zshellcheck/cmd/zshellcheck@latest
 ```bash
 zshellcheck path/to/script.zsh
 zshellcheck -severity warning -format sarif ./scripts > zshellcheck.sarif
+
+# Preview auto-fixes as a unified diff, or apply them in place
+zshellcheck -diff ./scripts
+zshellcheck -fix ./scripts
 ```
 
 ### GitHub Actions
