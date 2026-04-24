@@ -17,7 +17,7 @@ func init() {
 
 func checkZC1191(node ast.Node) []Violation {
 	ident, ok := node.(*ast.Identifier)
-	if !ok || ident.Value != "clear" {
+	if !ok || ident == nil || ident.Value != "clear" {
 		return nil
 	}
 

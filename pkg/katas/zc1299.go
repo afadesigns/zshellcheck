@@ -21,6 +21,9 @@ func checkZC1299(node ast.Node) []Violation {
 	if !ok {
 		return nil
 	}
+	if ident == nil {
+		return nil
+	}
 
 	if ident.Value != "$BASH_LINENO" && ident.Value != "BASH_LINENO" {
 		return nil

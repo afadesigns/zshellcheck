@@ -20,6 +20,9 @@ func checkZC1324(node ast.Node) []Violation {
 	if !ok {
 		return nil
 	}
+	if ident == nil {
+		return nil
+	}
 
 	if ident.Value != "$PROMPT_COMMAND" && ident.Value != "PROMPT_COMMAND" {
 		return nil

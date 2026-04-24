@@ -20,6 +20,9 @@ func checkZC1325(node ast.Node) []Violation {
 	if !ok {
 		return nil
 	}
+	if ident == nil {
+		return nil
+	}
 
 	if ident.Value != "$PS0" && ident.Value != "PS0" {
 		return nil

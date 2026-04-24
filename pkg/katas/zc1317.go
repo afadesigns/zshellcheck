@@ -21,6 +21,9 @@ func checkZC1317(node ast.Node) []Violation {
 	if !ok {
 		return nil
 	}
+	if ident == nil {
+		return nil
+	}
 
 	if ident.Value != "$BASH_ENV" && ident.Value != "BASH_ENV" {
 		return nil

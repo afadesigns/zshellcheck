@@ -21,6 +21,9 @@ func checkZC1326(node ast.Node) []Violation {
 	if !ok {
 		return nil
 	}
+	if ident == nil {
+		return nil
+	}
 
 	if ident.Value != "$HISTTIMEFORMAT" && ident.Value != "HISTTIMEFORMAT" {
 		return nil

@@ -21,6 +21,9 @@ func checkZC1328(node ast.Node) []Violation {
 	if !ok {
 		return nil
 	}
+	if ident == nil {
+		return nil
+	}
 
 	if ident.Value != "$HISTCONTROL" && ident.Value != "HISTCONTROL" {
 		return nil

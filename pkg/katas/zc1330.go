@@ -21,6 +21,9 @@ func checkZC1330(node ast.Node) []Violation {
 	if !ok {
 		return nil
 	}
+	if ident == nil {
+		return nil
+	}
 
 	if ident.Value != "$INPUTRC" && ident.Value != "INPUTRC" {
 		return nil

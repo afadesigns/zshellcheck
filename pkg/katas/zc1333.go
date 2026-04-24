@@ -25,6 +25,9 @@ func fixZC1333(node ast.Node, v Violation, source []byte) []FixEdit {
 	if !ok {
 		return nil
 	}
+	if ident == nil {
+		return nil
+	}
 	switch ident.Value {
 	case "$TIMEFORMAT":
 		return []FixEdit{{
@@ -47,6 +50,9 @@ func fixZC1333(node ast.Node, v Violation, source []byte) []FixEdit {
 func checkZC1333(node ast.Node) []Violation {
 	ident, ok := node.(*ast.Identifier)
 	if !ok {
+		return nil
+	}
+	if ident == nil {
 		return nil
 	}
 

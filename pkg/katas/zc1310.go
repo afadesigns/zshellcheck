@@ -20,6 +20,9 @@ func checkZC1310(node ast.Node) []Violation {
 	if !ok {
 		return nil
 	}
+	if ident == nil {
+		return nil
+	}
 
 	if ident.Value != "$BASH_EXECUTION_STRING" && ident.Value != "BASH_EXECUTION_STRING" {
 		return nil
