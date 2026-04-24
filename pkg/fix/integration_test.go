@@ -681,6 +681,14 @@ func TestFixIntegration_ZC1234_DockerRunAddRm(t *testing.T) {
 	}
 }
 
+func TestFixIntegration_ZC1231_GitCloneShallow(t *testing.T) {
+	src := "git clone https://github.com/x/y\n"
+	want := "git clone --depth 1 https://github.com/x/y\n"
+	if got := runFix(t, src); got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}
+
 func TestFixIntegration_SecondPass_ResolvesInner(t *testing.T) {
 	src := "result=`which git`\n"
 	first := runFix(t, src)
