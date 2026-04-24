@@ -729,6 +729,14 @@ func TestFixIntegration_ZC1267_DfAddPortable(t *testing.T) {
 	}
 }
 
+func TestFixIntegration_ZC1283_SetOToSetopt(t *testing.T) {
+	src := "set -o pipefail\n"
+	want := "setopt pipefail\n"
+	if got := runFix(t, src); got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}
+
 func TestFixIntegration_ZC1288_DeclareToTypeset(t *testing.T) {
 	src := "declare -i counter=0\n"
 	want := "typeset -i counter=0\n"
