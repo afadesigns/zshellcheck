@@ -134,6 +134,20 @@ func TestFixIntegration_ZC1004_ExitToReturn(t *testing.T) {
 	}
 }
 
+func TestFixIntegration_ZC1001_BraceArrayAccess(t *testing.T) {
+	src := `x=$arr[1]
+y=$other[2]
+z=$pair[a,b]
+`
+	want := `x=${arr[1]}
+y=${other[2]}
+z=${pair[a,b]}
+`
+	if got := runFix(t, src); got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}
+
 func TestFixIntegration_ZC1003_TestToArith(t *testing.T) {
 	src := `if [ $count -eq 0 ]; then
   :
