@@ -614,6 +614,25 @@ func TestFixIntegration_ZC1135_EnvStripInline(t *testing.T) {
 	}
 }
 
+func TestFixIntegration_ZC1170_PushdAddQuiet(t *testing.T) {
+	src := "pushd /tmp\n"
+	want := "pushd -q /tmp\n"
+	if got := runFix(t, src); got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}
+
+func TestFixIntegration_ZC1170_PopdWithDirAddQuiet(t *testing.T) {
+	// Bare `popd` parses as Identifier (not SimpleCommand) so the
+	// detector doesn't fire on it; giving popd an argument routes
+	// through SimpleCommand where the detector lives.
+	src := "popd /tmp\n"
+	want := "popd -q /tmp\n"
+	if got := runFix(t, src); got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}
+
 func TestFixIntegration_SecondPass_ResolvesInner(t *testing.T) {
 	src := "result=`which git`\n"
 	first := runFix(t, src)
