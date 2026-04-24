@@ -566,6 +566,22 @@ func TestFixIntegration_ZC1140_HashToCommandV(t *testing.T) {
 	}
 }
 
+func TestFixIntegration_ZC1144_TrapSignalNumberToName(t *testing.T) {
+	src := "trap 'cleanup' 15\n"
+	want := "trap 'cleanup' TERM\n"
+	if got := runFix(t, src); got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}
+
+func TestFixIntegration_ZC1144_MultipleSignalsRewritten(t *testing.T) {
+	src := "trap 'cleanup' 2 15\n"
+	want := "trap 'cleanup' INT TERM\n"
+	if got := runFix(t, src); got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}
+
 func TestFixIntegration_SecondPass_ResolvesInner(t *testing.T) {
 	src := "result=`which git`\n"
 	first := runFix(t, src)
