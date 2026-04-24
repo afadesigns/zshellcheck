@@ -95,14 +95,15 @@ func (p *Parser) parseStatement() ast.Statement {
 	case token.COLON, token.DOT, token.LBRACKET,
 		token.GT, token.LT, token.GTGT, token.LTLT, token.GTAMP, token.LTAMP, token.AMPERSAND, token.SLASH:
 		return p.parseSimpleCommandStatement()
-	case token.BACKTICK, token.DOLLAR_LPAREN:
-		// A command-producing expression (`cmd` or $(cmd)) can stand
-		// on its own as a statement, but it can also head a pipeline
-		// or a logical chain: `` `_cmd` | sed … ``, `$(date) && ...`.
-		// Parse the expression via the normal prefix path, then fold
-		// any pipeline / AND / OR continuations into an infix tree
-		// so the trailing `|` / `&&` / `||` do not leak back into
-		// parseStatement's next-iteration dispatch.
+	case token.BACKTICK, token.DOLLAR_LPAREN, token.VARIABLE, token.DollarLbrace:
+		// A command-producing expression (`cmd`, $(cmd), $name,
+		// ${name}) can stand on its own as a statement, but can
+		// also head a pipeline or a logical chain:
+		// `` `_cmd` | sed … ``, `$(date) && ...`, `$VAR | awk`.
+		// Parse the expression via the normal prefix path, then
+		// fold any pipeline / AND / OR continuations into an infix
+		// tree so the trailing `|` / `&&` / `||` do not leak back
+		// into parseStatement's next-iteration dispatch.
 		return p.parsePipelineStartingWithExpression()
 	case token.CASE:
 		return p.parseCaseStatement()
