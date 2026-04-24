@@ -12,7 +12,34 @@ func init() {
 			"spawning `touch`. Use `touch` only when you need to update timestamps.",
 		Severity: SeverityStyle,
 		Check:    checkZC1128,
+		Fix:      fixZC1128,
 	})
+}
+
+// fixZC1128 rewrites `touch file` into `> file`. Detector already
+// guards against flagged forms (timestamp updates) and multi-arg
+// invocations, so the fix covers only the single-file case.
+func fixZC1128(node ast.Node, v Violation, source []byte) []FixEdit {
+	cmd, ok := node.(*ast.SimpleCommand)
+	if !ok {
+		return nil
+	}
+	if len(cmd.Arguments) != 1 {
+		return nil
+	}
+	nameOff := LineColToByteOffset(source, v.Line, v.Column)
+	if nameOff < 0 || nameOff+len("touch") > len(source) {
+		return nil
+	}
+	if string(source[nameOff:nameOff+len("touch")]) != "touch" {
+		return nil
+	}
+	return []FixEdit{{
+		Line:    v.Line,
+		Column:  v.Column,
+		Length:  len("touch"),
+		Replace: ">",
+	}}
 }
 
 func checkZC1128(node ast.Node) []Violation {
