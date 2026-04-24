@@ -14,7 +14,28 @@ func init() {
 			"poor error messages. Use `command -v cmd` for cleaner checks in Zsh.",
 		Severity: SeverityStyle,
 		Check:    checkZC1140,
+		Fix:      fixZC1140,
 	})
+}
+
+// fixZC1140 rewrites `hash cmd` to `command -v cmd`. Single-edit
+// command-name replacement — arguments stay intact. Detector gates
+// on flagged forms like `hash -r`, so those stay as-is.
+func fixZC1140(node ast.Node, v Violation, source []byte) []FixEdit {
+	cmd, ok := node.(*ast.SimpleCommand)
+	if !ok {
+		return nil
+	}
+	ident, ok := cmd.Name.(*ast.Identifier)
+	if !ok || ident.Value != "hash" {
+		return nil
+	}
+	return []FixEdit{{
+		Line:    v.Line,
+		Column:  v.Column,
+		Length:  len("hash"),
+		Replace: "command -v",
+	}}
 }
 
 func checkZC1140(node ast.Node) []Violation {

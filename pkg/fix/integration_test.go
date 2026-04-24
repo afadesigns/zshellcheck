@@ -558,6 +558,14 @@ func TestFixIntegration_ZC1147_FlatPathUnchanged(t *testing.T) {
 	}
 }
 
+func TestFixIntegration_ZC1140_HashToCommandV(t *testing.T) {
+	src := "hash git\n"
+	want := "command -v git\n"
+	if got := runFix(t, src); got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}
+
 func TestFixIntegration_SecondPass_ResolvesInner(t *testing.T) {
 	src := "result=`which git`\n"
 	first := runFix(t, src)
