@@ -22,7 +22,8 @@ func (p *Parser) parseExpression(precedence int) ast.Expression {
 	switch p.curToken.Type {
 	case token.RDBRACKET, token.AND, token.OR,
 		token.THEN, token.ELSE, token.ELIF, token.Fi,
-		token.DO, token.DONE, token.ESAC:
+		token.DO, token.DONE, token.ESAC,
+		token.SEMICOLON:
 		return nil
 	}
 	prefix := p.prefixParseFns[p.curToken.Type]
@@ -679,9 +680,17 @@ func (p *Parser) parseIndexExpression(left ast.Expression) ast.Expression {
 	// starting with a digit (`emoji[1st_place_medal]`) tokenise as
 	// INT + IDENT, and keys with punctuation (`arr[foo-bar]`,
 	// `arr[x.y]`) split across multiple tokens. The arithmetic
-	// parse above only consumed the first piece, so if peek isn't
-	// RBRACKET yet, fall through to an opaque scan that tracks
-	// bracket depth and stops at the matching `]`.
+	// parse above may have already landed curToken on the closing
+	// `]` when a prefix expression's failed RHS swallowed it
+	// (e.g. `${#y[*]}`: parsePrefixExpression on `*` advanced into
+	// the RBRACKET). Only short-circuit when we're clearly at the
+	// outermost subscript's close — detected by peek being the
+	// enclosing `${…}`'s RBRACE. In nested forms like
+	// `FG[$colors[color+1]]` peek is another RBRACKET (the outer
+	// subscript's close) and we must continue to expectPeek it.
+	if p.curTokenIs(token.RBRACKET) && p.peekTokenIs(token.RBRACE) {
+		return exp
+	}
 	if !p.peekTokenIs(token.RBRACKET) {
 		bdepth := 0
 		for !p.peekTokenIs(token.EOF) {
