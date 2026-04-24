@@ -18,6 +18,15 @@ type Lexer struct {
 	// in `arr[$m[i]]`. When depth is zero the lexer emits two
 	// RBRACKETs instead of RDBRACKET.
 	dbracketDepth int
+
+	// parenStack records the kind of every paren-like opener that is
+	// still awaiting its close. 'D' for `((` (arithmetic), 'P' for
+	// plain `(` and for `$(` command substitution. The lexer fuses
+	// `))` into DoubleRparen only when the innermost open context is
+	// 'D'; a plain `(` inside `(( … ))` closes with a single RPAREN
+	// so that `(( x = $((1+1)) + 2 ))` emits two inner RPARENs for
+	// the `$(` + `(` pair and a final DoubleRparen for the outer `((`.
+	parenStack []byte
 }
 
 func New(input string) *Lexer {
@@ -94,6 +103,7 @@ func (l *Lexer) NextToken() token.Token {
 				l.readChar()
 				literal := string(ch) + string(l.ch)
 				tok = token.Token{Type: token.EQ_LPAREN, Literal: literal, Line: l.line, Column: l.column}
+				l.parenStack = append(l.parenStack, 'P')
 			} else {
 				tok = newToken(token.ASSIGN, l.ch, l.line, l.column)
 			}
@@ -119,18 +129,13 @@ func (l *Lexer) NextToken() token.Token {
 			l.readChar()
 			literal := string(ch) + string(l.ch)
 			tok = token.Token{Type: token.DoubleLparen, Literal: literal, Line: l.line, Column: l.column}
+			l.parenStack = append(l.parenStack, 'D')
 		} else {
 			tok = newToken(token.LPAREN, l.ch, l.line, l.column)
+			l.parenStack = append(l.parenStack, 'P')
 		}
 	case ')':
-		if l.peekChar() == ')' {
-			ch := l.ch
-			l.readChar()
-			literal := string(ch) + string(l.ch)
-			tok = token.Token{Type: token.DoubleRparen, Literal: literal, Line: l.line, Column: l.column}
-		} else {
-			tok = newToken(token.RPAREN, l.ch, l.line, l.column)
-		}
+		tok = l.readCloseParen()
 	case ',':
 		tok = newToken(token.COMMA, l.ch, l.line, l.column)
 	case '+':
@@ -200,6 +205,7 @@ func (l *Lexer) NextToken() token.Token {
 			l.readChar()
 			literal := string(ch) + string(l.ch)
 			tok = token.Token{Type: token.LT_LPAREN, Literal: literal, Line: l.line, Column: l.column}
+			l.parenStack = append(l.parenStack, 'P')
 		default:
 			tok = newToken(token.LT, l.ch, l.line, l.column)
 		}
@@ -220,6 +226,7 @@ func (l *Lexer) NextToken() token.Token {
 			l.readChar()
 			literal := string(ch) + string(l.ch)
 			tok = token.Token{Type: token.GT_LPAREN, Literal: literal, Line: l.line, Column: l.column}
+			l.parenStack = append(l.parenStack, 'P')
 		case '|':
 			// Zsh `>|file` and `>!file` force-clobber a file even
 			// when `NO_CLOBBER` is set. The trailing `|` / `!`
@@ -381,6 +388,32 @@ func (l *Lexer) NextToken() token.Token {
 	return tok
 }
 
+// readCloseParen resolves a `)` to either DoubleRparen (fused `))`)
+// or a plain RPAREN by consulting parenStack. `))` fuses only when
+// the innermost still-open context is 'D' (a `((` opener). Plain `(`
+// / `$(` / `<(` / `>(` / `=(` openers close with a single `)` so the
+// inner `))` in `(( x = $((1+1)) + 2 ))` does not swallow the outer
+// `((`'s closer.
+func (l *Lexer) readCloseParen() token.Token {
+	top := byte(0)
+	if n := len(l.parenStack); n > 0 {
+		top = l.parenStack[n-1]
+	}
+	if l.peekChar() == ')' && top == 'D' {
+		ch := l.ch
+		l.readChar()
+		literal := string(ch) + string(l.ch)
+		tok := token.Token{Type: token.DoubleRparen, Literal: literal, Line: l.line, Column: l.column}
+		l.parenStack = l.parenStack[:len(l.parenStack)-1]
+		return tok
+	}
+	tok := newToken(token.RPAREN, l.ch, l.line, l.column)
+	if len(l.parenStack) > 0 {
+		l.parenStack = l.parenStack[:len(l.parenStack)-1]
+	}
+	return tok
+}
+
 // readDollarToken dispatches the specialised forms that follow a
 // leading `$`. It returns (tok, true) when it has consumed a recognised
 // form — parameter expansion opener (${ or $(), ANSI-C / gettext string
@@ -407,6 +440,11 @@ func (l *Lexer) readDollarToken(hasSpace bool) (token.Token, bool) {
 		tok.Column = l.column
 		l.readChar() // consume '$'
 		l.readChar() // advance past '('
+		// `$(` opens a command-substitution that closes with a single
+		// `)`. Record it as 'P' so a nested `))` does not get fused
+		// into DoubleRparen when only the inner `(` / `$(` are being
+		// closed.
+		l.parenStack = append(l.parenStack, 'P')
 		tok.HasPrecedingSpace = hasSpace
 		return tok, true
 	case '\'':

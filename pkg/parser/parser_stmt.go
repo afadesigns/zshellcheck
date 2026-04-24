@@ -893,11 +893,40 @@ func (p *Parser) parseDeclarationValue() ast.Expression {
 		paren := p.curToken
 		p.nextToken() // consume (
 
+		// Track paren and brace depth so nested `$(...)`,
+		// `${...}`, `$((...))` inside the array literal don't
+		// terminate the scan prematurely. Without this,
+		// `x=($(cmd))` fell off the end looking for the outer `)`
+		// because the lexer's `$(` + `)` pair consumed the `)` we
+		// expected.
 		val := "("
-		for !p.curTokenIs(token.RPAREN) && !p.curTokenIs(token.EOF) {
-			val += " " + p.curToken.Literal // Very rough
+		depth := 0
+		for !p.curTokenIs(token.EOF) {
+			switch {
+			case p.curTokenIs(token.RPAREN):
+				if depth == 0 {
+					goto arrDone
+				}
+				depth--
+			case p.curTokenIs(token.LPAREN),
+				p.curTokenIs(token.DOLLAR_LPAREN),
+				p.curTokenIs(token.DoubleLparen),
+				p.curTokenIs(token.LBRACE),
+				p.curTokenIs(token.DollarLbrace):
+				depth++
+			case p.curTokenIs(token.DoubleRparen):
+				if depth > 0 {
+					depth--
+				}
+			case p.curTokenIs(token.RBRACE):
+				if depth > 0 {
+					depth--
+				}
+			}
+			val += " " + p.curToken.Literal
 			p.nextToken()
 		}
+	arrDone:
 		val += " )"
 		if p.curTokenIs(token.RPAREN) {
 			p.nextToken()
