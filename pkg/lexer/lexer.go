@@ -327,6 +327,32 @@ func (l *Lexer) NextToken() token.Token {
 			tok.Column = col
 			tok.HasPrecedingSpace = hasSpace
 			return tok
+		case l.ch == '\\':
+			// Backslash outside a string quotes exactly one following
+			// character. Zsh glob escapes (`\(`, `\)`, `\*`, `\?`,
+			// etc.) surface in oh-my-zsh themes. Emit the escaped
+			// character's natural token — backslash-newline is
+			// already handled by skipWhitespace. For non-alphanumeric
+			// escapes we emit the raw escaped char as an IDENT-style
+			// word so parseCommandWord folds it into the surrounding
+			// word naturally. We only do this when the next byte is
+			// one of the commonly-escaped glob / shell metacharacters
+			// to avoid destabilising token-aware contexts.
+			if next := l.peekChar(); next == '(' || next == ')' || next == '*' ||
+				next == '?' || next == '[' || next == ']' || next == '|' ||
+				next == '&' || next == ';' || next == '<' || next == '>' ||
+				next == '{' || next == '}' || next == '$' || next == '\\' {
+				line, col := l.line, l.column
+				l.readChar() // consume '\'
+				tok = token.Token{
+					Type:    token.IDENT,
+					Literal: "\\" + string(l.ch),
+					Line:    line,
+					Column:  col,
+				}
+			} else {
+				tok = newToken(token.ILLEGAL, l.ch, l.line, l.column)
+			}
 		default:
 			tok = newToken(token.ILLEGAL, l.ch, l.line, l.column)
 		}
