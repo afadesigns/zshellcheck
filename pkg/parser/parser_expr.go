@@ -329,7 +329,13 @@ func (p *Parser) parseArrayAccess() ast.Expression {
 					exp.Index = idx.Index
 				}
 			}
-		case p.curTokenIs(token.VARIABLE), p.curTokenIs(token.INT):
+		case p.curTokenIs(token.VARIABLE), p.curTokenIs(token.INT),
+			p.curTokenIs(token.ASTERISK), p.curTokenIs(token.QUESTION),
+			p.curTokenIs(token.MINUS), p.curTokenIs(token.BANG):
+			// Special positional / array-style subject names like
+			// `${#*}`, `${?}`, `${-}`, `${!}`. Treat the
+			// punctuation as a literal subject so the modifier tail
+			// scanner takes over.
 			exp.Left = &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
 		default:
 			expr := p.parseExpression(LOWEST)
