@@ -138,6 +138,19 @@ func (p *Parser) parseIntegerLiteral() ast.Expression {
 		return nil
 	}
 	lit.Value = value
+	// Inside arithmetic (`(( … ))`, `$(( … ))`), Zsh accepts
+	// floating-point literals like `1.0` and the trailing-dot
+	// variant `1000.`. The lexer emits these as INT + DOT (+ INT
+	// for the fractional part). Absorb the DOT (and any following
+	// digit run) so the closing `))` aligns. The AST keeps the
+	// integer part as Value; katas that need the source form walk
+	// Token.Literal which still names the int run.
+	if p.inArithmetic && p.peekTokenIs(token.DOT) && !p.peekToken.HasPrecedingSpace {
+		p.nextToken() // consume DOT
+		if p.peekTokenIs(token.INT) && !p.peekToken.HasPrecedingSpace {
+			p.nextToken() // consume fractional INT
+		}
+	}
 	return lit
 }
 
