@@ -729,6 +729,14 @@ func TestFixIntegration_ZC1267_DfAddPortable(t *testing.T) {
 	}
 }
 
+func TestFixIntegration_ZC1355_EchoDashERawToPrintR(t *testing.T) {
+	src := `echo -E "literal\tslash"` + "\n"
+	want := `print -r "literal\tslash"` + "\n"
+	if got := runFix(t, src); got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}
+
 func TestFixIntegration_ZC1356_ReadArrayFlagUppercase(t *testing.T) {
 	// ZC1012 fires simultaneously (missing raw flag) so the combined
 	// rewrite adds the raw flag as well.
