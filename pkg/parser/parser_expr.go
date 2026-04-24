@@ -656,7 +656,17 @@ func (p *Parser) parseCommandSubstitution() ast.Expression {
 	p.nextToken()
 
 	p.inBackticks++
+	// Backtick body can be a multi-statement list `\`a; b; c\`` —
+	// parseCommandList alone only handles one pipeline + logical
+	// chain, so subsequent `;` separators fired
+	// "expected `, got ;". Drain extras opaquely after the first
+	// command, mirroring parseDollarParenExpression's fix.
 	exp.Command = p.parseCommandList()
+	for p.peekTokenIs(token.SEMICOLON) {
+		p.nextToken()
+		p.nextToken()
+		_ = p.parseStatement()
+	}
 	p.inBackticks--
 
 	if !p.expectPeek(token.BACKTICK) {
