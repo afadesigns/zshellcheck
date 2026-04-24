@@ -1161,6 +1161,33 @@ func TestBraceParamExpansionSingleCharFlags(t *testing.T) {
 	}
 }
 
+func TestDeclarationEmptyAssignmentAtEOL(t *testing.T) {
+	// `typeset -g VAR=` with nothing after the `=` is valid Zsh
+	// (sets VAR to the empty string). The previous code over-
+	// consumed past the newline trying to read a value, taking
+	// the next statement's first token with it. In the real-world
+	// start.zsh from zsh-autosuggestions this swallowed the `fi`.
+	inputs := []string{
+		`typeset -g VAR=`,
+		`typeset -g A=
+echo after`,
+		`if true; then
+  typeset -g VAR=
+fi`,
+		`local X=
+readonly Y+=
+echo go`,
+	}
+	for _, input := range inputs {
+		l := lexer.New(input)
+		p := New(l)
+		_ = p.ParseProgram()
+		if errs := p.Errors(); len(errs) != 0 {
+			t.Errorf("%s:\n  unexpected parser errors: %v", input, errs)
+		}
+	}
+}
+
 func TestDeclarationFollowedByIfOnNextLine(t *testing.T) {
 	// Regression: `typeset -g A` directly followed by an `if … then …
 	// fi` on the next line used to swallow the `if` keyword, leaving
