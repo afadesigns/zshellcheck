@@ -9,6 +9,15 @@ import (
 )
 
 func (p *Parser) parseExpression(precedence int) ast.Expression {
+	// Inside a `[[ … ]]` conditional, the infix chain may recurse
+	// into parseInfixExpression's right-hand side just before the
+	// closing `]]`. A glob pattern like `.*` or `*.zsh` leaves the
+	// trailing `]]` as the next token, and an ASTERISK/DOT infix
+	// recursion would try to parse it as a prefix. Return nil
+	// silently so the caller's infix result is still well-formed.
+	if p.curTokenIs(token.RDBRACKET) {
+		return nil
+	}
 	prefix := p.prefixParseFns[p.curToken.Type]
 	if prefix == nil {
 		p.noPrefixParseFnError(p.curToken.Type)
@@ -18,6 +27,17 @@ func (p *Parser) parseExpression(precedence int) ast.Expression {
 
 	for !p.peekTokenIs(token.SEMICOLON) && precedence < p.peekPrecedence() {
 		if !p.inArithmetic && p.peekTokenIs(token.LBRACKET) && p.peekToken.HasPrecedingSpace {
+			break
+		}
+		// Stop an infix chain at `]]`. Inside a `[[ … ]]`
+		// conditional the expression parser would otherwise
+		// consume `*]]` as an infix multiplication with a
+		// non-existent right-hand side, producing
+		// "no prefix parse function for ]]" on glob patterns
+		// like `.*` or `*.zsh`. RDBRACKET has no precedence
+		// entry, but ASTERISK's PRODUCT outranks LOWEST and
+		// lures the loop in before the peek check fires.
+		if p.peekTokenIs(token.RDBRACKET) {
 			break
 		}
 
