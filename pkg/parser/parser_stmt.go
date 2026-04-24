@@ -264,6 +264,19 @@ func (p *Parser) parseCommandPipeline() ast.Expression {
 	switch p.curToken.Type {
 	case token.WHILE:
 		left = p.parseWhileLoopStatement()
+	case token.LPAREN:
+		// Subshell group: `( cmd1; cmd2 )` appears as the RHS of
+		// logical chains like `[[ … ]] && ( … )`. Parse the group
+		// as a grouped expression so parseSingleCommand doesn't
+		// treat `(` as a command name.
+		left = p.parseGroupedExpression()
+	case token.LDBRACKET:
+		// `[[ … ]]` condition as a pipeline term (RHS of `&&`/`||`
+		// or head of a pipe). Call the prefix directly so the
+		// caller doesn't try to use it as a simple-command name.
+		left = p.parseDoubleBracketExpression()
+	case token.DoubleLparen:
+		left = p.parseArithmeticCommand()
 	default:
 		left = p.parseSingleCommand()
 	}
