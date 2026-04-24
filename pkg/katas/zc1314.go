@@ -20,6 +20,9 @@ func checkZC1314(node ast.Node) []Violation {
 	if !ok {
 		return nil
 	}
+	if ident == nil {
+		return nil
+	}
 
 	if ident.Value != "$BASH_LOADABLES_PATH" && ident.Value != "BASH_LOADABLES_PATH" {
 		return nil

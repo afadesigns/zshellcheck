@@ -27,6 +27,9 @@ func fixZC1300(node ast.Node, v Violation, source []byte) []FixEdit {
 	if !ok {
 		return nil
 	}
+	if ident == nil {
+		return nil
+	}
 	switch ident.Value {
 	case "$BASH_VERSION", "$BASH_VERSINFO":
 		return []FixEdit{{
@@ -49,6 +52,9 @@ func fixZC1300(node ast.Node, v Violation, source []byte) []FixEdit {
 func checkZC1300(node ast.Node) []Violation {
 	ident, ok := node.(*ast.Identifier)
 	if !ok {
+		return nil
+	}
+	if ident == nil {
 		return nil
 	}
 

@@ -24,6 +24,9 @@ func fixZC1331(node ast.Node, v Violation, source []byte) []FixEdit {
 	if !ok {
 		return nil
 	}
+	if ident == nil {
+		return nil
+	}
 	switch ident.Value {
 	case "$BASH_REMATCH":
 		return []FixEdit{{
@@ -46,6 +49,9 @@ func fixZC1331(node ast.Node, v Violation, source []byte) []FixEdit {
 func checkZC1331(node ast.Node) []Violation {
 	ident, ok := node.(*ast.Identifier)
 	if !ok {
+		return nil
+	}
+	if ident == nil {
 		return nil
 	}
 

@@ -20,6 +20,9 @@ func checkZC1320(node ast.Node) []Violation {
 	if !ok {
 		return nil
 	}
+	if ident == nil {
+		return nil
+	}
 
 	if ident.Value != "$BASH_ARGV" && ident.Value != "BASH_ARGV" {
 		return nil

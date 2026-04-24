@@ -21,6 +21,9 @@ func checkZC1321(node ast.Node) []Violation {
 	if !ok {
 		return nil
 	}
+	if ident == nil {
+		return nil
+	}
 
 	if ident.Value != "$BASH_XTRACEFD" && ident.Value != "BASH_XTRACEFD" {
 		return nil
