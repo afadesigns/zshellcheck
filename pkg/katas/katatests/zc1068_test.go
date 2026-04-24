@@ -50,6 +50,12 @@ func TestZC1068(t *testing.T) {
 				},
 			},
 		},
+		{
+			// Regression for #1225 — anonymous function must not panic.
+			name:     "anonymous function is safe",
+			input:    `() { echo hi } "$@"`,
+			expected: []katas.Violation{},
+		},
 	}
 
 	for _, tt := range tests {

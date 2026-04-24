@@ -24,10 +24,16 @@ func checkZC1068(node ast.Node) []Violation {
 
 	switch n := node.(type) {
 	case *ast.FunctionDefinition:
+		if n.Name == nil {
+			return nil
+		}
 		name = n.Name.Value
 		tokenLine = n.Token.Line
 		tokenCol = n.Token.Column
 	case *ast.FunctionLiteral:
+		if n.Name == nil {
+			return nil
+		}
 		name = n.Name.Value
 		tokenLine = n.Token.Line
 		tokenCol = n.Token.Column
