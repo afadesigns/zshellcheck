@@ -770,7 +770,13 @@ func (p *Parser) parseForLoopStatement() *ast.ForLoopStatement {
 	}
 
 	// For-each loop: for name [in words]; do
-	if !p.expectPeek(token.IDENT) {
+	// Zsh accepts numeric positional names like `for 1 in "$@"; do`
+	// (shorthand to iterate over positionals). Allow INT as the
+	// binding name alongside IDENT.
+	if p.peekTokenIs(token.IDENT) || p.peekTokenIs(token.INT) {
+		p.nextToken()
+	} else {
+		p.peekError(token.IDENT)
 		return nil
 	}
 	stmt.Name = &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
