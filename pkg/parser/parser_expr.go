@@ -558,7 +558,19 @@ func (p *Parser) parseDollarParenExpression() ast.Expression {
 	}
 
 	p.nextToken()
+	// First parse as a command list so `$(cmd arg1 arg2 | other)`
+	// returns a SimpleCommand / pipeline — detection katas like
+	// ZC1050 walk `n.Command` expecting that shape. If the body
+	// continues past the first pipeline with a `;` separator,
+	// drain the rest opaquely so `$(cmd1; cmd2)` reaches its
+	// closing `)` cleanly. The AST keeps the first command; katas
+	// that care about the full body can walk source.
 	exp.Command = p.parseCommandList()
+	for p.peekTokenIs(token.SEMICOLON) {
+		p.nextToken() // onto ;
+		p.nextToken() // onto next stmt head
+		_ = p.parseStatement()
+	}
 	if !p.expectPeek(token.RPAREN) {
 		return nil
 	}
