@@ -23,7 +23,14 @@ func (p *Parser) parseExpression(precedence int) ast.Expression {
 	case token.RDBRACKET, token.AND, token.OR,
 		token.THEN, token.ELSE, token.ELIF, token.Fi,
 		token.DO, token.DONE, token.ESAC,
-		token.SEMICOLON, token.DSEMI:
+		token.SEMICOLON, token.DSEMI,
+		// Statement keywords on the next line indicate the previous
+		// expression's RHS was empty (`name=<NL>for x in …; do`).
+		// Return nil so the InfixExpression's Right stays unset and
+		// the dispatcher picks up FOR/IF/etc. as a fresh statement.
+		token.FOR, token.WHILE, token.If, token.CASE,
+		token.SELECT, token.LET, token.RETURN,
+		token.TYPESET, token.DECLARE:
 		return nil
 	}
 	prefix := p.prefixParseFns[p.curToken.Type]
@@ -225,6 +232,25 @@ func (p *Parser) parseTernaryExpression(left ast.Expression) ast.Expression {
 	return &ast.InfixExpression{Token: tok, Operator: "?", Left: left, Right: thenExpr}
 }
 
+// isEmptyRhsTerminator reports whether the token signals an empty
+// right-hand side for an assignment-like infix. Used by ASSIGN /
+// PLUSEQ to bail before advancing past a keyword that belongs to the
+// next statement.
+func isEmptyRhsTerminator(t token.Type) bool {
+	switch t {
+	case token.SEMICOLON, token.EOF, token.PIPE, token.AMPERSAND,
+		token.AND, token.OR, token.RPAREN, token.RBRACE,
+		token.RDBRACKET, token.RBRACKET,
+		token.FOR, token.WHILE, token.If, token.CASE,
+		token.SELECT, token.LET, token.RETURN,
+		token.TYPESET, token.DECLARE,
+		token.THEN, token.ELSE, token.ELIF, token.Fi,
+		token.DO, token.DONE, token.ESAC, token.DSEMI:
+		return true
+	}
+	return false
+}
+
 func (p *Parser) parseInfixExpression(left ast.Expression) ast.Expression {
 	expression := &ast.InfixExpression{
 		Token:    p.curToken,
@@ -232,6 +258,15 @@ func (p *Parser) parseInfixExpression(left ast.Expression) ast.Expression {
 		Left:     left,
 	}
 	precedence := p.curPrecedence()
+	// Empty RHS for assignment-shaped infixes (`X=<NL>for …`,
+	// `Y+=<NL>case …`): if peek already signals a terminator /
+	// next-statement keyword, leave Right=nil and DON'T advance —
+	// otherwise parseStatement's outer nextToken would skip past
+	// the keyword.
+	isAssign := p.curTokenIs(token.ASSIGN) || p.curTokenIs(token.PLUSEQ)
+	if isAssign && isEmptyRhsTerminator(p.peekToken.Type) {
+		return expression
+	}
 	p.nextToken()
 	expression.Right = p.parseExpression(precedence)
 	return expression
