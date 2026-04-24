@@ -302,7 +302,13 @@ func (p *Parser) parseCommandWord() ast.Expression {
 			t == token.MINUS || t == token.CARET || t == token.TILDE || t == token.DOT ||
 			t == token.GT || t == token.LT || t == token.AMPERSAND || t == token.LBRACKET ||
 			t == token.COMMA || t == token.COLON || t == token.GTGT || t == token.LTLT ||
-			t == token.GTAMP || t == token.LTAMP {
+			t == token.GTAMP || t == token.LTAMP ||
+			// `=` is an assignment operator in expression context but a
+			// literal in command arguments (e.g. `alias -- -='cd -'`,
+			// or `env FOO=bar cmd`). Treat it as a literal word part
+			// when it appears mid-command. The declaration parser has
+			// its own dedicated handling for the IDENT=VALUE form.
+			t == token.ASSIGN || t == token.PLUSEQ {
 			return false
 		}
 		return p.prefixParseFns[t] != nil
