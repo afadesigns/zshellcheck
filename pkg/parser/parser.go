@@ -120,6 +120,14 @@ func New(l *lexer.Lexer) *Parser {
 	p.registerPrefix(token.ASTERISK, p.parsePrefixExpression)
 	p.registerPrefix(token.QUESTION, p.parsePrefixExpression)
 	p.registerPrefix(token.TILDE, p.parsePrefixExpression)
+	// `++x` is pre-increment in Zsh arithmetic (`(( ++x ))`).
+	// Register INC as prefix so the body parses alongside its
+	// postfix counterpart. DEC is deliberately NOT registered as
+	// prefix because many katas' existing test fixtures route
+	// `--flag` arg handling through paths that assume DEC is only
+	// postfix; a parser-wide change there needs a coordinated kata
+	// cleanup first.
+	p.registerPrefix(token.INC, p.parsePrefixExpression)
 	p.registerPrefix(token.TRUE, p.parseBoolean)
 	p.registerPrefix(token.FALSE, p.parseBoolean)
 	p.registerPrefix(token.LPAREN, p.parseGroupedExpression)
