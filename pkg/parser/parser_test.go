@@ -1045,6 +1045,31 @@ func TestArithmeticLogicalChain(t *testing.T) {
 	}
 }
 
+func TestReturnAsLogicalRhs(t *testing.T) {
+	// `cmd || return`, `cmd && return 0`, etc. are idiomatic guards.
+	// When OR/AND got folded into an expression InfixExpression the
+	// right-hand side reached parseExpression's prefix table and
+	// `return` had no entry, producing "no prefix parse function
+	// for RETURN". Registering RETURN as a prefix that builds a
+	// SimpleCommand unblocks the chain; top-level `return` keeps
+	// its dedicated parseReturnStatement path.
+	inputs := []string{
+		`ref=$(cmd) || return`,
+		`ref=$(cmd) || return 1`,
+		`ref=$(cmd) && return`,
+		`[[ -n "$x" ]] && return 0`,
+		`(( n > 0 )) || return`,
+	}
+	for _, input := range inputs {
+		l := lexer.New(input)
+		p := New(l)
+		_ = p.ParseProgram()
+		if errs := p.Errors(); len(errs) != 0 {
+			t.Errorf("%s:\n  unexpected parser errors: %v", input, errs)
+		}
+	}
+}
+
 func TestDoubleBracketLogicalChain(t *testing.T) {
 	// `[[ … ]] && cmd` and `[[ … ]] || cmd` are idiomatic short-
 	// circuit guards. The parser used to let the generic expression
