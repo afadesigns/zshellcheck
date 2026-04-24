@@ -1178,6 +1178,28 @@ func TestArraySubscriptFlags(t *testing.T) {
 	}
 }
 
+func TestBraceParamExpansionEmptySubject(t *testing.T) {
+	// `${(%):-default}` applies the `(%)` flag to an empty parameter
+	// with a default. The subject is legitimately absent; without a
+	// guard the parser tried to parse `:` as a prefix expression and
+	// produced "no prefix parse function for :" on simonoff and
+	// other oh-my-zsh themes.
+	inputs := []string{
+		`x=${(%):-default}`,
+		`y=${(%):--(foo)-}`,
+		`z=${#${(%):--(bar)-}}`,
+		`a=${(l.5.):-default}`,
+	}
+	for _, input := range inputs {
+		l := lexer.New(input)
+		p := New(l)
+		_ = p.ParseProgram()
+		if errs := p.Errors(); len(errs) != 0 {
+			t.Errorf("%s:\n  unexpected parser errors: %v", input, errs)
+		}
+	}
+}
+
 func TestBraceParamExpansionModifiersAreOpaque(t *testing.T) {
 	// Every Zsh parameter-expansion modifier that comes after the
 	// subject is accepted without a structured AST yet (tracked in
