@@ -166,6 +166,29 @@ fi
 	}
 }
 
+func TestFixIntegration_ZC1012_ReadAddR(t *testing.T) {
+	src := "read VAR\n"
+	want := "read -r VAR\n"
+	if got := runFix(t, src); got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}
+
+func TestFixIntegration_ZC1012_ReadWithFlagsPreserved(t *testing.T) {
+	src := "read -p prompt VAR\n"
+	want := "read -r -p prompt VAR\n"
+	if got := runFix(t, src); got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}
+
+func TestFixIntegration_ZC1012_ReadDashRLeftAlone(t *testing.T) {
+	src := "read -r VAR\n"
+	if got := runFix(t, src); got != src {
+		t.Errorf("already-fixed input should be idempotent, got %q", got)
+	}
+}
+
 func TestFixIntegration_SecondPass_ResolvesInner(t *testing.T) {
 	src := "result=`which git`\n"
 	first := runFix(t, src)
