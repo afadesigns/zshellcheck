@@ -127,6 +127,11 @@ func New(l *lexer.Lexer) *Parser {
 	// token to fold into an Identifier when it appears as the
 	// start of an expression.
 	p.registerPrefix(token.COLON, p.parseIdentifier)
+	// COMMA as prefix folds bare commas (`function {a,b,c}_x()`,
+	// brace-expansion bodies that the parser stumbles into as
+	// individual statements) into Identifier tokens so the
+	// surrounding block parses cleanly.
+	p.registerPrefix(token.COMMA, p.parseIdentifier)
 	p.registerPrefix(token.INT, p.parseIntegerLiteral)
 	p.registerPrefix(token.BANG, p.parsePrefixExpression)
 	p.registerPrefix(token.MINUS, p.parsePrefixExpression)
