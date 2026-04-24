@@ -426,7 +426,10 @@ func (l *Lexer) NextToken() (tok token.Token) {
 			// word naturally. We only do this when the next byte is
 			// one of the commonly-escaped glob / shell metacharacters
 			// to avoid destabilising token-aware contexts.
-			if next := l.peekChar(); next == '(' || next == ')' || next == '*' ||
+			next := l.peekChar()
+			isLetter := (next >= 'a' && next <= 'z') || (next >= 'A' && next <= 'Z') ||
+				(next >= '0' && next <= '9')
+			if isLetter || next == '(' || next == ')' || next == '*' ||
 				next == '?' || next == '[' || next == ']' || next == '|' ||
 				next == '&' || next == ';' || next == '<' || next == '>' ||
 				next == '{' || next == '}' || next == '$' || next == '\\' ||
