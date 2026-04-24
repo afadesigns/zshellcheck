@@ -598,6 +598,14 @@ func TestFixIntegration_ZC1162_CpCapitalRToArchive(t *testing.T) {
 	}
 }
 
+func TestFixIntegration_ZC1171_EchoEscapeToPrint(t *testing.T) {
+	src := `echo -e "line1\nline2"` + "\n"
+	want := `print "line1\nline2"` + "\n"
+	if got := runFix(t, src); got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}
+
 func TestFixIntegration_SecondPass_ResolvesInner(t *testing.T) {
 	src := "result=`which git`\n"
 	first := runFix(t, src)
