@@ -485,6 +485,30 @@ func TestFixIntegration_ZC1091_MultipleOpsLeftAlone(t *testing.T) {
 	}
 }
 
+func TestFixIntegration_ZC1126_SortPipeUniq(t *testing.T) {
+	src := "sort file | uniq\n"
+	want := "sort -u file\n"
+	if got := runFix(t, src); got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}
+
+func TestFixIntegration_ZC1126_SortNoArgsPipeUniq(t *testing.T) {
+	src := "sort | uniq\n"
+	want := "sort -u\n"
+	if got := runFix(t, src); got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}
+
+func TestFixIntegration_ZC1126_UniqCountUnchanged(t *testing.T) {
+	// ZC1126 detector skips `uniq -c` etc; fix also stays silent.
+	src := "sort | uniq -c\n"
+	if got := runFix(t, src); got != src {
+		t.Errorf("uniq with flags should be left alone, got %q", got)
+	}
+}
+
 func TestFixIntegration_SecondPass_ResolvesInner(t *testing.T) {
 	src := "result=`which git`\n"
 	first := runFix(t, src)
