@@ -697,6 +697,14 @@ func TestFixIntegration_ZC1241_XargsAddNullSep(t *testing.T) {
 	}
 }
 
+func TestFixIntegration_ZC1263_AptToAptGet(t *testing.T) {
+	src := "apt install curl\n"
+	want := "apt-get install curl\n"
+	if got := runFix(t, src); got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}
+
 func TestFixIntegration_SecondPass_ResolvesInner(t *testing.T) {
 	src := "result=`which git`\n"
 	first := runFix(t, src)
