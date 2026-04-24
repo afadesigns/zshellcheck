@@ -84,6 +84,13 @@ func New(l *lexer.Lexer) *Parser {
 	// when the parser is already mid-expression (OR/AND folded as
 	// infix into an expression chain with `return` on the RHS).
 	p.registerPrefix(token.RETURN, p.parseKeywordAsCommand)
+	// DOT as a prefix models literal-word contexts like `*.zsh`
+	// inside a glob, `.*` as a Zsh conditional pattern, or `./path`
+	// inside an argument list. Wrap the dot in an Identifier and
+	// let parseCommandWord / the bracket scanner fold surrounding
+	// tokens in; without this, every dot in a conditional or
+	// subscript expression fired "no prefix parse function for .".
+	p.registerPrefix(token.DOT, p.parseIdentifier)
 	p.registerPrefix(token.INT, p.parseIntegerLiteral)
 	p.registerPrefix(token.BANG, p.parsePrefixExpression)
 	p.registerPrefix(token.MINUS, p.parsePrefixExpression)
