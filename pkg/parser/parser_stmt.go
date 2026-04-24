@@ -835,9 +835,15 @@ func (p *Parser) parseCaseStatement() *ast.CaseStatement {
 		}
 		// curToken may already be on `)` when parseCommandWord
 		// absorbed an inline glob group like `(a|b)*` whose close
-		// IS the label terminator. Otherwise expectPeek(RPAREN)
-		// to advance onto the label close.
-		if !p.curTokenIs(token.RPAREN) {
+		// IS the label terminator. When the absorbed `)` is just
+		// the glob close and the actual label terminator is the
+		// NEXT `)` — e.g. `plugin::(disable|enable|load))` —
+		// advance once so we land on the label's own `)`. Otherwise
+		// expectPeek(RPAREN) to reach the label close from any
+		// other tail token.
+		if p.curTokenIs(token.RPAREN) && p.peekTokenIs(token.RPAREN) {
+			p.nextToken()
+		} else if !p.curTokenIs(token.RPAREN) {
 			if !p.expectPeek(token.RPAREN) {
 				return nil
 			}

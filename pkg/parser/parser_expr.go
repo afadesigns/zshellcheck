@@ -800,18 +800,20 @@ func (p *Parser) parseDollarParenExpression() ast.Expression {
 	// past either and re-enter parseStatement. Stops at RPAREN or
 	// EOF; callers handle unexpected EOF as a parse error.
 	for !p.peekTokenIs(token.RPAREN) && !p.peekTokenIs(token.EOF) {
-		if p.peekTokenIs(token.SEMICOLON) {
+		switch {
+		case p.peekTokenIs(token.SEMICOLON):
 			p.nextToken() // onto ;
-		} else if p.peekToken.Line > p.curToken.Line {
+		case p.peekToken.Line > p.curToken.Line:
 			// implicit newline separator: fall through to nextToken
-		} else {
+		default:
 			// Unknown continuation — bail so the RPAREN expectPeek
 			// below reports a meaningful error.
-			break
+			goto drainDone
 		}
 		p.nextToken() // onto next stmt head
 		_ = p.parseStatement()
 	}
+drainDone:
 	if !p.expectPeek(token.RPAREN) {
 		return nil
 	}
