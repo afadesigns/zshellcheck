@@ -757,6 +757,33 @@ func (p *Parser) parseDeclarationStatement() *ast.DeclarationStatement {
 			assign := &ast.DeclarationAssignment{
 				Name: &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal},
 			}
+			// Brace expansion inside the name: p10k config files
+			// declare `typeset -g X_{A,B,C}_Y=1` and expect the
+			// parser to treat the whole `X_{A,B,C}_Y` as one name.
+			// Consume a matching `{…}` span plus any trailing IDENT
+			// suffix so the `=` positions correctly relative to the
+			// logical name.
+			if p.peekTokenIs(token.LBRACE) && !p.peekToken.HasPrecedingSpace {
+				p.nextToken() // onto {
+				depth := 1
+				for depth > 0 && !p.peekTokenIs(token.EOF) {
+					p.nextToken()
+					switch {
+					case p.curTokenIs(token.LBRACE):
+						depth++
+					case p.curTokenIs(token.RBRACE):
+						depth--
+					}
+				}
+				// After the matching `}`, an IDENT suffix (the `_Y`
+				// in `X_{…}_Y`) belongs to the same name. Walk
+				// through any suffix tokens on the same line until
+				// we hit a terminator or =/+= operator.
+				for p.peekTokenIs(token.IDENT) && p.peekToken.Line == startLine &&
+					!p.peekToken.HasPrecedingSpace {
+					p.nextToken()
+				}
+			}
 			// Peek the =/+= before consuming the name so we can decide
 			// whether to stay on the name token (bare declaration) or
 			// move onto the operator (value follows). An empty RHS

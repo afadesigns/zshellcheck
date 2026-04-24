@@ -1092,6 +1092,29 @@ func TestBareDollarAsIdentifier(t *testing.T) {
 	}
 }
 
+func TestDeclarationBraceExpansionInName(t *testing.T) {
+	// Zsh brace-expansion inside an identifier name —
+	// `typeset -g X_{A,B,C}_Y=1` — generates three names from one
+	// declaration. Powerlevel10k's config files use this pattern
+	// heavily to declare per-VI-mode variables in a single line.
+	// Previously the parser consumed X_ as the name, broke the loop
+	// on LBRACE, and cascaded into "no prefix parse function for ,".
+	inputs := []string{
+		`typeset -g X_{A,B}_Y=1`,
+		`typeset -g POWERLEVEL9K_PROMPT_CHAR_{OK,ERROR}_VIINS_CONTENT_EXPANSION='❯'`,
+		`local X_{A,B,C}_Y`,
+		`readonly PREFIX_{DEV,PROD}=value`,
+	}
+	for _, input := range inputs {
+		l := lexer.New(input)
+		p := New(l)
+		_ = p.ParseProgram()
+		if errs := p.Errors(); len(errs) != 0 {
+			t.Errorf("%s:\n  unexpected parser errors: %v", input, errs)
+		}
+	}
+}
+
 func TestForLoopShortForm(t *testing.T) {
 	// Zsh `for NAME ( items ) body` is the paren-delimited short
 	// form that needs no do/done. Prezto init.zsh uses it to iterate
