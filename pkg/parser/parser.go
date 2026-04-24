@@ -122,6 +122,11 @@ func New(l *lexer.Lexer) *Parser {
 	// single-character `]`. Without a prefix the lexer's RBRACKET
 	// token had nowhere to land at statement / argument position.
 	p.registerPrefix(token.RBRACKET, p.parseIdentifier)
+	// COLON as prefix: `dir=:$X` (literal `:` value), `${(j::)`
+	// flag forms, and `:` (POSIX null-command) all need the
+	// token to fold into an Identifier when it appears as the
+	// start of an expression.
+	p.registerPrefix(token.COLON, p.parseIdentifier)
 	p.registerPrefix(token.INT, p.parseIntegerLiteral)
 	p.registerPrefix(token.BANG, p.parsePrefixExpression)
 	p.registerPrefix(token.MINUS, p.parsePrefixExpression)
