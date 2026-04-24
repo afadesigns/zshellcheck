@@ -12,12 +12,20 @@ type Lexer struct {
 	line         int  // current line number
 	column       int  // current column number
 
-	// dbracketDepth tracks nesting of `[[ … ]]` conditional blocks.
-	// Without this we cannot distinguish a conditional close (the
-	// fused `]]` token) from two consecutive single-bracket closes
-	// in `arr[$m[i]]`. When depth is zero the lexer emits two
-	// RBRACKETs instead of RDBRACKET.
+	// dbracketDepth is kept for historical parity with katas that
+	// look at it, but the primary source of truth is now
+	// bracketStack below. Incremented alongside every `[[` push and
+	// decremented alongside every `]]` close.
 	dbracketDepth int
+
+	// bracketStack records every open bracket so `]]` only fuses
+	// into RDBRACKET when it actually closes a `[[`. 'D' marks a
+	// `[[` opener; 'B' marks a plain `[` (array subscript or a
+	// glob bracket class). Without this a POSIX class inside a
+	// conditional like `[[ $x == *[[:alnum:]] ]]` collapsed the
+	// class's `]]` into the conditional's closer and left the
+	// outer `]]` unfused.
+	bracketStack []byte
 
 	// pendingContinuation is set when skipWhitespace has just consumed
 	// a `\<NL>` line-continuation pair. It is read and cleared by
@@ -66,6 +74,18 @@ func (l *Lexer) peekChar() byte {
 		return 0
 	}
 	return l.input[l.readPosition]
+}
+
+// peekAt returns the byte n positions ahead of the current reading
+// position (1 == peekChar). Used by the `[` handler to look past the
+// immediate peek so `[[:alnum:]]` can disambiguate the bracket class
+// opener from the `[[` keyword without rewinding state.
+func (l *Lexer) peekAt(n int) byte {
+	idx := l.readPosition + n - 1
+	if idx >= len(l.input) {
+		return 0
+	}
+	return l.input[idx]
 }
 
 func (l *Lexer) NextToken() (tok token.Token) {
@@ -211,28 +231,48 @@ func (l *Lexer) NextToken() (tok token.Token) {
 	case '}':
 		tok = newToken(token.RBRACE, l.ch, l.line, l.column)
 	case '[':
-		if l.peekChar() == '[' {
+		// Fuse `[[` into LDBRACKET unless it opens a POSIX
+		// character class like `[[:alnum:]]`. The keyword `[[` is
+		// always followed by whitespace (and never by `:`); a
+		// `[[:` run belongs to a glob bracket expression where the
+		// outer `[` opens the class and `[:name:]` is the POSIX
+		// indicator. Emit two independent LBRACKETs in that case
+		// so parseCommandWord can pack them into the pattern word.
+		if l.peekChar() == '[' && l.peekAt(2) != ':' {
 			ch := l.ch
 			l.readChar()
 			literal := string(ch) + string(l.ch)
 			tok = token.Token{Type: token.LDBRACKET, Literal: literal, Line: l.line, Column: l.column}
 			l.dbracketDepth++
+			l.bracketStack = append(l.bracketStack, 'D')
 		} else {
 			tok = newToken(token.LBRACKET, l.ch, l.line, l.column)
+			l.bracketStack = append(l.bracketStack, 'B')
 		}
 	case ']':
-		// `]]` only means RDBRACKET when there is a pending
-		// `[[` to close. In array-subscript contexts like
-		// `arr[$m[i]]` the two brackets close two independent
-		// subscripts and must lex as two RBRACKET tokens.
-		if l.peekChar() == ']' && l.dbracketDepth > 0 {
+		// `]]` fuses to RDBRACKET only when the innermost open
+		// bracket is a `[[`. Plain `[` / glob bracket classes
+		// close one at a time, so `[[:alnum:]]` inside a `[[ ]]`
+		// conditional keeps the outer close intact instead of
+		// collapsing the class's `]]` into the conditional's.
+		top := byte(0)
+		if n := len(l.bracketStack); n > 0 {
+			top = l.bracketStack[n-1]
+		}
+		if l.peekChar() == ']' && top == 'D' {
 			ch := l.ch
 			l.readChar()
 			literal := string(ch) + string(l.ch)
 			tok = token.Token{Type: token.RDBRACKET, Literal: literal, Line: l.line, Column: l.column}
-			l.dbracketDepth--
+			if l.dbracketDepth > 0 {
+				l.dbracketDepth--
+			}
+			l.bracketStack = l.bracketStack[:len(l.bracketStack)-1]
 		} else {
 			tok = newToken(token.RBRACKET, l.ch, l.line, l.column)
+			if len(l.bracketStack) > 0 {
+				l.bracketStack = l.bracketStack[:len(l.bracketStack)-1]
+			}
 		}
 	case '$':
 		if dollarTok, ok := l.readDollarToken(hasSpace); ok {
