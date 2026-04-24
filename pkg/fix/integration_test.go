@@ -729,6 +729,14 @@ func TestFixIntegration_ZC1267_DfAddPortable(t *testing.T) {
 	}
 }
 
+func TestFixIntegration_ZC1318_BashCmdsToCommands(t *testing.T) {
+	src := "c=$BASH_CMDS\n"
+	want := "c=$commands\n"
+	if got := runFix(t, src); got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}
+
 func TestFixIntegration_ZC1305_CompWordsToWords(t *testing.T) {
 	src := "w=$COMP_WORDS\n"
 	want := "w=$words\n"
