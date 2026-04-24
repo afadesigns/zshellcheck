@@ -7,6 +7,18 @@ import (
 	"github.com/afadesigns/zshellcheck/pkg/token"
 )
 
+// nodeString returns n.String() when n is non-nil, or an empty string
+// when n is nil. Every Node.String() that embeds a child-node's output
+// routes through here so a partially-parsed tree (where the parser
+// recovered from an error and left a child field unset) can stringify
+// without panicking.
+func nodeString(n Node) string {
+	if n == nil {
+		return ""
+	}
+	return n.String()
+}
+
 // Node represents a node in the AST.
 type Node interface {
 	TokenLiteral() string // literal value of the node
@@ -57,7 +69,7 @@ func (ls *LetStatement) TokenLiteralNode() token.Token { return ls.Token }
 
 // String returns a string representation of the LetStatement.
 func (ls *LetStatement) String() string {
-	return ls.Token.Literal + " " + ls.Name.String() + " = " + ls.Value.String() + ";"
+	return ls.Token.Literal + " " + nodeString(ls.Name) + " = " + nodeString(ls.Value) + ";"
 }
 
 // ReturnStatement represents a return statement.
@@ -74,7 +86,7 @@ func (rs *ReturnStatement) TokenLiteralNode() token.Token { return rs.Token }
 // String returns a string representation of the ReturnStatement.
 func (rs *ReturnStatement) String() string {
 	if rs.ReturnValue != nil {
-		return rs.Token.Literal + " " + rs.ReturnValue.String()
+		return rs.Token.Literal + " " + nodeString(rs.ReturnValue)
 	}
 	return rs.Token.Literal
 }
@@ -92,7 +104,7 @@ func (es *ExpressionStatement) TokenLiteralNode() token.Token { return es.Token 
 
 // String returns a string representation of the ExpressionStatement.
 func (es *ExpressionStatement) String() string {
-	return es.Expression.String()
+	return nodeString(es.Expression)
 }
 
 // Identifier represents an identifier.
@@ -149,7 +161,7 @@ func (pe *PrefixExpression) TokenLiteralNode() token.Token { return pe.Token }
 func (pe *PrefixExpression) String() string {
 	var right string
 	if pe.Right != nil {
-		right = pe.Right.String()
+		right = nodeString(pe.Right)
 	}
 	return "(" + pe.Operator + right + ")"
 }
@@ -167,7 +179,7 @@ func (pe *PostfixExpression) TokenLiteralNode() token.Token { return pe.Token }
 
 // String returns a string representation of the PostfixExpression.
 func (pe *PostfixExpression) String() string {
-	return "(" + pe.Left.String() + pe.Operator + ")"
+	return "(" + nodeString(pe.Left) + pe.Operator + ")"
 }
 
 // InfixExpression represents an infix expression (e.g. 5 + 5).
@@ -184,7 +196,7 @@ func (ie *InfixExpression) TokenLiteralNode() token.Token { return ie.Token }
 
 // String returns a string representation of the InfixExpression.
 func (ie *InfixExpression) String() string {
-	return "(" + ie.Left.String() + " " + ie.Operator + " " + ie.Right.String() + ")"
+	return "(" + nodeString(ie.Left) + " " + ie.Operator + " " + nodeString(ie.Right) + ")"
 }
 
 // BlockStatement represents a block of statements (e.g., in if or function bodies).
@@ -223,9 +235,9 @@ func (is *IfStatement) TokenLiteralNode() token.Token { return is.Token }
 // String returns a string representation of the IfStatement.
 func (is *IfStatement) String() string {
 	var sb strings.Builder
-	sb.WriteString(is.Token.Literal + "(" + is.Condition.String() + ") " + is.Consequence.String())
+	sb.WriteString(is.Token.Literal + "(" + nodeString(is.Condition) + ") " + nodeString(is.Consequence))
 	if is.Alternative != nil {
-		sb.WriteString("else " + is.Alternative.String())
+		sb.WriteString("else " + nodeString(is.Alternative))
 	}
 	return sb.String()
 }
@@ -251,27 +263,27 @@ func (fls *ForLoopStatement) String() string {
 	var sb strings.Builder
 	sb.WriteString(fls.Token.Literal + " ")
 	if fls.Name != nil {
-		sb.WriteString(fls.Name.String() + " in")
+		sb.WriteString(nodeString(fls.Name) + " in")
 		for _, item := range fls.Items {
 			sb.WriteString(" " + item.String())
 		}
 	} else {
 		sb.WriteString("(")
 		if fls.Init != nil {
-			sb.WriteString(fls.Init.String())
+			sb.WriteString(nodeString(fls.Init))
 		}
 		sb.WriteString("; ")
 		if fls.Condition != nil {
-			sb.WriteString(fls.Condition.String())
+			sb.WriteString(nodeString(fls.Condition))
 		}
 		sb.WriteString("; ")
 		if fls.Post != nil {
-			sb.WriteString(fls.Post.String())
+			sb.WriteString(nodeString(fls.Post))
 		}
 		sb.WriteString(")")
 	}
 	sb.WriteString(" ")
-	sb.WriteString(fls.Body.String())
+	sb.WriteString(nodeString(fls.Body))
 	return sb.String()
 }
 
@@ -290,8 +302,8 @@ func (wls *WhileLoopStatement) TokenLiteralNode() token.Token { return wls.Token
 // String returns a string representation of the WhileLoopStatement.
 func (wls *WhileLoopStatement) String() string {
 	var sb strings.Builder
-	sb.WriteString(wls.Token.Literal + "(" + wls.Condition.String() + ") ")
-	sb.WriteString(wls.Body.String())
+	sb.WriteString(wls.Token.Literal + "(" + nodeString(wls.Condition) + ") ")
+	sb.WriteString(nodeString(wls.Body))
 	return sb.String()
 }
 
@@ -318,7 +330,7 @@ func (fl *FunctionLiteral) String() string {
 	}
 	sb.WriteString(strings.Join(params, ", "))
 	sb.WriteString(") ")
-	sb.WriteString(fl.Body.String())
+	sb.WriteString(nodeString(fl.Body))
 	return sb.String()
 }
 
@@ -336,7 +348,7 @@ func (ce *CallExpression) TokenLiteralNode() token.Token { return ce.Token }
 // String returns a string representation of the CallExpression.
 func (ce *CallExpression) String() string {
 	var sb strings.Builder
-	sb.WriteString(ce.Function.String())
+	sb.WriteString(nodeString(ce.Function))
 	sb.WriteString("(")
 	args := []string{}
 	for _, a := range ce.Arguments {
@@ -360,7 +372,7 @@ func (ie *IndexExpression) TokenLiteralNode() token.Token { return ie.Token }
 
 // String returns a string representation of the IndexExpression.
 func (ie *IndexExpression) String() string {
-	return "(" + ie.Left.String() + "[" + ie.Index.String() + "])"
+	return "(" + nodeString(ie.Left) + "[" + nodeString(ie.Index) + "])"
 }
 
 // BracketExpression represents a bracket expression (e.g. {a, b, c}).
@@ -430,7 +442,7 @@ func (ge *GroupedExpression) expressionNode()               {}
 func (ge *GroupedExpression) TokenLiteral() string          { return ge.Token.Literal }
 func (ge *GroupedExpression) TokenLiteralNode() token.Token { return ge.Token }
 func (ge *GroupedExpression) String() string {
-	return "(" + ge.Expression.String() + ")"
+	return "(" + nodeString(ge.Expression) + ")"
 }
 
 // ArrayAccess represents an array access expression (e.g. ${arr[0]}).
@@ -449,10 +461,10 @@ func (aa *ArrayAccess) String() string {
 	var sb strings.Builder
 	sb.WriteString("${ ")
 	if aa.Left != nil {
-		sb.WriteString(aa.Left.String())
+		sb.WriteString(nodeString(aa.Left))
 	}
 	if aa.Index != nil {
-		sb.WriteString("[" + aa.Index.String() + "]")
+		sb.WriteString("[" + nodeString(aa.Index) + "]")
 	}
 	sb.WriteString("}")
 	return sb.String()
@@ -468,7 +480,7 @@ func (cs *CommandSubstitution) expressionNode()               {}
 func (cs *CommandSubstitution) TokenLiteral() string          { return cs.Token.Literal }
 func (cs *CommandSubstitution) TokenLiteralNode() token.Token { return cs.Token }
 func (cs *CommandSubstitution) String() string {
-	return "$(" + cs.Command.String() + ")"
+	return "$(" + nodeString(cs.Command) + ")"
 }
 
 // InvalidArrayAccess represents an invalid array access.
@@ -482,7 +494,7 @@ func (ia *InvalidArrayAccess) expressionNode()               {}
 func (ia *InvalidArrayAccess) TokenLiteral() string          { return ia.Token.Literal }
 func (ia *InvalidArrayAccess) TokenLiteralNode() token.Token { return ia.Token }
 func (ia *InvalidArrayAccess) String() string {
-	return ia.Left.String() + "[" + ia.Index.String() + "]"
+	return nodeString(ia.Left) + "[" + nodeString(ia.Index) + "]"
 }
 
 // ArrayLiteral represents an array literal (e.g., (val1 val2)).
@@ -532,7 +544,7 @@ func (dpe *DollarParenExpression) TokenLiteral() string          { return dpe.To
 func (dpe *DollarParenExpression) TokenLiteralNode() token.Token { return dpe.Token }
 
 // String returns a string representation of the DollarParenExpression.
-func (dpe *DollarParenExpression) String() string { return "$(" + dpe.Command.String() + ")" }
+func (dpe *DollarParenExpression) String() string { return "$(" + nodeString(dpe.Command) + ")" }
 
 // SimpleCommand represents a simple command (e.g., ls -l).
 type SimpleCommand struct {
@@ -549,7 +561,7 @@ func (sc *SimpleCommand) TokenLiteralNode() token.Token { return sc.Token }
 // String returns a string representation of the SimpleCommand.
 func (sc *SimpleCommand) String() string {
 	var sb strings.Builder
-	sb.WriteString(sc.Name.String())
+	sb.WriteString(nodeString(sc.Name))
 	for _, arg := range sc.Arguments {
 		sb.WriteString(" " + arg.String())
 	}
@@ -591,7 +603,7 @@ func (cs *CaseStatement) TokenLiteralNode() token.Token { return cs.Token }
 func (cs *CaseStatement) String() string {
 	var sb strings.Builder
 	sb.WriteString("case ")
-	sb.WriteString(cs.Value.String())
+	sb.WriteString(nodeString(cs.Value))
 	sb.WriteString(" in\n")
 	for _, clause := range cs.Clauses {
 		sb.WriteString(clause.String())
@@ -622,7 +634,7 @@ func (cc *CaseClause) String() string {
 		sb.WriteString(p.String())
 	}
 	sb.WriteString(") ")
-	sb.WriteString(cc.Body.String())
+	sb.WriteString(nodeString(cc.Body))
 	sb.WriteString("\n")
 	return sb.String()
 }
@@ -781,7 +793,7 @@ func (ss *SelectStatement) TokenLiteralNode() token.Token { return ss.Token }
 func (ss *SelectStatement) String() string {
 	var sb strings.Builder
 	sb.WriteString("select ")
-	sb.WriteString(ss.Name.String())
+	sb.WriteString(nodeString(ss.Name))
 	if len(ss.Items) > 0 {
 		sb.WriteString(" in")
 		for _, item := range ss.Items {
@@ -790,7 +802,7 @@ func (ss *SelectStatement) String() string {
 		}
 	}
 	sb.WriteString("; do ")
-	sb.WriteString(ss.Body.String())
+	sb.WriteString(nodeString(ss.Body))
 	sb.WriteString("done")
 	return sb.String()
 }
@@ -813,7 +825,7 @@ func (cs *CoprocStatement) String() string {
 	if cs.Name != "" {
 		sb.WriteString(cs.Name + " ")
 	}
-	sb.WriteString(cs.Command.String())
+	sb.WriteString(nodeString(cs.Command))
 	return sb.String()
 }
 
@@ -826,14 +838,14 @@ type DeclarationAssignment struct {
 
 func (da *DeclarationAssignment) String() string {
 	var sb strings.Builder
-	sb.WriteString(da.Name.String())
+	sb.WriteString(nodeString(da.Name))
 	if da.Value != nil {
 		if da.IsAppend {
 			sb.WriteString("+=")
 		} else {
 			sb.WriteString("=")
 		}
-		sb.WriteString(da.Value.String())
+		sb.WriteString(nodeString(da.Value))
 	}
 	return sb.String()
 }
@@ -876,7 +888,7 @@ func (ac *ArithmeticCommand) TokenLiteral() string          { return ac.Token.Li
 func (ac *ArithmeticCommand) TokenLiteralNode() token.Token { return ac.Token }
 
 func (ac *ArithmeticCommand) String() string {
-	return "((" + ac.Expression.String() + "))"
+	return "((" + nodeString(ac.Expression) + "))"
 }
 
 // Redirection represents a redirection.
@@ -891,7 +903,7 @@ func (r *Redirection) expressionNode()               {}
 func (r *Redirection) TokenLiteral() string          { return r.Token.Literal }
 func (r *Redirection) TokenLiteralNode() token.Token { return r.Token }
 func (r *Redirection) String() string {
-	return r.Left.String() + " " + r.Operator + " " + r.Right.String()
+	return nodeString(r.Left) + " " + r.Operator + " " + nodeString(r.Right)
 }
 
 // ProcessSubstitution represents <(...) or >(...).
@@ -903,7 +915,9 @@ type ProcessSubstitution struct {
 func (ps *ProcessSubstitution) expressionNode()               {}
 func (ps *ProcessSubstitution) TokenLiteral() string          { return ps.Token.Literal }
 func (ps *ProcessSubstitution) TokenLiteralNode() token.Token { return ps.Token }
-func (ps *ProcessSubstitution) String() string                { return ps.Token.Literal + ps.Command.String() + ")" }
+func (ps *ProcessSubstitution) String() string {
+	return ps.Token.Literal + nodeString(ps.Command) + ")"
+}
 
 // Subshell represents ( ... ).
 type Subshell struct {
@@ -915,7 +929,7 @@ func (s *Subshell) statementNode()                {}
 func (s *Subshell) expressionNode()               {}
 func (s *Subshell) TokenLiteral() string          { return s.Token.Literal }
 func (s *Subshell) TokenLiteralNode() token.Token { return s.Token }
-func (s *Subshell) String() string                { return "(" + s.Command.String() + ")" }
+func (s *Subshell) String() string                { return "(" + nodeString(s.Command) + ")" }
 
 // FunctionDefinition represents a function definition statement.
 type FunctionDefinition struct {
@@ -929,7 +943,7 @@ func (fd *FunctionDefinition) expressionNode()               {}
 func (fd *FunctionDefinition) TokenLiteral() string          { return fd.Token.Literal }
 func (fd *FunctionDefinition) TokenLiteralNode() token.Token { return fd.Token }
 func (fd *FunctionDefinition) String() string {
-	return "function " + fd.Name.String() + " " + fd.Body.String()
+	return "function " + nodeString(fd.Name) + " " + nodeString(fd.Body)
 }
 
 var (
