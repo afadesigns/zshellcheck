@@ -445,6 +445,21 @@ func TestFixIntegration_ZC1076_AutoloadWithUZUnchanged(t *testing.T) {
 	}
 }
 
+func TestFixIntegration_ZC1040_AppendNullGlob(t *testing.T) {
+	src := "for f in *.txt; do :; done\n"
+	want := "for f in *.txt(N); do :; done\n"
+	if got := runFix(t, src); got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}
+
+func TestFixIntegration_ZC1040_AlreadyQualifiedUnchanged(t *testing.T) {
+	src := "for f in *.txt(N); do :; done\n"
+	if got := runFix(t, src); got != src {
+		t.Errorf("already-qualified glob should be idempotent, got %q", got)
+	}
+}
+
 func TestFixIntegration_SecondPass_ResolvesInner(t *testing.T) {
 	src := "result=`which git`\n"
 	first := runFix(t, src)

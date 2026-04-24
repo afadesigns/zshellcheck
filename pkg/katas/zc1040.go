@@ -14,7 +14,51 @@ func init() {
 			"Use the `(N)` glob qualifier to make it null (empty) if no matches found, preventing the error.",
 		Severity: SeverityStyle,
 		Check:    checkZC1040,
+		Fix:      fixZC1040,
 	})
+}
+
+// fixZC1040 appends `(N)` after a glob pattern in a `for` loop item
+// list, turning `for f in *.txt` into `for f in *.txt(N)` so an
+// empty match produces an empty iterator instead of an error.
+// Span scanning ends at the first unescaped whitespace / delimiter.
+func fixZC1040(_ ast.Node, v Violation, source []byte) []FixEdit {
+	start := LineColToByteOffset(source, v.Line, v.Column)
+	if start < 0 || start >= len(source) {
+		return nil
+	}
+	argLen := unquotedArgLen(source, start)
+	if argLen == 0 {
+		return nil
+	}
+	end := start + argLen
+	endLine, endCol := offsetLineColZC1040(source, end)
+	if endLine < 0 {
+		return nil
+	}
+	return []FixEdit{{
+		Line:    endLine,
+		Column:  endCol,
+		Length:  0,
+		Replace: "(N)",
+	}}
+}
+
+func offsetLineColZC1040(source []byte, offset int) (int, int) {
+	if offset < 0 || offset > len(source) {
+		return -1, -1
+	}
+	line := 1
+	col := 1
+	for i := 0; i < offset; i++ {
+		if source[i] == '\n' {
+			line++
+			col = 1
+			continue
+		}
+		col++
+	}
+	return line, col
 }
 
 func checkZC1040(node ast.Node) []Violation {
