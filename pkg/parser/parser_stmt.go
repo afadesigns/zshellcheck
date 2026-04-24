@@ -16,18 +16,26 @@ func (p *Parser) parseStatement() ast.Statement {
 	case token.LET:
 		return p.parseLetStatement()
 	case token.If:
-		return p.parseIfStatement()
+		stmt := p.parseIfStatement()
+		p.consumePipelineTail()
+		return stmt
 	case token.SHEBANG:
 		return p.parseShebangStatement()
 	case token.HASH:
 		// Skip comments for now
 		return nil
 	case token.FOR:
-		return p.parseForLoopStatement()
+		stmt := p.parseForLoopStatement()
+		p.consumePipelineTail()
+		return stmt
 	case token.WHILE:
-		return p.parseWhileLoopStatement()
+		stmt := p.parseWhileLoopStatement()
+		p.consumePipelineTail()
+		return stmt
 	case token.SELECT:
-		return p.parseSelectStatement()
+		stmt := p.parseSelectStatement()
+		p.consumePipelineTail()
+		return stmt
 	case token.COPROC:
 		return p.parseCoprocStatement()
 	case token.TYPESET, token.DECLARE:
@@ -124,7 +132,9 @@ func (p *Parser) parseStatement() ast.Statement {
 		// into parseStatement's next-iteration dispatch.
 		return p.parsePipelineStartingWithExpression()
 	case token.CASE:
-		return p.parseCaseStatement()
+		stmt := p.parseCaseStatement()
+		p.consumePipelineTail()
+		return stmt
 	case token.IDENT:
 		if p.curToken.Literal == "test" {
 			return p.parseSimpleCommandStatement()
@@ -211,6 +221,21 @@ func (p *Parser) parseExpressionOrFunctionDefinition() ast.Statement {
 		}
 	}
 	return stmt
+}
+
+// consumePipelineTail drains trailing `| cmd` / `&& cmd` / `|| cmd`
+// continuations that follow a block-shaped statement (if/for/while/
+// case). These structures can head pipelines in Zsh
+// (`for f in *; do …; done | column -t`) but have no AST node for a
+// pipeline with a block left-hand side, so the continuation is
+// consumed opaquely. Detection katas that need the full pipeline
+// walk source directly.
+func (p *Parser) consumePipelineTail() {
+	for p.peekTokenIs(token.PIPE) || p.peekTokenIs(token.AND) || p.peekTokenIs(token.OR) {
+		p.nextToken() // onto op
+		p.nextToken() // onto RHS head
+		_ = p.parseCommandPipeline()
+	}
 }
 
 // parsePipelineStartingWithExpression parses a statement whose head
