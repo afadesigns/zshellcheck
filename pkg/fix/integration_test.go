@@ -721,6 +721,14 @@ func TestFixIntegration_ZC1253_DockerBuildNoCache(t *testing.T) {
 	}
 }
 
+func TestFixIntegration_ZC1267_DfAddPortable(t *testing.T) {
+	src := "df -h /\n"
+	want := "df -P -h /\n"
+	if got := runFix(t, src); got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}
+
 func TestFixIntegration_SecondPass_ResolvesInner(t *testing.T) {
 	src := "result=`which git`\n"
 	first := runFix(t, src)
