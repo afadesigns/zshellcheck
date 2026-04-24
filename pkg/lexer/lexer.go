@@ -203,12 +203,20 @@ func (l *Lexer) NextToken() (tok token.Token) {
 			*l = savedLexer
 		}
 
-		if l.peekChar() == '-' {
+		switch l.peekChar() {
+		case '-':
 			ch := l.ch
 			l.readChar()
 			literal := string(ch) + string(l.ch)
 			tok = token.Token{Type: token.DEC, Literal: literal, Line: l.line, Column: l.column}
-		} else {
+		case '=':
+			// Zsh arithmetic compound-assign `-=`. Fuse into
+			// PLUSEQ like the other compound forms.
+			ch := l.ch
+			l.readChar()
+			literal := string(ch) + string(l.ch)
+			tok = token.Token{Type: token.PLUSEQ, Literal: literal, Line: l.line, Column: l.column}
+		default:
 			tok = newToken(token.MINUS, l.ch, l.line, l.column)
 		}
 	case '!':
@@ -221,7 +229,20 @@ func (l *Lexer) NextToken() (tok token.Token) {
 			tok = newToken(token.BANG, l.ch, l.line, l.column)
 		}
 	case '*':
-		tok = newToken(token.ASTERISK, l.ch, l.line, l.column)
+		// Zsh compound-assign `*=`. Inside arithmetic
+		// `(( x *= 2 ))`, `*=` updates-with-multiply; outside,
+		// bare `*` keeps its ASTERISK role for globs / expansions.
+		// Fuse the two-char form into PLUSEQ so the parser's
+		// existing compound-assign infix covers modulo/multiply/
+		// divide variants uniformly.
+		if l.peekChar() == '=' {
+			ch := l.ch
+			l.readChar()
+			literal := string(ch) + string(l.ch)
+			tok = token.Token{Type: token.PLUSEQ, Literal: literal, Line: l.line, Column: l.column}
+		} else {
+			tok = newToken(token.ASTERISK, l.ch, l.line, l.column)
+		}
 	case '<':
 		tok = l.readAngleBracket(true)
 	case '>':
@@ -317,7 +338,17 @@ func (l *Lexer) NextToken() (tok token.Token) {
 	case '^':
 		tok = newToken(token.CARET, l.ch, l.line, l.column)
 	case '%':
-		tok = newToken(token.PERCENT, l.ch, l.line, l.column)
+		// Zsh arithmetic compound-assign `%=`: `(( x %= 60 ))`.
+		// Fuse into PLUSEQ like the other compound-assign forms
+		// so the parser reuses its existing EQUALS-level infix.
+		if l.peekChar() == '=' {
+			ch := l.ch
+			l.readChar()
+			literal := string(ch) + string(l.ch)
+			tok = token.Token{Type: token.PLUSEQ, Literal: literal, Line: l.line, Column: l.column}
+		} else {
+			tok = newToken(token.PERCENT, l.ch, l.line, l.column)
+		}
 	case '.':
 		tok = newToken(token.DOT, l.ch, l.line, l.column)
 	case '"':
