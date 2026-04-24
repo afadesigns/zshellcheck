@@ -633,6 +633,14 @@ func TestFixIntegration_ZC1170_PopdWithDirAddQuiet(t *testing.T) {
 	}
 }
 
+func TestFixIntegration_ZC1209_SystemctlNoPager(t *testing.T) {
+	src := "systemctl status nginx\n"
+	want := "systemctl --no-pager status nginx\n"
+	if got := runFix(t, src); got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}
+
 func TestFixIntegration_SecondPass_ResolvesInner(t *testing.T) {
 	src := "result=`which git`\n"
 	first := runFix(t, src)

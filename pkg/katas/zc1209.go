@@ -12,7 +12,58 @@ func init() {
 		Description: "`systemctl` invokes a pager by default which hangs in non-interactive scripts. " +
 			"Use `--no-pager` or pipe to `cat` for reliable script output.",
 		Check: checkZC1209,
+		Fix:   fixZC1209,
 	})
+}
+
+// fixZC1209 inserts ` --no-pager` after the `systemctl` command
+// name so subcommands that emit pager output (status, list-*)
+// behave predictably in scripts.
+func fixZC1209(node ast.Node, v Violation, source []byte) []FixEdit {
+	cmd, ok := node.(*ast.SimpleCommand)
+	if !ok {
+		return nil
+	}
+	ident, ok := cmd.Name.(*ast.Identifier)
+	if !ok || ident.Value != "systemctl" {
+		return nil
+	}
+	nameOff := LineColToByteOffset(source, v.Line, v.Column)
+	if nameOff < 0 {
+		return nil
+	}
+	nameLen := IdentLenAt(source, nameOff)
+	if nameLen != len("systemctl") {
+		return nil
+	}
+	insertAt := nameOff + nameLen
+	insLine, insCol := offsetLineColZC1209(source, insertAt)
+	if insLine < 0 {
+		return nil
+	}
+	return []FixEdit{{
+		Line:    insLine,
+		Column:  insCol,
+		Length:  0,
+		Replace: " --no-pager",
+	}}
+}
+
+func offsetLineColZC1209(source []byte, offset int) (int, int) {
+	if offset < 0 || offset > len(source) {
+		return -1, -1
+	}
+	line := 1
+	col := 1
+	for i := 0; i < offset; i++ {
+		if source[i] == '\n' {
+			line++
+			col = 1
+			continue
+		}
+		col++
+	}
+	return line, col
 }
 
 func checkZC1209(node ast.Node) []Violation {
