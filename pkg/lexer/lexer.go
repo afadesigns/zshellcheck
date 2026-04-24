@@ -27,6 +27,14 @@ type Lexer struct {
 	// outer `]]` unfused.
 	bracketStack []byte
 
+	// suppressLparenFusion is set after emitting DOLLAR_LPAREN (`$(`)
+	// so the next `(` is NOT fused with its peek into DoubleLparen.
+	// Real code writes `$(((expr) * 2))` which is `$((` arithmetic
+	// plus a nested `(expr)` grouping; without this flag the lexer
+	// consumed the inner `(` into a DoubleLparen and the outer
+	// arithmetic `))` never found its match.
+	suppressLparenFusion bool
+
 	// pendingContinuation is set when skipWhitespace has just consumed
 	// a `\<NL>` line-continuation pair. It is read and cleared by
 	// NextToken so the next emitted token carries
@@ -92,10 +100,21 @@ func (l *Lexer) NextToken() (tok token.Token) {
 	// skipWhitespace sets pendingContinuation when a `\<NL>` pair
 	// was absorbed; stamp the flag onto the returned token via this
 	// named-return defer so every early return path inherits it.
+	// Also clear suppressLparenFusion unless the returned token is
+	// another `$(` — the flag is one-shot: the NEXT `(` (paren
+	// token) should skip fusion, any other token drops the flag so
+	// later `((` pairs (e.g. a fresh arithmetic open) fuse normally.
+	prevSuppress := l.suppressLparenFusion
 	defer func() {
 		if l.pendingContinuation {
 			tok.HasPrecedingContinuation = true
 			l.pendingContinuation = false
+		}
+		// If the just-emitted token is LPAREN (we consumed the
+		// suppress), or anything that doesn't open another `$(`,
+		// clear the flag. DOLLAR_LPAREN re-sets it explicitly.
+		if prevSuppress && tok.Type != token.DOLLAR_LPAREN {
+			l.suppressLparenFusion = false
 		}
 	}()
 	hasSpace := l.skipWhitespace()
@@ -158,7 +177,7 @@ func (l *Lexer) NextToken() (tok token.Token) {
 	case '?':
 		tok = newToken(token.QUESTION, l.ch, l.line, l.column)
 	case '(':
-		if l.peekChar() == '(' {
+		if l.peekChar() == '(' && !l.suppressLparenFusion {
 			ch := l.ch
 			l.readChar()
 			literal := string(ch) + string(l.ch)
@@ -168,6 +187,7 @@ func (l *Lexer) NextToken() (tok token.Token) {
 			tok = newToken(token.LPAREN, l.ch, l.line, l.column)
 			l.parenStack = append(l.parenStack, 'P')
 		}
+		l.suppressLparenFusion = false
 	case ')':
 		tok = l.readCloseParen()
 	case ',':
@@ -656,8 +676,13 @@ func (l *Lexer) readDollarToken(hasSpace bool) (token.Token, bool) {
 		// `$(` opens a command-substitution that closes with a single
 		// `)`. Record it as 'P' so a nested `))` does not get fused
 		// into DoubleRparen when only the inner `(` / `$(` are being
-		// closed.
+		// closed. Also tell the `(` handler to emit its next token
+		// as a plain LPAREN regardless of peek, so `$((` reads as
+		// `$(` + `(` (arithmetic open) rather than `$(` +
+		// DoubleLparen which would desync nested groupings like
+		// `$(((expr) * 2))`.
 		l.parenStack = append(l.parenStack, 'P')
+		l.suppressLparenFusion = true
 		tok.HasPrecedingSpace = hasSpace
 		return tok, true
 	case '\'':
