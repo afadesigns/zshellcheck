@@ -46,6 +46,18 @@ func (p *Parser) parseExpression(precedence int) ast.Expression {
 		if p.peekTokenIs(token.RDBRACKET) {
 			break
 		}
+		// When the infix chain has already landed curToken on
+		// `]]`, the conditional is finished. Stop the outer loop
+		// before it reaches across the bracket and picks up the
+		// next statement's `&&` / `||` as a continuation of the
+		// bracket expression. Without this, patterns that end in
+		// an ASTERISK (`[[ $x = /* ]]`) left curToken on RDBRACKET
+		// with peek on OR, and LOWEST's precedence table let OR
+		// win, swallowing the following command into the bracket
+		// body.
+		if p.curTokenIs(token.RDBRACKET) {
+			break
+		}
 		// Inside a `[[ … ]]` conditional, adjacent `(…)` groups are
 		// glob alternations being concatenated — not function calls
 		// on the left-hand expression. Stop the infix loop from
