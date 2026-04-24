@@ -339,6 +339,17 @@ func (p *Parser) parseArrayAccess() ast.Expression {
 	// depth, so the closing `}` is found correctly. The AST still
 	// exposes the subject — katas that only care about the variable
 	// name keep working — but the modifier body is opaque.
+	// When curToken is already at the closing `}` (e.g. ASSIGN's
+	// RHS in `${X=}` was empty and parseExpression bailed on
+	// RBRACE without consuming it), short-circuit IF this is the
+	// outermost expansion — detected by peek being EOF or another
+	// terminator. Inside a nested form like `${#${=name}}`, the
+	// inner ArrayAccess already left curToken on its close `}`
+	// while the outer's close is the next `}` (peek RBRACE), and
+	// we still need expectPeek(RBRACE) to advance.
+	if p.curTokenIs(token.RBRACE) && !p.peekTokenIs(token.RBRACE) {
+		return exp
+	}
 	if !p.peekTokenIs(token.RBRACE) {
 		depth := 0
 		for !p.peekTokenIs(token.EOF) {
