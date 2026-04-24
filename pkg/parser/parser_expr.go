@@ -460,6 +460,25 @@ func (p *Parser) parseInvalidArrayAccessPrefix() ast.Expression {
 		return &ast.Identifier{Token: dollarToken, Value: "$"}
 	}
 
+	// `$[expr]` — Zsh's older / deprecated arithmetic expansion
+	// form, equivalent to `$((expr))`. Consume the body opaquely
+	// to the matching `]` so callers see a single Identifier and
+	// the rest of the line keeps parsing.
+	if p.peekTokenIs(token.LBRACKET) {
+		p.nextToken() // onto [
+		bdepth := 1
+		for bdepth > 0 && !p.peekTokenIs(token.EOF) {
+			p.nextToken()
+			switch {
+			case p.curTokenIs(token.LBRACKET):
+				bdepth++
+			case p.curTokenIs(token.RBRACKET):
+				bdepth--
+			}
+		}
+		return &ast.Identifier{Token: dollarToken, Value: "$[…]"}
+	}
+
 	if p.peekTokenIs(token.HASH) || p.peekTokenIs(token.INT) || p.peekTokenIs(token.ASTERISK) || p.peekTokenIs(token.BANG) || p.peekTokenIs(token.MINUS) {
 		p.nextToken()
 		opToken := p.curToken
