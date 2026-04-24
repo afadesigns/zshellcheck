@@ -364,6 +364,16 @@ func (p *Parser) parseCommandWord() ast.Expression {
 		return p.prefixParseFns[t] != nil
 	}
 
+	// Track LBRACE depth opened MID-WORD so a matching `}` isn't
+	// mistaken for a delimiter. Zsh git refspecs like
+	// `@{upstream}` appear bare on command lines; without this the
+	// RBRACE closed the arg at `{upstream` and the outer `$(` lost
+	// its closing `)`. When the word STARTS with `{` we leave
+	// braceDepth at zero so brace expansions `{1..10}` still
+	// terminate at `}` (tests like ZC1083 expect `{1..10}$var`
+	// to parse as two concatenated words: `{1..10}` then `$var`).
+	braceDepth := 0
+
 	// Parse the first part
 	if !isExpression(p.curToken.Type) {
 		parts = append(parts, &ast.StringLiteral{Token: p.curToken, Value: p.curToken.Literal})
@@ -372,11 +382,22 @@ func (p *Parser) parseCommandWord() ast.Expression {
 	}
 
 	// Continue parsing while the next token is adjacent (no preceding space)
-	for !p.peekToken.HasPrecedingSpace && !p.isCommandDelimiter(p.peekToken) &&
-		p.peekOnSameLogicalLine() {
-
+	for !p.peekToken.HasPrecedingSpace && p.peekOnSameLogicalLine() {
+		if braceDepth == 0 && p.isCommandDelimiter(p.peekToken) {
+			break
+		}
+		if braceDepth > 0 && p.peekTokenIs(token.EOF) {
+			break
+		}
 		p.nextToken()
-
+		switch p.curToken.Type {
+		case token.LBRACE:
+			braceDepth++
+		case token.RBRACE:
+			if braceDepth > 0 {
+				braceDepth--
+			}
+		}
 		if !isExpression(p.curToken.Type) {
 			// Treat as literal string part
 			parts = append(parts, &ast.StringLiteral{Token: p.curToken, Value: p.curToken.Literal})
