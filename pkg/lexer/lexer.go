@@ -395,12 +395,11 @@ func (l *Lexer) readDollarToken(hasSpace bool) (token.Token, bool) {
 		return tok, true
 	case '\'':
 		// Zsh ANSI-C quoting: $'…' processes backslash escapes like
-		// \n, \t etc. Emit one STRING token spanning the $' opener
-		// through the matching closing quote so the parser sees a
-		// literal value rather than DOLLAR + bare quoted string.
+		// \n, \t, and crucially \' for an embedded single quote.
+		// Must honour escapes so `$'\''` does not terminate early.
 		col := l.column
 		l.readChar() // consume '$'
-		body := l.readString('\'')
+		body := l.readStringFlavour('\'', true)
 		tok.Type = token.STRING
 		tok.Literal = "$" + body
 		tok.Line = l.line
@@ -467,6 +466,17 @@ func (l *Lexer) readNumber() string {
 }
 
 func (l *Lexer) readString(quote byte) string {
+	return l.readStringFlavour(quote, quote == '"')
+}
+
+// readStringFlavour is the shared body of string lexing. When
+// honourEscapes is true, `\X` mid-string consumes both bytes so
+// that `\<quote>` does not terminate the string — used by double-
+// quoted strings and by the `$'…'` ANSI-C form. Plain single quotes
+// in Zsh never honour escapes: `\` inside `'…'` is a literal
+// backslash, and the only way to embed `'` is to close and reopen
+// the quotation.
+func (l *Lexer) readStringFlavour(quote byte, honourEscapes bool) string {
 	position := l.position // include opening quote
 	for {
 		l.readChar()
@@ -476,7 +486,7 @@ func (l *Lexer) readString(quote byte) string {
 		if l.ch == quote {
 			break
 		}
-		if l.ch == '\\' {
+		if honourEscapes && l.ch == '\\' {
 			l.readChar() // skip escaped char
 			if l.ch == 0 {
 				break
