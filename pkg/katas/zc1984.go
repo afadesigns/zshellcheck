@@ -22,6 +22,12 @@ func init() {
 	})
 }
 
+var zc1984ZapFlags = map[string]bool{
+	"-Z":        true,
+	"-o":        true,
+	"--zap-all": true,
+}
+
 func checkZC1984(node ast.Node) []Violation {
 	cmd, ok := node.(*ast.SimpleCommand)
 	if !ok {
@@ -31,36 +37,24 @@ func checkZC1984(node ast.Node) []Violation {
 	if !ok {
 		return nil
 	}
-
-	// Parser caveat: `sgdisk --zap-all $DISK` mangles command name to
-	// `zap-all` and leaves the `--` as a postfix on a prior expression.
-	if ident.Value == "zap-all" {
-		return zc1984Hit(cmd, "sgdisk --zap-all")
-	}
 	if ident.Value != "sgdisk" {
 		return nil
 	}
 	for _, arg := range cmd.Arguments {
 		v := arg.String()
-		switch v {
-		case "-Z":
-			return zc1984Hit(cmd, "sgdisk -Z")
-		case "-o":
-			return zc1984Hit(cmd, "sgdisk -o")
+		if zc1984ZapFlags[v] {
+			line, col := FlagArgPosition(cmd, zc1984ZapFlags)
+			return []Violation{{
+				KataID: "ZC1984",
+				Message: "`sgdisk " + v + "` erases the GPT on the target device — a wrong " +
+					"`$DISK` detaches every partition/LVM/LUKS header and bricks boot. " +
+					"`lsblk`/`blkid` preflight, `--backup` the old table, and test with " +
+					"`-t`/`--pretend` first.",
+				Line:   line,
+				Column: col,
+				Level:  SeverityError,
+			}}
 		}
 	}
 	return nil
-}
-
-func zc1984Hit(cmd *ast.SimpleCommand, form string) []Violation {
-	return []Violation{{
-		KataID: "ZC1984",
-		Message: "`" + form + "` erases the GPT on the target device — a wrong " +
-			"`$DISK` detaches every partition/LVM/LUKS header and bricks boot. " +
-			"`lsblk`/`blkid` preflight, `--backup` the old table, and test with " +
-			"`-t`/`--pretend` first.",
-		Line:   cmd.Token.Line,
-		Column: cmd.Token.Column,
-		Level:  SeverityError,
-	}}
 }

@@ -19,14 +19,14 @@ func TestZC1767(t *testing.T) {
 			expected: []katas.Violation{},
 		},
 		{
-			name:  "invalid — `mongod --bind_ip 0.0.0.0` (leading-flag mangled)",
+			name:  "invalid — `mongod --bind_ip 0.0.0.0`",
 			input: `mongod --bind_ip 0.0.0.0`,
 			expected: []katas.Violation{
 				{
 					KataID:  "ZC1767",
 					Message: "`mongod --bind_ip 0.0.0.0` exposes MongoDB on every interface — 2017 ransomware-wave target. Bind to `127.0.0.1` or a private-network IP, enable `--auth`, firewall port 27017.",
 					Line:    1,
-					Column:  10,
+					Column:  9,
 				},
 			},
 		},

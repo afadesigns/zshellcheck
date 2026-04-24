@@ -16,6 +16,8 @@ var zc1791DaemonSockets = []string{
 	"/var/run/docker/containerd/containerd.sock",
 }
 
+var zc1791UnixSocketFlags = map[string]bool{"--unix-socket": true}
+
 func init() {
 	RegisterKata(ast.SimpleCommandNode, Kata{
 		ID:       "ZC1791",
@@ -41,16 +43,6 @@ func checkZC1791(node ast.Node) []Violation {
 	ident, ok := cmd.Name.(*ast.Identifier)
 	if !ok {
 		return nil
-	}
-
-	// Parser caveat: `curl --unix-socket PATH URL` mangles so the SimpleCommand
-	// name becomes `unix-socket` and `PATH` is arg[0].
-	if ident.Value == "unix-socket" {
-		if len(cmd.Arguments) == 0 {
-			return nil
-		}
-		path := strings.Trim(cmd.Arguments[0].String(), "\"'")
-		return zc1791MatchSocket(cmd, path)
 	}
 
 	if ident.Value != "curl" {
@@ -82,13 +74,14 @@ func checkZC1791(node ast.Node) []Violation {
 func zc1791MatchSocket(cmd *ast.SimpleCommand, path string) []Violation {
 	for _, sock := range zc1791DaemonSockets {
 		if path == sock {
+			line, col := FlagArgPosition(cmd, zc1791UnixSocketFlags)
 			return []Violation{{
 				KataID: "ZC1791",
 				Message: "`curl --unix-socket " + path + "` speaks the container-daemon " +
 					"API — a `POST /containers/create` with `Privileged=true` is a " +
 					"host-root primitive. Use the CLI (`docker`/`podman`) instead.",
-				Line:   cmd.Token.Line,
-				Column: cmd.Token.Column,
+				Line:   line,
+				Column: col,
 				Level:  SeverityError,
 			}}
 		}

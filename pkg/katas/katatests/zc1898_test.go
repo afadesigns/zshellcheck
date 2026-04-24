@@ -24,14 +24,14 @@ func TestZC1898(t *testing.T) {
 			expected: []katas.Violation{},
 		},
 		{
-			name:  "invalid — `gpg --export-secret-keys KEYID` (mangled name)",
+			name:  "invalid — `gpg --export-secret-keys KEYID` (leading)",
 			input: `gpg --export-secret-keys KEYID`,
 			expected: []katas.Violation{
 				{
 					KataID:  "ZC1898",
 					Message: "`gpg --export-secret-keys` writes the private key to stdout — one CI-log or wrong-tty redirect leaks it. Back up interactively on an air-gapped host, or write to a `umask 077` path and re-encrypt.",
 					Line:    1,
-					Column:  7,
+					Column:  6,
 				},
 			},
 		},
@@ -43,7 +43,7 @@ func TestZC1898(t *testing.T) {
 					KataID:  "ZC1898",
 					Message: "`gpg --export-secret-subkeys` writes the private key to stdout — one CI-log or wrong-tty redirect leaks it. Back up interactively on an air-gapped host, or write to a `umask 077` path and re-encrypt.",
 					Line:    1,
-					Column:  1,
+					Column:  12,
 				},
 			},
 		},

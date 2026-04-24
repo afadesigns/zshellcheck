@@ -20,6 +20,11 @@ func init() {
 	})
 }
 
+var zc1933ClearFlags = map[string]bool{
+	"-C":      true,
+	"--clear": true,
+}
+
 func checkZC1933(node ast.Node) []Violation {
 	cmd, ok := node.(*ast.SimpleCommand)
 	if !ok {
@@ -28,11 +33,6 @@ func checkZC1933(node ast.Node) []Violation {
 	ident, ok := cmd.Name.(*ast.Identifier)
 	if !ok {
 		return nil
-	}
-
-	// Parser caveat: `ipvsadm --clear` mangles the command name to `clear`.
-	if ident.Value == "clear" {
-		return zc1933Hit(cmd, "ipvsadm --clear")
 	}
 	if ident.Value != "ipvsadm" {
 		return nil
@@ -48,13 +48,14 @@ func checkZC1933(node ast.Node) []Violation {
 }
 
 func zc1933Hit(cmd *ast.SimpleCommand, form string) []Violation {
+	line, col := FlagArgPosition(cmd, zc1933ClearFlags)
 	return []Violation{{
 		KataID: "ZC1933",
 		Message: "`" + form + "` wipes every IPVS virtual service and real-server binding — " +
 			"load balancing stops, clients see 5xx. Save via `ipvsadm --save`, drain " +
 			"specific services with `-D`, reserve `--clear` for break-glass.",
-		Line:   cmd.Token.Line,
-		Column: cmd.Token.Column,
+		Line:   line,
+		Column: col,
 		Level:  SeverityError,
 	}}
 }

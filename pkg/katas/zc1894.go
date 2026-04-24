@@ -22,6 +22,11 @@ func init() {
 	})
 }
 
+var zc1894FlushFlags = map[string]bool{
+	"-F":      true,
+	"--flush": true,
+}
+
 func checkZC1894(node ast.Node) []Violation {
 	cmd, ok := node.(*ast.SimpleCommand)
 	if !ok {
@@ -31,32 +36,23 @@ func checkZC1894(node ast.Node) []Violation {
 	if !ok {
 		return nil
 	}
-	// Parser caveat: `conntrack --flush <table>` mangles the command name to
-	// `flush`, with `<table>` promoted to arg[0].
-	if ident.Value == "flush" {
-		return zc1894Hit(cmd)
-	}
 	if ident.Value != "conntrack" {
 		return nil
 	}
 	for _, arg := range cmd.Arguments {
-		v := arg.String()
-		if v == "-F" || v == "--flush" {
-			return zc1894Hit(cmd)
+		if zc1894FlushFlags[arg.String()] {
+			line, col := FlagArgPosition(cmd, zc1894FlushFlags)
+			return []Violation{{
+				KataID: "ZC1894",
+				Message: "`conntrack -F` wipes every tracked flow — stateful " +
+					"`ctstate ESTABLISHED` allowances drop, running SSH sessions " +
+					"lose their entry. Gate with `at now + N min` or narrow to " +
+					"one flow with `conntrack -D -s <ip>`.",
+				Line:   line,
+				Column: col,
+				Level:  SeverityError,
+			}}
 		}
 	}
 	return nil
-}
-
-func zc1894Hit(cmd *ast.SimpleCommand) []Violation {
-	return []Violation{{
-		KataID: "ZC1894",
-		Message: "`conntrack -F` wipes every tracked flow — stateful " +
-			"`ctstate ESTABLISHED` allowances drop, running SSH sessions " +
-			"lose their entry. Gate with `at now + N min` or narrow to " +
-			"one flow with `conntrack -D -s <ip>`.",
-		Line:   cmd.Token.Line,
-		Column: cmd.Token.Column,
-		Level:  SeverityError,
-	}}
 }

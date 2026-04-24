@@ -31,19 +31,19 @@ func TestZC1933(t *testing.T) {
 					KataID:  "ZC1933",
 					Message: "`ipvsadm -C` wipes every IPVS virtual service and real-server binding — load balancing stops, clients see 5xx. Save via `ipvsadm --save`, drain specific services with `-D`, reserve `--clear` for break-glass.",
 					Line:    1,
-					Column:  1,
+					Column:  9,
 				},
 			},
 		},
 		{
-			name:  "invalid — `ipvsadm --clear now` (mangled)",
+			name:  "invalid — `ipvsadm --clear now`",
 			input: `ipvsadm --clear now`,
 			expected: []katas.Violation{
 				{
 					KataID:  "ZC1933",
 					Message: "`ipvsadm --clear` wipes every IPVS virtual service and real-server binding — load balancing stops, clients see 5xx. Save via `ipvsadm --save`, drain specific services with `-D`, reserve `--clear` for break-glass.",
 					Line:    1,
-					Column:  11,
+					Column:  10,
 				},
 			},
 		},

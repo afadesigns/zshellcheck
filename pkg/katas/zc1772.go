@@ -14,18 +14,6 @@ var zc1772EraseFlags = map[string]bool{
 	"--trim-sector-ranges":      true,
 }
 
-// Parser caveat: a leading long flag can mangle hdparm into a SimpleCommand
-// whose name is the bare flag without leading dashes.
-var zc1772MangledNames = map[string]bool{
-	"security-erase":          true,
-	"security-erase-enhanced": true,
-	"security-set-pass":       true,
-	"security-unlock":         true,
-	"security-disable":        true,
-	"security-freeze":         true,
-	"trim-sector-ranges":      true,
-}
-
 func init() {
 	RegisterKata(ast.SimpleCommandNode, Kata{
 		ID:       "ZC1772",
@@ -55,10 +43,6 @@ func checkZC1772(node ast.Node) []Violation {
 		return nil
 	}
 
-	if zc1772MangledNames[ident.Value] {
-		return zc1772Hit(cmd, "--"+ident.Value)
-	}
-
 	if ident.Value != "hdparm" {
 		return nil
 	}
@@ -73,13 +57,14 @@ func checkZC1772(node ast.Node) []Violation {
 }
 
 func zc1772Hit(cmd *ast.SimpleCommand, flag string) []Violation {
+	line, col := FlagArgPosition(cmd, zc1772EraseFlags)
 	return []Violation{{
 		KataID: "ZC1772",
 		Message: "`hdparm " + flag + "` issues an ATA-level operation that ignores " +
 			"filesystems and cannot be rolled back. Pin the disk by " +
 			"`/dev/disk/by-id/…`, keep it behind a runbook, keep the password out of argv.",
-		Line:   cmd.Token.Line,
-		Column: cmd.Token.Column,
+		Line:   line,
+		Column: col,
 		Level:  SeverityError,
 	}}
 }

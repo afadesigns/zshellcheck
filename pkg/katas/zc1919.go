@@ -20,6 +20,11 @@ func init() {
 	})
 }
 
+var zc1919KillFlags = map[string]bool{
+	"-K":     true,
+	"--kill": true,
+}
+
 func checkZC1919(node ast.Node) []Violation {
 	cmd, ok := node.(*ast.SimpleCommand)
 	if !ok {
@@ -28,15 +33,6 @@ func checkZC1919(node ast.Node) []Violation {
 	ident, ok := cmd.Name.(*ast.Identifier)
 	if !ok {
 		return nil
-	}
-	// Parser caveat: `ss --kill <filter>` mangles the command name to `kill`.
-	if ident.Value == "kill" {
-		for _, arg := range cmd.Arguments {
-			if arg.String() == "state" || arg.String() == "dst" || arg.String() == "src" ||
-				arg.String() == "dport" || arg.String() == "sport" {
-				return zc1919Hit(cmd)
-			}
-		}
 	}
 	if ident.Value != "ss" {
 		return nil
@@ -50,16 +46,7 @@ func checkZC1919(node ast.Node) []Violation {
 		if len(v) >= 2 && v[0] == '-' && v[1] != '-' {
 			for i := 1; i < len(v); i++ {
 				if v[i] == 'K' {
-					return []Violation{{
-						KataID: "ZC1919",
-						Message: "`ss -K` terminates every socket the filter matches — " +
-							"broad filters (`state established`, `dport 22`) kill the running SSH " +
-							"session. Preview with the same filter minus `-K`, and pin to a specific " +
-							"dst/port/state tuple.",
-						Line:   cmd.Token.Line,
-						Column: cmd.Token.Column,
-						Level:  SeverityWarning,
-					}}
+					return zc1919Hit(cmd)
 				}
 			}
 		}
@@ -68,13 +55,14 @@ func checkZC1919(node ast.Node) []Violation {
 }
 
 func zc1919Hit(cmd *ast.SimpleCommand) []Violation {
+	line, col := FlagArgPosition(cmd, zc1919KillFlags)
 	return []Violation{{
 		KataID: "ZC1919",
 		Message: "`ss -K` terminates every socket the filter matches — broad filters " +
 			"(`state established`, `dport 22`) kill the running SSH session. Preview " +
 			"with the same filter minus `-K`, and pin to a specific dst/port/state tuple.",
-		Line:   cmd.Token.Line,
-		Column: cmd.Token.Column,
+		Line:   line,
+		Column: col,
 		Level:  SeverityWarning,
 	}}
 }

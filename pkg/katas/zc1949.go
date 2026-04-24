@@ -20,6 +20,11 @@ func init() {
 	})
 }
 
+var zc1949ForceFlags = map[string]bool{
+	"-f":      true,
+	"--force": true,
+}
+
 func checkZC1949(node ast.Node) []Violation {
 	cmd, ok := node.(*ast.SimpleCommand)
 	if !ok {
@@ -29,31 +34,23 @@ func checkZC1949(node ast.Node) []Violation {
 	if !ok {
 		return nil
 	}
-
-	// Parser caveat: `rmmod --force MOD` mangles the command name to `force`.
-	if ident.Value == "force" {
-		return zc1949Hit(cmd, "rmmod --force")
-	}
 	if ident.Value != "rmmod" {
 		return nil
 	}
 	for _, arg := range cmd.Arguments {
 		v := arg.String()
-		if v == "-f" || v == "--force" {
-			return zc1949Hit(cmd, "rmmod "+v)
+		if zc1949ForceFlags[v] {
+			line, col := FlagArgPosition(cmd, zc1949ForceFlags)
+			return []Violation{{
+				KataID: "ZC1949",
+				Message: "`rmmod " + v + "` tears down a module even when its refcount is non-zero — " +
+					"in-use drivers dangle, kernel oopses on the next callback. Stop holders first " +
+					"(`lsof`/`umount`/`ip link down`), then `rmmod` without `-f`.",
+				Line:   line,
+				Column: col,
+				Level:  SeverityError,
+			}}
 		}
 	}
 	return nil
-}
-
-func zc1949Hit(cmd *ast.SimpleCommand, form string) []Violation {
-	return []Violation{{
-		KataID: "ZC1949",
-		Message: "`" + form + "` tears down a module even when its refcount is non-zero — " +
-			"in-use drivers dangle, kernel oopses on the next callback. Stop holders first " +
-			"(`lsof`/`umount`/`ip link down`), then `rmmod` without `-f`.",
-		Line:   cmd.Token.Line,
-		Column: cmd.Token.Column,
-		Level:  SeverityError,
-	}}
 }

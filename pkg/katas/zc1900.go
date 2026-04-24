@@ -19,6 +19,10 @@ func init() {
 	})
 }
 
+var zc1900LocationFlags = map[string]bool{
+	"--location-trusted": true,
+}
+
 func checkZC1900(node ast.Node) []Violation {
 	cmd, ok := node.(*ast.SimpleCommand)
 	if !ok {
@@ -28,30 +32,22 @@ func checkZC1900(node ast.Node) []Violation {
 	if !ok {
 		return nil
 	}
-
-	// Parser caveat: `curl --location-trusted …` mangles the command name
-	// to `location-trusted`.
-	switch ident.Value {
-	case "location-trusted":
-		return zc1900Hit(cmd)
-	case "curl":
-		for _, arg := range cmd.Arguments {
-			if arg.String() == "--location-trusted" {
-				return zc1900Hit(cmd)
-			}
+	if ident.Value != "curl" {
+		return nil
+	}
+	for _, arg := range cmd.Arguments {
+		if zc1900LocationFlags[arg.String()] {
+			line, col := FlagArgPosition(cmd, zc1900LocationFlags)
+			return []Violation{{
+				KataID: "ZC1900",
+				Message: "`curl --location-trusted` replays `Authorization`, cookies, and " +
+					"`-u user:pass` on every redirect — a 302 to attacker-controlled host " +
+					"leaks the token. Drop the flag; verify final hostname before sending secrets.",
+				Line:   line,
+				Column: col,
+				Level:  SeverityWarning,
+			}}
 		}
 	}
 	return nil
-}
-
-func zc1900Hit(cmd *ast.SimpleCommand) []Violation {
-	return []Violation{{
-		KataID: "ZC1900",
-		Message: "`curl --location-trusted` replays `Authorization`, cookies, and " +
-			"`-u user:pass` on every redirect — a 302 to attacker-controlled host " +
-			"leaks the token. Drop the flag; verify final hostname before sending secrets.",
-		Line:   cmd.Token.Line,
-		Column: cmd.Token.Column,
-		Level:  SeverityWarning,
-	}}
 }

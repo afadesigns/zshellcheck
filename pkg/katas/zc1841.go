@@ -4,6 +4,8 @@ import (
 	"github.com/afadesigns/zshellcheck/pkg/ast"
 )
 
+var zc1841ProxyFlags = map[string]bool{"--proxy-insecure": true}
+
 func init() {
 	RegisterKata(ast.SimpleCommandNode, Kata{
 		ID:       "ZC1841",
@@ -32,11 +34,6 @@ func checkZC1841(node ast.Node) []Violation {
 		return nil
 	}
 
-	// Parser caveat: `curl --proxy-insecure …` mangles the command name to
-	// `proxy-insecure` when the flag is the first arg. Cover both shapes.
-	if ident.Value == "proxy-insecure" {
-		return zc1841Hit(cmd)
-	}
 	if ident.Value != "curl" {
 		return nil
 	}
@@ -49,14 +46,15 @@ func checkZC1841(node ast.Node) []Violation {
 }
 
 func zc1841Hit(cmd *ast.SimpleCommand) []Violation {
+	line, col := FlagArgPosition(cmd, zc1841ProxyFlags)
 	return []Violation{{
 		KataID: "ZC1841",
 		Message: "`curl --proxy-insecure` skips TLS verification on the proxy hop — " +
 			"an on-path attacker can present any cert and decrypt the tunnel " +
 			"(including `Authorization:` headers). Install the proxy CA and use " +
 			"`--proxy-cacert PATH`.",
-		Line:   cmd.Token.Line,
-		Column: cmd.Token.Column,
+		Line:   line,
+		Column: col,
 		Level:  SeverityError,
 	}}
 }

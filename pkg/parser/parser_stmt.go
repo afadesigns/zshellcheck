@@ -145,6 +145,14 @@ func (p *Parser) parseStatement() ast.Statement {
 			p.peekTokenIs(token.DOLLAR_LPAREN) || p.peekTokenIs(token.SLASH) ||
 			p.peekTokenIs(token.TILDE) || p.peekTokenIs(token.ASTERISK) ||
 			p.peekTokenIs(token.BANG) || p.peekTokenIs(token.LBRACE) ||
+			// `cmd --flag arg` / `cmd ++foo`. DEC / INC are long-
+			// option prefixes here. Without this routing the
+			// expression-level postfix path turned `cmd--` into a
+			// PostfixExpression and the rest of the line leaked
+			// into sibling statements. Each kata that walked the
+			// mangled SimpleCommand.Name-as-flag shape now sees
+			// the correct cmd-name + flag-arg pair.
+			p.peekTokenIs(token.DEC) || p.peekTokenIs(token.INC) ||
 			// Zero-arg commands followed by a pipe / logical chain
 			// must route through parseSimpleCommandStatement so the
 			// pipeline / AND / OR chain is parsed at the command
@@ -465,6 +473,12 @@ func (p *Parser) parseCommandWord() ast.Expression {
 			t == token.GT || t == token.LT || t == token.AMPERSAND || t == token.LBRACKET ||
 			t == token.COMMA || t == token.COLON || t == token.GTGT || t == token.LTLT ||
 			t == token.GTAMP || t == token.LTAMP ||
+			// DEC / INC in command-arg position are POSIX end-of-
+			// options (`cmd --`) or long-flag openers (`cmd --foo`),
+			// never prefix-decrement / pre-increment. Prefix DEC is
+			// reached inside arithmetic `((…))` where parseCommandWord
+			// is not in play.
+			t == token.DEC || t == token.INC ||
 			// `=` is an assignment operator in expression context but a
 			// literal in command arguments (e.g. `alias -- -='cd -'`,
 			// or `env FOO=bar cmd`). Treat it as a literal word part
@@ -614,6 +628,16 @@ func (p *Parser) parseIfStatement() *ast.IfStatement {
 				stmt.Alternative = p.parseBlockStatement(token.RBRACE)
 			}
 		}
+		// Step past the closing RBRACE so an enclosing brace-scoped
+		// body (for/while/subshell brace body) does not mistake the
+		// if's terminator for its own. The consumedBraceTerminator
+		// flag tells parseBlockStatement to skip its usual post-
+		// statement nextToken — otherwise we'd overshoot the next
+		// statement's head.
+		if p.curTokenIs(token.RBRACE) {
+			p.nextToken()
+			p.consumedBraceTerminator = true
+		}
 		return stmt
 	}
 
@@ -705,6 +729,14 @@ func (p *Parser) parseBlockStatement(terminators ...token.Type) *ast.BlockStatem
 		}
 		if curIsTerm {
 			break
+		}
+
+		// Brace-form statements (e.g. `if cond { body }`) advance
+		// past their own closing RBRACE and set this flag so we do
+		// not double-advance past the following statement's head.
+		if p.consumedBraceTerminator {
+			p.consumedBraceTerminator = false
+			continue
 		}
 
 		p.nextToken()
@@ -1096,7 +1128,12 @@ func (p *Parser) parseDeclarationStatement() *ast.DeclarationStatement {
 		}
 
 		// Identifier (optionally followed by = or += value).
-		if p.curTokenIs(token.IDENT) {
+		// STRING / VARIABLE / DollarLbrace also lead here — Zsh
+		// accepts `typeset -g "$1"="$2"` where the name is the
+		// expansion of `$1`. The composite-name loop below stitches
+		// adjacent no-space parts together regardless of head kind.
+		if p.curTokenIs(token.IDENT) || p.curTokenIs(token.STRING) ||
+			p.curTokenIs(token.VARIABLE) || p.curTokenIs(token.DollarLbrace) {
 			assign := &ast.DeclarationAssignment{
 				Name: &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal},
 			}

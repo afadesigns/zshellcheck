@@ -82,6 +82,14 @@ type Parser struct {
 	// `(a|b) called with (c|d)`. The flag gates the LPAREN infix
 	// so parseCallExpression doesn't fire on pattern groups.
 	inDoubleBracket bool
+
+	// consumedBraceTerminator signals that the most recently
+	// returned statement already advanced past its own closing
+	// RBRACE (e.g. Zsh brace-form `if cond { body }`). Tells the
+	// outer parseBlockStatement to skip its own post-statement
+	// nextToken so we don't overshoot the following statement's
+	// head. parseBlockStatement clears the flag after honouring it.
+	consumedBraceTerminator bool
 }
 
 func New(l *lexer.Lexer) *Parser {
@@ -97,6 +105,11 @@ func New(l *lexer.Lexer) *Parser {
 	// when the parser is already mid-expression (OR/AND folded as
 	// infix into an expression chain with `return` on the RHS).
 	p.registerPrefix(token.RETURN, p.parseKeywordAsCommand)
+	// Zsh `=cmd` substitutes the absolute path of `cmd` (equivalent
+	// to `$(which cmd)`). Lexer emits ASSIGN+IDENT; parseEqualsForm
+	// fuses them when the `=` has no preceding space. Only relevant
+	// as a statement head — infix ASSIGN still handles `x=y`.
+	p.registerPrefix(token.ASSIGN, p.parseEqualsForm)
 	// DOT as a prefix models literal-word contexts like `*.zsh`
 	// inside a glob, `.*` as a Zsh conditional pattern, or `./path`
 	// inside an argument list. Wrap the dot in an Identifier and
@@ -140,14 +153,15 @@ func New(l *lexer.Lexer) *Parser {
 	p.registerPrefix(token.ASTERISK, p.parsePrefixExpression)
 	p.registerPrefix(token.QUESTION, p.parsePrefixExpression)
 	p.registerPrefix(token.TILDE, p.parsePrefixExpression)
-	// `++x` is pre-increment in Zsh arithmetic (`(( ++x ))`).
-	// Register INC as prefix so the body parses alongside its
-	// postfix counterpart. DEC is deliberately NOT registered as
-	// prefix because many katas' existing test fixtures route
-	// `--flag` arg handling through paths that assume DEC is only
-	// postfix; a parser-wide change there needs a coordinated kata
-	// cleanup first.
+	// `++x` / `--x` are pre-increment / pre-decrement in Zsh
+	// arithmetic (`(( ++x ))`, `(( --x ))`). Register both as
+	// prefix; the statement layer routes `cmd --flag arg` through
+	// parseSimpleCommandStatement before the expression path sees
+	// the DEC token, so prefix DEC is only reached inside actual
+	// arithmetic or where a long flag survives as an argument to
+	// the expression path (which the simple-command layer drains).
 	p.registerPrefix(token.INC, p.parsePrefixExpression)
+	p.registerPrefix(token.DEC, p.parsePrefixExpression)
 	p.registerPrefix(token.TRUE, p.parseBoolean)
 	p.registerPrefix(token.FALSE, p.parseBoolean)
 	p.registerPrefix(token.LPAREN, p.parseGroupedExpression)

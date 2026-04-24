@@ -4,6 +4,8 @@ import (
 	"github.com/afadesigns/zshellcheck/pkg/ast"
 )
 
+var zc1852PanicFlags = map[string]bool{"--panic-on": true}
+
 func init() {
 	RegisterKata(ast.SimpleCommandNode, Kata{
 		ID:       "ZC1852",
@@ -31,11 +33,6 @@ func checkZC1852(node ast.Node) []Violation {
 		return nil
 	}
 
-	// Parser caveat: `firewall-cmd --panic-on …` mangles the command name to
-	// `panic-on` when the flag is the first arg. Cover both shapes.
-	if ident.Value == "panic-on" {
-		return zc1852Hit(cmd)
-	}
 	if ident.Value != "firewall-cmd" {
 		return nil
 	}
@@ -48,14 +45,15 @@ func checkZC1852(node ast.Node) []Violation {
 }
 
 func zc1852Hit(cmd *ast.SimpleCommand) []Violation {
+	line, col := FlagArgPosition(cmd, zc1852PanicFlags)
 	return []Violation{{
 		KataID: "ZC1852",
 		Message: "`firewall-cmd --panic-on` drops every packet regardless of zone — " +
 			"an SSH-run call loses the session instantly. Use targeted zone rules; " +
 			"if you really need panic mode, gate behind `at now + N minutes … " +
 			"firewall-cmd --panic-off`.",
-		Line:   cmd.Token.Line,
-		Column: cmd.Token.Column,
+		Line:   line,
+		Column: col,
 		Level:  SeverityError,
 	}}
 }

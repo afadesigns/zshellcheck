@@ -21,6 +21,11 @@ func init() {
 	})
 }
 
+var zc1939ForceFlags = map[string]bool{
+	"-f":      true,
+	"--force": true,
+}
+
 func checkZC1939(node ast.Node) []Violation {
 	cmd, ok := node.(*ast.SimpleCommand)
 	if !ok {
@@ -29,10 +34,6 @@ func checkZC1939(node ast.Node) []Violation {
 	ident, ok := cmd.Name.(*ast.Identifier)
 	if !ok {
 		return nil
-	}
-	// Parser caveat: `<cmd> --force` mangles the command name to `force`.
-	if ident.Value == "force" {
-		return zc1939Hit(cmd, "reboot/halt/poweroff --force")
 	}
 	if ident.Value != "reboot" && ident.Value != "halt" && ident.Value != "poweroff" {
 		return nil
@@ -55,13 +56,14 @@ func checkZC1939(node ast.Node) []Violation {
 }
 
 func zc1939Hit(cmd *ast.SimpleCommand, form string) []Violation {
+	line, col := FlagArgPosition(cmd, zc1939ForceFlags)
 	return []Violation{{
 		KataID: "ZC1939",
 		Message: "`" + form + "` fires `reboot(2)` immediately — no `ExecStop=`, no " +
 			"filesystem sync, no clean unmount. Databases replay from last checkpoint. " +
 			"Use `systemctl reboot` / `shutdown -r +N`; reserve `-f` for wedged recovery.",
-		Line:   cmd.Token.Line,
-		Column: cmd.Token.Column,
+		Line:   line,
+		Column: col,
 		Level:  SeverityError,
 	}}
 }

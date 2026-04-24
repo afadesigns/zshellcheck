@@ -19,6 +19,8 @@ func init() {
 	})
 }
 
+var zc1767BindFlags = map[string]bool{"--bind_ip": true}
+
 func checkZC1767(node ast.Node) []Violation {
 	cmd, ok := node.(*ast.SimpleCommand)
 	if !ok {
@@ -29,26 +31,31 @@ func checkZC1767(node ast.Node) []Violation {
 	if !ok {
 		return nil
 	}
-	// Parser caveat: `mongod --bind_ip 0.0.0.0` mangles to SimpleCommand name
-	// "bind_ip" with the IP as the first arg.
-	if ident.Value != "bind_ip" {
-		return nil
-	}
-	if len(cmd.Arguments) == 0 {
-		return nil
-	}
-	first := cmd.Arguments[0].String()
-	if first != "0.0.0.0" && first != "::" && first != "[::]" {
+	if ident.Value != "mongod" {
 		return nil
 	}
 
-	return []Violation{{
-		KataID: "ZC1767",
-		Message: "`mongod --bind_ip " + first + "` exposes MongoDB on every interface — " +
-			"2017 ransomware-wave target. Bind to `127.0.0.1` or a private-network IP, " +
-			"enable `--auth`, firewall port 27017.",
-		Line:   cmd.Token.Line,
-		Column: cmd.Token.Column,
-		Level:  SeverityError,
-	}}
+	for i, arg := range cmd.Arguments {
+		if !zc1767BindFlags[arg.String()] {
+			continue
+		}
+		if i+1 >= len(cmd.Arguments) {
+			return nil
+		}
+		ip := cmd.Arguments[i+1].String()
+		if ip != "0.0.0.0" && ip != "::" && ip != "[::]" {
+			return nil
+		}
+		line, col := FlagArgPosition(cmd, zc1767BindFlags)
+		return []Violation{{
+			KataID: "ZC1767",
+			Message: "`mongod --bind_ip " + ip + "` exposes MongoDB on every interface — " +
+				"2017 ransomware-wave target. Bind to `127.0.0.1` or a private-network IP, " +
+				"enable `--auth`, firewall port 27017.",
+			Line:   line,
+			Column: col,
+			Level:  SeverityError,
+		}}
+	}
+	return nil
 }

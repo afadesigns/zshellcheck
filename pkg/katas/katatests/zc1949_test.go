@@ -31,19 +31,19 @@ func TestZC1949(t *testing.T) {
 					KataID:  "ZC1949",
 					Message: "`rmmod -f` tears down a module even when its refcount is non-zero — in-use drivers dangle, kernel oopses on the next callback. Stop holders first (`lsof`/`umount`/`ip link down`), then `rmmod` without `-f`.",
 					Line:    1,
-					Column:  1,
+					Column:  7,
 				},
 			},
 		},
 		{
-			name:  "invalid — `rmmod --force foo` (mangled)",
+			name:  "invalid — `rmmod --force foo`",
 			input: `rmmod --force foo`,
 			expected: []katas.Violation{
 				{
 					KataID:  "ZC1949",
 					Message: "`rmmod --force` tears down a module even when its refcount is non-zero — in-use drivers dangle, kernel oopses on the next callback. Stop holders first (`lsof`/`umount`/`ip link down`), then `rmmod` without `-f`.",
 					Line:    1,
-					Column:  9,
+					Column:  8,
 				},
 			},
 		},

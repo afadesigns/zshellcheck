@@ -24,14 +24,14 @@ func TestZC1900(t *testing.T) {
 			expected: []katas.Violation{},
 		},
 		{
-			name:  "invalid — `curl --location-trusted https://api` (mangled)",
+			name:  "invalid — `curl --location-trusted https://api` (leading)",
 			input: `curl --location-trusted https://api`,
 			expected: []katas.Violation{
 				{
 					KataID:  "ZC1900",
 					Message: "`curl --location-trusted` replays `Authorization`, cookies, and `-u user:pass` on every redirect — a 302 to attacker-controlled host leaks the token. Drop the flag; verify final hostname before sending secrets.",
 					Line:    1,
-					Column:  8,
+					Column:  7,
 				},
 			},
 		},
@@ -43,7 +43,7 @@ func TestZC1900(t *testing.T) {
 					KataID:  "ZC1900",
 					Message: "`curl --location-trusted` replays `Authorization`, cookies, and `-u user:pass` on every redirect — a 302 to attacker-controlled host leaks the token. Drop the flag; verify final hostname before sending secrets.",
 					Line:    1,
-					Column:  1,
+					Column:  20,
 				},
 			},
 		},

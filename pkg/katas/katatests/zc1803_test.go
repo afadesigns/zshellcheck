@@ -31,7 +31,7 @@ func TestZC1803(t *testing.T) {
 					KataID:  "ZC1803",
 					Message: "`mysql --skip-ssl` disables TLS — login handshake and queries travel in plaintext. Use `--ssl-mode=VERIFY_IDENTITY` (MySQL) / `sslmode=verify-full` (psql) with a pinned CA.",
 					Line:    1,
-					Column:  9,
+					Column:  8,
 				},
 			},
 		},

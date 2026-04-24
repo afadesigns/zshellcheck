@@ -21,6 +21,11 @@ func init() {
 	})
 }
 
+var zc1943BootFlags = map[string]bool{
+	"-b":     true,
+	"--boot": true,
+}
+
 func checkZC1943(node ast.Node) []Violation {
 	cmd, ok := node.(*ast.SimpleCommand)
 	if !ok {
@@ -30,32 +35,23 @@ func checkZC1943(node ast.Node) []Violation {
 	if !ok {
 		return nil
 	}
-
-	// Parser caveat: `systemd-nspawn --boot` mangles the command name to
-	// `boot` (after the `systemd-nspawn--` subtract).
-	if ident.Value == "boot" {
-		return zc1943Hit(cmd, "systemd-nspawn --boot")
-	}
 	if ident.Value != "systemd-nspawn" {
 		return nil
 	}
 	for _, arg := range cmd.Arguments {
 		v := arg.String()
-		if v == "-b" || v == "--boot" {
-			return zc1943Hit(cmd, "systemd-nspawn "+v)
+		if zc1943BootFlags[v] {
+			line, col := FlagArgPosition(cmd, zc1943BootFlags)
+			return []Violation{{
+				KataID: "ZC1943",
+				Message: "`systemd-nspawn " + v + "` runs the rootfs's `/sbin/init` with minimal isolation — " +
+					"init scripts execute first and can probe the host. Use `-U`, drop caps with " +
+					"`--capability=`, pair with `--private-network`, prefer `machinectl start`.",
+				Line:   line,
+				Column: col,
+				Level:  SeverityWarning,
+			}}
 		}
 	}
 	return nil
-}
-
-func zc1943Hit(cmd *ast.SimpleCommand, form string) []Violation {
-	return []Violation{{
-		KataID: "ZC1943",
-		Message: "`" + form + "` runs the rootfs's `/sbin/init` with minimal isolation — " +
-			"init scripts execute first and can probe the host. Use `-U`, drop caps with " +
-			"`--capability=`, pair with `--private-network`, prefer `machinectl start`.",
-		Line:   cmd.Token.Line,
-		Column: cmd.Token.Column,
-		Level:  SeverityWarning,
-	}}
 }
