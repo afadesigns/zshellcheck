@@ -20,6 +20,13 @@ func init() {
 	})
 }
 
+var zc1915Flags = map[string]bool{
+	"--zero-superblock": true,
+	"-S":                true,
+	"--stop":            true,
+	"--remove":          true,
+}
+
 func checkZC1915(node ast.Node) []Violation {
 	cmd, ok := node.(*ast.SimpleCommand)
 	if !ok {
@@ -29,36 +36,33 @@ func checkZC1915(node ast.Node) []Violation {
 	if !ok {
 		return nil
 	}
+	if ident.Value != "mdadm" {
+		return nil
+	}
 
-	// Parser caveat: `mdadm --zero-superblock $DEV` mangles the command
-	// name to `zero-superblock`.
-	switch ident.Value {
-	case "zero-superblock":
-		return zc1915Hit(cmd, "mdadm --zero-superblock")
-	case "mdadm":
-		for _, arg := range cmd.Arguments {
-			v := arg.String()
-			switch v {
-			case "--zero-superblock":
-				return zc1915Hit(cmd, "mdadm --zero-superblock")
-			case "-S", "--stop":
-				return zc1915Hit(cmd, "mdadm "+v)
-			case "--remove":
-				return zc1915Hit(cmd, "mdadm --remove")
-			}
+	for _, arg := range cmd.Arguments {
+		v := arg.String()
+		switch v {
+		case "--zero-superblock":
+			return zc1915Hit(cmd, "mdadm --zero-superblock")
+		case "-S", "--stop":
+			return zc1915Hit(cmd, "mdadm "+v)
+		case "--remove":
+			return zc1915Hit(cmd, "mdadm --remove")
 		}
 	}
 	return nil
 }
 
 func zc1915Hit(cmd *ast.SimpleCommand, form string) []Violation {
+	line, col := FlagArgPosition(cmd, zc1915Flags)
 	return []Violation{{
 		KataID: "ZC1915",
 		Message: "`" + form + "` drops RAID metadata or halts a live array — mounted root " +
 			"or /boot panics the host; a stale superblock scrambles data on next `--create`. " +
 			"Snapshot `mdadm --detail --export` first and keep behind a runbook.",
-		Line:   cmd.Token.Line,
-		Column: cmd.Token.Column,
+		Line:   line,
+		Column: col,
 		Level:  SeverityError,
 	}}
 }

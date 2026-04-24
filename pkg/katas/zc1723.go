@@ -11,15 +11,6 @@ var zc1723DeleteFlags = map[string]bool{
 	"--delete-key":                    true,
 }
 
-// Parser caveat: a leading `--long-flag` mangles the GPG name so the next
-// SimpleCommand becomes the bare flag without the leading dashes.
-var zc1723MangledNames = map[string]bool{
-	"delete-secret-keys":            true,
-	"delete-secret-and-public-keys": true,
-	"delete-keys":                   true,
-	"delete-key":                    true,
-}
-
 func init() {
 	RegisterKata(ast.SimpleCommandNode, Kata{
 		ID:       "ZC1723",
@@ -47,10 +38,6 @@ func checkZC1723(node ast.Node) []Violation {
 		return nil
 	}
 
-	if zc1723MangledNames[ident.Value] {
-		return zc1723Hit(cmd, "--"+ident.Value)
-	}
-
 	if ident.Value != "gpg" && ident.Value != "gpg2" {
 		return nil
 	}
@@ -58,20 +45,17 @@ func checkZC1723(node ast.Node) []Violation {
 	for _, arg := range cmd.Arguments {
 		v := arg.String()
 		if zc1723DeleteFlags[v] {
-			return zc1723Hit(cmd, v)
+			line, col := FlagArgPosition(cmd, zc1723DeleteFlags)
+			return []Violation{{
+				KataID: "ZC1723",
+				Message: "`gpg " + v + "` permanently destroys keyring entries — no recovery " +
+					"without a separate backup. Export with `gpg --export-secret-keys --armor " +
+					"KEYID` first; never pair this flag with `--batch --yes`.",
+				Line:   line,
+				Column: col,
+				Level:  SeverityError,
+			}}
 		}
 	}
 	return nil
-}
-
-func zc1723Hit(cmd *ast.SimpleCommand, flag string) []Violation {
-	return []Violation{{
-		KataID: "ZC1723",
-		Message: "`gpg " + flag + "` permanently destroys keyring entries — no recovery " +
-			"without a separate backup. Export with `gpg --export-secret-keys --armor " +
-			"KEYID` first; never pair this flag with `--batch --yes`.",
-		Line:   cmd.Token.Line,
-		Column: cmd.Token.Column,
-		Level:  SeverityError,
-	}}
 }

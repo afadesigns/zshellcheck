@@ -130,6 +130,31 @@ func (p *Parser) parseIdentifier() ast.Expression {
 	return &ast.Identifier{Token: tok, Value: value}
 }
 
+// parseEqualsForm handles Zsh's `=cmd` notation where a leading `=`
+// with no preceding space substitutes the absolute path of the named
+// command (roughly equivalent to `$(which cmd)`). The lexer splits
+// this into ASSIGN + IDENT; we fuse them into a single identifier so
+// the downstream pipeline / redirection code treats it as a command
+// head. Used at statement head position; infix ASSIGN still handles
+// plain assignments.
+func (p *Parser) parseEqualsForm() ast.Expression {
+	eqTok := p.curToken
+	if p.peekToken.HasPrecedingSpace || p.peekTokenIs(token.EOF) {
+		return nil
+	}
+	p.nextToken()
+	name := "=" + p.curToken.Literal
+	cmd := &ast.SimpleCommand{
+		Token: eqTok,
+		Name:  &ast.Identifier{Token: eqTok, Value: name},
+	}
+	for !p.isCommandDelimiter(p.peekToken) && p.peekToken.Line == eqTok.Line {
+		p.nextToken()
+		cmd.Arguments = append(cmd.Arguments, p.parseCommandWord())
+	}
+	return cmd
+}
+
 // parseKeywordAsCommand wraps a Zsh keyword (currently RETURN) as a
 // SimpleCommand so it can appear as the right-hand side of a logical
 // expression chain like `cmd || return 0`. Any arguments on the same

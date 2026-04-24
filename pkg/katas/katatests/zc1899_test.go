@@ -24,14 +24,14 @@ func TestZC1899(t *testing.T) {
 			expected: []katas.Violation{},
 		},
 		{
-			name:  "invalid — `mokutil --disable-validation now` (mangled name)",
+			name:  "invalid — `mokutil --disable-validation now` (leading)",
 			input: `mokutil --disable-validation now`,
 			expected: []katas.Violation{
 				{
 					KataID:  "ZC1899",
 					Message: "`mokutil --disable-validation` stops the shim from validating kernel/modules against enrolled keys — Secure Boot becomes advisory. Leave validation on; enrol specific keys with `mokutil --import`.",
 					Line:    1,
-					Column:  11,
+					Column:  10,
 				},
 			},
 		},
@@ -43,7 +43,7 @@ func TestZC1899(t *testing.T) {
 					KataID:  "ZC1899",
 					Message: "`mokutil --disable-validation` stops the shim from validating kernel/modules against enrolled keys — Secure Boot becomes advisory. Leave validation on; enrol specific keys with `mokutil --import`.",
 					Line:    1,
-					Column:  1,
+					Column:  13,
 				},
 			},
 		},

@@ -22,6 +22,16 @@ var zc1803PgClients = map[string]bool{
 	"pg_restore": true,
 }
 
+var zc1803MySQLFlags = map[string]bool{
+	"--skip-ssl":          true,
+	"--ssl=0":             true,
+	"--ssl=false":         true,
+	"--ssl-mode=disabled": true,
+	"--ssl-mode=DISABLED": true,
+	"--ssl-mode=disable":  true,
+	"--ssl-mode=DISABLE":  true,
+}
+
 func init() {
 	RegisterKata(ast.SimpleCommandNode, Kata{
 		ID:       "ZC1803",
@@ -49,18 +59,13 @@ func checkZC1803(node ast.Node) []Violation {
 		return nil
 	}
 
-	// Parser caveat: `mysql --skip-ssl …` mangles name to `skip-ssl`.
-	if ident.Value == "skip-ssl" {
-		return zc1803Hit(cmd, "mysql", "--skip-ssl")
-	}
-
 	if zc1803MySQLClients[ident.Value] {
 		for _, arg := range cmd.Arguments {
 			raw := strings.Trim(arg.String(), "\"'")
 			v := strings.ToLower(raw)
 			if v == "--skip-ssl" || v == "--ssl=0" || v == "--ssl=false" ||
 				v == "--ssl-mode=disabled" || v == "--ssl-mode=disable" {
-				return zc1803Hit(cmd, ident.Value, raw)
+				return zc1803HitMySQL(cmd, ident.Value, raw)
 			}
 		}
 	}
@@ -69,14 +74,27 @@ func checkZC1803(node ast.Node) []Violation {
 		for _, arg := range cmd.Arguments {
 			raw := strings.Trim(arg.String(), "\"'")
 			if strings.Contains(strings.ToLower(raw), "sslmode=disable") {
-				return zc1803Hit(cmd, ident.Value, raw)
+				return zc1803HitPg(cmd, ident.Value, raw)
 			}
 		}
 	}
 	return nil
 }
 
-func zc1803Hit(cmd *ast.SimpleCommand, tool, flag string) []Violation {
+func zc1803HitMySQL(cmd *ast.SimpleCommand, tool, flag string) []Violation {
+	line, col := FlagArgPosition(cmd, zc1803MySQLFlags)
+	return []Violation{{
+		KataID: "ZC1803",
+		Message: "`" + tool + " " + flag + "` disables TLS — login handshake and " +
+			"queries travel in plaintext. Use `--ssl-mode=VERIFY_IDENTITY` (MySQL) / " +
+			"`sslmode=verify-full` (psql) with a pinned CA.",
+		Line:   line,
+		Column: col,
+		Level:  SeverityError,
+	}}
+}
+
+func zc1803HitPg(cmd *ast.SimpleCommand, tool, flag string) []Violation {
 	return []Violation{{
 		KataID: "ZC1803",
 		Message: "`" + tool + " " + flag + "` disables TLS — login handshake and " +

@@ -31,44 +31,33 @@ func checkZC1770(node ast.Node) []Violation {
 	if !ok {
 		return nil
 	}
-
-	if ident.Value == "always-trust" {
-		return zc1770Hit(cmd, "--always-trust")
-	}
-	if ident.Value == "trust-model" {
-		if len(cmd.Arguments) > 0 && cmd.Arguments[0].String() == "always" {
-			return zc1770Hit(cmd, "--trust-model always")
-		}
-		return nil
-	}
-
 	if ident.Value != "gpg" && ident.Value != "gpg2" {
 		return nil
 	}
 
 	for i, arg := range cmd.Arguments {
 		v := arg.String()
-		if v == "--always-trust" {
-			return zc1770Hit(cmd, "--always-trust")
-		}
-		if v == "--trust-model" && i+1 < len(cmd.Arguments) && cmd.Arguments[i+1].String() == "always" {
-			return zc1770Hit(cmd, "--trust-model always")
-		}
-		if v == "--trust-model=always" {
-			return zc1770Hit(cmd, "--trust-model=always")
+		switch {
+		case v == "--always-trust":
+			return zc1770Hit(cmd, "--always-trust", map[string]bool{"--always-trust": true})
+		case v == "--trust-model" && i+1 < len(cmd.Arguments) && cmd.Arguments[i+1].String() == "always":
+			return zc1770Hit(cmd, "--trust-model always", map[string]bool{"--trust-model": true})
+		case v == "--trust-model=always":
+			return zc1770Hit(cmd, "--trust-model=always", map[string]bool{"--trust-model=always": true})
 		}
 	}
 	return nil
 }
 
-func zc1770Hit(cmd *ast.SimpleCommand, flag string) []Violation {
+func zc1770Hit(cmd *ast.SimpleCommand, flag string, needle map[string]bool) []Violation {
+	line, col := FlagArgPosition(cmd, needle)
 	return []Violation{{
 		KataID: "ZC1770",
 		Message: "`gpg " + flag + "` marks every imported key as fully trusted — a " +
 			"signature from an attacker-supplied key verifies cleanly. Drop the flag " +
 			"and pin the expected fingerprint, or assign trust via `gpg --edit-key KEYID trust`.",
-		Line:   cmd.Token.Line,
-		Column: cmd.Token.Column,
+		Line:   line,
+		Column: col,
 		Level:  SeverityWarning,
 	}}
 }

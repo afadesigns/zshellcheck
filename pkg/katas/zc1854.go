@@ -24,6 +24,12 @@ func init() {
 	})
 }
 
+var zc1854Flags = map[string]bool{
+	"--add-repo": true,
+	"addrepo":    true,
+	"ar":         true,
+}
+
 func checkZC1854(node ast.Node) []Violation {
 	cmd, ok := node.(*ast.SimpleCommand)
 	if !ok {
@@ -36,14 +42,6 @@ func checkZC1854(node ast.Node) []Violation {
 
 	switch ident.Value {
 	case "yum-config-manager":
-		for _, arg := range cmd.Arguments {
-			if zc1854IsHTTPURL(arg.String()) {
-				return zc1854Hit(cmd, "yum-config-manager --add-repo "+arg.String())
-			}
-		}
-	case "add-repo":
-		// Parser caveat: `yum-config-manager --add-repo URL` mangles the
-		// command name to `add-repo`.
 		for _, arg := range cmd.Arguments {
 			if zc1854IsHTTPURL(arg.String()) {
 				return zc1854Hit(cmd, "yum-config-manager --add-repo "+arg.String())
@@ -79,13 +77,14 @@ func zc1854IsHTTPURL(v string) bool {
 }
 
 func zc1854Hit(cmd *ast.SimpleCommand, where string) []Violation {
+	line, col := FlagArgPosition(cmd, zc1854Flags)
 	return []Violation{{
 		KataID: "ZC1854",
 		Message: "`" + where + "` registers a plaintext repo — on-path attacker can " +
 			"substitute packages and strip GPG-check directives. Use `https://` and " +
 			"pin `gpgkey=file://` in the `.repo`.",
-		Line:   cmd.Token.Line,
-		Column: cmd.Token.Column,
+		Line:   line,
+		Column: col,
 		Level:  SeverityError,
 	}}
 }

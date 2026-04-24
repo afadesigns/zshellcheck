@@ -21,6 +21,11 @@ func init() {
 	})
 }
 
+var zc1953ShareFlags = map[string]bool{
+	"--make-shared":  true,
+	"--make-rshared": true,
+}
+
 func checkZC1953(node ast.Node) []Violation {
 	cmd, ok := node.(*ast.SimpleCommand)
 	if !ok {
@@ -30,31 +35,23 @@ func checkZC1953(node ast.Node) []Violation {
 	if !ok {
 		return nil
 	}
-
-	// Parser caveat: `mount --make-shared PATH` mangles the command name to
-	// `make-shared` (or `make-rshared`).
-	switch ident.Value {
-	case "make-shared", "make-rshared":
-		return zc1953Hit(cmd, "mount --"+ident.Value)
-	case "mount":
-		for _, arg := range cmd.Arguments {
-			v := arg.String()
-			if v == "--make-shared" || v == "--make-rshared" {
-				return zc1953Hit(cmd, "mount "+v)
-			}
+	if ident.Value != "mount" {
+		return nil
+	}
+	for _, arg := range cmd.Arguments {
+		v := arg.String()
+		if zc1953ShareFlags[v] {
+			line, col := FlagArgPosition(cmd, zc1953ShareFlags)
+			return []Violation{{
+				KataID: "ZC1953",
+				Message: "`mount " + v + "` puts the mount in a shared-subtree group — later " +
+					"bind-mounts propagate to every peer, including containers. Classic escape " +
+					"stepping stone. Use `--make-private` on sensitive paths.",
+				Line:   line,
+				Column: col,
+				Level:  SeverityWarning,
+			}}
 		}
 	}
 	return nil
-}
-
-func zc1953Hit(cmd *ast.SimpleCommand, form string) []Violation {
-	return []Violation{{
-		KataID: "ZC1953",
-		Message: "`" + form + "` puts the mount in a shared-subtree group — later " +
-			"bind-mounts propagate to every peer, including containers. Classic escape " +
-			"stepping stone. Use `--make-private` on sensitive paths.",
-		Line:   cmd.Token.Line,
-		Column: cmd.Token.Column,
-		Level:  SeverityWarning,
-	}}
 }

@@ -31,19 +31,19 @@ func TestZC1943(t *testing.T) {
 					KataID:  "ZC1943",
 					Message: "`systemd-nspawn -b` runs the rootfs's `/sbin/init` with minimal isolation — init scripts execute first and can probe the host. Use `-U`, drop caps with `--capability=`, pair with `--private-network`, prefer `machinectl start`.",
 					Line:    1,
-					Column:  1,
+					Column:  16,
 				},
 			},
 		},
 		{
-			name:  "invalid — `systemd-nspawn --boot -D $ROOT` (mangled)",
+			name:  "invalid — `systemd-nspawn --boot -D $ROOT`",
 			input: `systemd-nspawn --boot -D $ROOT`,
 			expected: []katas.Violation{
 				{
 					KataID:  "ZC1943",
 					Message: "`systemd-nspawn --boot` runs the rootfs's `/sbin/init` with minimal isolation — init scripts execute first and can probe the host. Use `-U`, drop caps with `--capability=`, pair with `--private-network`, prefer `machinectl start`.",
 					Line:    1,
-					Column:  18,
+					Column:  17,
 				},
 			},
 		},

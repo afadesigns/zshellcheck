@@ -22,6 +22,11 @@ func init() {
 	})
 }
 
+var zc1911LazyFlags = map[string]bool{
+	"-l":     true,
+	"--lazy": true,
+}
+
 func checkZC1911(node ast.Node) []Violation {
 	cmd, ok := node.(*ast.SimpleCommand)
 	if !ok {
@@ -31,10 +36,6 @@ func checkZC1911(node ast.Node) []Violation {
 	if !ok {
 		return nil
 	}
-	// Parser caveat: `umount --lazy MOUNT` mangles the command name to `lazy`.
-	if ident.Value == "lazy" {
-		return zc1911Hit(cmd, "--lazy")
-	}
 	if ident.Value != "umount" {
 		return nil
 	}
@@ -42,13 +43,15 @@ func checkZC1911(node ast.Node) []Violation {
 	for _, arg := range cmd.Arguments {
 		v := arg.String()
 		if v == "-l" || v == "--lazy" {
-			return zc1911Hit(cmd, v)
+			line, col := FlagArgPosition(cmd, zc1911LazyFlags)
+			return zc1911Hit(v, line, col)
 		}
 		if strings.HasPrefix(v, "-") && !strings.HasPrefix(v, "--") {
 			// Clustered short flags, e.g. `-fl` / `-lf`.
 			for i := 1; i < len(v); i++ {
 				if v[i] == 'l' {
-					return zc1911Hit(cmd, "-l")
+					tok := arg.TokenLiteralNode()
+					return zc1911Hit("-l", tok.Line, tok.Column)
 				}
 			}
 		}
@@ -56,14 +59,14 @@ func checkZC1911(node ast.Node) []Violation {
 	return nil
 }
 
-func zc1911Hit(cmd *ast.SimpleCommand, flag string) []Violation {
+func zc1911Hit(flag string, line, col int) []Violation {
 	return []Violation{{
 		KataID: "ZC1911",
 		Message: "`umount " + flag + "` detaches the mount but leaves any open fd pointing at " +
 			"a ghost filesystem — writers keep writing, re-mounts stack invisibly. Stop the " +
 			"fd holder first (`lsof`/`fuser`), then do a normal `umount`.",
-		Line:   cmd.Token.Line,
-		Column: cmd.Token.Column,
+		Line:   line,
+		Column: col,
 		Level:  SeverityWarning,
 	}}
 }

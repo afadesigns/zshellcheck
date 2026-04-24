@@ -1,5 +1,7 @@
 package katas
 
+import "github.com/afadesigns/zshellcheck/pkg/ast"
+
 // LineColToByteOffset converts a 1-based (line, column) coordinate
 // pair into a 0-based byte offset within source. It returns -1 when
 // the coordinates are out of range. Used by kata Fix functions that
@@ -57,4 +59,21 @@ func isIdentByte(b byte) bool {
 		return true
 	}
 	return false
+}
+
+// FlagArgPosition scans cmd.Arguments for the first arg whose
+// String() value matches one of needles. Returns the (line, column)
+// of that arg's leading token. When no arg matches, falls back to
+// the cmd.Token coordinates so callers always have something to
+// report. Used by katas that detect dangerous long-flags
+// (`--delete-secret-keys`, `--bind_ip 0.0.0.0`, etc.) and want the
+// violation pointer at the flag itself, not the host command name.
+func FlagArgPosition(cmd *ast.SimpleCommand, needles map[string]bool) (int, int) {
+	for _, arg := range cmd.Arguments {
+		if needles[arg.String()] {
+			tok := arg.TokenLiteralNode()
+			return tok.Line, tok.Column
+		}
+	}
+	return cmd.Token.Line, cmd.Token.Column
 }

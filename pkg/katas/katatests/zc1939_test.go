@@ -31,19 +31,19 @@ func TestZC1939(t *testing.T) {
 					KataID:  "ZC1939",
 					Message: "`reboot -f` fires `reboot(2)` immediately — no `ExecStop=`, no filesystem sync, no clean unmount. Databases replay from last checkpoint. Use `systemctl reboot` / `shutdown -r +N`; reserve `-f` for wedged recovery.",
 					Line:    1,
-					Column:  1,
+					Column:  8,
 				},
 			},
 		},
 		{
-			name:  "invalid — `poweroff --force now` (mangled)",
+			name:  "invalid — `poweroff --force now`",
 			input: `poweroff --force now`,
 			expected: []katas.Violation{
 				{
 					KataID:  "ZC1939",
-					Message: "`reboot/halt/poweroff --force` fires `reboot(2)` immediately — no `ExecStop=`, no filesystem sync, no clean unmount. Databases replay from last checkpoint. Use `systemctl reboot` / `shutdown -r +N`; reserve `-f` for wedged recovery.",
+					Message: "`poweroff --force` fires `reboot(2)` immediately — no `ExecStop=`, no filesystem sync, no clean unmount. Databases replay from last checkpoint. Use `systemctl reboot` / `shutdown -r +N`; reserve `-f` for wedged recovery.",
 					Line:    1,
-					Column:  12,
+					Column:  11,
 				},
 			},
 		},

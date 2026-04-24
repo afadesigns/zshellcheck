@@ -19,6 +19,10 @@ func init() {
 	})
 }
 
+var zc1899DisableFlags = map[string]bool{
+	"--disable-validation": true,
+}
+
 func checkZC1899(node ast.Node) []Violation {
 	cmd, ok := node.(*ast.SimpleCommand)
 	if !ok {
@@ -28,30 +32,22 @@ func checkZC1899(node ast.Node) []Violation {
 	if !ok {
 		return nil
 	}
-
-	// Parser caveat: `mokutil --disable-validation` mangles the command
-	// name to `disable-validation`.
-	switch ident.Value {
-	case "disable-validation":
-		return zc1899Hit(cmd)
-	case "mokutil":
-		for _, arg := range cmd.Arguments {
-			if arg.String() == "--disable-validation" {
-				return zc1899Hit(cmd)
-			}
+	if ident.Value != "mokutil" {
+		return nil
+	}
+	for _, arg := range cmd.Arguments {
+		if zc1899DisableFlags[arg.String()] {
+			line, col := FlagArgPosition(cmd, zc1899DisableFlags)
+			return []Violation{{
+				KataID: "ZC1899",
+				Message: "`mokutil --disable-validation` stops the shim from validating " +
+					"kernel/modules against enrolled keys — Secure Boot becomes advisory. " +
+					"Leave validation on; enrol specific keys with `mokutil --import`.",
+				Line:   line,
+				Column: col,
+				Level:  SeverityError,
+			}}
 		}
 	}
 	return nil
-}
-
-func zc1899Hit(cmd *ast.SimpleCommand) []Violation {
-	return []Violation{{
-		KataID: "ZC1899",
-		Message: "`mokutil --disable-validation` stops the shim from validating " +
-			"kernel/modules against enrolled keys — Secure Boot becomes advisory. " +
-			"Leave validation on; enrol specific keys with `mokutil --import`.",
-		Line:   cmd.Token.Line,
-		Column: cmd.Token.Column,
-		Level:  SeverityError,
-	}}
 }
