@@ -352,6 +352,14 @@ func (p *Parser) parseLetStatement() *ast.LetStatement {
 		return nil
 	}
 
+	// Zsh `let` accepts `local` / `-i` / `-x` etc. modifier words
+	// between the keyword and the assignment target, e.g.
+	// `let local elapsed=1`. Skip leading IDENT modifiers (but not
+	// the final name, which is the one paired with `=`).
+	for p.peekTokenIs(token.IDENT) {
+		p.nextToken()
+	}
+
 	stmt.Name = &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
 
 	if !p.expectPeek(token.ASSIGN) {
