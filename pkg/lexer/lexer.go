@@ -447,7 +447,9 @@ func (l *Lexer) readAngleBracket(isLeft bool) token.Token {
 	if isLeft {
 		switch peek {
 		case '<':
-			return two(token.LTLT)
+			tok := two(token.LTLT)
+			l.consumeHeredocBody()
+			return tok
 		case '&':
 			return two(token.LTAMP)
 		case '(':
@@ -479,6 +481,123 @@ func (l *Lexer) readAngleBracket(isLeft bool) token.Token {
 		return two(token.GT)
 	}
 	return newToken(token.GT, l.ch, l.line, l.column)
+}
+
+// consumeHeredocBody is called immediately after emitting LTLT (the
+// `<<` token). Zsh heredocs — `cat <<EOF … EOF`, `cat <<-EOF … EOF`,
+// `cat <<"EOF" … EOF`, `cat <<\EOF … EOF` — have a body that begins
+// on the next line and ends at a line consisting of just the
+// delimiter (optionally preceded by tabs when `<<-` is used). The
+// body must be opaque to the lexer, because it routinely contains
+// pipes, backticks, and brace groups that would otherwise lex as
+// real tokens. Peek forward for the delimiter word, then fast-
+// forward past the end of the matching closer line.
+//
+// The parser currently has no heredoc AST node. Dropping the body
+// lets real scripts parse cleanly; detection katas that care about
+// heredoc content can walk source directly.
+func (l *Lexer) consumeHeredocBody() {
+	// Skip trailing `-` (strip-tabs flavour) and intervening
+	// whitespace to land on the delimiter's first byte.
+	pos := l.readPosition
+	if pos < len(l.input) && l.input[pos] == '-' {
+		pos++
+	}
+	for pos < len(l.input) && (l.input[pos] == ' ' || l.input[pos] == '\t') {
+		pos++
+	}
+	if pos >= len(l.input) {
+		return
+	}
+	// Pull the delimiter word. Accept quoted and backslash-escaped
+	// forms by stripping those characters but using the literal
+	// body as the match target. When no plausible delimiter is
+	// present, leave the lexer alone.
+	delim, delimEnd := extractHeredocDelim(l.input, pos)
+	if delim == "" {
+		return
+	}
+	// Scan forward to the first byte after a line consisting of
+	// just the delimiter (optionally indented by tabs for `<<-`).
+	i := delimEnd
+	// Walk to the first newline that starts the body.
+	for i < len(l.input) && l.input[i] != '\n' {
+		i++
+	}
+	// Loop over lines until we find one equal to the delimiter.
+	for i < len(l.input) {
+		// Step past the newline to the next line's first byte.
+		i++
+		lineStart := i
+		// Allow leading tabs for `<<-` form.
+		for i < len(l.input) && l.input[i] == '\t' {
+			i++
+		}
+		lineBodyStart := i
+		// Advance to end of line.
+		for i < len(l.input) && l.input[i] != '\n' {
+			i++
+		}
+		// Compare the (possibly tab-stripped) line body against
+		// the delimiter.
+		if l.input[lineBodyStart:i] == delim {
+			// Consume through to just after this closer line's
+			// newline (or EOF). Update position state.
+			_ = lineStart
+			l.fastForwardTo(i)
+			return
+		}
+	}
+	// Delimiter never found; leave lexer state alone so the caller
+	// continues as if no heredoc was detected.
+}
+
+// extractHeredocDelim scans a heredoc delimiter word starting at
+// pos, handling quoted and backslash-escaped forms. Returns the
+// effective delimiter text and the input index immediately past it,
+// or ("", pos) when no delimiter is present.
+func extractHeredocDelim(input string, pos int) (string, int) {
+	if pos >= len(input) {
+		return "", pos
+	}
+	switch input[pos] {
+	case '"', '\'':
+		quote := input[pos]
+		pos++
+		start := pos
+		for pos < len(input) && input[pos] != quote {
+			pos++
+		}
+		delim := input[start:pos]
+		if pos < len(input) {
+			pos++
+		}
+		return delim, pos
+	case '\\':
+		pos++
+	}
+	start := pos
+	for pos < len(input) && (isWordByte(input[pos])) {
+		pos++
+	}
+	if pos == start {
+		return "", pos
+	}
+	return input[start:pos], pos
+}
+
+func isWordByte(ch byte) bool {
+	return ('a' <= ch && ch <= 'z') || ('A' <= ch && ch <= 'Z') ||
+		('0' <= ch && ch <= '9') || ch == '_' || ch == '-'
+}
+
+// fastForwardTo re-anchors the lexer at the given input index,
+// advancing line/column counters along the way so subsequent tokens
+// carry accurate source coordinates.
+func (l *Lexer) fastForwardTo(target int) {
+	for l.readPosition <= target && l.ch != 0 {
+		l.readChar()
+	}
 }
 
 // readCloseParen resolves a `)` to either DoubleRparen (fused `))`)
