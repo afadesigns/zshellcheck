@@ -416,39 +416,7 @@ func (l *Lexer) NextToken() (tok token.Token) {
 			tok.HasPrecedingSpace = hasSpace
 			return tok
 		case l.ch == '\\':
-			// Backslash outside a string quotes exactly one following
-			// character. Zsh glob escapes (`\(`, `\)`, `\*`, `\?`,
-			// etc.) surface in oh-my-zsh themes. Emit the escaped
-			// character's natural token — backslash-newline is
-			// already handled by skipWhitespace. For non-alphanumeric
-			// escapes we emit the raw escaped char as an IDENT-style
-			// word so parseCommandWord folds it into the surrounding
-			// word naturally. We only do this when the next byte is
-			// one of the commonly-escaped glob / shell metacharacters
-			// to avoid destabilising token-aware contexts.
-			next := l.peekChar()
-			isLetter := (next >= 'a' && next <= 'z') || (next >= 'A' && next <= 'Z') ||
-				(next >= '0' && next <= '9')
-			if isLetter || next == '(' || next == ')' || next == '*' ||
-				next == '?' || next == '[' || next == ']' || next == '|' ||
-				next == '&' || next == ';' || next == '<' || next == '>' ||
-				next == '{' || next == '}' || next == '$' || next == '\\' ||
-				next == '/' || next == '.' || next == '!' || next == '~' ||
-				next == '^' || next == ' ' || next == '\t' || next == '#' ||
-				next == '"' || next == '\'' || next == '=' || next == '%' ||
-				next == ',' || next == ':' || next == '@' || next == '+' ||
-				next == '-' {
-				line, col := l.line, l.column
-				l.readChar() // consume '\'
-				tok = token.Token{
-					Type:    token.IDENT,
-					Literal: "\\" + string(l.ch),
-					Line:    line,
-					Column:  col,
-				}
-			} else {
-				tok = newToken(token.ILLEGAL, l.ch, l.line, l.column)
-			}
+			tok = l.readBackslashEscape()
 		default:
 			tok = newToken(token.ILLEGAL, l.ch, l.line, l.column)
 		}
@@ -625,6 +593,38 @@ func isWordByte(ch byte) bool {
 func (l *Lexer) fastForwardTo(target int) {
 	for l.readPosition <= target && l.ch != 0 {
 		l.readChar()
+	}
+}
+
+// readBackslashEscape handles a `\X` sequence outside string contexts.
+// Backslash quotes exactly one following character; for any of the
+// common glob / shell / regex metacharacters or alphanumerics we
+// emit the pair as an IDENT word so parseCommandWord folds it into
+// the surrounding word. Anything else falls back to ILLEGAL to keep
+// token-aware contexts stable.
+func (l *Lexer) readBackslashEscape() token.Token {
+	next := l.peekChar()
+	isLetter := (next >= 'a' && next <= 'z') || (next >= 'A' && next <= 'Z') ||
+		(next >= '0' && next <= '9')
+	allowed := isLetter || next == '(' || next == ')' || next == '*' ||
+		next == '?' || next == '[' || next == ']' || next == '|' ||
+		next == '&' || next == ';' || next == '<' || next == '>' ||
+		next == '{' || next == '}' || next == '$' || next == '\\' ||
+		next == '/' || next == '.' || next == '!' || next == '~' ||
+		next == '^' || next == ' ' || next == '\t' || next == '#' ||
+		next == '"' || next == '\'' || next == '=' || next == '%' ||
+		next == ',' || next == ':' || next == '@' || next == '+' ||
+		next == '-'
+	if !allowed {
+		return newToken(token.ILLEGAL, l.ch, l.line, l.column)
+	}
+	line, col := l.line, l.column
+	l.readChar() // consume '\'
+	return token.Token{
+		Type:    token.IDENT,
+		Literal: "\\" + string(l.ch),
+		Line:    line,
+		Column:  col,
 	}
 }
 
