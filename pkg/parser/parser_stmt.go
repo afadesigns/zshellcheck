@@ -824,6 +824,16 @@ func (p *Parser) parseForLoopStatement() *ast.ForLoopStatement {
 		p.nextToken()
 	}
 
+	// Zsh short body form: `for x in items; { body }` replaces
+	// `do … done` with a brace block. Accept LBRACE here alongside
+	// the classic DO keyword.
+	if p.peekTokenIs(token.LBRACE) {
+		p.nextToken()  // onto {
+		p.nextToken()  // into body
+		stmt.Body = p.parseBlockStatement(token.RBRACE)
+		return stmt
+	}
+
 	if !p.expectPeek(token.DO) {
 		return nil
 	}
