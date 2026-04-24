@@ -715,6 +715,16 @@ func (p *Parser) parseBlockStatement(terminators ...token.Type) *ast.BlockStatem
 func (p *Parser) parseSubshellStatement() ast.Statement {
 	subshellToken := p.curToken
 	p.nextToken()
+	// Anonymous-function form `() { body }` — empty parens
+	// followed by an opening brace. parseStatement routes LPAREN
+	// here, so detect that pattern and parse the body as a brace
+	// block rather than a subshell.
+	if p.curTokenIs(token.RPAREN) && p.peekTokenIs(token.LBRACE) {
+		p.nextToken() // onto {
+		p.nextToken() // into body
+		body := p.parseBlockStatement(token.RBRACE)
+		return &ast.FunctionDefinition{Token: subshellToken, Body: body}
+	}
 	block := p.parseBlockStatement(token.RPAREN)
 	if !p.curTokenIs(token.RPAREN) {
 		p.peekError(token.RPAREN)
