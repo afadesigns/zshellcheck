@@ -221,8 +221,7 @@ $#&|`
 		{token.SEMICOLON, ";"},
 		{token.DOLLAR, "$"},
 		{token.HASH, "#"},
-		{token.AMPERSAND, "&"},
-		{token.PIPE, "|"},
+		{token.AMPERSAND, "&|"},
 		{token.EOF, ""},
 	}
 

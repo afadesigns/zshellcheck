@@ -203,63 +203,9 @@ func (l *Lexer) NextToken() (tok token.Token) {
 	case '*':
 		tok = newToken(token.ASTERISK, l.ch, l.line, l.column)
 	case '<':
-		switch l.peekChar() {
-		case '<':
-			ch := l.ch
-			l.readChar()
-			literal := string(ch) + string(l.ch)
-			tok = token.Token{Type: token.LTLT, Literal: literal, Line: l.line, Column: l.column}
-		case '&':
-			ch := l.ch
-			l.readChar()
-			literal := string(ch) + string(l.ch)
-			tok = token.Token{Type: token.LTAMP, Literal: literal, Line: l.line, Column: l.column}
-		case '(':
-			ch := l.ch
-			l.readChar()
-			literal := string(ch) + string(l.ch)
-			tok = token.Token{Type: token.LT_LPAREN, Literal: literal, Line: l.line, Column: l.column}
-			l.parenStack = append(l.parenStack, 'P')
-		default:
-			tok = newToken(token.LT, l.ch, l.line, l.column)
-		}
+		tok = l.readAngleBracket(true)
 	case '>':
-		switch l.peekChar() {
-		case '>':
-			ch := l.ch
-			l.readChar()
-			literal := string(ch) + string(l.ch)
-			tok = token.Token{Type: token.GTGT, Literal: literal, Line: l.line, Column: l.column}
-		case '&':
-			ch := l.ch
-			l.readChar()
-			literal := string(ch) + string(l.ch)
-			tok = token.Token{Type: token.GTAMP, Literal: literal, Line: l.line, Column: l.column}
-		case '(':
-			ch := l.ch
-			l.readChar()
-			literal := string(ch) + string(l.ch)
-			tok = token.Token{Type: token.GT_LPAREN, Literal: literal, Line: l.line, Column: l.column}
-			l.parenStack = append(l.parenStack, 'P')
-		case '|':
-			// Zsh `>|file` and `>!file` force-clobber a file even
-			// when `NO_CLOBBER` is set. The trailing `|` / `!`
-			// belongs to the redirection, not to a pipeline or
-			// negation that follows. Emit the pair as a plain GT
-			// so parseCommandPipeline's redirection path handles
-			// it unchanged — the AST form is identical to `>file`.
-			ch := l.ch
-			l.readChar()
-			literal := string(ch) + string(l.ch)
-			tok = token.Token{Type: token.GT, Literal: literal, Line: l.line, Column: l.column}
-		case '!':
-			ch := l.ch
-			l.readChar()
-			literal := string(ch) + string(l.ch)
-			tok = token.Token{Type: token.GT, Literal: literal, Line: l.line, Column: l.column}
-		default:
-			tok = newToken(token.GT, l.ch, l.line, l.column)
-		}
+		tok = l.readAngleBracket(false)
 	case '{':
 		tok = newToken(token.LBRACE, l.ch, l.line, l.column)
 	case '}':
@@ -295,12 +241,24 @@ func (l *Lexer) NextToken() (tok token.Token) {
 		tok = newToken(token.DOLLAR, l.ch, l.line, l.column)
 
 	case '&':
-		if l.peekChar() == '&' {
+		switch l.peekChar() {
+		case '&':
 			ch := l.ch
 			l.readChar()
 			literal := string(ch) + string(l.ch)
 			tok = token.Token{Type: token.AND, Literal: literal, Line: l.line, Column: l.column}
-		} else {
+		case '|', '!':
+			// Zsh disown-in-background shortcuts: `&|` and `&!` both
+			// background the command AND disown it in one step. Fuse
+			// with AMPERSAND so the parser treats them like a plain
+			// `&` terminator; the trailing `|` / `!` is semantic
+			// metadata that downstream katas can read from the
+			// Literal if needed.
+			ch := l.ch
+			l.readChar()
+			literal := string(ch) + string(l.ch)
+			tok = token.Token{Type: token.AMPERSAND, Literal: literal, Line: l.line, Column: l.column}
+		default:
 			tok = newToken(token.AMPERSAND, l.ch, l.line, l.column)
 		}
 	case '|':
@@ -400,6 +358,56 @@ func (l *Lexer) NextToken() (tok token.Token) {
 	l.readChar()
 	tok.HasPrecedingSpace = hasSpace
 	return tok
+}
+
+// readAngleBracket emits the token for a leading `<` or `>` and the
+// punctuation pair that follows it. `isLeft` selects the LT-family
+// mappings (`<<`, `<&`, `<(`, `<=`); otherwise the GT-family
+// (`>>`, `>&`, `>=`, `>(`, `>|`, `>!`). Fusing here keeps the main
+// NextToken switch short enough for golangci's funlen limit without
+// duplicating the depth / parenStack bookkeeping.
+func (l *Lexer) readAngleBracket(isLeft bool) token.Token {
+	lead := l.ch
+	peek := l.peekChar()
+	two := func(t token.Type) token.Token {
+		l.readChar()
+		return token.Token{Type: t, Literal: string(lead) + string(l.ch), Line: l.line, Column: l.column}
+	}
+	if isLeft {
+		switch peek {
+		case '<':
+			return two(token.LTLT)
+		case '&':
+			return two(token.LTAMP)
+		case '(':
+			t := two(token.LT_LPAREN)
+			l.parenStack = append(l.parenStack, 'P')
+			return t
+		case '=':
+			return two(token.LE_NUM)
+		}
+		return newToken(token.LT, l.ch, l.line, l.column)
+	}
+	switch peek {
+	case '>':
+		return two(token.GTGT)
+	case '&':
+		return two(token.GTAMP)
+	case '=':
+		return two(token.GE_NUM)
+	case '(':
+		t := two(token.GT_LPAREN)
+		l.parenStack = append(l.parenStack, 'P')
+		return t
+	case '|', '!':
+		// Zsh force-clobber redirections `>|file` and `>!file`
+		// override NO_CLOBBER. The trailing `|` / `!` belongs to
+		// the redirect, not to a following pipeline or negation;
+		// emit GT so parseCommandPipeline's redirection path
+		// handles them the same as plain `>`.
+		return two(token.GT)
+	}
+	return newToken(token.GT, l.ch, l.line, l.column)
 }
 
 // readCloseParen resolves a `)` to either DoubleRparen (fused `))`)
