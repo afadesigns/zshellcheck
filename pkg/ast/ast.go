@@ -2,6 +2,7 @@ package ast
 
 import (
 	"fmt"
+	"reflect"
 	"strings"
 
 	"github.com/afadesigns/zshellcheck/pkg/token"
@@ -647,6 +648,15 @@ type WalkFn func(node Node) bool
 // It calls the walkFn for each node.
 func Walk(node Node, f WalkFn) {
 	if node == nil {
+		return
+	}
+	// Guard against typed-nil interface values: a Node interface can
+	// hold a concrete type descriptor with a nil pointer underneath,
+	// which does not compare equal to nil. Descending into such a
+	// value hands every kata switch arm a nil receiver, so fields
+	// like Identifier.Value or SimpleCommand.Name panic immediately.
+	// Reflect is the cheapest reliable check for this case.
+	if v := reflect.ValueOf(node); v.Kind() == reflect.Ptr && v.IsNil() {
 		return
 	}
 
