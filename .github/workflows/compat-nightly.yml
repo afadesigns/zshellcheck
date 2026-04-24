@@ -1,0 +1,76 @@
+name: Compat sweep (nightly)
+
+# Runs the Zsh-ecosystem compatibility harness against a small subset of
+# corpora every night and on manual dispatch. Reports parser-error
+# counts so regressions surface without waiting for the next manual
+# sweep. The full matrix (oh-my-zsh, powerlevel10k, prezto,
+# zsh-syntax-highlighting, spaceship-prompt) stays manual because the
+# clones are heavy; we run the lighter ones here.
+
+on:
+  schedule:
+    # Every night
+    - cron: '15 3 * * *'
+  workflow_dispatch:
+    inputs:
+      corpora:
+        description: 'Corpora to sweep (space-separated; empty = small set)'
+        required: false
+        default: ''
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+jobs:
+  sweep:
+    name: Compat sweep
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: step-security/harden-runner@8d3c67de8e2fe68ef647c8db1e6a09f647780f40 # v2.19.0
+        with:
+          egress-policy: audit
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v4.1.7
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6.4.0
+        with:
+          go-version: 'stable'
+          cache: true
+      - name: Build zshellcheck
+        run: go build -o /tmp/zshellcheck ./cmd/zshellcheck
+      - name: Sweep small corpora
+        env:
+          ZSHELLCHECK_BIN: /tmp/zshellcheck
+        run: |
+          # Default to the lightest corpora when no input is provided.
+          # zsh-autosuggestions and zsh-completions are tiny and parse
+          # cleanly today; keep them as the regression canary set.
+          targets="${{ github.event.inputs.corpora }}"
+          if [ -z "$targets" ]; then
+            targets="autosuggestions completions"
+          fi
+          # shellcheck disable=SC2086
+          bash scripts/test-zsh-compat.sh $targets
+      - name: Report parser-error totals
+        if: always()
+        env:
+          ZSHELLCHECK_BIN: /tmp/zshellcheck
+        run: |
+          targets="${{ github.event.inputs.corpora }}"
+          if [ -z "$targets" ]; then
+            targets="autosuggestions completions"
+          fi
+          # shellcheck disable=SC2086
+          bash scripts/test-zsh-compat.sh $targets 2>&1 | grep -E '^=== |parse errors' | tee compat-report.txt
+      - name: Upload sweep report
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: compat-report
+          path: compat-report.txt
+          retention-days: 30
