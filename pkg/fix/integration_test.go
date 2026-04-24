@@ -665,6 +665,14 @@ func TestFixIntegration_ZC1226_DmesgAddTime(t *testing.T) {
 	}
 }
 
+func TestFixIntegration_ZC1227_CurlAddFail(t *testing.T) {
+	src := "curl https://example.com/data\n"
+	want := "curl -f https://example.com/data\n"
+	if got := runFix(t, src); got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}
+
 func TestFixIntegration_SecondPass_ResolvesInner(t *testing.T) {
 	src := "result=`which git`\n"
 	first := runFix(t, src)
