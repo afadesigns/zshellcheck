@@ -117,6 +117,11 @@ func New(l *lexer.Lexer) *Parser {
 	// fired "no prefix parse function for /". SLASH has no infix
 	// entry so this only widens prefix acceptance.
 	p.registerPrefix(token.SLASH, p.parseIdentifier)
+	// RBRACKET as a prefix covers literal `]` arguments — e.g.
+	// Zsh `alias ]=cat` defines an alias whose name is the
+	// single-character `]`. Without a prefix the lexer's RBRACKET
+	// token had nowhere to land at statement / argument position.
+	p.registerPrefix(token.RBRACKET, p.parseIdentifier)
 	p.registerPrefix(token.INT, p.parseIntegerLiteral)
 	p.registerPrefix(token.BANG, p.parsePrefixExpression)
 	p.registerPrefix(token.MINUS, p.parsePrefixExpression)
