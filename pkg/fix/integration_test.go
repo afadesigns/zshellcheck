@@ -392,6 +392,21 @@ func TestFixIntegration_ZC1085_AlreadyQuotedUnchanged(t *testing.T) {
 	}
 }
 
+func TestFixIntegration_ZC1084_FindGlobQuoted(t *testing.T) {
+	src := "find . -name *.txt\n"
+	want := "find . -name '*.txt'\n"
+	if got := runFix(t, src); got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}
+
+func TestFixIntegration_ZC1084_FindAlreadyQuotedUnchanged(t *testing.T) {
+	src := "find . -name '*.txt'\n"
+	if got := runFix(t, src); got != src {
+		t.Errorf("quoted pattern should be idempotent, got %q", got)
+	}
+}
+
 func TestFixIntegration_SecondPass_ResolvesInner(t *testing.T) {
 	src := "result=`which git`\n"
 	first := runFix(t, src)
