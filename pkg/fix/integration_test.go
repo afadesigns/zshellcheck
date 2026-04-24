@@ -705,6 +705,14 @@ func TestFixIntegration_ZC1263_AptToAptGet(t *testing.T) {
 	}
 }
 
+func TestFixIntegration_ZC1264_YumToDnf(t *testing.T) {
+	src := "yum install httpd\n"
+	want := "dnf install httpd\n"
+	if got := runFix(t, src); got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}
+
 func TestFixIntegration_SecondPass_ResolvesInner(t *testing.T) {
 	src := "result=`which git`\n"
 	first := runFix(t, src)
