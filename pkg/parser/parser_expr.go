@@ -9,15 +9,19 @@ import (
 )
 
 func (p *Parser) parseExpression(precedence int) ast.Expression {
-	// Inside a `[[ … ]]` conditional, the infix chain may recurse
-	// into parseInfixExpression's right-hand side just before the
-	// closing `]]` or a logical connector (`&&`, `||`). A glob
-	// pattern like `"foo"*` leaves one of these as the next token
-	// and an ASTERISK/DOT infix recursion would try to parse it as
-	// a prefix. Return nil silently so the caller's infix result
-	// is well-formed and the conditional parser resumes at the
-	// connector.
-	if p.curTokenIs(token.RDBRACKET) || p.curTokenIs(token.AND) || p.curTokenIs(token.OR) {
+	// The infix chain may recurse into parseInfixExpression's
+	// right-hand side just before a statement terminator or
+	// block-structure keyword (`]]`, `&&`, `||`, `then`, `else`,
+	// `elif`, `fi`, `do`, `done`, `esac`). Bail silently in all
+	// those cases so the caller's partial infix result stays
+	// well-formed and the outer statement parser resumes cleanly.
+	// Typical trigger: a bare `VAR=` at end of line followed by
+	// the next statement's keyword, or a glob pattern inside a
+	// conditional like `"foo"* && …`.
+	switch p.curToken.Type {
+	case token.RDBRACKET, token.AND, token.OR,
+		token.THEN, token.ELSE, token.ELIF, token.Fi,
+		token.DO, token.DONE, token.ESAC:
 		return nil
 	}
 	prefix := p.prefixParseFns[p.curToken.Type]

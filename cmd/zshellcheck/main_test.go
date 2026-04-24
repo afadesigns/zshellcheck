@@ -508,7 +508,9 @@ func TestProcessFile_ParserErrors(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "bad.zsh")
 	// Write something that will cause parser errors
-	if err := os.WriteFile(path, []byte("if then fi fi fi fi\n"), 0o600); err != nil {
+	// Syntactically invalid input that no legitimate silent-recovery
+	// path can absorb: an unopened `)` and a stray `]`.
+	if err := os.WriteFile(path, []byte(") ]\n"), 0o600); err != nil {
 		t.Fatal(err)
 	}
 
