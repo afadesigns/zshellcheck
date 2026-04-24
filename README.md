@@ -1,12 +1,6 @@
 <div align="center">
 
-```
- mmmmmm  mmmm  #             ""#    ""#      mmm  #                    #
-     #" #"   " # mm    mmm     #      #    m"   " # mm    mmm    mmm   #   m
-   m#   "#mmm  #"  #  #"  #    #      #    #      #"  #  #"  #  #"  "  # m"
-  m"        "# #   #  #""""    #      #    #      #   #  #""""  #      #"#
- ##mmmm "mmm#" #   #  "#mm"    "mm    "mm   "mmm" #   #  "#mm"  "#mm"  #  "m
-```
+<img src="docs/assets/banner.png" alt="zshellcheck" width="100%" />
 
 ### Native static analysis for Zsh
 
