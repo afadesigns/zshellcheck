@@ -23,7 +23,7 @@ func (p *Parser) parseExpression(precedence int) ast.Expression {
 	case token.RDBRACKET, token.AND, token.OR,
 		token.THEN, token.ELSE, token.ELIF, token.Fi,
 		token.DO, token.DONE, token.ESAC,
-		token.SEMICOLON:
+		token.SEMICOLON, token.DSEMI:
 		return nil
 	}
 	prefix := p.prefixParseFns[p.curToken.Type]

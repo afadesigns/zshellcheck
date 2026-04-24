@@ -145,7 +145,7 @@ func (p *Parser) parseStatement() ast.Statement {
 			p.peekTokenIs(token.DOLLAR_LPAREN) || p.peekTokenIs(token.SLASH) ||
 			p.peekTokenIs(token.TILDE) || p.peekTokenIs(token.ASTERISK) ||
 			p.peekTokenIs(token.BANG) || p.peekTokenIs(token.LBRACE) ||
-			// Zero-arg commands followed by a pipe / logical chain
+// Zero-arg commands followed by a pipe / logical chain
 			// must route through parseSimpleCommandStatement so the
 			// pipeline / AND / OR chain is parsed at the command
 			// layer. Without this `cmd1 |\n cmd2` left `cmd1` as a
