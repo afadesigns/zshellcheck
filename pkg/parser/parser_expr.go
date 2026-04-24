@@ -795,8 +795,20 @@ func (p *Parser) parseDollarParenExpression() ast.Expression {
 	// closing `)` cleanly. The AST keeps the first command; katas
 	// that care about the full body can walk source.
 	exp.Command = p.parseCommandList()
-	for p.peekTokenIs(token.SEMICOLON) {
-		p.nextToken() // onto ;
+	// Drain any further statements inside the `$( … )` body.
+	// Zsh separates statements with `;` or a newline, so advance
+	// past either and re-enter parseStatement. Stops at RPAREN or
+	// EOF; callers handle unexpected EOF as a parse error.
+	for !p.peekTokenIs(token.RPAREN) && !p.peekTokenIs(token.EOF) {
+		if p.peekTokenIs(token.SEMICOLON) {
+			p.nextToken() // onto ;
+		} else if p.peekToken.Line > p.curToken.Line {
+			// implicit newline separator: fall through to nextToken
+		} else {
+			// Unknown continuation — bail so the RPAREN expectPeek
+			// below reports a meaningful error.
+			break
+		}
 		p.nextToken() // onto next stmt head
 		_ = p.parseStatement()
 	}
