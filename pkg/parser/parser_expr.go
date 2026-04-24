@@ -589,6 +589,28 @@ func (p *Parser) parseIndexExpression(left ast.Expression) ast.Expression {
 		}
 		// Advance onto the subject after the closing paren.
 		p.nextToken()
+		// When a flag tuple was present the subject is a glob
+		// pattern (`arr[(r)*.zsh]`, `${1[(wr)^(*=*|sudo)]}`), not
+		// an arithmetic expression. Consume the remainder of the
+		// body opaquely so mixed glob alternations, negations, and
+		// nested classes don't crash the arithmetic parser. The
+		// AST keeps Index set to a placeholder; detection katas
+		// that need the raw subscript text read it from source.
+		exp.Index = &ast.StringLiteral{Token: p.curToken, Value: p.curToken.Literal}
+		bdepth := 0
+		for !p.curTokenIs(token.EOF) {
+			switch {
+			case p.curTokenIs(token.RBRACKET):
+				if bdepth == 0 {
+					return exp
+				}
+				bdepth--
+			case p.curTokenIs(token.LBRACKET):
+				bdepth++
+			}
+			p.nextToken()
+		}
+		return exp
 	}
 
 	prevInArithmetic := p.inArithmetic

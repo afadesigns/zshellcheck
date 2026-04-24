@@ -80,6 +80,15 @@ func (p *Parser) parseStatement() ast.Statement {
 	case token.COLON, token.DOT, token.LBRACKET,
 		token.GT, token.LT, token.GTGT, token.LTLT, token.GTAMP, token.LTAMP, token.AMPERSAND, token.SLASH:
 		return p.parseSimpleCommandStatement()
+	case token.BACKTICK, token.DOLLAR_LPAREN:
+		// A command-producing expression (`cmd` or $(cmd)) can stand
+		// on its own as a statement, but it can also head a pipeline
+		// or a logical chain: `` `_cmd` | sed … ``, `$(date) && ...`.
+		// Parse the expression via the normal prefix path, then fold
+		// any pipeline / AND / OR continuations into an infix tree
+		// so the trailing `|` / `&&` / `||` do not leak back into
+		// parseStatement's next-iteration dispatch.
+		return p.parsePipelineStartingWithExpression()
 	case token.CASE:
 		return p.parseCaseStatement()
 	case token.IDENT:
@@ -168,6 +177,32 @@ func (p *Parser) parseExpressionOrFunctionDefinition() ast.Statement {
 		}
 	}
 	return stmt
+}
+
+// parsePipelineStartingWithExpression parses a statement whose head
+// is a command-producing expression (backtick or `$(…)`) and then
+// folds any trailing pipeline / logical chain onto it. The generic
+// parseSingleCommand path can't handle this because it expects the
+// head to be an IDENT; doing the expression parse first and grafting
+// the pipeline on top keeps the AST shape identical to what the
+// IDENT path would produce for `cmd | other`.
+func (p *Parser) parsePipelineStartingWithExpression() ast.Statement {
+	tok := p.curToken
+	expr := p.parseExpression(LOWEST)
+	if expr == nil {
+		return nil
+	}
+	for p.peekTokenIs(token.PIPE) || p.peekTokenIs(token.AND) || p.peekTokenIs(token.OR) {
+		p.nextToken()
+		op := p.curToken
+		p.nextToken()
+		right := p.parseCommandPipeline()
+		expr = &ast.InfixExpression{Token: op, Operator: op.Literal, Left: expr, Right: right}
+	}
+	if p.peekTokenIs(token.SEMICOLON) {
+		p.nextToken()
+	}
+	return &ast.ExpressionStatement{Token: tok, Expression: expr}
 }
 
 func (p *Parser) parseSimpleCommandStatement() ast.Statement {
