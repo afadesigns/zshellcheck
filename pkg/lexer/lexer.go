@@ -19,6 +19,14 @@ type Lexer struct {
 	// RBRACKETs instead of RDBRACKET.
 	dbracketDepth int
 
+	// pendingContinuation is set when skipWhitespace has just consumed
+	// a `\<NL>` line-continuation pair. It is read and cleared by
+	// NextToken so the next emitted token carries
+	// HasPrecedingContinuation, letting the parser treat it as if it
+	// were on the previous line without altering the physical Line
+	// used for error messages.
+	pendingContinuation bool
+
 	// parenStack records the kind of every paren-like opener that is
 	// still awaiting its close. 'D' for `((` (arithmetic), 'P' for
 	// plain `(` and for `$(` command substitution. The lexer fuses
@@ -60,11 +68,17 @@ func (l *Lexer) peekChar() byte {
 	return l.input[l.readPosition]
 }
 
-func (l *Lexer) NextToken() token.Token {
-	var tok token.Token
-
+func (l *Lexer) NextToken() (tok token.Token) {
+	// skipWhitespace sets pendingContinuation when a `\<NL>` pair
+	// was absorbed; stamp the flag onto the returned token via this
+	// named-return defer so every early return path inherits it.
+	defer func() {
+		if l.pendingContinuation {
+			tok.HasPrecedingContinuation = true
+			l.pendingContinuation = false
+		}
+	}()
 	hasSpace := l.skipWhitespace()
-	// Store hasSpace but set it on tok later because tok is re-assigned below.
 
 	if l.ch == '#' {
 		if l.peekChar() == '!' {
@@ -532,18 +546,39 @@ func (l *Lexer) readString(quote byte) string {
 // the quotation.
 func (l *Lexer) readStringFlavour(quote byte, honourEscapes bool) string {
 	position := l.position // include opening quote
+	// braceDepth tracks `${ … }` parameter expansions embedded in a
+	// double-quoted string. Zsh suspends outer-quote termination
+	// while inside `${…}`, so nested quotes like
+	// `"${var="default"}"` must not split the string at the inner
+	// `"`. Single quotes and ANSI-C strings never embed expansions,
+	// so braceDepth only grows when honourEscapes is true.
+	braceDepth := 0
 	for {
 		l.readChar()
 		if l.ch == 0 {
 			break
 		}
-		if l.ch == quote {
+		if l.ch == quote && braceDepth == 0 {
 			break
 		}
 		if honourEscapes && l.ch == '\\' {
 			l.readChar() // skip escaped char
 			if l.ch == 0 {
 				break
+			}
+			continue
+		}
+		if honourEscapes && l.ch == '$' && l.peekChar() == '{' {
+			l.readChar() // consume `$`
+			braceDepth++
+			continue
+		}
+		if braceDepth > 0 {
+			switch l.ch {
+			case '{':
+				braceDepth++
+			case '}':
+				braceDepth--
 			}
 		}
 	}
@@ -579,6 +614,7 @@ func (l *Lexer) skipWhitespace() bool {
 				l.readChar() // consume '\'
 				l.readChar() // consume '\n'
 				skipped = true
+				l.pendingContinuation = true
 				continue
 			}
 		}

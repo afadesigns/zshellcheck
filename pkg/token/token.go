@@ -8,6 +8,13 @@ type Token struct {
 	Line              int
 	Column            int
 	HasPrecedingSpace bool
+	// HasPrecedingContinuation is set when the lexer consumed a
+	// `\<NL>` pair immediately before this token. The Line / Column
+	// fields still refer to the physical source position so error
+	// messages stay accurate, but parsers can treat the token as if
+	// it were on the previous line — matching how Zsh collapses
+	// line-continuations into one logical command.
+	HasPrecedingContinuation bool
 }
 
 const (

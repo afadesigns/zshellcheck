@@ -282,7 +282,7 @@ func (p *Parser) parseSingleCommand() ast.Expression {
 	}
 
 	// Continue parsing arguments
-	for !p.isCommandDelimiter(p.peekToken) && p.peekToken.Line == p.curToken.Line {
+	for !p.isCommandDelimiter(p.peekToken) && p.peekOnSameLogicalLine() {
 		p.nextToken()
 		arg := p.parseCommandWord()
 		cmd.Arguments = append(cmd.Arguments, arg)
@@ -323,7 +323,7 @@ func (p *Parser) parseCommandWord() ast.Expression {
 
 	// Continue parsing while the next token is adjacent (no preceding space)
 	for !p.peekToken.HasPrecedingSpace && !p.isCommandDelimiter(p.peekToken) &&
-		p.peekToken.Line == p.curToken.Line {
+		p.peekOnSameLogicalLine() {
 
 		p.nextToken()
 
@@ -666,7 +666,7 @@ func (p *Parser) parseForLoopStatement() *ast.ForLoopStatement {
 		p.nextToken()
 		stmt.Items = []ast.Expression{}
 		for !p.peekTokenIs(token.SEMICOLON) && !p.peekTokenIs(token.DO) && !p.peekTokenIs(token.EOF) &&
-			p.peekToken.Line == p.curToken.Line {
+			p.peekOnSameLogicalLine() {
 			p.nextToken()
 			arg := p.parseCommandWord()
 			stmt.Items = append(stmt.Items, arg)
@@ -710,7 +710,7 @@ func (p *Parser) parseSelectStatement() *ast.SelectStatement {
 		p.nextToken()
 		stmt.Items = []ast.Expression{}
 		for !p.peekTokenIs(token.SEMICOLON) && !p.peekTokenIs(token.DO) && !p.peekTokenIs(token.EOF) &&
-			p.peekToken.Line == p.curToken.Line {
+			p.peekOnSameLogicalLine() {
 			p.nextToken()
 			arg := p.parseCommandWord()
 			stmt.Items = append(stmt.Items, arg)
