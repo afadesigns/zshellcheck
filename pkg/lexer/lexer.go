@@ -341,7 +341,9 @@ func (l *Lexer) NextToken() token.Token {
 			if next := l.peekChar(); next == '(' || next == ')' || next == '*' ||
 				next == '?' || next == '[' || next == ']' || next == '|' ||
 				next == '&' || next == ';' || next == '<' || next == '>' ||
-				next == '{' || next == '}' || next == '$' || next == '\\' {
+				next == '{' || next == '}' || next == '$' || next == '\\' ||
+				next == '/' || next == '.' || next == '!' || next == '~' ||
+				next == '^' {
 				line, col := l.line, l.column
 				l.readChar() // consume '\'
 				tok = token.Token{
