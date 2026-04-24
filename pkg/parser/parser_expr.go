@@ -424,6 +424,27 @@ func (p *Parser) parseInvalidArrayAccessPrefix() ast.Expression {
 		exp := &ast.InvalidArrayAccess{Token: dollarToken, Left: plus}
 		p.nextToken()
 		exp.Index = p.parseExpression(LOWEST)
+		// Subscript body may carry tokens the arithmetic expression
+		// parser didn't consume — e.g. `_$cmd` lexes as IDENT +
+		// VARIABLE; the first IDENT returns from parseExpression
+		// and the VARIABLE falls out. Drain opaquely to the
+		// matching `]` so `$+name[_$cmd]` parses cleanly.
+		if !p.peekTokenIs(token.RBRACKET) {
+			bdepth := 0
+			for !p.peekTokenIs(token.EOF) {
+				p.nextToken()
+				switch {
+				case p.curTokenIs(token.LBRACKET):
+					bdepth++
+				case p.curTokenIs(token.RBRACKET):
+					if bdepth == 0 {
+						return exp
+					}
+					bdepth--
+				}
+			}
+			return exp
+		}
 		if !p.expectPeek(token.RBRACKET) {
 			return nil
 		}
