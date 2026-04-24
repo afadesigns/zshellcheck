@@ -1045,6 +1045,29 @@ func TestArithmeticLogicalChain(t *testing.T) {
 	}
 }
 
+func TestBraceParamExpansionSingleCharFlags(t *testing.T) {
+	// Zsh single-char pre-flags inside `${X name}` that modify the
+	// expansion: `=` (split), `~` (glob interpret), `^` (rc-style).
+	// Real-world code relies on all three; without explicit handling
+	// the parser tried to run `=` / `^` through the generic prefix
+	// path, which has no entry for ASSIGN / CARET, and produced
+	// "no prefix parse function for =" on zsh-autosuggestions.
+	inputs := []string{
+		`a=(${=VAR})`,
+		`b=(${~PATTERN})`,
+		`c=(${^ARRAY})`,
+		`d=(${=ZSH_AUTOSUGGEST_STRATEGY})`,
+	}
+	for _, input := range inputs {
+		l := lexer.New(input)
+		p := New(l)
+		_ = p.ParseProgram()
+		if errs := p.Errors(); len(errs) != 0 {
+			t.Errorf("%s:\n  unexpected parser errors: %v", input, errs)
+		}
+	}
+}
+
 func TestDeclarationFollowedByIfOnNextLine(t *testing.T) {
 	// Regression: `typeset -g A` directly followed by an `if … then …
 	// fi` on the next line used to swallow the `if` keyword, leaving

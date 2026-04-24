@@ -146,6 +146,17 @@ func (p *Parser) parseArrayAccess() ast.Expression {
 		hasLengthOp = true
 	}
 
+	// Zsh single-character pre-flags inside `${X name}` that modify the
+	// expansion rather than naming a parameter: `=` (split), `~` (glob
+	// interpret), `^` (rc-style expansion). They precede the subject and
+	// are consumed without producing an AST node — detection katas that
+	// care about them walk the source directly. Without this guard the
+	// generic prefix-expression path rejects `=` and `^`, breaking real
+	// scripts like `strategies=(${=VAR})` from zsh-autosuggestions.
+	for p.peekTokenIs(token.ASSIGN) || p.peekTokenIs(token.TILDE) || p.peekTokenIs(token.CARET) {
+		p.nextToken()
+	}
+
 	p.nextToken() // move to subject
 
 	expr := p.parseExpression(LOWEST)
