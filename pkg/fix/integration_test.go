@@ -729,6 +729,14 @@ func TestFixIntegration_ZC1267_DfAddPortable(t *testing.T) {
 	}
 }
 
+func TestFixIntegration_ZC1307_DirstackLowercase(t *testing.T) {
+	src := "top=$DIRSTACK\n"
+	want := "top=$dirstack\n"
+	if got := runFix(t, src); got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}
+
 func TestFixIntegration_ZC1301_PipestatusLowercase(t *testing.T) {
 	src := "status=$PIPESTATUS\n"
 	want := "status=$pipestatus\n"
