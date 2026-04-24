@@ -12,7 +12,58 @@ func init() {
 		Description: "`curl` without `-f` silently returns error pages (404, 500) as success. " +
 			"Use `-f` or `--fail` to return exit code 22 on HTTP errors.",
 		Check: checkZC1227,
+		Fix:   fixZC1227,
 	})
+}
+
+// fixZC1227 inserts ` -f` after the `curl` command name so HTTP
+// errors translate into a non-zero exit code. Detector guards the
+// shape (URL arg present, no existing -f/-fsSL/etc.).
+func fixZC1227(node ast.Node, v Violation, source []byte) []FixEdit {
+	cmd, ok := node.(*ast.SimpleCommand)
+	if !ok {
+		return nil
+	}
+	ident, ok := cmd.Name.(*ast.Identifier)
+	if !ok || ident.Value != "curl" {
+		return nil
+	}
+	nameOff := LineColToByteOffset(source, v.Line, v.Column)
+	if nameOff < 0 {
+		return nil
+	}
+	nameLen := IdentLenAt(source, nameOff)
+	if nameLen != len("curl") {
+		return nil
+	}
+	insertAt := nameOff + nameLen
+	insLine, insCol := offsetLineColZC1227(source, insertAt)
+	if insLine < 0 {
+		return nil
+	}
+	return []FixEdit{{
+		Line:    insLine,
+		Column:  insCol,
+		Length:  0,
+		Replace: " -f",
+	}}
+}
+
+func offsetLineColZC1227(source []byte, offset int) (int, int) {
+	if offset < 0 || offset > len(source) {
+		return -1, -1
+	}
+	line := 1
+	col := 1
+	for i := 0; i < offset; i++ {
+		if source[i] == '\n' {
+			line++
+			col = 1
+			continue
+		}
+		col++
+	}
+	return line, col
 }
 
 func checkZC1227(node ast.Node) []Violation {
