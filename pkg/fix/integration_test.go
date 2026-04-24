@@ -519,6 +519,14 @@ func TestFixIntegration_ZC1118_EchoDashNToPrintRN(t *testing.T) {
 	}
 }
 
+func TestFixIntegration_ZC1124_CatDevNullTruncate(t *testing.T) {
+	src := "cat /dev/null > file\n"
+	want := ": > file\n"
+	if got := runFix(t, src); got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}
+
 func TestFixIntegration_SecondPass_ResolvesInner(t *testing.T) {
 	src := "result=`which git`\n"
 	first := runFix(t, src)
