@@ -542,6 +542,22 @@ func TestFixIntegration_ZC1128_TouchWithFlagsUnchanged(t *testing.T) {
 	}
 }
 
+func TestFixIntegration_ZC1147_MkdirAddParentFlag(t *testing.T) {
+	src := "mkdir a/b/c\n"
+	want := "mkdir -p a/b/c\n"
+	if got := runFix(t, src); got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}
+
+func TestFixIntegration_ZC1147_FlatPathUnchanged(t *testing.T) {
+	// Detector only fires on nested paths; flat mkdir stays.
+	src := "mkdir foo\n"
+	if got := runFix(t, src); got != src {
+		t.Errorf("flat mkdir should stay, got %q", got)
+	}
+}
+
 func TestFixIntegration_SecondPass_ResolvesInner(t *testing.T) {
 	src := "result=`which git`\n"
 	first := runFix(t, src)
