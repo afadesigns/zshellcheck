@@ -176,14 +176,26 @@ func (p *Parser) parseArrayAccess() ast.Expression {
 		p.nextToken()
 	}
 
-	p.nextToken() // move to subject
-
-	expr := p.parseExpression(LOWEST)
-	if idxExpr, ok := expr.(*ast.IndexExpression); ok {
-		exp.Left = idxExpr.Left
-		exp.Index = idxExpr.Index
+	// The subject is optional when the only body is a modifier tail
+	// applied to an empty parameter, as in `${(%):-default}` where
+	// the `(%)` flag group is followed directly by `:-`. Without
+	// this guard, parseExpression tries to find a prefix for `:` and
+	// errors out. If the peek is a modifier punctuator, skip straight
+	// to the opaque modifier-tail scanner below.
+	if p.peekTokenIs(token.COLON) || p.peekTokenIs(token.HASH) ||
+		p.peekTokenIs(token.PERCENT) || p.peekTokenIs(token.SLASH) {
+		// Nothing to parse for the subject; the modifier tail loop
+		// will consume the rest of the body.
+		exp.Left = nil
 	} else {
-		exp.Left = expr
+		p.nextToken() // move to subject
+		expr := p.parseExpression(LOWEST)
+		if idxExpr, ok := expr.(*ast.IndexExpression); ok {
+			exp.Left = idxExpr.Left
+			exp.Index = idxExpr.Index
+		} else {
+			exp.Left = expr
+		}
 	}
 
 	if hasLengthOp && exp.Left != nil {
