@@ -458,11 +458,27 @@ func (l *Lexer) readString(quote byte) string {
 
 func (l *Lexer) skipWhitespace() bool {
 	skipped := false
-	for l.ch == ' ' || l.ch == '\t' || l.ch == '\n' || l.ch == '\r' {
-		skipped = true
-		l.readChar()
+	for {
+		switch l.ch {
+		case ' ', '\t', '\n', '\r':
+			skipped = true
+			l.readChar()
+			continue
+		case '\\':
+			// Line continuation: an unquoted backslash immediately
+			// followed by a newline joins the next line to the
+			// current one. Skip both characters so the lexer treats
+			// `cmd \<NL>arg` as `cmd arg`. Any other use of `\`
+			// falls through to the regular token handler.
+			if l.peekChar() == '\n' {
+				l.readChar() // consume '\'
+				l.readChar() // consume '\n'
+				skipped = true
+				continue
+			}
+		}
+		return skipped
 	}
-	return skipped
 }
 
 func (l *Lexer) skipComment() {
