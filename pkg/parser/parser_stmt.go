@@ -442,7 +442,18 @@ func (p *Parser) parseCommandWord() ast.Expression {
 			// or `env FOO=bar cmd`). Treat it as a literal word part
 			// when it appears mid-command. The declaration parser has
 			// its own dedicated handling for the IDENT=VALUE form.
-			t == token.ASSIGN || t == token.PLUSEQ {
+			t == token.ASSIGN || t == token.PLUSEQ ||
+			// Reserved-word tokens (FUNCTION/SELECT/COPROC/etc.) are
+			// keywords in statement position but routinely appear as
+			// literal arguments — `reserved_words=( do done … function
+			// repeat select … )`, `print -l function`. Treat them as
+			// literal strings in command-arg / array-element contexts.
+			t == token.FUNCTION || t == token.SELECT || t == token.COPROC ||
+			t == token.DO || t == token.DONE || t == token.ESAC ||
+			t == token.THEN || t == token.ELSE || t == token.ELIF || t == token.Fi ||
+			t == token.If || t == token.FOR || t == token.WHILE || t == token.CASE ||
+			t == token.IN || t == token.LET || t == token.RETURN ||
+			t == token.TYPESET || t == token.DECLARE {
 			return false
 		}
 		return p.prefixParseFns[t] != nil
