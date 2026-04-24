@@ -370,7 +370,11 @@ func (p *Parser) parseArrayAccess() ast.Expression {
 	// care about them walk the source directly. Without this guard the
 	// generic prefix-expression path rejects `=` and `^`, breaking real
 	// scripts like `strategies=(${=VAR})` from zsh-autosuggestions.
-	for p.peekTokenIs(token.ASSIGN) || p.peekTokenIs(token.TILDE) || p.peekTokenIs(token.CARET) {
+	for p.peekTokenIs(token.ASSIGN) || p.peekTokenIs(token.TILDE) ||
+		p.peekTokenIs(token.CARET) || p.peekTokenIs(token.EQ) {
+		// `${==X}` is the double-`=` form (strip an outer `=`
+		// flag); the lexer fuses `==` into a single EQ token, so
+		// allow that as a pre-flag here too.
 		p.nextToken()
 	}
 
