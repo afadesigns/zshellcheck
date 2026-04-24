@@ -6,6 +6,33 @@ import (
 	"github.com/afadesigns/zshellcheck/pkg/token"
 )
 
+func TestDollarQuotedStrings(t *testing.T) {
+	// Zsh ANSI-C quoting `$'…'` and gettext quoting `$"…"` must lex
+	// as single STRING tokens. Previously the `$` was emitted as
+	// DOLLAR and the quote contents as STRING, producing a pair the
+	// parser could not consume on an assignment RHS. Widely used in
+	// oh-my-zsh themes (darkblood and many more) to embed escape
+	// sequences inside prompt strings.
+	cases := []struct {
+		in   string
+		want string
+	}{
+		{`$'hello'`, `$'hello'`},
+		{`$'a\nb'`, `$'a\nb'`},
+		{`$"gettext"`, `$"gettext"`},
+	}
+	for _, c := range cases {
+		l := New(c.in)
+		tok := l.NextToken()
+		if tok.Type != token.STRING {
+			t.Errorf("%q: want STRING, got %s", c.in, tok.Type)
+		}
+		if tok.Literal != c.want {
+			t.Errorf("%q: literal = %q, want %q", c.in, tok.Literal, c.want)
+		}
+	}
+}
+
 func TestNextToken(t *testing.T) {
 	input := `let five = 5;
 let ten = 10;
