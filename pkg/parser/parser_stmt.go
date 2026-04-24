@@ -955,11 +955,13 @@ func (p *Parser) parseForLoopStatement() *ast.ForLoopStatement {
 
 	// Zsh multi-variable for loop: `for k v in …` / `for a b c in …`
 	// pairs each element of the item list against the declared
-	// variables in turn. The AST currently only models a single
-	// Name, so skip extra names forward until we hit IN / LPAREN /
-	// SEMICOLON / DO. Detection katas that need the full name list
-	// can read source directly.
-	for p.peekTokenIs(token.IDENT) {
+	// variables in turn. The implicit-list form `for k v w; do …`
+	// (no `in` — iterates over `$@`) allows numeric positional
+	// names as well, e.g. `for 1 2 3; do …` in
+	// zsh-syntax-highlighting. Accept IDENT and INT alike; the AST
+	// only models a single Name, so extras are skipped. Detection
+	// katas that need the full name list can read source directly.
+	for p.peekTokenIs(token.IDENT) || p.peekTokenIs(token.INT) {
 		p.nextToken()
 	}
 
