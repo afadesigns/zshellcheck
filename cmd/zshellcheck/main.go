@@ -12,6 +12,7 @@ import (
 	"github.com/adrg/xdg"
 	"github.com/afadesigns/zshellcheck/pkg/ast"
 	"github.com/afadesigns/zshellcheck/pkg/config"
+	"github.com/afadesigns/zshellcheck/pkg/fix"
 	"github.com/afadesigns/zshellcheck/pkg/katas"
 	"github.com/afadesigns/zshellcheck/pkg/lexer"
 	"github.com/afadesigns/zshellcheck/pkg/parser"
@@ -43,6 +44,9 @@ func run() int {
 	verbose := flag.Bool("verbose", false, "Show detailed Kata descriptions in text output")
 	noColor := flag.Bool("no-color", false, "Disable colored output")
 	severityFilter := flag.String("severity", "", "Comma-separated list of severities to show (error,warning,info,style)")
+	fixMode := flag.Bool("fix", false, "Apply auto-fixes in place for katas that declare a Fix")
+	diffMode := flag.Bool("diff", false, "Print a unified diff of the fixes instead of writing them")
+	dryRun := flag.Bool("dry-run", false, "When used with -fix, do not modify files; just list what would change")
 	flag.Parse()
 
 	if *showVersion {
@@ -114,9 +118,20 @@ func run() int {
 
 	kataRegistry := katas.Registry
 
+	fixOpts := fixOptions{
+		enabled: *fixMode || *diffMode,
+		diff:    *diffMode,
+		dryRun:  *dryRun,
+	}
+	if fixOpts.diff {
+		// -diff is equivalent to -fix -dry-run with diff rendering.
+		fixOpts.enabled = true
+		fixOpts.dryRun = true
+	}
+
 	totalViolations := 0
 	for _, filename := range flag.Args() {
-		totalViolations += processPath(filename, os.Stdout, os.Stderr, config, kataRegistry, *format, allowedSeverities)
+		totalViolations += processPath(filename, os.Stdout, os.Stderr, config, kataRegistry, *format, allowedSeverities, fixOpts)
 	}
 
 	if totalViolations > 0 {
@@ -156,7 +171,13 @@ func loadConfig(paths ...string) (config.Config, error) {
 	return cfg, nil
 }
 
-func processPath(path string, out, errOut io.Writer, cfg config.Config, registry *katas.KatasRegistry, format string, allowedSeverities []katas.Severity) int {
+type fixOptions struct {
+	enabled bool
+	diff    bool
+	dryRun  bool
+}
+
+func processPath(path string, out, errOut io.Writer, cfg config.Config, registry *katas.KatasRegistry, format string, allowedSeverities []katas.Severity, fixOpts fixOptions) int {
 	info, err := os.Stat(path)
 	if err != nil {
 		fmt.Fprintf(errOut, "Error stating path %s: %s\n", path, err)
@@ -186,19 +207,19 @@ func processPath(path string, out, errOut io.Writer, cfg config.Config, registry
 			// For now, let's try to parse everything, or maybe filter by extension/shebang if it gets too noisy.
 			// Shellcheck defaults to checking all files passed, but for recursive it might filter.
 			// Let's assume user wants to check all files in the dir if they passed the dir.
-			count += processFile(p, out, errOut, cfg, registry, format, allowedSeverities)
+			count += processFile(p, out, errOut, cfg, registry, format, allowedSeverities, fixOpts)
 			return nil
 		})
 		if err != nil {
 			fmt.Fprintf(errOut, "Error walking directory %s: %s\n", path, err)
 		}
 	} else {
-		count += processFile(path, out, errOut, cfg, registry, format, allowedSeverities)
+		count += processFile(path, out, errOut, cfg, registry, format, allowedSeverities, fixOpts)
 	}
 	return count
 }
 
-func processFile(filename string, out, errOut io.Writer, cfg config.Config, registry *katas.KatasRegistry, format string, allowedSeverities []katas.Severity) int {
+func processFile(filename string, out, errOut io.Writer, cfg config.Config, registry *katas.KatasRegistry, format string, allowedSeverities []katas.Severity, fixOpts fixOptions) int {
 	data, err := os.ReadFile(filename)
 	if err != nil {
 		fmt.Fprintf(errOut, "Error reading file %s: %s\n", filename, err)
@@ -227,8 +248,15 @@ func processFile(filename string, out, errOut io.Writer, cfg config.Config, regi
 	}
 
 	violations := []katas.Violation{}
+	var edits []katas.FixEdit
 	ast.Walk(program, func(node ast.Node) bool {
-		violations = append(violations, registry.Check(node, disabled)...)
+		if fixOpts.enabled {
+			vs, es := registry.CheckAndFix(node, disabled, data)
+			violations = append(violations, vs...)
+			edits = append(edits, es...)
+		} else {
+			violations = append(violations, registry.Check(node, disabled)...)
+		}
 		return true // Continue walking
 	})
 
@@ -256,6 +284,38 @@ func processFile(filename string, out, errOut io.Writer, cfg config.Config, regi
 			}
 		}
 		violations = filteredViolations
+	}
+
+	// Apply auto-fixes when requested. Edits land only when the file has
+	// surviving violations (silenced / severity-filtered violations drop
+	// their associated fixes too — silence should silence the fix).
+	if fixOpts.enabled && len(edits) > 0 && len(violations) > 0 {
+		if fixOpts.diff {
+			diff, derr := fix.Diff(filename, string(data), edits)
+			if derr != nil {
+				fmt.Fprintf(errOut, "fix: diff failed for %s: %s\n", filename, derr)
+			} else if diff != "" {
+				fmt.Fprint(out, diff)
+			}
+		} else if !fixOpts.dryRun {
+			fixed, ferr := fix.Apply(string(data), edits)
+			if ferr != nil {
+				fmt.Fprintf(errOut, "fix: apply failed for %s: %s\n", filename, ferr)
+			} else if fixed != string(data) {
+				// Preserve the original file permissions so in-place
+				// rewrites do not change execute bits or group/other
+				// visibility.
+				mode := os.FileMode(0o600)
+				if info, statErr := os.Stat(filename); statErr == nil {
+					mode = info.Mode().Perm()
+				}
+				if werr := os.WriteFile(filename, []byte(fixed), mode); werr != nil {
+					fmt.Fprintf(errOut, "fix: write failed for %s: %s\n", filename, werr)
+				} else {
+					fmt.Fprintf(errOut, "fixed %d edit(s) in %s\n", len(edits), filename)
+				}
+			}
+		}
 	}
 
 	if len(violations) > 0 {

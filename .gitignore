@@ -25,3 +25,9 @@ Thumbs.db
 
 # Local tool configuration
 bin/
+
+# External Zsh corpora cloned by scripts/test-zsh-compat.sh for
+# compatibility testing. These are third-party repos (oh-my-zsh,
+# powerlevel10k, prezto, etc.); never commit them.
+/testdata/external-corpora/
+/.compat-err

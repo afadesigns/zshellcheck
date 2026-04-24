@@ -13,7 +13,28 @@ func init() {
 			"way to find the location of a command.",
 		Severity: SeverityInfo,
 		Check:    checkZC1005,
+		Fix:      fixZC1005,
 	})
+}
+
+// fixZC1005 rewrites `which` -> `whence` at the command name position.
+// Arguments are unchanged; the two builtins share the identifier-query
+// shape for the common case.
+func fixZC1005(node ast.Node, v Violation, source []byte) []FixEdit {
+	cmd, ok := node.(*ast.SimpleCommand)
+	if !ok {
+		return nil
+	}
+	ident, ok := cmd.Name.(*ast.Identifier)
+	if !ok || ident.Value != "which" {
+		return nil
+	}
+	return []FixEdit{{
+		Line:    v.Line,
+		Column:  v.Column,
+		Length:  len("which"),
+		Replace: "whence",
+	}}
 }
 
 func checkZC1005(node ast.Node) []Violation {

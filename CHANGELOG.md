@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.14] - 2026-04-24
+
+### Added
+- **Auto-fixer core.** New `pkg/fix` package applies per-kata `Fix` edits to source files. Handles 1-based line/column to byte-offset resolution, conflict resolution when edits overlap (outer span wins, inner picked up on rerun), and a built-in unified-diff renderer for preview mode.
+- **CLI fix flags** — `-fix` (apply in place), `-diff` (preview as unified diff), `-dry-run` (with `-fix`, report without writing). File permissions are preserved across in-place rewrites.
+- **Kata `Fix` hook.** `Kata` now carries an optional `Fix func(ast.Node, Violation, []byte) []FixEdit`. Checks that declare a Fix participate in auto-fixing; those that do not continue to lint-only.
+- **First-wave Fix coverage:**
+  - `ZC1002` — `` `cmd` `` to `$(cmd)`.
+  - `ZC1005` — `which` to `whence`.
+  - `ZC1092` — `echo` to `print -r --` for the no-flag form.
+- **Zsh-ecosystem compatibility harness.** New `scripts/test-zsh-compat.sh` clones a local corpus of well-known Zsh projects (oh-my-zsh, powerlevel10k, prezto, zsh-autosuggestions, zsh-syntax-highlighting, zsh-completions, spaceship-prompt) into `testdata/external-corpora/` (git-ignored) and reports parser errors plus violation summaries. The corpora are local-only; the gitignore rule keeps them out of commits.
+
+### Changed
+- `CheckAndFix` registry method added alongside `Check` so the walker can collect violations and their fix edits in a single pass.
+
 ## [1.0.13] - 2026-04-22
 
 ### Fixed

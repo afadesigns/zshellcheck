@@ -25,13 +25,29 @@ type Violation struct {
 	Level   Severity
 }
 
-// Kata represents a single linting rule.
+// FixEdit is a single text replacement applied by the auto-fixer.
+// Coordinates are 1-based; Length is the number of bytes of source to
+// replace starting at Line:Column. Replace may be empty (deletion) and
+// may span multiple lines.
+type FixEdit struct {
+	Line    int
+	Column  int
+	Length  int
+	Replace string
+}
+
+// Kata represents a single linting rule. Fix is optional; when non-nil
+// the auto-fixer invokes it with the AST node, the violation, and the
+// full file source (byte slice) so the fix can inspect a span around
+// the violation before producing edits. Katas with no safe
+// deterministic fix leave Fix nil and the fixer skips them.
 type Kata struct {
 	ID          string
 	Title       string
 	Description string
 	Severity    Severity
 	Check       func(node ast.Node) []Violation
+	Fix         func(node ast.Node, v Violation, source []byte) []FixEdit
 }
 
 // KatasRegistry is a registry for all available Katas.
@@ -94,6 +110,56 @@ func (kr *KatasRegistry) Check(node ast.Node, disabledKatas []string) []Violatio
 		}
 	}
 	return violations
+}
+
+// FixesFor invokes the Fix function of the kata that produced the
+// given violation, if any, and returns the resulting edits. An empty
+// slice means the kata has no deterministic auto-fix; callers should
+// skip the violation in fix mode.
+func (kr *KatasRegistry) FixesFor(node ast.Node, v Violation, source []byte) []FixEdit {
+	kata, ok := kr.KatasByID[v.KataID]
+	if !ok || kata.Fix == nil {
+		return nil
+	}
+	return kata.Fix(node, v, source)
+}
+
+// CheckAndFix runs Check for every kata registered against the node
+// type and, when a kata also declares a Fix, invokes that Fix for each
+// emitted violation. Returns the violations (including ones without a
+// fix) and the concatenated edits. Use this from the CLI fix mode so
+// each node is visited exactly once.
+func (kr *KatasRegistry) CheckAndFix(node ast.Node, disabledKatas []string, source []byte) ([]Violation, []FixEdit) {
+	var violations []Violation
+	var edits []FixEdit
+	key := fmt.Sprintf("%T", node)
+	katasForNode, ok := kr.KatasByType[key]
+	if !ok {
+		return nil, nil
+	}
+	for _, kata := range katasForNode {
+		skip := false
+		for _, d := range disabledKatas {
+			if d == kata.ID {
+				skip = true
+				break
+			}
+		}
+		if skip {
+			continue
+		}
+		vs := kata.Check(node)
+		for i := range vs {
+			if vs[i].Level == "" {
+				vs[i].Level = kata.Severity
+			}
+			if kata.Fix != nil {
+				edits = append(edits, kata.Fix(node, vs[i], source)...)
+			}
+		}
+		violations = append(violations, vs...)
+	}
+	return violations, edits
 }
 
 // DefaultKatasRegistry is the default registry.

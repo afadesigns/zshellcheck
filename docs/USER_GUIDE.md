@@ -31,6 +31,9 @@ Paths may be files or directories. Directories are walked recursively; `.go`, `.
 | `-verbose` | off | Emit full kata descriptions in text output. |
 | `-no-color` | off | Disable ANSI colours. Also implied when stdout is not a TTY. |
 | `-cpuprofile <path>` | — | Write a Go `pprof` CPU profile to `<path>` for benchmarking. |
+| `-fix` | off | Apply auto-fixes in place for katas that declare one. Safe, deterministic rewrites only. |
+| `-diff` | off | Preview the fixes as a unified diff instead of writing them. Implies dry-run. |
+| `-dry-run` | off | With `-fix`, report what would change without modifying files. |
 | `-version` | — | Print the version and exit. |
 | `-h` / `--help` | — | Print usage and exit. |
 
@@ -52,7 +55,19 @@ zshellcheck -severity error,warning,info ./scripts
 
 # Emit SARIF for CI upload
 zshellcheck -format sarif -severity warning ./scripts > zshellcheck.sarif
+
+# Preview auto-fixes as a diff
+zshellcheck -diff ./scripts
+
+# Apply auto-fixes in place
+zshellcheck -fix ./scripts
 ```
+
+### Auto-fixes
+
+Katas with a deterministic, reversible rewrite ship a `Fix` implementation. Run `zshellcheck -fix <path>` to apply them in place, or `zshellcheck -diff <path>` to preview the result. The fixer only rewrites the exact span the kata points at — arguments, quoting, and surrounding whitespace are preserved byte-for-byte.
+
+Silenced violations (via `.zshellcheckrc` or inline `# zshellcheck disable=…` directives) keep their fixes silenced too.
 
 ---
 

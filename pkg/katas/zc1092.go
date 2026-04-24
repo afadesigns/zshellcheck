@@ -13,7 +13,36 @@ func init() {
 			"For formatted output, `printf` is preferred.",
 		Severity: SeverityWarning,
 		Check:    checkZC1092,
+		Fix:      fixZC1092,
 	})
+}
+
+// fixZC1092 rewrites plain `echo ARGS...` -> `print -r -- ARGS...`.
+// Only the no-flag form is auto-fixed. When the first argument starts
+// with `-` the command is using BSD-style flags (-n / -e / -E) whose
+// translation to print differs per flag and is deferred to human
+// review. The replacement covers only the command name — arguments
+// stay byte-identical so quoting and expansions are preserved.
+func fixZC1092(node ast.Node, v Violation, source []byte) []FixEdit {
+	cmd, ok := node.(*ast.SimpleCommand)
+	if !ok {
+		return nil
+	}
+	if cmd.Name == nil || cmd.Name.String() != "echo" {
+		return nil
+	}
+	// Skip the flagged forms; print's flag semantics differ.
+	if len(cmd.Arguments) > 0 {
+		if first := cmd.Arguments[0].String(); len(first) > 0 && first[0] == '-' {
+			return nil
+		}
+	}
+	return []FixEdit{{
+		Line:    v.Line,
+		Column:  v.Column,
+		Length:  len("echo"),
+		Replace: "print -r --",
+	}}
 }
 
 func checkZC1092(node ast.Node) []Violation {

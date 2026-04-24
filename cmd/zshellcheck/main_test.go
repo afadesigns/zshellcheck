@@ -368,7 +368,7 @@ func TestProcessFile_TextFormat(t *testing.T) {
 	cfg.NoColor = true
 	registry := katas.Registry
 
-	count := processFile(path, &out, &errOut, cfg, registry, "text", nil)
+	count := processFile(path, &out, &errOut, cfg, registry, "text", nil, fixOptions{})
 	// We don't know exactly how many violations, but it should not panic
 	_ = count
 }
@@ -384,7 +384,7 @@ func TestProcessFile_JSONFormat(t *testing.T) {
 	cfg := config.DefaultConfig()
 	registry := katas.Registry
 
-	count := processFile(path, &out, &errOut, cfg, registry, "json", nil)
+	count := processFile(path, &out, &errOut, cfg, registry, "json", nil, fixOptions{})
 	_ = count
 }
 
@@ -399,7 +399,7 @@ func TestProcessFile_SarifFormat(t *testing.T) {
 	cfg := config.DefaultConfig()
 	registry := katas.Registry
 
-	count := processFile(path, &out, &errOut, cfg, registry, "sarif", nil)
+	count := processFile(path, &out, &errOut, cfg, registry, "sarif", nil, fixOptions{})
 	_ = count
 }
 
@@ -408,7 +408,7 @@ func TestProcessFile_NonexistentFile(t *testing.T) {
 	cfg := config.DefaultConfig()
 	registry := katas.Registry
 
-	count := processFile("/nonexistent/file.zsh", &out, &errOut, cfg, registry, "text", nil)
+	count := processFile("/nonexistent/file.zsh", &out, &errOut, cfg, registry, "text", nil, fixOptions{})
 	if count != 0 {
 		t.Errorf("expected 0 violations for nonexistent file, got %d", count)
 	}
@@ -426,7 +426,7 @@ func TestProcessFile_SeverityFilter(t *testing.T) {
 	registry := katas.Registry
 
 	// Filter to only show errors
-	count := processFile(path, &out, &errOut, cfg, registry, "text", []katas.Severity{katas.SeverityError})
+	count := processFile(path, &out, &errOut, cfg, registry, "text", []katas.Severity{katas.SeverityError}, fixOptions{})
 	_ = count
 }
 
@@ -442,7 +442,7 @@ func TestProcessPath_File(t *testing.T) {
 	cfg.NoColor = true
 	registry := katas.Registry
 
-	count := processPath(path, &out, &errOut, cfg, registry, "text", nil)
+	count := processPath(path, &out, &errOut, cfg, registry, "text", nil, fixOptions{})
 	_ = count
 }
 
@@ -463,7 +463,7 @@ func TestProcessPath_Directory(t *testing.T) {
 	cfg.NoColor = true
 	registry := katas.Registry
 
-	count := processPath(dir, &out, &errOut, cfg, registry, "text", nil)
+	count := processPath(dir, &out, &errOut, cfg, registry, "text", nil, fixOptions{})
 	_ = count
 }
 
@@ -472,7 +472,7 @@ func TestProcessPath_Nonexistent(t *testing.T) {
 	cfg := config.DefaultConfig()
 	registry := katas.Registry
 
-	count := processPath("/nonexistent/path", &out, &errOut, cfg, registry, "text", nil)
+	count := processPath("/nonexistent/path", &out, &errOut, cfg, registry, "text", nil, fixOptions{})
 	if count != 0 {
 		t.Errorf("expected 0 for nonexistent path, got %d", count)
 	}
@@ -500,7 +500,7 @@ func TestProcessPath_DirectoryWithHiddenDir(t *testing.T) {
 	cfg.NoColor = true
 	registry := katas.Registry
 
-	count := processPath(dir, &out, &errOut, cfg, registry, "text", nil)
+	count := processPath(dir, &out, &errOut, cfg, registry, "text", nil, fixOptions{})
 	_ = count
 }
 
@@ -516,7 +516,7 @@ func TestProcessFile_ParserErrors(t *testing.T) {
 	cfg := config.DefaultConfig()
 	registry := katas.Registry
 
-	count := processFile(path, &out, &errOut, cfg, registry, "text", nil)
+	count := processFile(path, &out, &errOut, cfg, registry, "text", nil, fixOptions{})
 	// Parser errors should return 1
 	if count < 1 {
 		t.Errorf("expected at least 1 for parser errors, got %d", count)
@@ -540,7 +540,7 @@ func TestProcessPath_DirectorySkipsNonShellFiles(t *testing.T) {
 	cfg.NoColor = true
 	registry := katas.Registry
 
-	count := processPath(dir, &out, &errOut, cfg, registry, "text", nil)
+	count := processPath(dir, &out, &errOut, cfg, registry, "text", nil, fixOptions{})
 	// All non-shell files should be skipped, so violations from parsing Go/etc should be 0
 	if count != 0 {
 		t.Errorf("expected 0 violations for skipped files, got %d", count)
@@ -665,7 +665,7 @@ func TestProcessFile_WithViolationsAllFormats(t *testing.T) {
 	for _, format := range []string{"text", "json", "sarif"} {
 		t.Run(format, func(t *testing.T) {
 			var out, errOut bytes.Buffer
-			count := processFile(path, &out, &errOut, cfg, registry, format, nil)
+			count := processFile(path, &out, &errOut, cfg, registry, format, nil, fixOptions{})
 			if count == 0 {
 				t.Logf("no violations found for format %s (may vary by katas)", format)
 			}
@@ -686,7 +686,7 @@ func TestProcessFile_WithSeverityFilterAll(t *testing.T) {
 	registry := katas.Registry
 
 	allSeverities := []katas.Severity{katas.SeverityError, katas.SeverityWarning, katas.SeverityInfo, katas.SeverityStyle}
-	count := processFile(path, &out, &errOut, cfg, registry, "text", allSeverities)
+	count := processFile(path, &out, &errOut, cfg, registry, "text", allSeverities, fixOptions{})
 	_ = count
 }
 
@@ -706,7 +706,7 @@ func TestProcessPath_DirectoryWithNestedDirs(t *testing.T) {
 	cfg.NoColor = true
 	registry := katas.Registry
 
-	count := processPath(dir, &out, &errOut, cfg, registry, "text", nil)
+	count := processPath(dir, &out, &errOut, cfg, registry, "text", nil, fixOptions{})
 	_ = count
 }
 
@@ -789,6 +789,6 @@ func TestProcessFile_ViolationsWithVerbose(t *testing.T) {
 	cfg.Verbose = true
 	registry := katas.Registry
 
-	count := processFile(path, &out, &errOut, cfg, registry, "text", nil)
+	count := processFile(path, &out, &errOut, cfg, registry, "text", nil, fixOptions{})
 	_ = count
 }
