@@ -68,6 +68,16 @@ func (p *Parser) parseExpression(precedence int) ast.Expression {
 		if p.curTokenIs(token.RDBRACKET) {
 			break
 		}
+		// Outside arithmetic, a `/` glued to the previous token is
+		// a path separator, not a division operator. Treat
+		// `$(cmd)/` or `x/y` at statement level as end-of-
+		// expression so SLASH's PRODUCT precedence doesn't sweep
+		// the next line's keyword (`if`, `for`, etc.) in as the
+		// division RHS. Spaced forms `5 / 5` still enter the infix
+		// path so arithmetic tests keep working.
+		if !p.inArithmetic && p.peekTokenIs(token.SLASH) && !p.peekToken.HasPrecedingSpace {
+			break
+		}
 		// Inside a `[[ … ]]` conditional, adjacent `(…)` groups are
 		// glob alternations being concatenated — not function calls
 		// on the left-hand expression. Stop the infix loop from
