@@ -13,7 +13,35 @@ func init() {
 			"Zsh provides `$funcstack` as the equivalent, containing the call stack " +
 			"of function names with the current function at index 1.",
 		Check: checkZC1298,
+		Fix:   fixZC1298,
 	})
+}
+
+// fixZC1298 renames the Bash `$FUNCNAME` identifier to the Zsh
+// `$funcstack` equivalent. Handles both the dollar-prefixed and
+// bare forms.
+func fixZC1298(node ast.Node, v Violation, source []byte) []FixEdit {
+	ident, ok := node.(*ast.Identifier)
+	if !ok {
+		return nil
+	}
+	switch ident.Value {
+	case "$FUNCNAME":
+		return []FixEdit{{
+			Line:    v.Line,
+			Column:  v.Column,
+			Length:  len("$FUNCNAME"),
+			Replace: "$funcstack",
+		}}
+	case "FUNCNAME":
+		return []FixEdit{{
+			Line:    v.Line,
+			Column:  v.Column,
+			Length:  len("FUNCNAME"),
+			Replace: "funcstack",
+		}}
+	}
+	return nil
 }
 
 func checkZC1298(node ast.Node) []Violation {

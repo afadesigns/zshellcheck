@@ -729,6 +729,14 @@ func TestFixIntegration_ZC1267_DfAddPortable(t *testing.T) {
 	}
 }
 
+func TestFixIntegration_ZC1298_FuncnameToFuncstack(t *testing.T) {
+	src := "name=$FUNCNAME\n"
+	want := "name=$funcstack\n"
+	if got := runFix(t, src); got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}
+
 func TestFixIntegration_ZC1304_BashSubshellToZsh(t *testing.T) {
 	src := "depth=$BASH_SUBSHELL\n"
 	want := "depth=$ZSH_SUBSHELL\n"
