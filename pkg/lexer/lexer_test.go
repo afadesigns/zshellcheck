@@ -6,6 +6,47 @@ import (
 	"github.com/afadesigns/zshellcheck/pkg/token"
 )
 
+func TestNestedSubscriptClose(t *testing.T) {
+	// `arr[$m[i]]` has two consecutive `]` that must lex as two
+	// RBRACKET tokens, not a single RDBRACKET. The lexer now
+	// tracks `[[ … ]]` conditional depth and only fuses `]]` when
+	// there is an open conditional waiting to close.
+	cases := []struct {
+		in          string
+		wantTypes   []token.Type
+		lastLiteral string
+	}{
+		{
+			in:        `FG[$colors[i]]`,
+			wantTypes: []token.Type{token.IDENT, token.LBRACKET, token.VARIABLE, token.LBRACKET, token.IDENT, token.RBRACKET, token.RBRACKET, token.EOF},
+		},
+		{
+			in:        `[[ $x ]]`,
+			wantTypes: []token.Type{token.LDBRACKET, token.VARIABLE, token.RDBRACKET, token.EOF},
+		},
+	}
+	for _, c := range cases {
+		l := New(c.in)
+		var got []token.Type
+		for {
+			tok := l.NextToken()
+			got = append(got, tok.Type)
+			if tok.Type == token.EOF || len(got) > 20 {
+				break
+			}
+		}
+		if len(got) != len(c.wantTypes) {
+			t.Errorf("%q: got %v, want %v", c.in, got, c.wantTypes)
+			continue
+		}
+		for i, want := range c.wantTypes {
+			if got[i] != want {
+				t.Errorf("%q: token %d = %s, want %s", c.in, i, got[i], want)
+			}
+		}
+	}
+}
+
 func TestLineContinuation(t *testing.T) {
 	// `\<newline>` outside a string is Zsh's line-continuation
 	// sequence: the lexer should skip both characters so downstream
