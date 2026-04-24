@@ -719,10 +719,19 @@ func (l *Lexer) readDollarToken(hasSpace bool) (token.Token, bool) {
 	}
 	if isLetter(l.peekChar()) {
 		col := l.column
+		line := l.line
 		l.readChar() // consume '$'
 		tok.Type = token.VARIABLE
 		tok.Literal = "$" + l.readIdentifier()
-		tok.Line = l.line
+		// Stamp the START line, not the line after readIdentifier
+		// — readIdentifier advances PAST the last identifier byte,
+		// which on `$name\n` lands l.ch on the newline and bumps
+		// l.line. Without capturing `line` first, every variable
+		// followed by a newline got tagged as the next line, which
+		// confused the parser's same-line argument check (e.g.
+		// `for x in $files\ndo` exited the items loop too early
+		// because $files looked like it was on the do-line).
+		tok.Line = line
 		tok.Column = col
 		tok.HasPrecedingSpace = hasSpace
 		return tok, true
