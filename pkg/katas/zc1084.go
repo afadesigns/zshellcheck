@@ -14,7 +14,49 @@ func init() {
 			"Quote arguments to `-name`, `-path`, etc.",
 		Severity: SeverityWarning,
 		Check:    checkZC1084,
+		Fix:      fixZC1084,
 	})
+}
+
+// fixZC1084 wraps an unquoted `find` glob argument in single-quotes
+// so the shell passes the pattern through verbatim. The violation
+// column already points at the pattern arg start. Span scanning
+// respects `[…]` / `{…}` so character classes and alternations
+// stay whole.
+func fixZC1084(_ ast.Node, v Violation, source []byte) []FixEdit {
+	start := LineColToByteOffset(source, v.Line, v.Column)
+	if start < 0 || start >= len(source) {
+		return nil
+	}
+	argLen := unquotedArgLen(source, start)
+	if argLen == 0 {
+		return nil
+	}
+	endLine, endCol := offsetLineColZC1084(source, start+argLen)
+	if endLine < 0 {
+		return nil
+	}
+	return []FixEdit{
+		{Line: v.Line, Column: v.Column, Length: 0, Replace: `'`},
+		{Line: endLine, Column: endCol, Length: 0, Replace: `'`},
+	}
+}
+
+func offsetLineColZC1084(source []byte, offset int) (int, int) {
+	if offset < 0 || offset > len(source) {
+		return -1, -1
+	}
+	line := 1
+	col := 1
+	for i := 0; i < offset; i++ {
+		if source[i] == '\n' {
+			line++
+			col = 1
+			continue
+		}
+		col++
+	}
+	return line, col
 }
 
 func checkZC1084(node ast.Node) []Violation {
