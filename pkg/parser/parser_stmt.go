@@ -617,6 +617,21 @@ func (p *Parser) parseForLoopStatement() *ast.ForLoopStatement {
 		if !p.expectPeek(token.RPAREN) {
 			return nil
 		}
+
+		// Body form varies. Some Zsh code uses the pure short form
+		// (`for x (items) body`); other code mixes short-form items
+		// with a classic `do/done` body (`for x (items); do … done`).
+		// A leading `;` and `do` indicates the latter.
+		if p.peekTokenIs(token.SEMICOLON) {
+			p.nextToken()
+		}
+		if p.peekTokenIs(token.DO) {
+			p.nextToken() // onto DO
+			p.nextToken() // into body
+			stmt.Body = p.parseBlockStatement(token.DONE)
+			return stmt
+		}
+
 		// Body is a single statement on the same line (usually a
 		// command) or a braced block. Wrap non-block statements in
 		// a BlockStatement so the Body field stays homogeneous.
