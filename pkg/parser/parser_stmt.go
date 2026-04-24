@@ -192,6 +192,16 @@ func (p *Parser) chainLogical(left ast.Expression, startTok token.Token) ast.Sta
 func (p *Parser) parseExpressionOrFunctionDefinition() ast.Statement {
 	stmt := p.parseExpressionStatement()
 
+	// `IDENT= cmd | other` — Zsh inline env-prefix assignment
+	// followed by a pipeline. The expression path successfully
+	// parses the `IDENT=value` infix but leaves the trailing `|`
+	// for the next iteration which crashes on PIPE. Drain
+	// pipeline / logical continuations onto the statement so they
+	// stay attached to the right side of the inline assignment.
+	if stmt != nil {
+		p.consumePipelineTail()
+	}
+
 	// Check if it matches function definition pattern: name()
 	if call, ok := stmt.Expression.(*ast.CallExpression); ok {
 		if len(call.Arguments) == 0 {
