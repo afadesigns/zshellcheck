@@ -12,7 +12,57 @@ func init() {
 		Description: "`pushd` and `popd` print the directory stack by default, cluttering output. " +
 			"Use `-q` flag to suppress output in scripts.",
 		Check: checkZC1170,
+		Fix:   fixZC1170,
 	})
+}
+
+// fixZC1170 inserts ` -q` after `pushd` or `popd` so the directory
+// stack output is suppressed in scripts.
+func fixZC1170(node ast.Node, v Violation, source []byte) []FixEdit {
+	cmd, ok := node.(*ast.SimpleCommand)
+	if !ok {
+		return nil
+	}
+	ident, ok := cmd.Name.(*ast.Identifier)
+	if !ok || (ident.Value != "pushd" && ident.Value != "popd") {
+		return nil
+	}
+	nameOff := LineColToByteOffset(source, v.Line, v.Column)
+	if nameOff < 0 {
+		return nil
+	}
+	nameLen := IdentLenAt(source, nameOff)
+	if nameLen != len(ident.Value) {
+		return nil
+	}
+	insertAt := nameOff + nameLen
+	insLine, insCol := offsetLineColZC1170(source, insertAt)
+	if insLine < 0 {
+		return nil
+	}
+	return []FixEdit{{
+		Line:    insLine,
+		Column:  insCol,
+		Length:  0,
+		Replace: " -q",
+	}}
+}
+
+func offsetLineColZC1170(source []byte, offset int) (int, int) {
+	if offset < 0 || offset > len(source) {
+		return -1, -1
+	}
+	line := 1
+	col := 1
+	for i := 0; i < offset; i++ {
+		if source[i] == '\n' {
+			line++
+			col = 1
+			continue
+		}
+		col++
+	}
+	return line, col
 }
 
 func checkZC1170(node ast.Node) []Violation {
