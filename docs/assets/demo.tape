@@ -25,47 +25,35 @@ Enter
 Show
 Sleep 800ms
 
-# 1. Show the script
-Type "cat deploy.zsh"
-Sleep 300ms
-Enter
-Sleep 2.5s
-
-# 2. Lint it (severity warning to keep output focused)
+# 1. Lint (severity warning to keep output focused)
 Type "zshellcheck -severity warning deploy.zsh"
 Sleep 300ms
 Enter
-Sleep 4s
+Sleep 4.5s
 
-# 3. Preview the fix (unified diff)
+# 2. Preview the fix (unified diff)
 Type "clear"
 Enter
 Sleep 200ms
 Type "zshellcheck -severity warning -diff deploy.zsh"
 Sleep 300ms
 Enter
-Sleep 4s
+Sleep 4.5s
 
-# 4. Apply the fix
+# 3. Apply the fix
 Type "clear"
 Enter
 Sleep 200ms
 Type "zshellcheck -fix deploy.zsh"
 Sleep 300ms
 Enter
-Sleep 2s
+Sleep 2.5s
 
-# 5. Re-lint — one warning remains (rm -rf guard needs human judgment)
-Type "zshellcheck -severity warning deploy.zsh"
-Sleep 300ms
-Enter
-Sleep 3.5s
-
-# 6. Show the rewritten file
+# 4. Re-lint — one warning remains (rm -rf guard needs human judgment)
 Type "clear"
 Enter
 Sleep 200ms
-Type "cat deploy.zsh"
+Type "zshellcheck -severity warning deploy.zsh"
 Sleep 300ms
 Enter
-Sleep 3s
+Sleep 4s

@@ -84,7 +84,7 @@ func (r *TextReporter) Report(violations []katas.Violation) error {
 			}
 			// Use a simple space padding. Note: this might be slightly off if tabs are present,
 			// but it's a standard starting point.
-			if _, err := fmt.Fprintf(r.writer, "  %s%s^%s\n", strings.Repeat(" ", padding), bold, reset); err != nil {
+			if _, err := fmt.Fprintf(r.writer, "  %s%s↑%s\n", strings.Repeat(" ", padding), bold, reset); err != nil {
 				return err
 			}
 		}

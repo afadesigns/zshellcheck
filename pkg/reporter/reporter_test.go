@@ -51,19 +51,17 @@ func TestTextReporter_Report(t *testing.T) {
 		t.Errorf("Report() produced incorrect output.\nGot:\n%s", buf.String())
 	}
 
-	// Check for code snippet and caret
+	// Check for code snippet and column pointer
 	// Format:
 	//   first line
-	//   ^
+	//   ↑
 	expectedSnippet := "  first line\n"
 	if !bytes.Contains(buf.Bytes(), []byte(expectedSnippet)) {
 		t.Errorf("Report() output missing source code snippet.\nWant: %q\nGot:\n%q", expectedSnippet, buf.String())
 	}
 
-	// Check for caret with color
-	// Note: config constants are not exported, so using hardcoded ANSI codes or config public constants if available.
-	// pkg/config/config.go exports ColorBold etc.
-	expectedCaret := "  " + config.ColorBold + "^" + config.ColorReset
+	// Check for column pointer with color (U+2191 upward arrow).
+	expectedCaret := "  " + config.ColorBold + "↑" + config.ColorReset
 	if !bytes.Contains(buf.Bytes(), []byte(expectedCaret)) {
 		t.Errorf("Report() output missing caret.\nWant: %q\nGot:\n%q", expectedCaret, buf.String())
 	}
