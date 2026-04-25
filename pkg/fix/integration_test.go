@@ -1298,3 +1298,19 @@ func TestFixIntegration_ZC1643_AlreadyReadRedirectUnchanged(t *testing.T) {
 		t.Errorf("already-fixed input should be idempotent, got %q", got)
 	}
 }
+
+func TestFixIntegration_ZC1675_ExportFunctionFlag(t *testing.T) {
+	src := "export -f my_helper\n"
+	want := "typeset -fx my_helper\n"
+	if got := runFix(t, src); got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}
+
+func TestFixIntegration_ZC1675_ExportStripFlag(t *testing.T) {
+	src := "export -n PATH\n"
+	want := "typeset +x PATH\n"
+	if got := runFix(t, src); got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}
