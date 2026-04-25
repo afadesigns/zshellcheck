@@ -11,7 +11,7 @@ Auto-generated list of all 1000 implemented checks. Do not edit by hand — rege
 | `info` | 64 |
 | `style` | 257 |
 | **total** | **1000** |
-| **with auto-fix** | **115** |
+| **with auto-fix** | **116** |
 
 Auto-fix availability is marked per-entry below as **Auto-fix:** `yes` or `no`. Run `zshellcheck -fix path/...` to apply every available rewrite, or `-diff` to preview without writing.
 
@@ -292,7 +292,7 @@ Auto-fix availability is marked per-entry below as **Auto-fix:** `yes` or `no`. 
 - [ZC1276: Use Zsh `{start..end}` instead of `seq`](#zc1276) · auto-fix
 - [ZC1277: Superseded by ZC1108 — retired duplicate](#zc1277)
 - [ZC1278: Superseded by ZC1009 — retired duplicate](#zc1278)
-- [ZC1279: Use `realpath` instead of `readlink -f` for canonical paths](#zc1279)
+- [ZC1279: Use `realpath` instead of `readlink -f` for canonical paths](#zc1279) · auto-fix
 - [ZC1280: Use `Zsh ${var:e}` instead of shell expansion to extract file extension](#zc1280)
 - [ZC1281: Use `sort -u` instead of `sort \| uniq` for deduplication](#zc1281)
 - [ZC1282: Use Zsh `${var:r}` instead of `sed` to remove file extension](#zc1282)
@@ -4324,7 +4324,7 @@ Disable by adding `ZC1278` to `disabled_katas` in `.zshellcheckrc`.
 ### ZC1279 — Use `realpath` instead of `readlink -f` for canonical paths
 
 **Severity:** `info`  
-**Auto-fix:** `no`
+**Auto-fix:** `yes`
 
 `readlink -f` is not portable across all platforms (notably macOS). Use `realpath` which is POSIX-standard and available on modern systems.
 

@@ -1450,6 +1450,21 @@ func TestFixIntegration_ZC1413_AlreadyWhenceP(t *testing.T) {
 	}
 }
 
+func TestFixIntegration_ZC1279_ReadlinkFToRealpath(t *testing.T) {
+	src := "readlink -f /usr/bin/zsh\n"
+	want := "realpath /usr/bin/zsh\n"
+	if got := runFix(t, src); got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}
+
+func TestFixIntegration_ZC1279_AlreadyRealpath(t *testing.T) {
+	src := "realpath /usr/bin/zsh\n"
+	if got := runFix(t, src); got != src {
+		t.Errorf("already-fixed input should be idempotent, got %q", got)
+	}
+}
+
 func TestFixIntegration_ZC1252_PipedCatHandledByZC1146(t *testing.T) {
 	// `cat /etc/group | head` lets ZC1146 win the overlap and collapse
 	// the pipe into `head /etc/group`. ZC1252's two-edit rewrite would

@@ -36,7 +36,7 @@ Our mission is to provide the most comprehensive, fast, and reliable tooling for
 - [ ] **Language Server Protocol (LSP)**: Build an official LSP implementation to support VS Code, Neovim, and other editors natively with inline diagnostics and "Quick Fix" actions.
 - [x] **Auto-Fixer core** (v1.0.14+): `-fix`, `-diff`, `-dry-run` flags applying deterministic per-kata rewrites.
   The set of fix-enabled katas grows with each release.
-- [ ] **Auto-Fixer coverage**: 116 of 1000 katas (11.6%) ship a deterministic rewrite as of the latest tag.
+- [ ] **Auto-Fixer coverage**: 117 of 1000 katas (11.7%) ship a deterministic rewrite as of the latest tag.
   Expansion continues per release; the structural ceiling is the subset of detections that admit a context-free, idempotent, byte-exact rewrite — many advisory or context-dependent detections will remain detection-only.
 - [ ] **Plugin System**: Allow users to write their own custom checks in Lua or Wasm.
 - [ ] **Distribution channels** — broaden install paths beyond `./install.sh`, `go install`, and the signed Releases archive:
