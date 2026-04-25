@@ -11,7 +11,7 @@ Auto-generated list of all 1000 implemented checks. Do not edit by hand — rege
 | `info` | 64 |
 | `style` | 257 |
 | **total** | **1000** |
-| **with auto-fix** | **122** |
+| **with auto-fix** | **123** |
 
 Auto-fix availability is marked per-entry below as **Auto-fix:** `yes` or `no`. Run `zshellcheck -fix path/...` to apply every available rewrite, or `-diff` to preview without writing.
 
@@ -417,7 +417,7 @@ Auto-fix availability is marked per-entry below as **Auto-fix:** `yes` or `no`. 
 - [ZC1401: Prefer Zsh `$VENDOR` over parsing `$MACHTYPE` for vendor detection](#zc1401)
 - [ZC1402: Avoid `date -d @seconds` — use Zsh `strftime` for epoch formatting](#zc1402)
 - [ZC1403: Setting `$HISTFILESIZE` alone is incomplete in Zsh — pair with `$SAVEHIST`](#zc1403)
-- [ZC1404: Avoid `$BASH_CMDS` — Bash-specific hash-table mirror, use Zsh `$commands`](#zc1404)
+- [ZC1404: Avoid `$BASH_CMDS` — Bash-specific hash-table mirror, use Zsh `$commands`](#zc1404) · auto-fix
 - [ZC1405: Avoid `env -u VAR cmd` — use Zsh `(unset VAR; cmd)` subshell](#zc1405)
 - [ZC1406: Prefer Zsh `zargs -P N` autoload over `xargs -P N` for parallel execution](#zc1406)
 - [ZC1407: Avoid `/dev/tcp/...` — use Zsh `zsh/net/tcp` module](#zc1407)
@@ -5824,7 +5824,7 @@ Disable by adding `ZC1403` to `disabled_katas` in `.zshellcheckrc`.
 ### ZC1404 — Avoid `$BASH_CMDS` — Bash-specific hash-table mirror, use Zsh `$commands`
 
 **Severity:** `warning`  
-**Auto-fix:** `no`
+**Auto-fix:** `yes`
 
 Bash's `$BASH_CMDS` associative array mirrors the hash-table of command names→paths. Zsh exposes the same via `$commands` (assoc array from `zsh/parameter`). `$BASH_CMDS` is unset in Zsh.
 
