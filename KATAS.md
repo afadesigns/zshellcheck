@@ -11,7 +11,7 @@ Auto-generated list of all 1000 implemented checks. Do not edit by hand — rege
 | `info` | 64 |
 | `style` | 257 |
 | **total** | **1000** |
-| **with auto-fix** | **109** |
+| **with auto-fix** | **110** |
 
 Auto-fix availability is marked per-entry below as **Auto-fix:** `yes` or `no`. Run `zshellcheck -fix path/...` to apply every available rewrite, or `-diff` to preview without writing.
 
@@ -32,7 +32,7 @@ Auto-fix availability is marked per-entry below as **Auto-fix:** `yes` or `no`. 
 - [ZC1013: Use `((...))` for arithmetic operations instead of `let`](#zc1013) · auto-fix
 - [ZC1014: Use `git switch` or `git restore` instead of `git checkout`](#zc1014)
 - [ZC1015: Use `$(...)` for command substitution instead of backticks](#zc1015) · auto-fix
-- [ZC1016: Use `read -s` when reading sensitive information](#zc1016)
+- [ZC1016: Use `read -s` when reading sensitive information](#zc1016) · auto-fix
 - [ZC1017: Use `print -r` to print strings literally](#zc1017) · auto-fix
 - [ZC1018: Superseded by ZC1009 — retired duplicate](#zc1018)
 - [ZC1019: Superseded by ZC1005 — retired duplicate](#zc1019)
@@ -1204,7 +1204,7 @@ Disable by adding `ZC1015` to `disabled_katas` in `.zshellcheckrc`.
 ### ZC1016 — Use `read -s` when reading sensitive information
 
 **Severity:** `style`  
-**Auto-fix:** `no`
+**Auto-fix:** `yes`
 
 When asking for passwords or secrets, use `read -s` to prevent the input from being echoed to the terminal.
 

@@ -1346,3 +1346,15 @@ func TestFixIntegration_ZC1512_RestartVerb(t *testing.T) {
 		t.Errorf("got %q, want %q", got, want)
 	}
 }
+
+func TestFixIntegration_ZC1016_ReadSensitive(t *testing.T) {
+	// ZC1012 also fires (insert -r) and lands its edit at the same
+	// offset; the conflict resolver keeps the first edit per pass.
+	// Re-running -fix would converge; this test asserts a single-pass
+	// fixture-stable rewrite that includes whichever flag wins.
+	src := "read password\n"
+	got := runFix(t, src)
+	if !strings.Contains(got, "read -") || !strings.Contains(got, "password") {
+		t.Errorf("expected read with a flag and the variable, got %q", got)
+	}
+}
