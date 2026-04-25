@@ -4,8 +4,8 @@
 # well-known Zsh projects and report parser errors + violation counts.
 #
 # The corpora live under testdata/external-corpora/<name>/ which is
-# gitignored (see .gitignore). This script is local-only: it never
-# commits or pushes anything from those clones.
+# gitignored (see .gitignore). The script never commits or pushes
+# anything from those clones.
 #
 # Usage:
 #   scripts/test-zsh-compat.sh                  # full matrix

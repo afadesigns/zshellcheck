@@ -28,9 +28,6 @@ bin/
 
 # External Zsh corpora cloned by scripts/test-zsh-compat.sh for
 # compatibility testing. These are third-party repos (oh-my-zsh,
-# powerlevel10k, prezto, etc.); never commit them.
+# powerlevel10k, prezto, etc.).
 /testdata/external-corpora/
 /.compat-err
-
-# Local-only — linguist hint for workflow lock files (kept off remote).
-.gitattributes
