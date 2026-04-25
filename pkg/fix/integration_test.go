@@ -1314,3 +1314,11 @@ func TestFixIntegration_ZC1675_ExportStripFlag(t *testing.T) {
 		t.Errorf("got %q, want %q", got, want)
 	}
 }
+
+func TestFixIntegration_ZC1273_GrepDevNullToDashQ(t *testing.T) {
+	src := "grep PAT file /dev/null\n"
+	want := "grep -q PAT file\n"
+	if got := runFix(t, src); got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}
