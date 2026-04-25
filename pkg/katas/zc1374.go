@@ -14,7 +14,48 @@ func init() {
 			"use `${#funcstack}`. Reading `$FUNCNEST` expecting depth returns the limit, not " +
 			"the current depth.",
 		Check: checkZC1374,
+		Fix:   fixZC1374,
 	})
+}
+
+// fixZC1374 rewrites `$FUNCNEST` / `${FUNCNEST}` arguments to
+// `${#funcstack}` inside echo / print / printf calls. One edit per
+// matching arg. Idempotent — a re-run sees `${#funcstack}`, which
+// the detector's exact-match guard won't match.
+func fixZC1374(node ast.Node, _ Violation, source []byte) []FixEdit {
+	cmd, ok := node.(*ast.SimpleCommand)
+	if !ok {
+		return nil
+	}
+	ident, ok := cmd.Name.(*ast.Identifier)
+	if !ok {
+		return nil
+	}
+	if ident.Value != "echo" && ident.Value != "print" && ident.Value != "printf" {
+		return nil
+	}
+	var edits []FixEdit
+	for _, arg := range cmd.Arguments {
+		val := arg.String()
+		if val != "$FUNCNEST" && val != "${FUNCNEST}" {
+			continue
+		}
+		tok := arg.TokenLiteralNode()
+		off := LineColToByteOffset(source, tok.Line, tok.Column)
+		if off < 0 || off+len(val) > len(source) {
+			continue
+		}
+		if string(source[off:off+len(val)]) != val {
+			continue
+		}
+		edits = append(edits, FixEdit{
+			Line:    tok.Line,
+			Column:  tok.Column,
+			Length:  len(val),
+			Replace: "${#funcstack}",
+		})
+	}
+	return edits
 }
 
 func checkZC1374(node ast.Node) []Violation {

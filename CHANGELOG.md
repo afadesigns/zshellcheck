@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- **Auto-fix coverage now at 120/1000 katas.** New rewrites since 1.0.15, every one deterministic and idempotent on a re-run:
+- **Auto-fix coverage now at 121/1000 katas.** New rewrites since 1.0.15, every one deterministic and idempotent on a re-run:
   - `ZC1015` backticks → `$(...)`.
   - `ZC1016` inserts `-s` after `read` when the variable looks sensitive (`password`, `secret`, `token`, …).
   - `ZC1032` `let i=i+1` → `(( i++ ))` (and `i-1` → `i--`).
@@ -45,6 +45,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `ZC1319` `$BASH_ARGC` → `$#`.
   - `ZC1320` `$BASH_ARGV` → `$argv`.
   - `ZC1334` `type -p` / `type -P` → `whence -p`.
+  - `ZC1374` `$FUNCNEST` → `${#funcstack}` inside echo / print / printf args.
   - `ZC1377` `BASH_ALIASES` → `aliases` inside echo / print / printf string args.
   - `ZC1378` uppercase `DIRSTACK` → `dirstack` inside echo / print / printf string args.
   - `ZC1380` `export HISTIGNORE=…` → `export HISTORY_IGNORE=…`.
