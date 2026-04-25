@@ -11,7 +11,7 @@ Auto-generated list of all 1000 implemented checks. Do not edit by hand — rege
 | `info` | 64 |
 | `style` | 257 |
 | **total** | **1000** |
-| **with auto-fix** | **112** |
+| **with auto-fix** | **113** |
 
 Auto-fix availability is marked per-entry below as **Auto-fix:** `yes` or `no`. Run `zshellcheck -fix path/...` to apply every available rewrite, or `-diff` to preview without writing.
 
@@ -265,7 +265,7 @@ Auto-fix availability is marked per-entry below as **Auto-fix:** `yes` or `no`. 
 - [ZC1249: Use `ssh-keygen -f` to specify key file in scripts](#zc1249)
 - [ZC1250: Use `gpg --batch` in scripts for non-interactive operation](#zc1250)
 - [ZC1251: Use `mount -o noexec,nosuid` for untrusted media](#zc1251)
-- [ZC1252: Use `getent passwd` instead of `cat /etc/passwd`](#zc1252)
+- [ZC1252: Use `getent passwd` instead of `cat /etc/passwd`](#zc1252) · auto-fix
 - [ZC1253: Use `docker build --no-cache` in CI for reproducible builds](#zc1253) · auto-fix
 - [ZC1254: Avoid `git commit --amend` in shared branches](#zc1254)
 - [ZC1255: Use `curl -L` to follow HTTP redirects](#zc1255) · auto-fix
@@ -4000,7 +4000,7 @@ Disable by adding `ZC1251` to `disabled_katas` in `.zshellcheckrc`.
 ### ZC1252 — Use `getent passwd` instead of `cat /etc/passwd`
 
 **Severity:** `style`  
-**Auto-fix:** `no`
+**Auto-fix:** `yes`
 
 `cat /etc/passwd` misses users from LDAP, NIS, or SSSD sources. `getent passwd` queries NSS and returns all configured user databases.
 
