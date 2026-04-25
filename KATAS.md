@@ -11,7 +11,7 @@ Auto-generated list of all 1000 implemented checks. Do not edit by hand — rege
 | `info` | 64 |
 | `style` | 257 |
 | **total** | **1000** |
-| **with auto-fix** | **118** |
+| **with auto-fix** | **119** |
 
 Auto-fix availability is marked per-entry below as **Auto-fix:** `yes` or `no`. Run `zshellcheck -fix path/...` to apply every available rewrite, or `-diff` to preview without writing.
 
@@ -230,7 +230,7 @@ Auto-fix availability is marked per-entry below as **Auto-fix:** `yes` or `no`. 
 - [ZC1214: Avoid `su` in scripts — use `sudo -u` for user switching](#zc1214)
 - [ZC1215: Source `/etc/os-release` instead of parsing with `cat`/`grep`](#zc1215) · auto-fix
 - [ZC1216: Avoid `nslookup` — use `dig` or `host` for DNS queries](#zc1216) · auto-fix
-- [ZC1217: Avoid `service` command — use `systemctl` on systemd](#zc1217)
+- [ZC1217: Avoid `service` command — use `systemctl` on systemd](#zc1217) · auto-fix
 - [ZC1218: Avoid `useradd` without `--shell /sbin/nologin` for service accounts](#zc1218)
 - [ZC1219: Use `curl -fsSL` instead of `wget -O -` for piped downloads](#zc1219) · auto-fix
 - [ZC1220: Use `chown :group` instead of `chgrp` for group changes](#zc1220)
@@ -3580,7 +3580,7 @@ Disable by adding `ZC1216` to `disabled_katas` in `.zshellcheckrc`.
 ### ZC1217 — Avoid `service` command — use `systemctl` on systemd
 
 **Severity:** `info`  
-**Auto-fix:** `no`
+**Auto-fix:** `yes`
 
 `service` is a SysVinit compatibility wrapper. On systemd systems, use `systemctl start/stop/restart/status` directly.
 

@@ -12,6 +12,10 @@ func init() {
 		Description: "`service` is a SysVinit compatibility wrapper. " +
 			"On systemd systems, use `systemctl start/stop/restart/status` directly.",
 		Check: checkZC1217,
+		// Reuse the `service UNIT VERB` → `systemctl VERB UNIT` rewrite
+		// from ZC1512. Both detectors fire on the same shape; the
+		// conflict resolver dedupes overlapping edits.
+		Fix: fixZC1512,
 	})
 }
 

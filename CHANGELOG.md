@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- **Auto-fix coverage now at 119/1000 katas.** New rewrites since 1.0.15, every one deterministic and idempotent on a re-run:
+- **Auto-fix coverage now at 120/1000 katas.** New rewrites since 1.0.15, every one deterministic and idempotent on a re-run:
   - `ZC1015` backticks → `$(...)`.
   - `ZC1016` inserts `-s` after `read` when the variable looks sensitive (`password`, `secret`, `token`, …).
   - `ZC1032` `let i=i+1` → `(( i++ ))` (and `i-1` → `i--`).
@@ -28,6 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `ZC1216` `nslookup` → `host`.
   - `ZC1219` `wget -O- URL` / `wget -qO- URL` → `curl -fsSL URL`.
   - `ZC1215` `cat /etc/{os,lsb}-release` → `. /etc/{os,lsb}-release` (single-arg only).
+  - `ZC1217` shares the `service UNIT VERB` → `systemctl VERB UNIT` rewrite with ZC1512.
   - `ZC1230` `ping URL` → `ping -c 4 URL`.
   - `ZC1235` `git push -f` → `git push --force-with-lease`.
   - `ZC1238` strips `-it` from `docker exec`.
