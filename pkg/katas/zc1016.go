@@ -14,7 +14,53 @@ func init() {
 			"the input from being echoed to the terminal.",
 		Severity: SeverityStyle,
 		Check:    checkZC1016,
+		Fix:      fixZC1016,
 	})
+}
+
+// fixZC1016 inserts ` -s` after the `read` command name. The detector
+// gates on the absence of `-s` in any flag bundle, so the insertion
+// is idempotent on a re-run.
+func fixZC1016(node ast.Node, v Violation, source []byte) []FixEdit {
+	cmd, ok := node.(*ast.SimpleCommand)
+	if !ok {
+		return nil
+	}
+	if cmd.Name == nil || cmd.Name.String() != "read" {
+		return nil
+	}
+	nameOff := LineColToByteOffset(source, v.Line, v.Column)
+	if nameOff < 0 || IdentLenAt(source, nameOff) != len("read") {
+		return nil
+	}
+	insertAt := nameOff + len("read")
+	insLine, insCol := offsetLineColZC1016(source, insertAt)
+	if insLine < 0 {
+		return nil
+	}
+	return []FixEdit{{
+		Line:    insLine,
+		Column:  insCol,
+		Length:  0,
+		Replace: " -s",
+	}}
+}
+
+func offsetLineColZC1016(source []byte, offset int) (int, int) {
+	if offset < 0 || offset > len(source) {
+		return -1, -1
+	}
+	line := 1
+	col := 1
+	for i := 0; i < offset; i++ {
+		if source[i] == '\n' {
+			line++
+			col = 1
+			continue
+		}
+		col++
+	}
+	return line, col
 }
 
 func checkZC1016(node ast.Node) []Violation {
