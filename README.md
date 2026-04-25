@@ -81,6 +81,14 @@ Found 2 violations.
 
 Use **ShellCheck** for portable `sh` / `bash`. Use **ZShellCheck** for native Zsh — parameter-expansion flags (`${(U)x}`, `${(f)x}`), glob qualifiers (`*.zsh(.)`), `[[`, `(( ))`, `print -r --`, modifiers (`:t`, `:h`, `:r`), associative arrays, `setopt` options, hook functions. Full matrix: [docs/REFERENCE.md#comparison-vs-shellcheck](docs/REFERENCE.md#comparison-vs-shellcheck).
 
+## Tested integrations
+
+ZShellCheck is verified against the script corpora of these popular Zsh ecosystems. Every release runs a parse + lint sweep over each — no panics, no crashes, deterministic output.
+
+| Frameworks                                                                | Plugin / theme managers                                                            | Plugins + utilities                                                                                                                                                                                          | Themes / prompts                                                                                                          |
+| :------------------------------------------------------------------------ | :--------------------------------------------------------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------ |
+| oh-my-zsh · prezto · zimfw · antidote · zinit · zephyr · zsh-utils        | fzf · fzf-tab · fast-syntax-highlighting                                           | zsh-autosuggestions · zsh-syntax-highlighting · zsh-history-substring-search · zsh-vi-mode · zsh-autocomplete · zsh-completions                                                                                | powerlevel10k · spaceship-prompt · starship                                                                               |
+
 ## Documentation
 
 | Doc | What's inside |
