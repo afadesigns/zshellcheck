@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- **Auto-fix coverage now at 124/1000 katas.** New rewrites since 1.0.15, every one deterministic and idempotent on a re-run:
+- **Auto-fix coverage now at 125/1000 katas.** New rewrites since 1.0.15, every one deterministic and idempotent on a re-run:
   - `ZC1015` backticks → `$(...)`.
   - `ZC1016` inserts `-s` after `read` when the variable looks sensitive (`password`, `secret`, `token`, …).
   - `ZC1032` `let i=i+1` → `(( i++ ))` (and `i-1` → `i--`).
@@ -53,6 +53,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `ZC1380` `export HISTIGNORE=…` → `export HISTORY_IGNORE=…`.
   - `ZC1383` `TIMEFORMAT` → `TIMEFMT` inside echo / print / printf string args.
   - `ZC1394` `$BASH` → `$ZSH_NAME` inside echo / print / printf string args.
+  - `ZC1403` `HISTFILESIZE` → `SAVEHIST` inside echo / print / printf / export args.
   - `ZC1404` `$BASH_CMDS` → `$commands` inside echo / print / printf string args.
   - `ZC1413` `hash -t cmd` → `whence -p cmd` (rename + flag swap).
   - `ZC1411` `enable -n NAME` → `disable NAME`.
