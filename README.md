@@ -48,7 +48,7 @@ go install github.com/afadesigns/zshellcheck/cmd/zshellcheck@latest
 
 `--uninstall` reverses any of them.
 
-**On every tag:** native `.deb`, `.rpm`, `.apk`, and a multi-arch container at `ghcr.io/afadesigns/zshellcheck`.
+**On every tag:** native `.deb`, `.rpm`, `.apk`, and multi-arch container → `ghcr.io/afadesigns/zshellcheck`.
 
 Pinning, cosign verification, distro one-liners → [INSTALL.md](INSTALL.md).
 
@@ -72,9 +72,10 @@ Exits *0* on a clean run, *1* when anything was flagged.
 `zshellcheck -h` lists every flag, grouped by intent.
 
 Silence inline with `# noka: ZC1234` — bare `# noka` silences every kata on the line.
+
 Three forms (trailing, preceding, file-wide) → [USER_GUIDE](docs/USER_GUIDE.md#inline-noka-directives).
 
-### In CI
+### CI/CD
 
 ```yaml
 # .github/workflows/lint.yml
