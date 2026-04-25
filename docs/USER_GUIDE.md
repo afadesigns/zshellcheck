@@ -232,9 +232,11 @@ Both. Run ShellCheck for anything targeting `sh` / `bash` portability. Run ZShel
 
 Add a trailing comment: `some-command # zshellcheck disable=ZC1234`. See [Inline Disable Directives](#inline-disable-directives) above.
 
-### Is there an auto-fixer (`--fix`)?
+### Is there an auto-fixer (`-fix`)?
 
-Not yet — tracked as a 1.x item in [ROADMAP.md](../ROADMAP.md). Several katas have enough detection context to make a fixer possible; a formatter + fixer would likely ship together.
+Yes. Run `zshellcheck -fix path/to/script.zsh` to apply every available rewrite, or `zshellcheck -diff path/to/script.zsh` to preview the unified diff without writing. 67 katas ship deterministic rewrites today; coverage grows each release. The set of fixable katas is listed in [`KATAS.md`](../KATAS.md) — each entry carries an explicit `Auto-fix: yes/no` line.
+
+`-fix` runs multi-pass (up to five) so nested rewrites resolve in a single invocation. Pair `-fix` with `-dry-run` to report what would change without writing.
 
 ### The SARIF output is empty after a parse error. Why?
 

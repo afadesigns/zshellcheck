@@ -80,6 +80,39 @@ A kata is a Zsh-specific detection rule. Full scaffold + conventions live in the
 - **No duplicates.** Grep existing katas before writing a new one.
 - **Backtick-quote shell syntax** in titles, descriptions, and messages. End sentences with a period.
 
+### Adding an Auto-Fix
+
+A kata becomes auto-fixable when the rewrite is **context-free, idempotent, and byte-exact**. If any of those conditions fails, leave `Fix` nil and ship detection-only.
+
+1. Set the `Fix` field on the kata struct:
+
+   ```go
+   RegisterKata(ast.SimpleCommandNode, Kata{
+       ID:       "ZC#####",
+       Title:    "...",
+       Severity: SeverityWarning,
+       Check:    checkZC#####,
+       Fix:      fixZC#####,
+   })
+   ```
+
+2. Implement `fixZC####(node ast.Node, v Violation, source []byte) []FixEdit` returning a slice of byte-span replacements. `FixEdit` carries 1-based `Line` + `Column`, byte `Length`, and the replacement string. `pkg/katas/fixutil.go` exposes helpers (`LineColToByteOffset`, etc.).
+3. Re-confirm the rewrite is safe across whitespace, quoting, and trailing-comment variants. The fixer runs multi-pass (up to five) so nested rewrites can co-exist.
+4. Add a fix-side test in `pkg/katas/katatests/zc####_test.go` covering at least one applied-edit case and one no-op case.
+5. Re-run `go run ./internal/tools/gen-katas-md` to refresh `KATAS.md`. The new entry will report `Auto-fix: yes` and the summary count will increment.
+
+Reference rewrite shapes already in the catalog:
+
+| Pattern | Example |
+| --- | --- |
+| Token substitution (single byte span) | `ZC1002` `` `cmd` `` → `$(cmd)` |
+| Identifier rename | `ZC1005` `which` → `whence` |
+| Command + flag collapse | `ZC1355` `echo -E …` → `print -r …` |
+| Parameter-name rename | `ZC1313` `$BASH_ALIASES` → `$aliases` |
+| Quote-insertion around an expansion | `ZC1075` `rm -rf $var` → `rm -rf "$var"` |
+
+If your rewrite doesn't fit one of these shapes, document the new pattern under this list in the same PR.
+
 ## Security
 
 Do not file vulnerabilities as public issues. See [SECURITY.md](SECURITY.md) for the reporting process.

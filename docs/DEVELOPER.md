@@ -118,6 +118,44 @@ We use the standard Go testing framework.
 
 6.  **Once committed, fix — don't remove.** Retire duplicates as no-op stubs (see `ZC1018`, `ZC1022` for the pattern).
 
+### Adding an Auto-Fix
+
+A kata becomes auto-fixable when its rewrite is **context-free, idempotent, and byte-exact**. The auto-fixer runs every kata's `Fix` function over the source; conflicting overlaps resolve outer-wins on the first pass, with the inner edit picked up on a subsequent pass. The fixer caps at five passes by default so nested rewrites converge in a single `-fix` invocation.
+
+Set the `Fix` field on the kata struct alongside `Check`:
+
+```go
+RegisterKata(ast.SimpleCommandNode, Kata{
+    ID:          "ZCXXXX",
+    Title:       "...",
+    Severity:    SeverityWarning,
+    Check:       checkZCXXXX,
+    Fix:         fixZCXXXX,
+})
+```
+
+The `Fix` signature is:
+
+```go
+func fixZCXXXX(node ast.Node, v Violation, source []byte) []FixEdit
+```
+
+Return a slice of `FixEdit` — each carrying a 1-based `Line` + `Column`, a byte-span `Length` to replace, and the replacement string. `pkg/katas/fixutil.go` exposes `LineColToByteOffset` and related helpers that handle multi-byte UTF-8 alignment.
+
+If the rewrite cannot be made safe (the offending span depends on surrounding context, the new code might shift semantics, or the kata is advisory rather than mechanical), **leave `Fix` nil**. Detection-only katas remain valuable.
+
+#### Catalog of shipped rewrite shapes
+
+| Pattern | Example | Reference kata |
+| --- | --- | --- |
+| Token substitution (single byte span) | `` `cmd` `` → `$(cmd)` | `ZC1002` |
+| Identifier rename | `which` → `whence` | `ZC1005` |
+| Command + flag collapse | `echo -E …` → `print -r …` | `ZC1355` |
+| Parameter-name rename | `$BASH_ALIASES` → `$aliases` | `ZC1313` |
+| Quote-insertion around an expansion | `rm -rf $var` → `rm -rf "$var"` | `ZC1075` |
+
+When a new kata introduces a rewrite shape that doesn't fit one of these, extend the table in the same PR so the catalog stays current.
+
 ### Severity Levels
 
 Every kata must declare a severity via the Go constants `SeverityError`, `SeverityWarning`, `SeverityInfo`, `SeverityStyle` (defined in `pkg/katas/katas.go`). See the [Severity Levels reference](USER_GUIDE.md#severity-levels) for the rubric and when to pick each level.

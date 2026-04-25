@@ -43,7 +43,7 @@ Non-trivial direction is discussed on GitHub issues or PRs. Consensus preferred;
 | **Checks** | ~500 | 1000 |
 | **Output** | Text, JSON, GCC, TTY | Text, JSON, SARIF |
 | **Severity** | error, warning, info, style | error, warning, info, style |
-| **Auto-fix** | Partial | Planned |
+| **Auto-fix** | Partial | Shipped — 67 katas (`-fix`, `-diff`, `-dry-run`) |
 
 **Use ZShellCheck for:** `.zshrc`, Zsh plugins, and scripts using specific Zsh features (`[[`, modifiers).
 
