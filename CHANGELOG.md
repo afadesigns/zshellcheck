@@ -8,7 +8,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- **Auto-fix coverage expanded to 102 katas (+35 since 1.0.15).** All new fixes are deterministic, idempotent, and byte-exact outside the rewritten span. The TIER 2 batch added 12 span-aware / multi-edit / token-strip rewrites on top of the original 23 TIER 1 candidates:
+- **Auto-fix coverage expanded to 106 katas (+39 since 1.0.15).** All new fixes are deterministic, idempotent, and byte-exact outside the rewritten span. The TIER 2 batch-2 round added 4 more span/rename rewrites:
+  - **Arithmetic idiom collapse:**
+    - `ZC1032` — `let i=i+1` → `(( i++ ))`, `let i=i-1` → `(( i-- ))`. ZC1013 yields to ZC1032 on the increment/decrement shape so the rewrite uses the C-style operator.
+  - **Sibling delegation (no new helper):**
+    - `ZC1107` — `[[ a -lt b ]]` → `(( a < b ))`. Reuses `fixZC1091`; the conflict resolver dedupes the duplicate edit produced by both katas.
+  - **Two-edit command + flag swap:**
+    - `ZC1153` — `diff -q FILE1 FILE2` → `cmp -s FILE1 FILE2`.
+  - **Span-aware substitution rewrite:**
+    - `ZC1643` — `$(cat FILE)` → `$(<FILE)` inside SimpleCommand argument strings (e.g. `echo $(cat …)`). Assignment-form `x=$(cat …)` stays detection-only because the cat substitution sits as a DollarParenExpression child rather than as an argument the detector can reach.
+- **TIER 2 batch (+12, prior round):** All new fixes are deterministic, idempotent, and byte-exact outside the rewritten span. The TIER 2 batch added 12 span-aware / multi-edit / token-strip rewrites on top of the original 23 TIER 1 candidates:
   - **Pipeline collapse:**
     - `ZC1146` — `cat F | sed/awk/sort/head/tail` → `tool ... F` (drops `cat F |`, appends `F` to the right side).
     - `ZC1190` — `grep -v p1 | grep -v p2` → `grep -v -e p1 -e p2` (single-grep collapse).

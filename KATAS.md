@@ -11,7 +11,7 @@ Auto-generated list of all 1000 implemented checks. Do not edit by hand — rege
 | `info` | 64 |
 | `style` | 257 |
 | **total** | **1000** |
-| **with auto-fix** | **102** |
+| **with auto-fix** | **105** |
 
 Auto-fix availability is marked per-entry below as **Auto-fix:** `yes` or `no`. Run `zshellcheck -fix path/...` to apply every available rewrite, or `-diff` to preview without writing.
 
@@ -48,7 +48,7 @@ Auto-fix availability is marked per-entry below as **Auto-fix:** `yes` or `no`. 
 - [ZC1029: Superseded by ZC1022 — retired duplicate `let` detector](#zc1029)
 - [ZC1030: Use `printf` instead of `echo`](#zc1030)
 - [ZC1031: Use `#!/usr/bin/env zsh` for portability](#zc1031) · auto-fix
-- [ZC1032: Use `((...))` for C-style incrementing](#zc1032)
+- [ZC1032: Use `((...))` for C-style incrementing](#zc1032) · auto-fix
 - [ZC1033: Superseded by ZC1022 — retired duplicate `let` detector](#zc1033)
 - [ZC1034: Use `command -v` instead of `which`](#zc1034) · auto-fix
 - [ZC1035: Superseded by ZC1022 — retired duplicate `let` detector](#zc1035)
@@ -166,7 +166,7 @@ Auto-fix availability is marked per-entry below as **Auto-fix:** `yes` or `no`. 
 - [ZC1149: Avoid `echo` for error messages — use `>&2`](#zc1149)
 - [ZC1151: Avoid `cat -A` — use `print -v` or od for non-printable characters](#zc1151)
 - [ZC1152: Use Zsh PCRE module instead of `grep -P`](#zc1152)
-- [ZC1153: Use `cmp -s` instead of `diff` for equality check](#zc1153)
+- [ZC1153: Use `cmp -s` instead of `diff` for equality check](#zc1153) · auto-fix
 - [ZC1154: Use `find -exec {} +` instead of `find -exec {} \;`](#zc1154)
 - [ZC1155: Use `whence -a` instead of `which -a`](#zc1155) · auto-fix
 - [ZC1156: Avoid `ln` without `-s` for symlinks](#zc1156)
@@ -656,7 +656,7 @@ Auto-fix availability is marked per-entry below as **Auto-fix:** `yes` or `no`. 
 - [ZC1640: Style: `${!var}` Bash indirect expansion — prefer Zsh `${(P)var}`](#zc1640)
 - [ZC1641: Error on `kubectl create secret --from-literal=...` / `--docker-password=...`](#zc1641)
 - [ZC1642: Warn on `tshark -w FILE` / `dumpcap -w FILE` without `-Z user` — capture file owned by root](#zc1642)
-- [ZC1643: Style: `$(cat file)` — use `$(<file)` to skip the fork / exec](#zc1643)
+- [ZC1643: Style: `$(cat file)` — use `$(<file)` to skip the fork / exec](#zc1643) · auto-fix
 - [ZC1644: Error on `unzip -P SECRET` / `zip -P SECRET` — archive password in process list](#zc1644)
 - [ZC1645: Style: `lsb_release` — prefer sourcing `/etc/os-release` (no dependency, no fork)](#zc1645)
 - [ZC1646: Warn on `btrfs check --repair` / `xfs_repair -L` — last-resort recovery, may worsen damage](#zc1646)
@@ -1396,9 +1396,9 @@ Disable by adding `ZC1031` to `disabled_katas` in `.zshellcheckrc`.
 ### ZC1032 — Use `((...))` for C-style incrementing
 
 **Severity:** `style`  
-**Auto-fix:** `no`
+**Auto-fix:** `yes`
 
-Instead of `let i=i+1`, you can use the more concise and idiomatic C-style increment `(( i++ ))` in Zsh.
+Instead of `let i=i+1` or `let i=i-1`, you can use the more concise and idiomatic C-style increment `(( i++ ))` / decrement `(( i-- ))` in Zsh.
 
 Disable by adding `ZC1032` to `disabled_katas` in `.zshellcheckrc`.
 
@@ -2812,7 +2812,7 @@ Disable by adding `ZC1152` to `disabled_katas` in `.zshellcheckrc`.
 ### ZC1153 — Use `cmp -s` instead of `diff` for equality check
 
 **Severity:** `style`  
-**Auto-fix:** `no`
+**Auto-fix:** `yes`
 
 When only checking if two files are identical (not viewing differences), `cmp -s` is faster than `diff` as it stops at the first difference.
 
@@ -8692,7 +8692,7 @@ Disable by adding `ZC1642` to `disabled_katas` in `.zshellcheckrc`.
 ### ZC1643 — Style: `$(cat file)` — use `$(<file)` to skip the fork / exec
 
 **Severity:** `style`  
-**Auto-fix:** `no`
+**Auto-fix:** `yes`
 
 `$(cat FILE)` forks, execs `/usr/bin/cat`, reads FILE, writes the bytes to the pipe, waits for the child. `$(<FILE)` is a shell builtin — it reads FILE directly into the command-substitution buffer with no fork and no exec. In a hot path the speedup is dramatic, and even in cold paths it avoids one of the most common useless-use-of-cat patterns in review feedback.
 
