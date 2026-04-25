@@ -1555,6 +1555,17 @@ func TestFixIntegration_ZC1404_BashCmdsToCommands(t *testing.T) {
 	}
 }
 
+func TestFixIntegration_ZC1403_HistfilesizeToSavehist(t *testing.T) {
+	src := "export HISTFILESIZE=1000\n"
+	got := runFix(t, src)
+	if !strings.Contains(got, "SAVEHIST=1000") {
+		t.Errorf("expected SAVEHIST=1000, got %q", got)
+	}
+	if strings.Contains(got, "HISTFILESIZE") {
+		t.Errorf("HISTFILESIZE still present, got %q", got)
+	}
+}
+
 func TestFixIntegration_ZC1252_PipedCatHandledByZC1146(t *testing.T) {
 	// `cat /etc/group | head` lets ZC1146 win the overlap and collapse
 	// the pipe into `head /etc/group`. ZC1252's two-edit rewrite would

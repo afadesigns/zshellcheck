@@ -11,7 +11,7 @@ Auto-generated list of all 1000 implemented checks. Do not edit by hand — rege
 | `info` | 64 |
 | `style` | 257 |
 | **total** | **1000** |
-| **with auto-fix** | **123** |
+| **with auto-fix** | **124** |
 
 Auto-fix availability is marked per-entry below as **Auto-fix:** `yes` or `no`. Run `zshellcheck -fix path/...` to apply every available rewrite, or `-diff` to preview without writing.
 
@@ -416,7 +416,7 @@ Auto-fix availability is marked per-entry below as **Auto-fix:** `yes` or `no`. 
 - [ZC1400: Use Zsh `$CPUTYPE` for architecture detection instead of parsing `$HOSTTYPE`](#zc1400)
 - [ZC1401: Prefer Zsh `$VENDOR` over parsing `$MACHTYPE` for vendor detection](#zc1401)
 - [ZC1402: Avoid `date -d @seconds` — use Zsh `strftime` for epoch formatting](#zc1402)
-- [ZC1403: Setting `$HISTFILESIZE` alone is incomplete in Zsh — pair with `$SAVEHIST`](#zc1403)
+- [ZC1403: Setting `$HISTFILESIZE` alone is incomplete in Zsh — pair with `$SAVEHIST`](#zc1403) · auto-fix
 - [ZC1404: Avoid `$BASH_CMDS` — Bash-specific hash-table mirror, use Zsh `$commands`](#zc1404) · auto-fix
 - [ZC1405: Avoid `env -u VAR cmd` — use Zsh `(unset VAR; cmd)` subshell](#zc1405)
 - [ZC1406: Prefer Zsh `zargs -P N` autoload over `xargs -P N` for parallel execution](#zc1406)
@@ -5812,7 +5812,7 @@ Disable by adding `ZC1402` to `disabled_katas` in `.zshellcheckrc`.
 ### ZC1403 — Setting `$HISTFILESIZE` alone is incomplete in Zsh — pair with `$SAVEHIST`
 
 **Severity:** `warning`  
-**Auto-fix:** `no`
+**Auto-fix:** `yes`
 
 Bash uses `$HISTSIZE` (in-memory) and `$HISTFILESIZE` (on disk). Zsh uses `$HISTSIZE` (in-memory) and `$SAVEHIST` (on disk). Setting only `$HISTFILESIZE` in Zsh has no effect on disk — `$SAVEHIST` must be set. Mixing both names leaves disk-history behavior undefined.
 
