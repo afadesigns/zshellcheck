@@ -19,7 +19,57 @@ func init() {
 			"the child on empty input. BSD xargs defaults to this behavior, but the portable " +
 			"and explicit choice is to pass `-r` and document the intent.",
 		Check: checkZC1773,
+		Fix:   fixZC1773,
 	})
+}
+
+// fixZC1773 inserts ` -r` after the `xargs` command name. Detector
+// already guards against any existing `-r` / `--no-run-if-empty` /
+// combined-short-flag form so the insertion is idempotent.
+func fixZC1773(node ast.Node, v Violation, source []byte) []FixEdit {
+	cmd, ok := node.(*ast.SimpleCommand)
+	if !ok {
+		return nil
+	}
+	ident, ok := cmd.Name.(*ast.Identifier)
+	if !ok || ident.Value != "xargs" {
+		return nil
+	}
+	nameOff := LineColToByteOffset(source, v.Line, v.Column)
+	if nameOff < 0 {
+		return nil
+	}
+	if IdentLenAt(source, nameOff) != len("xargs") {
+		return nil
+	}
+	insertAt := nameOff + len("xargs")
+	insLine, insCol := offsetLineColZC1773(source, insertAt)
+	if insLine < 0 {
+		return nil
+	}
+	return []FixEdit{{
+		Line:    insLine,
+		Column:  insCol,
+		Length:  0,
+		Replace: " -r",
+	}}
+}
+
+func offsetLineColZC1773(source []byte, offset int) (int, int) {
+	if offset < 0 || offset > len(source) {
+		return -1, -1
+	}
+	line := 1
+	col := 1
+	for i := 0; i < offset; i++ {
+		if source[i] == '\n' {
+			line++
+			col = 1
+			continue
+		}
+		col++
+	}
+	return line, col
 }
 
 func checkZC1773(node ast.Node) []Violation {

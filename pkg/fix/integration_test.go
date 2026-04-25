@@ -672,7 +672,9 @@ func TestFixIntegration_ZC1226_DmesgAddTime(t *testing.T) {
 
 func TestFixIntegration_ZC1227_CurlAddFail(t *testing.T) {
 	src := "curl https://example.com/data\n"
-	want := "curl -f https://example.com/data\n"
+	// ZC1255 (curl -L for HTTP redirects) shares this fixture and applies
+	// alongside ZC1227's -f insertion in a single pass.
+	want := "curl -L -f https://example.com/data\n"
 	if got := runFix(t, src); got != want {
 		t.Errorf("got %q, want %q", got, want)
 	}
@@ -696,7 +698,9 @@ func TestFixIntegration_ZC1231_GitCloneShallow(t *testing.T) {
 
 func TestFixIntegration_ZC1241_XargsAddNullSep(t *testing.T) {
 	src := "xargs rm\n"
-	want := "xargs -0 rm\n"
+	// ZC1773 (xargs -r to skip the no-input run) shares this fixture and
+	// applies alongside ZC1241's -0 insertion in a single pass.
+	want := "xargs -r -0 rm\n"
 	if got := runFix(t, src); got != want {
 		t.Errorf("got %q, want %q", got, want)
 	}
@@ -1125,6 +1129,96 @@ func TestFixIntegration_ZC1163_GrepHeadOne(t *testing.T) {
 func TestFixIntegration_ZC1163_GrepHeadDashN1(t *testing.T) {
 	src := "grep PAT file | head -n1\n"
 	want := "grep -m 1 PAT file\n"
+	if got := runFix(t, src); got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}
+
+func TestFixIntegration_ZC1146_CatPipeTool(t *testing.T) {
+	// Detector whitelist on the right of the pipe is awk/sed/sort/head/tail
+	// — grep is intentionally excluded (grep accepts file args natively but
+	// has its own kata for the pattern). Use sed to exercise the rewrite.
+	src := "cat data.txt | sed s/foo/bar/\n"
+	want := "sed s/foo/bar/ data.txt\n"
+	if got := runFix(t, src); got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}
+
+func TestFixIntegration_ZC1190_DoubleGrepInverted(t *testing.T) {
+	// Fix gates on each side carrying exactly one non-flag pattern arg
+	// (zc1190SinglePattern). Adding a `file` arg on the left would push it
+	// over the limit, so the test fixture omits it.
+	src := "grep -v p1 | grep -v p2\n"
+	want := "grep -v -e p1 -e p2\n"
+	if got := runFix(t, src); got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}
+
+func TestFixIntegration_ZC1230_PingAddCount(t *testing.T) {
+	src := "ping example.com\n"
+	want := "ping -c 4 example.com\n"
+	if got := runFix(t, src); got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}
+
+func TestFixIntegration_ZC1238_DockerExecStripIt(t *testing.T) {
+	src := "docker exec -it container ls\n"
+	want := "docker exec container ls\n"
+	if got := runFix(t, src); got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}
+
+func TestFixIntegration_ZC1239_KubectlExecStripIt(t *testing.T) {
+	src := "kubectl exec -it pod -- ls\n"
+	want := "kubectl exec pod -- ls\n"
+	if got := runFix(t, src); got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}
+
+func TestFixIntegration_ZC1257_DockerStopAddTimeout(t *testing.T) {
+	src := "docker stop container\n"
+	want := "docker stop -t 10 container\n"
+	if got := runFix(t, src); got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}
+
+func TestFixIntegration_ZC1268_DuAddDoubleDash(t *testing.T) {
+	src := "du -sh *\n"
+	want := "du -sh -- *\n"
+	if got := runFix(t, src); got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}
+
+func TestFixIntegration_ZC1319_BashArgcRename(t *testing.T) {
+	// ZC1092 (echo → print -r --) also fires on this fixture; both fixes
+	// land in the same pass per the registry's first-edit-wins policy.
+	src := "echo $BASH_ARGC\n"
+	want := "print -r -- $#\n"
+	if got := runFix(t, src); got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}
+
+func TestFixIntegration_ZC1320_BashArgvRename(t *testing.T) {
+	// ZC1092 (echo → print -r --) also fires on this fixture; both fixes
+	// land in the same pass per the registry's first-edit-wins policy.
+	src := "echo $BASH_ARGV\n"
+	want := "print -r -- $argv\n"
+	if got := runFix(t, src); got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}
+
+func TestFixIntegration_ZC1380_HistignoreRename(t *testing.T) {
+	src := "export HISTIGNORE='ls:cd'\n"
+	want := "export HISTORY_IGNORE='ls:cd'\n"
 	if got := runFix(t, src); got != want {
 		t.Errorf("got %q, want %q", got, want)
 	}

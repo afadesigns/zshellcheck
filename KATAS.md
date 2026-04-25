@@ -11,7 +11,7 @@ Auto-generated list of all 1000 implemented checks. Do not edit by hand — rege
 | `info` | 64 |
 | `style` | 257 |
 | **total** | **1000** |
-| **with auto-fix** | **90** |
+| **with auto-fix** | **102** |
 
 Auto-fix availability is marked per-entry below as **Auto-fix:** `yes` or `no`. Run `zshellcheck -fix path/...` to apply every available rewrite, or `-diff` to preview without writing.
 
@@ -160,7 +160,7 @@ Auto-fix availability is marked per-entry below as **Auto-fix:** `yes` or `no`. 
 - [ZC1143: Avoid `set -e` — use explicit error handling](#zc1143)
 - [ZC1144: Avoid `trap` with signal numbers — use names](#zc1144) · auto-fix
 - [ZC1145: Avoid `tr -d` for character deletion — use parameter expansion](#zc1145)
-- [ZC1146: Avoid `cat file \| awk` — pass file to awk directly](#zc1146)
+- [ZC1146: Avoid `cat file \| awk` — pass file to awk directly](#zc1146) · auto-fix
 - [ZC1147: Avoid `mkdir` without `-p` for nested paths](#zc1147) · auto-fix
 - [ZC1148: Use `compdef` instead of `compctl` for completions](#zc1148)
 - [ZC1149: Avoid `echo` for error messages — use `>&2`](#zc1149)
@@ -203,7 +203,7 @@ Auto-fix availability is marked per-entry below as **Auto-fix:** `yes` or `no`. 
 - [ZC1187: Avoid `notify-send` without fallback — check availability first](#zc1187)
 - [ZC1188: Use Zsh `path+=()` instead of `export PATH=$PATH:dir`](#zc1188)
 - [ZC1189: Avoid `source /dev/stdin` — use direct evaluation](#zc1189)
-- [ZC1190: Combine chained `grep -v` into single invocation](#zc1190)
+- [ZC1190: Combine chained `grep -v` into single invocation](#zc1190) · auto-fix
 - [ZC1191: Avoid `clear` command — use ANSI escape sequences](#zc1191) · auto-fix
 - [ZC1192: Avoid `sleep 0` — it is a no-op external process](#zc1192) · auto-fix
 - [ZC1193: Avoid `rm -i` in non-interactive scripts](#zc1193)
@@ -243,7 +243,7 @@ Auto-fix availability is marked per-entry below as **Auto-fix:** `yes` or `no`. 
 - [ZC1227: Use `curl -f` to fail on HTTP errors](#zc1227) · auto-fix
 - [ZC1228: Avoid `ssh` without host key policy in scripts](#zc1228)
 - [ZC1229: Prefer `rsync` over `scp` for file transfers](#zc1229)
-- [ZC1230: Use `ping -c N` in scripts to limit ping count](#zc1230)
+- [ZC1230: Use `ping -c N` in scripts to limit ping count](#zc1230) · auto-fix
 - [ZC1231: Use `git clone --depth 1` for CI and build scripts](#zc1231) · auto-fix
 - [ZC1232: Avoid bare `pip install` — use `--user` or virtualenv](#zc1232)
 - [ZC1233: Avoid `npm install -g` — use `npx` for one-off tools](#zc1233)
@@ -251,8 +251,8 @@ Auto-fix availability is marked per-entry below as **Auto-fix:** `yes` or `no`. 
 - [ZC1235: Use `git push --force-with-lease` instead of `--force`](#zc1235) · auto-fix
 - [ZC1236: Avoid `git reset --hard` — irreversible data loss risk](#zc1236)
 - [ZC1237: Use `git clean -n` before `git clean -fd`](#zc1237)
-- [ZC1238: Avoid `docker exec -it` in scripts — drop `-it` for non-interactive](#zc1238)
-- [ZC1239: Avoid `kubectl exec -it` in scripts](#zc1239)
+- [ZC1238: Avoid `docker exec -it` in scripts — drop `-it` for non-interactive](#zc1238) · auto-fix
+- [ZC1239: Avoid `kubectl exec -it` in scripts](#zc1239) · auto-fix
 - [ZC1240: Use `find -maxdepth` with `-delete` to limit scope](#zc1240)
 - [ZC1241: Use `xargs -0` with null separators for safe argument passing](#zc1241) · auto-fix
 - [ZC1242: Use `tar -C dir` to extract into a specific directory](#zc1242)
@@ -268,9 +268,9 @@ Auto-fix availability is marked per-entry below as **Auto-fix:** `yes` or `no`. 
 - [ZC1252: Use `getent passwd` instead of `cat /etc/passwd`](#zc1252)
 - [ZC1253: Use `docker build --no-cache` in CI for reproducible builds](#zc1253) · auto-fix
 - [ZC1254: Avoid `git commit --amend` in shared branches](#zc1254)
-- [ZC1255: Use `curl -L` to follow HTTP redirects](#zc1255)
+- [ZC1255: Use `curl -L` to follow HTTP redirects](#zc1255) · auto-fix
 - [ZC1256: Clean up `mkfifo` pipes with a trap on EXIT](#zc1256)
-- [ZC1257: Use `docker stop -t` to set graceful shutdown timeout](#zc1257)
+- [ZC1257: Use `docker stop -t` to set graceful shutdown timeout](#zc1257) · auto-fix
 - [ZC1258: Consider `rsync --delete` for directory sync](#zc1258)
 - [ZC1259: Avoid `docker pull` without explicit tag — pin image versions](#zc1259)
 - [ZC1260: Use `git branch -d` instead of `-D` for safe deletion](#zc1260) · auto-fix
@@ -281,7 +281,7 @@ Auto-fix availability is marked per-entry below as **Auto-fix:** `yes` or `no`. 
 - [ZC1265: Use `systemctl enable --now` to enable and start together](#zc1265) · auto-fix
 - [ZC1266: Use `nproc` instead of parsing `/proc/cpuinfo`](#zc1266)
 - [ZC1267: Use `df -P` for POSIX-portable disk usage output](#zc1267) · auto-fix
-- [ZC1268: Use `du -sh --` to handle filenames starting with dash](#zc1268)
+- [ZC1268: Use `du -sh --` to handle filenames starting with dash](#zc1268) · auto-fix
 - [ZC1269: Use `pgrep` instead of `ps aux \| grep` for process search](#zc1269)
 - [ZC1270: Use `mktemp` instead of hardcoded `/tmp` paths](#zc1270)
 - [ZC1271: Use `command -v` instead of `which` for command existence checks](#zc1271) · auto-fix
@@ -332,8 +332,8 @@ Auto-fix availability is marked per-entry below as **Auto-fix:** `yes` or `no`. 
 - [ZC1316: Avoid `caller` builtin — use `$funcfiletrace` in Zsh](#zc1316)
 - [ZC1317: Avoid `$BASH_ENV` — use `$ZDOTDIR` and `$ENV` in Zsh](#zc1317)
 - [ZC1318: Avoid `$BASH_CMDS` — use `$commands` hash in Zsh](#zc1318) · auto-fix
-- [ZC1319: Avoid `$BASH_ARGC` — use `$#` in Zsh](#zc1319)
-- [ZC1320: Avoid `$BASH_ARGV` — use `$argv` in Zsh](#zc1320)
+- [ZC1319: Avoid `$BASH_ARGC` — use `$#` in Zsh](#zc1319) · auto-fix
+- [ZC1320: Avoid `$BASH_ARGV` — use `$argv` in Zsh](#zc1320) · auto-fix
 - [ZC1321: Avoid `$BASH_XTRACEFD` — not available in Zsh](#zc1321)
 - [ZC1322: Avoid `$COPROC` — Zsh coproc uses different syntax](#zc1322)
 - [ZC1323: Avoid `suspend` builtin — use `kill -STOP $$` in Zsh](#zc1323)
@@ -393,7 +393,7 @@ Auto-fix availability is marked per-entry below as **Auto-fix:** `yes` or `no`. 
 - [ZC1377: Avoid `$BASH_ALIASES` — use Zsh `$aliases` associative array](#zc1377) · auto-fix
 - [ZC1378: Avoid uppercase `$DIRSTACK` — Zsh uses lowercase `$dirstack`](#zc1378) · auto-fix
 - [ZC1379: Avoid `$PROMPT_COMMAND` — use Zsh `precmd` function](#zc1379)
-- [ZC1380: Avoid `$HISTIGNORE` — use Zsh `$HISTORY_IGNORE`](#zc1380)
+- [ZC1380: Avoid `$HISTIGNORE` — use Zsh `$HISTORY_IGNORE`](#zc1380) · auto-fix
 - [ZC1381: Avoid `$COMP_WORDS`/`$COMP_CWORD` — Zsh uses `words`/`$CURRENT`](#zc1381)
 - [ZC1382: Avoid `$READLINE_LINE`/`$READLINE_POINT` — Zsh ZLE uses `$BUFFER`/`$CURSOR`](#zc1382)
 - [ZC1383: Avoid `$TIMEFORMAT` — Zsh uses `$TIMEFMT`](#zc1383) · auto-fix
@@ -786,7 +786,7 @@ Auto-fix availability is marked per-entry below as **Auto-fix:** `yes` or `no`. 
 - [ZC1770: Warn on `gpg --always-trust` / `--trust-model always` — bypasses Web-of-Trust](#zc1770)
 - [ZC1771: Warn on `alias -g` / `alias -s` — global and suffix aliases surprise script readers](#zc1771)
 - [ZC1772: Error on `hdparm --security-erase` / `--trim-sector-ranges` — ATA-level data destruction](#zc1772)
-- [ZC1773: Warn on `xargs` without `-r` / `--no-run-if-empty` — runs once on empty input](#zc1773)
+- [ZC1773: Warn on `xargs` without `-r` / `--no-run-if-empty` — runs once on empty input](#zc1773) · auto-fix
 - [ZC1774: Warn on `setopt GLOB_SUBST` — `$var` starts glob-expanding, user data becomes a pattern](#zc1774)
 - [ZC1775: Warn on `timeout DURATION cmd` without `--kill-after` / `-k` — hang on SIGTERM-resistant child](#zc1775)
 - [ZC1776: Error on `psql postgresql://user:secret@host/db` — password in argv via connection URI](#zc1776)
@@ -2740,7 +2740,7 @@ Disable by adding `ZC1145` to `disabled_katas` in `.zshellcheckrc`.
 ### ZC1146 — Avoid `cat file | awk` — pass file to awk directly
 
 **Severity:** `style`  
-**Auto-fix:** `no`
+**Auto-fix:** `yes`
 
 `cat file | awk` spawns an unnecessary cat process. Pass the file directly as `awk '...' file`.
 
@@ -3256,7 +3256,7 @@ Disable by adding `ZC1189` to `disabled_katas` in `.zshellcheckrc`.
 ### ZC1190 — Combine chained `grep -v` into single invocation
 
 **Severity:** `style`  
-**Auto-fix:** `no`
+**Auto-fix:** `yes`
 
 `grep -v p1 | grep -v p2` spawns two processes. Use `grep -v -e p1 -e p2` to combine exclusions in one invocation.
 
@@ -3736,7 +3736,7 @@ Disable by adding `ZC1229` to `disabled_katas` in `.zshellcheckrc`.
 ### ZC1230 — Use `ping -c N` in scripts to limit ping count
 
 **Severity:** `warning`  
-**Auto-fix:** `no`
+**Auto-fix:** `yes`
 
 `ping` without `-c` runs indefinitely on Linux, hanging scripts. Always specify `-c N` to limit the number of packets.
 
@@ -3832,7 +3832,7 @@ Disable by adding `ZC1237` to `disabled_katas` in `.zshellcheckrc`.
 ### ZC1238 — Avoid `docker exec -it` in scripts — drop `-it` for non-interactive
 
 **Severity:** `warning`  
-**Auto-fix:** `no`
+**Auto-fix:** `yes`
 
 `docker exec -it` allocates a TTY and attaches stdin, which hangs in non-interactive scripts. Use `docker exec` without `-it` for scripted commands.
 
@@ -3844,7 +3844,7 @@ Disable by adding `ZC1238` to `disabled_katas` in `.zshellcheckrc`.
 ### ZC1239 — Avoid `kubectl exec -it` in scripts
 
 **Severity:** `warning`  
-**Auto-fix:** `no`
+**Auto-fix:** `yes`
 
 `kubectl exec -it` allocates a TTY which hangs in non-interactive scripts. Use `kubectl exec` without `-it` or use `kubectl exec -- cmd` for scripted commands.
 
@@ -4036,7 +4036,7 @@ Disable by adding `ZC1254` to `disabled_katas` in `.zshellcheckrc`.
 ### ZC1255 — Use `curl -L` to follow HTTP redirects
 
 **Severity:** `info`  
-**Auto-fix:** `no`
+**Auto-fix:** `yes`
 
 `curl` without `-L` does not follow redirects, returning 301/302 responses instead of the actual content. Use `-L` to follow redirects automatically.
 
@@ -4060,7 +4060,7 @@ Disable by adding `ZC1256` to `disabled_katas` in `.zshellcheckrc`.
 ### ZC1257 — Use `docker stop -t` to set graceful shutdown timeout
 
 **Severity:** `style`  
-**Auto-fix:** `no`
+**Auto-fix:** `yes`
 
 `docker stop` defaults to 10s before SIGKILL. In CI scripts, set an explicit timeout with `-t` to control shutdown behavior.
 
@@ -4192,7 +4192,7 @@ Disable by adding `ZC1267` to `disabled_katas` in `.zshellcheckrc`.
 ### ZC1268 — Use `du -sh --` to handle filenames starting with dash
 
 **Severity:** `info`  
-**Auto-fix:** `no`
+**Auto-fix:** `yes`
 
 `du -sh *` breaks if a filename starts with `-`. Use `--` to signal end of options and safely handle all filenames.
 
@@ -4804,7 +4804,7 @@ Disable by adding `ZC1318` to `disabled_katas` in `.zshellcheckrc`.
 ### ZC1319 — Avoid `$BASH_ARGC` — use `$#` in Zsh
 
 **Severity:** `warning`  
-**Auto-fix:** `no`
+**Auto-fix:** `yes`
 
 `$BASH_ARGC` is a Bash array tracking argument counts per stack frame. Zsh uses `$#` for argument count and `$argv` for the argument array.
 
@@ -4816,7 +4816,7 @@ Disable by adding `ZC1319` to `disabled_katas` in `.zshellcheckrc`.
 ### ZC1320 — Avoid `$BASH_ARGV` — use `$argv` in Zsh
 
 **Severity:** `warning`  
-**Auto-fix:** `no`
+**Auto-fix:** `yes`
 
 `$BASH_ARGV` is a Bash array containing arguments in reverse order. Zsh provides `$argv` (or `$@`) for positional parameters.
 
@@ -5536,7 +5536,7 @@ Disable by adding `ZC1379` to `disabled_katas` in `.zshellcheckrc`.
 ### ZC1380 — Avoid `$HISTIGNORE` — use Zsh `$HISTORY_IGNORE`
 
 **Severity:** `warning`  
-**Auto-fix:** `no`
+**Auto-fix:** `yes`
 
 Bash filters history entries matching `$HISTIGNORE` patterns. Zsh uses a parameter named `$HISTORY_IGNORE` (underscore in the middle). Setting `HISTIGNORE` in Zsh is a no-op.
 
@@ -10252,7 +10252,7 @@ Disable by adding `ZC1772` to `disabled_katas` in `.zshellcheckrc`.
 ### ZC1773 — Warn on `xargs` without `-r` / `--no-run-if-empty` — runs once on empty input
 
 **Severity:** `warning`  
-**Auto-fix:** `no`
+**Auto-fix:** `yes`
 
 GNU `xargs` (the common default on Linux) invokes the child command once with no arguments when its stdin is empty. Paired with a destructive child (`xargs rm`, `xargs kill`, `xargs docker stop`) a pipeline that produces zero hits silently runs the command with no operand — usually an error at best and a footgun at worst. The flag `-r` (GNU) / `--no-run-if-empty` tells xargs to skip the call when no items arrive. Add `-r` to every `xargs` pipeline whose producer can return no results, or switch to `find ... -exec cmd {} +` which never runs the child on empty input. BSD xargs defaults to this behavior, but the portable and explicit choice is to pass `-r` and document the intent.
 

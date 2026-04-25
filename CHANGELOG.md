@@ -8,7 +8,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- **Auto-fix coverage expanded to 90 katas (+23).** All new fixes are deterministic, idempotent, and byte-exact outside the rewritten span.
+- **Auto-fix coverage expanded to 102 katas (+35 since 1.0.15).** All new fixes are deterministic, idempotent, and byte-exact outside the rewritten span. The TIER 2 batch added 12 span-aware / multi-edit / token-strip rewrites on top of the original 23 TIER 1 candidates:
+  - **Pipeline collapse:**
+    - `ZC1146` — `cat F | sed/awk/sort/head/tail` → `tool ... F` (drops `cat F |`, appends `F` to the right side).
+    - `ZC1190` — `grep -v p1 | grep -v p2` → `grep -v -e p1 -e p2` (single-grep collapse).
+  - **Flag insertion (command-level):**
+    - `ZC1230` — `ping URL` → `ping -c 4 URL`.
+    - `ZC1255` — `curl URL` → `curl -L URL` (HTTP-redirect follow).
+    - `ZC1773` — `xargs CMD` → `xargs -r CMD` (skip empty-input invocation).
+  - **Flag insertion (subcommand-level / positional anchor):**
+    - `ZC1257` — `docker stop X` → `docker stop -t 10 X`.
+    - `ZC1268` — `du -sh *` → `du -sh -- *` (`--` end-of-options before first non-flag).
+  - **Token-strip (whitespace-aware delete):**
+    - `ZC1238` — `docker exec -it …` → `docker exec …`.
+    - `ZC1239` — `kubectl exec -it …` → `kubectl exec …`.
+  - **IdentifierNode renames (Bash → Zsh):**
+    - `ZC1319` — `$BASH_ARGC` → `$#`.
+    - `ZC1320` — `$BASH_ARGV` → `$argv`.
+  - **Assignment-LHS rename:**
+    - `ZC1380` — `export HISTIGNORE=…` → `export HISTORY_IGNORE=…`.
+- **Auto-fix coverage (TIER 1 batch, +23):** All new fixes are deterministic, idempotent, and byte-exact outside the rewritten span.
   - **Backtick / brace-range aliases (share existing fix shape):**
     - `ZC1015` — backticks → `$(...)` (alias of `ZC1002`).
     - `ZC1276` — `seq M N` → `{M..N}` brace range (alias of `ZC1061`).

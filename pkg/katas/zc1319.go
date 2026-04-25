@@ -12,7 +12,37 @@ func init() {
 		Description: "`$BASH_ARGC` is a Bash array tracking argument counts per stack frame. " +
 			"Zsh uses `$#` for argument count and `$argv` for the argument array.",
 		Check: checkZC1319,
+		Fix:   fixZC1319,
 	})
+}
+
+// fixZC1319 rewrites the Bash `$BASH_ARGC` / `BASH_ARGC` identifier to
+// the Zsh `$#` form. Caveat: `$BASH_ARGC` is per-frame in Bash; `$#`
+// is the current-frame argument count in Zsh. The rewrite is correct
+// for the common single-value usage; multi-frame stack inspection is
+// not portable and stays the user's responsibility.
+func fixZC1319(node ast.Node, v Violation, source []byte) []FixEdit {
+	ident, ok := node.(*ast.Identifier)
+	if !ok || ident == nil {
+		return nil
+	}
+	switch ident.Value {
+	case "$BASH_ARGC":
+		return []FixEdit{{
+			Line:    v.Line,
+			Column:  v.Column,
+			Length:  len("$BASH_ARGC"),
+			Replace: "$#",
+		}}
+	case "BASH_ARGC":
+		return []FixEdit{{
+			Line:    v.Line,
+			Column:  v.Column,
+			Length:  len("BASH_ARGC"),
+			Replace: "#",
+		}}
+	}
+	return nil
 }
 
 func checkZC1319(node ast.Node) []Violation {
