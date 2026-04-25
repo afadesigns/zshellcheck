@@ -11,7 +11,7 @@ Auto-generated list of all 1000 implemented checks. Do not edit by hand — rege
 | `info` | 64 |
 | `style` | 257 |
 | **total** | **1000** |
-| **with auto-fix** | **105** |
+| **with auto-fix** | **106** |
 
 Auto-fix availability is marked per-entry below as **Auto-fix:** `yes` or `no`. Run `zshellcheck -fix path/...` to apply every available rewrite, or `-diff` to preview without writing.
 
@@ -688,7 +688,7 @@ Auto-fix availability is marked per-entry below as **Auto-fix:** `yes` or `no`. 
 - [ZC1672: Info: `chcon` writes an ephemeral SELinux label — next `restorecon` wipes it](#zc1672)
 - [ZC1673: Style: `stty -echo` around `read` — prefer Zsh `read -s`](#zc1673)
 - [ZC1674: Warn on `docker/podman run --oom-kill-disable` or `--oom-score-adj <= -500`](#zc1674)
-- [ZC1675: Avoid Bash-only `export -f` / `export -n` — use Zsh `typeset -fx` / `typeset +x`](#zc1675)
+- [ZC1675: Avoid Bash-only `export -f` / `export -n` — use Zsh `typeset -fx` / `typeset +x`](#zc1675) · auto-fix
 - [ZC1676: Warn on `helm rollback --force` — recreates in-flight resources, corrupts rolling updates](#zc1676)
 - [ZC1677: Warn on `trap 'set -x' DEBUG` — xtrace on every command leaks secrets](#zc1677)
 - [ZC1678: Error on `borg init --encryption=none` — unencrypted backup repository](#zc1678)
@@ -9076,7 +9076,7 @@ Disable by adding `ZC1674` to `disabled_katas` in `.zshellcheckrc`.
 ### ZC1675 — Avoid Bash-only `export -f` / `export -n` — use Zsh `typeset -fx` / `typeset +x`
 
 **Severity:** `info`  
-**Auto-fix:** `no`
+**Auto-fix:** `yes`
 
 `export -f FUNC` (export a function to child processes) and `export -n VAR` (strip the export flag while keeping the value) are Bash-only. Zsh's `export` ignores `-f` entirely and prints usage for `-n`, so scripts that depend on either silently break under Zsh. The Zsh equivalents are `typeset -fx FUNC` for function export (parameter-passing via `$FUNCTIONS` in a subshell) and `typeset +x VAR` to drop the export flag. Functions that must cross a subshell are usually better handled by `autoload -Uz` from an `fpath` directory than by serialisation.
 

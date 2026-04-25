@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- **Auto-fix coverage now at 106/1000 katas.** New rewrites since 1.0.15, every one deterministic and idempotent on a re-run:
+- **Auto-fix coverage now at 107/1000 katas.** New rewrites since 1.0.15, every one deterministic and idempotent on a re-run:
   - `ZC1015` backticks → `$(...)`.
   - `ZC1032` `let i=i+1` → `(( i++ ))` (and `i-1` → `i--`).
   - `ZC1034` / `ZC1271` `which` → `command -v`.
@@ -46,6 +46,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `ZC1501` `docker-compose` → `docker compose`.
   - `ZC1565` `whereis` / `locate` / `mlocate` / `plocate` → `command -v`.
   - `ZC1643` `$(cat FILE)` → `$(<FILE)` inside SimpleCommand argument strings.
+  - `ZC1675` `export -f FUNC` → `typeset -fx FUNC`, `export -n VAR` → `typeset +x VAR`.
   - `ZC1773` `xargs CMD` → `xargs -r CMD`.
   - `ZC1334` collapses `type -p`'s flag with the rename so it wins over `ZC1064`'s narrower `type` → `command -v` form.
   - `ZC1013` defers to `ZC1032` on the increment/decrement shape so the rewrite uses the C-style operator instead of the literal `(( name = name+1 ))` form.
