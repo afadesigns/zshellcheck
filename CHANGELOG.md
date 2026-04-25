@@ -8,64 +8,47 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- **Auto-fix coverage expanded to 106 katas (+39 since 1.0.15).** All new fixes are deterministic, idempotent, and byte-exact outside the rewritten span. The TIER 2 batch-2 round added 4 more span/rename rewrites:
-  - **Arithmetic idiom collapse:**
-    - `ZC1032` — `let i=i+1` → `(( i++ ))`, `let i=i-1` → `(( i-- ))`. ZC1013 yields to ZC1032 on the increment/decrement shape so the rewrite uses the C-style operator.
-  - **Sibling delegation (no new helper):**
-    - `ZC1107` — `[[ a -lt b ]]` → `(( a < b ))`. Reuses `fixZC1091`; the conflict resolver dedupes the duplicate edit produced by both katas.
-  - **Two-edit command + flag swap:**
-    - `ZC1153` — `diff -q FILE1 FILE2` → `cmp -s FILE1 FILE2`.
-  - **Span-aware substitution rewrite:**
-    - `ZC1643` — `$(cat FILE)` → `$(<FILE)` inside SimpleCommand argument strings (e.g. `echo $(cat …)`). Assignment-form `x=$(cat …)` stays detection-only because the cat substitution sits as a DollarParenExpression child rather than as an argument the detector can reach.
-- **TIER 2 batch (+12, prior round):** All new fixes are deterministic, idempotent, and byte-exact outside the rewritten span. The TIER 2 batch added 12 span-aware / multi-edit / token-strip rewrites on top of the original 23 TIER 1 candidates:
-  - **Pipeline collapse:**
-    - `ZC1146` — `cat F | sed/awk/sort/head/tail` → `tool ... F` (drops `cat F |`, appends `F` to the right side).
-    - `ZC1190` — `grep -v p1 | grep -v p2` → `grep -v -e p1 -e p2` (single-grep collapse).
-  - **Flag insertion (command-level):**
-    - `ZC1230` — `ping URL` → `ping -c 4 URL`.
-    - `ZC1255` — `curl URL` → `curl -L URL` (HTTP-redirect follow).
-    - `ZC1773` — `xargs CMD` → `xargs -r CMD` (skip empty-input invocation).
-  - **Flag insertion (subcommand-level / positional anchor):**
-    - `ZC1257` — `docker stop X` → `docker stop -t 10 X`.
-    - `ZC1268` — `du -sh *` → `du -sh -- *` (`--` end-of-options before first non-flag).
-  - **Token-strip (whitespace-aware delete):**
-    - `ZC1238` — `docker exec -it …` → `docker exec …`.
-    - `ZC1239` — `kubectl exec -it …` → `kubectl exec …`.
-  - **IdentifierNode renames (Bash → Zsh):**
-    - `ZC1319` — `$BASH_ARGC` → `$#`.
-    - `ZC1320` — `$BASH_ARGV` → `$argv`.
-  - **Assignment-LHS rename:**
-    - `ZC1380` — `export HISTIGNORE=…` → `export HISTORY_IGNORE=…`.
-- **Auto-fix coverage (TIER 1 batch, +23):** All new fixes are deterministic, idempotent, and byte-exact outside the rewritten span.
-  - **Backtick / brace-range aliases (share existing fix shape):**
-    - `ZC1015` — backticks → `$(...)` (alias of `ZC1002`).
-    - `ZC1276` — `seq M N` → `{M..N}` brace range (alias of `ZC1061`).
-  - **Single-token command-name renames:**
-    - `ZC1034` — `which` → `command -v` (ExpressionStatement-position rewrite).
-    - `ZC1271` — `which` → `command -v` (SimpleCommand-position rewrite).
-    - `ZC1191` — `clear` → `print -rn $'\e[2J\e[H'` (avoids the external process; the `-rn` form keeps the rewrite idempotent against `ZC1017`/`ZC1118`).
-    - `ZC1202` — `ifconfig` → `ip addr`.
-    - `ZC1203` — `netstat` → `ss`.
-    - `ZC1216` — `nslookup` → `host`.
-    - `ZC1501` — `docker-compose` → `docker compose` (hyphen → space subcommand).
-    - `ZC1565` — `whereis` / `locate` / `mlocate` / `plocate` → `command -v`.
-    - `ZC1155` — `which -a` → `whence -a` (name swap; `-a` flag preserved).
-  - **Single-character / two-token flag swaps:**
-    - `ZC1260` — `git branch -D` → `git branch -d`.
-    - `ZC1235` — `git push -f` → `git push --force-with-lease`.
-  - **Two-edit / span-collapsing rewrites:**
-    - `ZC1334` — `type -p` / `type -P` → `whence -p` (collapses both name and flag in one span so it wins over `ZC1064`'s narrower `type` → `command -v`).
-    - `ZC1411` — `enable -n NAME` → `disable NAME` (drops the flag, renames the verb).
-    - `ZC1219` — `wget -O- URL` / `wget -qO- URL` → `curl -fsSL URL` (single-span rewrite of name + flag).
-    - `ZC1448` — `apt install` (no `-y`) inserts ` -y` after the command name; `ZC1213` continues to handle `apt-get` so the two katas do not double-insert.
-    - `ZC1163` — `grep PAT | head -1` (or `head -n1`) → `grep -m 1 PAT` (pipeline collapse).
-  - **IdentifierNode parameter renames:**
-    - `ZC1297` — `$BASH_SOURCE` → `${(%):-%x}`.
-  - **Echo / print / printf argument-string substitutions:**
-    - `ZC1377` — `BASH_ALIASES` → `aliases` inside string args.
-    - `ZC1378` — `DIRSTACK` → `dirstack` inside string args.
-    - `ZC1383` — `TIMEFORMAT` → `TIMEFMT` inside string / export args.
-    - `ZC1394` — `$BASH` (not part of `$BASH_*`) → `$ZSH_NAME` inside string args.
+- **Auto-fix coverage now at 106/1000 katas.** New rewrites since 1.0.15, every one deterministic and idempotent on a re-run:
+  - `ZC1015` backticks → `$(...)`.
+  - `ZC1032` `let i=i+1` → `(( i++ ))` (and `i-1` → `i--`).
+  - `ZC1034` / `ZC1271` `which` → `command -v`.
+  - `ZC1107` `[[ a -lt b ]]` → `(( a < b ))`.
+  - `ZC1146` `cat F | sed/awk/sort/head/tail` → `tool ... F`.
+  - `ZC1153` `diff -q F1 F2` → `cmp -s F1 F2`.
+  - `ZC1155` `which -a` → `whence -a`.
+  - `ZC1163` `grep PAT | head -1` → `grep -m 1 PAT`.
+  - `ZC1190` `grep -v p1 | grep -v p2` → `grep -v -e p1 -e p2`.
+  - `ZC1191` `clear` → `print -rn $'\e[2J\e[H'`.
+  - `ZC1202` `ifconfig` → `ip addr`.
+  - `ZC1203` `netstat` → `ss`.
+  - `ZC1216` `nslookup` → `host`.
+  - `ZC1219` `wget -O- URL` / `wget -qO- URL` → `curl -fsSL URL`.
+  - `ZC1230` `ping URL` → `ping -c 4 URL`.
+  - `ZC1235` `git push -f` → `git push --force-with-lease`.
+  - `ZC1238` strips `-it` from `docker exec`.
+  - `ZC1239` strips `-it` from `kubectl exec`.
+  - `ZC1255` `curl URL` → `curl -L URL`.
+  - `ZC1257` `docker stop X` → `docker stop -t 10 X`.
+  - `ZC1260` `git branch -D` → `git branch -d`.
+  - `ZC1268` inserts `--` before the first non-flag arg of `du -sh`.
+  - `ZC1276` `seq M N` → `{M..N}`.
+  - `ZC1297` `$BASH_SOURCE` → `${(%):-%x}`.
+  - `ZC1319` `$BASH_ARGC` → `$#`.
+  - `ZC1320` `$BASH_ARGV` → `$argv`.
+  - `ZC1334` `type -p` / `type -P` → `whence -p`.
+  - `ZC1377` `BASH_ALIASES` → `aliases` inside echo / print / printf string args.
+  - `ZC1378` uppercase `DIRSTACK` → `dirstack` inside echo / print / printf string args.
+  - `ZC1380` `export HISTIGNORE=…` → `export HISTORY_IGNORE=…`.
+  - `ZC1383` `TIMEFORMAT` → `TIMEFMT` inside echo / print / printf string args.
+  - `ZC1394` `$BASH` → `$ZSH_NAME` inside echo / print / printf string args.
+  - `ZC1411` `enable -n NAME` → `disable NAME`.
+  - `ZC1448` inserts `-y` after `apt install` / `apt upgrade` / `apt dist-upgrade` / `apt full-upgrade`.
+  - `ZC1501` `docker-compose` → `docker compose`.
+  - `ZC1565` `whereis` / `locate` / `mlocate` / `plocate` → `command -v`.
+  - `ZC1643` `$(cat FILE)` → `$(<FILE)` inside SimpleCommand argument strings.
+  - `ZC1773` `xargs CMD` → `xargs -r CMD`.
+  - `ZC1334` collapses `type -p`'s flag with the rename so it wins over `ZC1064`'s narrower `type` → `command -v` form.
+  - `ZC1013` defers to `ZC1032` on the increment/decrement shape so the rewrite uses the C-style operator instead of the literal `(( name = name+1 ))` form.
 
 ### Changed
 - `ZC1005`'s `which` → `whence` rewrite now yields `command -v` for the bare-statement case because the new `ZC1034` fix arrives ahead in walk order. Inside backticks / `$(...)`, `whence` still wins because the parent `ExpressionStatement` is absent.
