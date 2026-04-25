@@ -1522,6 +1522,28 @@ func TestFixIntegration_ZC1381_CompCwordToCurrent(t *testing.T) {
 	}
 }
 
+func TestFixIntegration_ZC1382_ReadlineLineToBuffer(t *testing.T) {
+	src := "print $READLINE_LINE\n"
+	got := runFix(t, src)
+	if !strings.Contains(got, "$BUFFER") {
+		t.Errorf("expected $BUFFER, got %q", got)
+	}
+	if strings.Contains(got, "READLINE_LINE") {
+		t.Errorf("READLINE_LINE still present, got %q", got)
+	}
+}
+
+func TestFixIntegration_ZC1382_ReadlinePointToCursor(t *testing.T) {
+	src := "print $READLINE_POINT\n"
+	got := runFix(t, src)
+	if !strings.Contains(got, "$CURSOR") {
+		t.Errorf("expected $CURSOR, got %q", got)
+	}
+	if strings.Contains(got, "READLINE_POINT") {
+		t.Errorf("READLINE_POINT still present, got %q", got)
+	}
+}
+
 func TestFixIntegration_ZC1252_PipedCatHandledByZC1146(t *testing.T) {
 	// `cat /etc/group | head` lets ZC1146 win the overlap and collapse
 	// the pipe into `head /etc/group`. ZC1252's two-edit rewrite would

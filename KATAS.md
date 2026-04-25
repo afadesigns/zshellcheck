@@ -11,7 +11,7 @@ Auto-generated list of all 1000 implemented checks. Do not edit by hand — rege
 | `info` | 64 |
 | `style` | 257 |
 | **total** | **1000** |
-| **with auto-fix** | **121** |
+| **with auto-fix** | **122** |
 
 Auto-fix availability is marked per-entry below as **Auto-fix:** `yes` or `no`. Run `zshellcheck -fix path/...` to apply every available rewrite, or `-diff` to preview without writing.
 
@@ -395,7 +395,7 @@ Auto-fix availability is marked per-entry below as **Auto-fix:** `yes` or `no`. 
 - [ZC1379: Avoid `$PROMPT_COMMAND` — use Zsh `precmd` function](#zc1379)
 - [ZC1380: Avoid `$HISTIGNORE` — use Zsh `$HISTORY_IGNORE`](#zc1380) · auto-fix
 - [ZC1381: Avoid `$COMP_WORDS`/`$COMP_CWORD` — Zsh uses `words`/`$CURRENT`](#zc1381) · auto-fix
-- [ZC1382: Avoid `$READLINE_LINE`/`$READLINE_POINT` — Zsh ZLE uses `$BUFFER`/`$CURSOR`](#zc1382)
+- [ZC1382: Avoid `$READLINE_LINE`/`$READLINE_POINT` — Zsh ZLE uses `$BUFFER`/`$CURSOR`](#zc1382) · auto-fix
 - [ZC1383: Avoid `$TIMEFORMAT` — Zsh uses `$TIMEFMT`](#zc1383) · auto-fix
 - [ZC1384: Avoid `$EXECIGNORE` — Bash-only; Zsh uses completion-system ignore patterns](#zc1384)
 - [ZC1385: Avoid `$PS0` — Bash-only; Zsh uses `preexec` hook](#zc1385)
@@ -5560,7 +5560,7 @@ Disable by adding `ZC1381` to `disabled_katas` in `.zshellcheckrc`.
 ### ZC1382 — Avoid `$READLINE_LINE`/`$READLINE_POINT` — Zsh ZLE uses `$BUFFER`/`$CURSOR`
 
 **Severity:** `error`  
-**Auto-fix:** `no`
+**Auto-fix:** `yes`
 
 Bash readline exposes the current input line as `$READLINE_LINE` and cursor offset as `$READLINE_POINT` inside `bind -x` handlers. Zsh's Line Editor (ZLE) uses `$BUFFER` (line text) and `$CURSOR` (1-based column) inside widget functions. The Bash names are unset in Zsh.
 
