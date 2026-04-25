@@ -33,22 +33,38 @@ Sleep 800ms
 Type "zshellcheck -severity warning deploy.zsh"
 Sleep 300ms
 Enter
-Sleep 5s
+Sleep 5.5s
 
-# 2. Preview the fix (unified diff). Inline `clear;` removes the dead empty-prompt frame.
-Type "clear; zshellcheck -severity warning -diff deploy.zsh"
+# Hidden screen reset between scenes so the viewer never sees a literal `clear`.
+Hide
+Type "clear"
+Enter
+Show
+
+# 2. Preview the fix (unified diff)
+Type "zshellcheck -severity warning -diff deploy.zsh"
 Sleep 300ms
 Enter
-Sleep 5s
+Sleep 5.5s
+
+Hide
+Type "clear"
+Enter
+Show
 
 # 3. Apply the fix
-Type "clear; zshellcheck -severity warning -fix deploy.zsh"
+Type "zshellcheck -severity warning -fix deploy.zsh"
 Sleep 300ms
 Enter
-Sleep 3s
+Sleep 3.5s
 
-# 4. Re-lint — one warning remains (rm -rf guard needs human judgment)
-Type "clear; zshellcheck -severity warning deploy.zsh"
+Hide
+Type "clear"
+Enter
+Show
+
+# 4. Re-lint — remaining warnings need human judgment
+Type "zshellcheck -severity warning deploy.zsh"
 Sleep 300ms
 Enter
-Sleep 4.5s
+Sleep 5s
