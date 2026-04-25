@@ -11,7 +11,7 @@ Auto-generated list of all 1000 implemented checks. Do not edit by hand — rege
 | `info` | 64 |
 | `style` | 257 |
 | **total** | **1000** |
-| **with auto-fix** | **110** |
+| **with auto-fix** | **111** |
 
 Auto-fix availability is marked per-entry below as **Auto-fix:** `yes` or `no`. Run `zshellcheck -fix path/...` to apply every available rewrite, or `-diff` to preview without writing.
 
@@ -59,7 +59,7 @@ Auto-fix availability is marked per-entry below as **Auto-fix:** `yes` or `no`. 
 - [ZC1040: Use (N) nullglob qualifier for globs in loops](#zc1040) · auto-fix
 - [ZC1041: Do not use variables in printf format string](#zc1041)
 - [ZC1042: Use "$@" to iterate over arguments](#zc1042)
-- [ZC1043: Use `local` for variables in functions](#zc1043)
+- [ZC1043: Use `local` for variables in functions](#zc1043) · auto-fix
 - [ZC1044: Check for unchecked `cd` commands](#zc1044)
 - [ZC1045: Declare and assign separately to avoid masking return values](#zc1045)
 - [ZC1046: Avoid `eval`](#zc1046)
@@ -1528,7 +1528,7 @@ Disable by adding `ZC1042` to `disabled_katas` in `.zshellcheckrc`.
 ### ZC1043 — Use `local` for variables in functions
 
 **Severity:** `style`  
-**Auto-fix:** `no`
+**Auto-fix:** `yes`
 
 Variables defined in functions are global by default in Zsh. Use `local` to scope them to the function.
 

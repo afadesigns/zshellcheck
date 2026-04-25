@@ -1358,3 +1358,30 @@ func TestFixIntegration_ZC1016_ReadSensitive(t *testing.T) {
 		t.Errorf("expected read with a flag and the variable, got %q", got)
 	}
 }
+
+func TestFixIntegration_ZC1043_LocalForFunctionVar(t *testing.T) {
+	src := `foo() {
+  bar=42
+  echo $bar
+}
+`
+	want := `foo() {
+  local bar=42
+  echo $bar
+}
+`
+	if got := runFix(t, src); got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}
+
+func TestFixIntegration_ZC1043_AlreadyLocal(t *testing.T) {
+	src := `foo() {
+  local bar=42
+  echo $bar
+}
+`
+	if got := runFix(t, src); got != src {
+		t.Errorf("already-local input should be idempotent, got %q", got)
+	}
+}
