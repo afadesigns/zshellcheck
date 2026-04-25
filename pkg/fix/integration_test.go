@@ -1393,3 +1393,39 @@ func TestFixIntegration_ZC1637_ReadonlyToTypesetR(t *testing.T) {
 		t.Errorf("got %q, want %q", got, want)
 	}
 }
+
+func TestFixIntegration_ZC1252_CatPasswdToGetent(t *testing.T) {
+	src := "cat /etc/passwd\n"
+	want := "getent passwd\n"
+	if got := runFix(t, src); got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}
+
+func TestFixIntegration_ZC1252_CatGroupToGetent(t *testing.T) {
+	src := "cat /etc/group\n"
+	want := "getent group\n"
+	if got := runFix(t, src); got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}
+
+func TestFixIntegration_ZC1252_CatShadowToGetent(t *testing.T) {
+	src := "cat /etc/shadow\n"
+	want := "getent shadow\n"
+	if got := runFix(t, src); got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}
+
+func TestFixIntegration_ZC1252_PipedCatHandledByZC1146(t *testing.T) {
+	// `cat /etc/group | head` lets ZC1146 win the overlap and collapse
+	// the pipe into `head /etc/group`. ZC1252's two-edit rewrite would
+	// also fire on the lhs SimpleCommand, but the conflict resolver
+	// keeps the parent-pipe edit emitted first in walk order.
+	src := "cat /etc/group | head\n"
+	want := "head /etc/group\n"
+	if got := runFix(t, src); got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}
