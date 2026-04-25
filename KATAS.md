@@ -11,7 +11,7 @@ Auto-generated list of all 1000 implemented checks. Do not edit by hand — rege
 | `info` | 64 |
 | `style` | 257 |
 | **total** | **1000** |
-| **with auto-fix** | **127** |
+| **with auto-fix** | **128** |
 
 Auto-fix availability is marked per-entry below as **Auto-fix:** `yes` or `no`. Run `zshellcheck -fix path/...` to apply every available rewrite, or `-diff` to preview without writing.
 
@@ -306,7 +306,7 @@ Auto-fix availability is marked per-entry below as **Auto-fix:** `yes` or `no`. 
 - [ZC1290: Use Zsh `${(n)array}` for numeric sorting instead of `sort -n`](#zc1290)
 - [ZC1291: Use Zsh `${(O)array}` for reverse sorting instead of `sort -r`](#zc1291)
 - [ZC1292: Use Zsh `${var//old/new}` instead of `tr` for character translation](#zc1292)
-- [ZC1293: Use `\[\[ \]\]` instead of `test` command in Zsh](#zc1293)
+- [ZC1293: Use `\[\[ \]\]` instead of `test` command in Zsh](#zc1293) · auto-fix
 - [ZC1294: Use `bindkey` instead of `bind` for key bindings in Zsh](#zc1294)
 - [ZC1295: Use `vared` instead of `read -e` for interactive editing in Zsh](#zc1295)
 - [ZC1296: Avoid `shopt` in Zsh — use `setopt`/`unsetopt` instead](#zc1296)
@@ -4492,7 +4492,7 @@ Disable by adding `ZC1292` to `disabled_katas` in `.zshellcheckrc`.
 ### ZC1293 — Use `[[ ]]` instead of `test` command in Zsh
 
 **Severity:** `style`  
-**Auto-fix:** `no`
+**Auto-fix:** `yes`
 
 Zsh `[[ ]]` provides a more powerful conditional expression syntax than the `test` command. It supports pattern matching, regex, and does not require quoting of variable expansions to prevent word splitting.
 

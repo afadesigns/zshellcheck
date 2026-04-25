@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- **Auto-fix coverage now at 128/1000 katas.** New rewrites since 1.0.15, every one deterministic and idempotent on a re-run:
+- **Auto-fix coverage now at 129/1000 katas.** New rewrites since 1.0.15, every one deterministic and idempotent on a re-run:
   - `ZC1015` backticks → `$(...)`.
   - `ZC1016` inserts `-s` after `read` when the variable looks sensitive (`password`, `secret`, `token`, …).
   - `ZC1008` and `ZC1022` share ZC1013's `let NAME=EXPR` → `(( NAME = EXPR ))` rewrite.
@@ -42,6 +42,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `ZC1268` inserts `--` before the first non-flag arg of `du -sh`.
   - `ZC1273` `grep PAT FILE /dev/null` → `grep -q PAT FILE` (insert `-q`, drop `/dev/null`).
   - `ZC1276` `seq M N` → `{M..N}`.
+  - `ZC1293` `test EXPR…` → `[[ EXPR… ]]`.
   - `ZC1279` `readlink -f PATH` → `realpath PATH` when `-f` is the first argument.
   - `ZC1297` `$BASH_SOURCE` → `${(%):-%x}`.
   - `ZC1319` `$BASH_ARGC` → `$#`.
