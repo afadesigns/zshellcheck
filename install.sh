@@ -171,7 +171,7 @@ if [ "$IN_SOURCE_REPO" = true ] && command -v go &> /dev/null; then
     fi
 
     echo -e "Go found in source repository. Building binary (Version: ${BLUE}${VERSION}${NC})..."
-    if go build -ldflags "-X github.com/afadesigns/zshellcheck/pkg/version.Version=${VERSION}" -o zshellcheck cmd/zshellcheck/main.go; then
+    if go build -ldflags "-X github.com/afadesigns/zshellcheck/pkg/version.Version=${VERSION}" -o zshellcheck ./cmd/zshellcheck; then
         BUILD_SUCCESS=true
         echo -e "${GREEN}Build successful.${NC}"
     else
