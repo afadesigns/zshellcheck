@@ -11,7 +11,7 @@ Auto-generated list of all 1000 implemented checks. Do not edit by hand — rege
 | `info` | 64 |
 | `style` | 257 |
 | **total** | **1000** |
-| **with auto-fix** | **119** |
+| **with auto-fix** | **120** |
 
 Auto-fix availability is marked per-entry below as **Auto-fix:** `yes` or `no`. Run `zshellcheck -fix path/...` to apply every available rewrite, or `-diff` to preview without writing.
 
@@ -387,7 +387,7 @@ Auto-fix availability is marked per-entry below as **Auto-fix:** `yes` or `no`. 
 - [ZC1371: Use Zsh array `:t` modifier instead of `basename -a` for bulk path stripping](#zc1371)
 - [ZC1372: Use Zsh `zmv` autoload function instead of `rename`/`rename.ul`](#zc1372)
 - [ZC1373: Use Zsh `${(0)var}` flag for NUL-split parsing instead of `env -0`](#zc1373)
-- [ZC1374: Avoid `$FUNCNEST` — Zsh uses `$FUNCNEST` as a limit, not a depth indicator](#zc1374)
+- [ZC1374: Avoid `$FUNCNEST` — Zsh uses `$FUNCNEST` as a limit, not a depth indicator](#zc1374) · auto-fix
 - [ZC1375: Use `\[\[ -t fd \]\]` instead of `tty -s` for tty-check](#zc1375)
 - [ZC1376: Avoid `BASH_XTRACEFD` — use Zsh `exec {fd}>file` + `setopt XTRACE`](#zc1376)
 - [ZC1377: Avoid `$BASH_ALIASES` — use Zsh `$aliases` associative array](#zc1377) · auto-fix
@@ -5464,7 +5464,7 @@ Disable by adding `ZC1373` to `disabled_katas` in `.zshellcheckrc`.
 ### ZC1374 — Avoid `$FUNCNEST` — Zsh uses `$FUNCNEST` as a limit, not a depth indicator
 
 **Severity:** `warning`  
-**Auto-fix:** `no`
+**Auto-fix:** `yes`
 
 Bash's `$FUNCNEST` is both a writable limit and (implicitly) the current depth-query vehicle. Zsh's `$FUNCNEST` is only the limit — to read the current depth use `${#funcstack}`. Reading `$FUNCNEST` expecting depth returns the limit, not the current depth.
 

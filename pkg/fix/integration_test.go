@@ -1489,6 +1489,17 @@ func TestFixIntegration_ZC1215_CatLsbReleaseToSource(t *testing.T) {
 	}
 }
 
+func TestFixIntegration_ZC1374_FuncnestToFuncstack(t *testing.T) {
+	src := "print $FUNCNEST\n"
+	got := runFix(t, src)
+	if !strings.Contains(got, "${#funcstack}") {
+		t.Errorf("expected fix to insert ${#funcstack}, got %q", got)
+	}
+	if strings.Contains(got, "$FUNCNEST") {
+		t.Errorf("expected fix to remove $FUNCNEST, got %q", got)
+	}
+}
+
 func TestFixIntegration_ZC1252_PipedCatHandledByZC1146(t *testing.T) {
 	// `cat /etc/group | head` lets ZC1146 win the overlap and collapse
 	// the pipe into `head /etc/group`. ZC1252's two-edit rewrite would
