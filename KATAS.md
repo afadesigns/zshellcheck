@@ -11,7 +11,7 @@ Auto-generated list of all 1000 implemented checks. Do not edit by hand — rege
 | `info` | 64 |
 | `style` | 257 |
 | **total** | **1000** |
-| **with auto-fix** | **114** |
+| **with auto-fix** | **115** |
 
 Auto-fix availability is marked per-entry below as **Auto-fix:** `yes` or `no`. Run `zshellcheck -fix path/...` to apply every available rewrite, or `-diff` to preview without writing.
 
@@ -426,7 +426,7 @@ Auto-fix availability is marked per-entry below as **Auto-fix:** `yes` or `no`. 
 - [ZC1410: Avoid `compopt` — Bash programmable-completion modifier, not in Zsh](#zc1410)
 - [ZC1411: Use Zsh `disable` instead of Bash `enable -n` to hide builtins](#zc1411) · auto-fix
 - [ZC1412: Avoid `$COMPREPLY` — Bash completion output, use Zsh `compadd`](#zc1412)
-- [ZC1413: Use Zsh `whence -p cmd` instead of `hash -t cmd` for resolved path](#zc1413)
+- [ZC1413: Use Zsh `whence -p cmd` instead of `hash -t cmd` for resolved path](#zc1413) · auto-fix
 - [ZC1414: Beware `hash -d` — Bash deletes from hash table, Zsh defines named directory](#zc1414)
 - [ZC1415: Prefer Zsh `TRAPZERR` function over `trap 'cmd' ERR`](#zc1415)
 - [ZC1416: Prefer Zsh `preexec` hook over `trap 'cmd' DEBUG`](#zc1416)
@@ -5932,7 +5932,7 @@ Disable by adding `ZC1412` to `disabled_katas` in `.zshellcheckrc`.
 ### ZC1413 — Use Zsh `whence -p cmd` instead of `hash -t cmd` for resolved path
 
 **Severity:** `style`  
-**Auto-fix:** `no`
+**Auto-fix:** `yes`
 
 Bash's `hash -t cmd` prints the hashed path for `cmd` (or fails if not hashed). Zsh's `whence -p cmd` prints the PATH-resolved absolute path, whether hashed or not — more reliable and the native Zsh idiom.
 

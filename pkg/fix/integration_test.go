@@ -1435,6 +1435,21 @@ func TestFixIntegration_ZC1172_AlreadyDashCapA(t *testing.T) {
 	}
 }
 
+func TestFixIntegration_ZC1413_HashTToWhenceP(t *testing.T) {
+	src := "hash -t git\n"
+	want := "whence -p git\n"
+	if got := runFix(t, src); got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}
+
+func TestFixIntegration_ZC1413_AlreadyWhenceP(t *testing.T) {
+	src := "whence -p git\n"
+	if got := runFix(t, src); got != src {
+		t.Errorf("already-fixed input should be idempotent, got %q", got)
+	}
+}
+
 func TestFixIntegration_ZC1252_PipedCatHandledByZC1146(t *testing.T) {
 	// `cat /etc/group | head` lets ZC1146 win the overlap and collapse
 	// the pipe into `head /etc/group`. ZC1252's two-edit rewrite would
