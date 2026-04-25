@@ -1544,6 +1544,17 @@ func TestFixIntegration_ZC1382_ReadlinePointToCursor(t *testing.T) {
 	}
 }
 
+func TestFixIntegration_ZC1404_BashCmdsToCommands(t *testing.T) {
+	src := "print $BASH_CMDS\n"
+	got := runFix(t, src)
+	if !strings.Contains(got, "$commands") {
+		t.Errorf("expected $commands, got %q", got)
+	}
+	if strings.Contains(got, "BASH_CMDS") {
+		t.Errorf("BASH_CMDS still present, got %q", got)
+	}
+}
+
 func TestFixIntegration_ZC1252_PipedCatHandledByZC1146(t *testing.T) {
 	// `cat /etc/group | head` lets ZC1146 win the overlap and collapse
 	// the pipe into `head /etc/group`. ZC1252's two-edit rewrite would
