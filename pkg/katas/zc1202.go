@@ -12,7 +12,29 @@ func init() {
 		Description: "`ifconfig` is deprecated on modern Linux. " +
 			"Use `ip addr`, `ip link`, or `ip route` from iproute2 for network operations.",
 		Check: checkZC1202,
+		Fix:   fixZC1202,
 	})
+}
+
+// fixZC1202 rewrites `ifconfig` to `ip addr` at the command name
+// position. `ip addr` is the closest single-token-equivalent iproute2
+// invocation; arguments stay untouched and operators/flags must be
+// adjusted manually for non-trivial cases.
+func fixZC1202(node ast.Node, v Violation, _ []byte) []FixEdit {
+	cmd, ok := node.(*ast.SimpleCommand)
+	if !ok {
+		return nil
+	}
+	ident, ok := cmd.Name.(*ast.Identifier)
+	if !ok || ident.Value != "ifconfig" {
+		return nil
+	}
+	return []FixEdit{{
+		Line:    v.Line,
+		Column:  v.Column,
+		Length:  len("ifconfig"),
+		Replace: "ip addr",
+	}}
 }
 
 func checkZC1202(node ast.Node) []Violation {

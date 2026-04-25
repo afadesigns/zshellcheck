@@ -11,7 +11,7 @@ Auto-generated list of all 1000 implemented checks. Do not edit by hand — rege
 | `info` | 64 |
 | `style` | 257 |
 | **total** | **1000** |
-| **with auto-fix** | **67** |
+| **with auto-fix** | **90** |
 
 Auto-fix availability is marked per-entry below as **Auto-fix:** `yes` or `no`. Run `zshellcheck -fix path/...` to apply every available rewrite, or `-diff` to preview without writing.
 
@@ -31,7 +31,7 @@ Auto-fix availability is marked per-entry below as **Auto-fix:** `yes` or `no`. 
 - [ZC1012: Use `read -r` to prevent backslash escaping](#zc1012) · auto-fix
 - [ZC1013: Use `((...))` for arithmetic operations instead of `let`](#zc1013) · auto-fix
 - [ZC1014: Use `git switch` or `git restore` instead of `git checkout`](#zc1014)
-- [ZC1015: Use `$(...)` for command substitution instead of backticks](#zc1015)
+- [ZC1015: Use `$(...)` for command substitution instead of backticks](#zc1015) · auto-fix
 - [ZC1016: Use `read -s` when reading sensitive information](#zc1016)
 - [ZC1017: Use `print -r` to print strings literally](#zc1017) · auto-fix
 - [ZC1018: Superseded by ZC1009 — retired duplicate](#zc1018)
@@ -50,7 +50,7 @@ Auto-fix availability is marked per-entry below as **Auto-fix:** `yes` or `no`. 
 - [ZC1031: Use `#!/usr/bin/env zsh` for portability](#zc1031) · auto-fix
 - [ZC1032: Use `((...))` for C-style incrementing](#zc1032)
 - [ZC1033: Superseded by ZC1022 — retired duplicate `let` detector](#zc1033)
-- [ZC1034: Use `command -v` instead of `which`](#zc1034)
+- [ZC1034: Use `command -v` instead of `which`](#zc1034) · auto-fix
 - [ZC1035: Superseded by ZC1022 — retired duplicate `let` detector](#zc1035)
 - [ZC1036: Prefer `\[\[ ... \]\]` over `test` command](#zc1036)
 - [ZC1037: Use 'print -r --' for variable expansion](#zc1037)
@@ -168,7 +168,7 @@ Auto-fix availability is marked per-entry below as **Auto-fix:** `yes` or `no`. 
 - [ZC1152: Use Zsh PCRE module instead of `grep -P`](#zc1152)
 - [ZC1153: Use `cmp -s` instead of `diff` for equality check](#zc1153)
 - [ZC1154: Use `find -exec {} +` instead of `find -exec {} \;`](#zc1154)
-- [ZC1155: Use `whence -a` instead of `which -a`](#zc1155)
+- [ZC1155: Use `whence -a` instead of `which -a`](#zc1155) · auto-fix
 - [ZC1156: Avoid `ln` without `-s` for symlinks](#zc1156)
 - [ZC1157: Avoid `strings` command — use Zsh `${(ps:\0:)var}`](#zc1157)
 - [ZC1158: Avoid `chown -R` without `--no-dereference`](#zc1158)
@@ -176,7 +176,7 @@ Auto-fix availability is marked per-entry below as **Auto-fix:** `yes` or `no`. 
 - [ZC1160: Prefer `curl` over `wget` for portability](#zc1160)
 - [ZC1161: Avoid `openssl` for simple hashing — use Zsh modules](#zc1161)
 - [ZC1162: Use `cp -a` instead of `cp -r` to preserve attributes](#zc1162) · auto-fix
-- [ZC1163: Use `grep -m 1` instead of `grep \| head -1`](#zc1163)
+- [ZC1163: Use `grep -m 1` instead of `grep \| head -1`](#zc1163) · auto-fix
 - [ZC1164: Avoid `sed -n 'Np'` — use Zsh array subscript](#zc1164)
 - [ZC1165: Use Zsh parameter expansion for simple `awk` field extraction](#zc1165)
 - [ZC1166: Avoid `grep -i` for case-insensitive match — use `(#i)` glob flag](#zc1166)
@@ -204,7 +204,7 @@ Auto-fix availability is marked per-entry below as **Auto-fix:** `yes` or `no`. 
 - [ZC1188: Use Zsh `path+=()` instead of `export PATH=$PATH:dir`](#zc1188)
 - [ZC1189: Avoid `source /dev/stdin` — use direct evaluation](#zc1189)
 - [ZC1190: Combine chained `grep -v` into single invocation](#zc1190)
-- [ZC1191: Avoid `clear` command — use ANSI escape sequences](#zc1191)
+- [ZC1191: Avoid `clear` command — use ANSI escape sequences](#zc1191) · auto-fix
 - [ZC1192: Avoid `sleep 0` — it is a no-op external process](#zc1192) · auto-fix
 - [ZC1193: Avoid `rm -i` in non-interactive scripts](#zc1193)
 - [ZC1194: Avoid `sed` with multiple `-e` — use a single script](#zc1194)
@@ -215,8 +215,8 @@ Auto-fix availability is marked per-entry below as **Auto-fix:** `yes` or `no`. 
 - [ZC1199: Avoid `telnet` in scripts — use `curl` or `zsh/net/tcp`](#zc1199)
 - [ZC1200: Avoid `ftp` — use `sftp` or `curl` for secure transfers](#zc1200)
 - [ZC1201: Avoid `rsh`/`rlogin`/`rcp` — use `ssh`/`scp`](#zc1201)
-- [ZC1202: Avoid `ifconfig` — use `ip` for network configuration](#zc1202)
-- [ZC1203: Avoid `netstat` — use `ss` for socket statistics](#zc1203)
+- [ZC1202: Avoid `ifconfig` — use `ip` for network configuration](#zc1202) · auto-fix
+- [ZC1203: Avoid `netstat` — use `ss` for socket statistics](#zc1203) · auto-fix
 - [ZC1204: Avoid `route` — use `ip route` for routing](#zc1204)
 - [ZC1205: Avoid `arp` — use `ip neigh` for neighbor tables](#zc1205)
 - [ZC1206: Avoid `crontab -e` in scripts — use `crontab file`](#zc1206)
@@ -229,10 +229,10 @@ Auto-fix availability is marked per-entry below as **Auto-fix:** `yes` or `no`. 
 - [ZC1213: Use `apt-get -y` in scripts for non-interactive installs](#zc1213) · auto-fix
 - [ZC1214: Avoid `su` in scripts — use `sudo -u` for user switching](#zc1214)
 - [ZC1215: Source `/etc/os-release` instead of parsing with `cat`/`grep`](#zc1215)
-- [ZC1216: Avoid `nslookup` — use `dig` or `host` for DNS queries](#zc1216)
+- [ZC1216: Avoid `nslookup` — use `dig` or `host` for DNS queries](#zc1216) · auto-fix
 - [ZC1217: Avoid `service` command — use `systemctl` on systemd](#zc1217)
 - [ZC1218: Avoid `useradd` without `--shell /sbin/nologin` for service accounts](#zc1218)
-- [ZC1219: Use `curl -fsSL` instead of `wget -O -` for piped downloads](#zc1219)
+- [ZC1219: Use `curl -fsSL` instead of `wget -O -` for piped downloads](#zc1219) · auto-fix
 - [ZC1220: Use `chown :group` instead of `chgrp` for group changes](#zc1220)
 - [ZC1221: Avoid `fdisk` in scripts — use `parted` or `sfdisk`](#zc1221)
 - [ZC1222: Avoid `lsof -i` for port checks — use `ss -tlnp`](#zc1222)
@@ -248,7 +248,7 @@ Auto-fix availability is marked per-entry below as **Auto-fix:** `yes` or `no`. 
 - [ZC1232: Avoid bare `pip install` — use `--user` or virtualenv](#zc1232)
 - [ZC1233: Avoid `npm install -g` — use `npx` for one-off tools](#zc1233)
 - [ZC1234: Use `docker run --rm` to auto-remove containers](#zc1234) · auto-fix
-- [ZC1235: Use `git push --force-with-lease` instead of `--force`](#zc1235)
+- [ZC1235: Use `git push --force-with-lease` instead of `--force`](#zc1235) · auto-fix
 - [ZC1236: Avoid `git reset --hard` — irreversible data loss risk](#zc1236)
 - [ZC1237: Use `git clean -n` before `git clean -fd`](#zc1237)
 - [ZC1238: Avoid `docker exec -it` in scripts — drop `-it` for non-interactive](#zc1238)
@@ -273,7 +273,7 @@ Auto-fix availability is marked per-entry below as **Auto-fix:** `yes` or `no`. 
 - [ZC1257: Use `docker stop -t` to set graceful shutdown timeout](#zc1257)
 - [ZC1258: Consider `rsync --delete` for directory sync](#zc1258)
 - [ZC1259: Avoid `docker pull` without explicit tag — pin image versions](#zc1259)
-- [ZC1260: Use `git branch -d` instead of `-D` for safe deletion](#zc1260)
+- [ZC1260: Use `git branch -d` instead of `-D` for safe deletion](#zc1260) · auto-fix
 - [ZC1261: Avoid piping `base64 -d` output to shell execution](#zc1261)
 - [ZC1262: Avoid `chmod -R 777` — recursive world-writable is critical](#zc1262)
 - [ZC1263: Use `apt-get` instead of `apt` in scripts](#zc1263) · auto-fix
@@ -284,12 +284,12 @@ Auto-fix availability is marked per-entry below as **Auto-fix:** `yes` or `no`. 
 - [ZC1268: Use `du -sh --` to handle filenames starting with dash](#zc1268)
 - [ZC1269: Use `pgrep` instead of `ps aux \| grep` for process search](#zc1269)
 - [ZC1270: Use `mktemp` instead of hardcoded `/tmp` paths](#zc1270)
-- [ZC1271: Use `command -v` instead of `which` for command existence checks](#zc1271)
+- [ZC1271: Use `command -v` instead of `which` for command existence checks](#zc1271) · auto-fix
 - [ZC1272: Use `install -m` instead of separate `cp` and `chmod`](#zc1272)
 - [ZC1273: Use `grep -q` instead of redirecting grep output to `/dev/null`](#zc1273)
 - [ZC1274: Use Zsh `${var:t}` instead of `basename`](#zc1274)
 - [ZC1275: Use Zsh `${var:h}` instead of `dirname`](#zc1275)
-- [ZC1276: Use Zsh `{start..end}` instead of `seq`](#zc1276)
+- [ZC1276: Use Zsh `{start..end}` instead of `seq`](#zc1276) · auto-fix
 - [ZC1277: Superseded by ZC1108 — retired duplicate](#zc1277)
 - [ZC1278: Superseded by ZC1009 — retired duplicate](#zc1278)
 - [ZC1279: Use `realpath` instead of `readlink -f` for canonical paths](#zc1279)
@@ -310,7 +310,7 @@ Auto-fix availability is marked per-entry below as **Auto-fix:** `yes` or `no`. 
 - [ZC1294: Use `bindkey` instead of `bind` for key bindings in Zsh](#zc1294)
 - [ZC1295: Use `vared` instead of `read -e` for interactive editing in Zsh](#zc1295)
 - [ZC1296: Avoid `shopt` in Zsh — use `setopt`/`unsetopt` instead](#zc1296)
-- [ZC1297: Avoid `$BASH_SOURCE` — use `$0` or `${(%):-%x}` in Zsh](#zc1297)
+- [ZC1297: Avoid `$BASH_SOURCE` — use `$0` or `${(%):-%x}` in Zsh](#zc1297) · auto-fix
 - [ZC1298: Avoid `$FUNCNAME` — use `$funcstack` in Zsh](#zc1298) · auto-fix
 - [ZC1299: Avoid `$BASH_LINENO` — use `$funcfiletrace` in Zsh](#zc1299)
 - [ZC1300: Avoid `$BASH_VERSINFO` — use `$ZSH_VERSION` in Zsh](#zc1300) · auto-fix
@@ -347,7 +347,7 @@ Auto-fix availability is marked per-entry below as **Auto-fix:** `yes` or `no`. 
 - [ZC1331: Avoid `$BASH_REMATCH` — use `$match` array in Zsh](#zc1331) · auto-fix
 - [ZC1332: Avoid `$GLOBIGNORE` — use `setopt EXTENDED_GLOB` in Zsh](#zc1332)
 - [ZC1333: Avoid `$TIMEFORMAT` — use `$TIMEFMT` in Zsh](#zc1333) · auto-fix
-- [ZC1334: Avoid `type -p` — use `whence -p` in Zsh](#zc1334)
+- [ZC1334: Avoid `type -p` — use `whence -p` in Zsh](#zc1334) · auto-fix
 - [ZC1335: Use Zsh array reversal instead of `tac` for in-memory data](#zc1335)
 - [ZC1336: Avoid `printenv` — use `typeset -x` or `export` in Zsh](#zc1336)
 - [ZC1337: Avoid `fold` command — use Zsh `print -l` with `$COLUMNS`](#zc1337)
@@ -390,13 +390,13 @@ Auto-fix availability is marked per-entry below as **Auto-fix:** `yes` or `no`. 
 - [ZC1374: Avoid `$FUNCNEST` — Zsh uses `$FUNCNEST` as a limit, not a depth indicator](#zc1374)
 - [ZC1375: Use `\[\[ -t fd \]\]` instead of `tty -s` for tty-check](#zc1375)
 - [ZC1376: Avoid `BASH_XTRACEFD` — use Zsh `exec {fd}>file` + `setopt XTRACE`](#zc1376)
-- [ZC1377: Avoid `$BASH_ALIASES` — use Zsh `$aliases` associative array](#zc1377)
-- [ZC1378: Avoid uppercase `$DIRSTACK` — Zsh uses lowercase `$dirstack`](#zc1378)
+- [ZC1377: Avoid `$BASH_ALIASES` — use Zsh `$aliases` associative array](#zc1377) · auto-fix
+- [ZC1378: Avoid uppercase `$DIRSTACK` — Zsh uses lowercase `$dirstack`](#zc1378) · auto-fix
 - [ZC1379: Avoid `$PROMPT_COMMAND` — use Zsh `precmd` function](#zc1379)
 - [ZC1380: Avoid `$HISTIGNORE` — use Zsh `$HISTORY_IGNORE`](#zc1380)
 - [ZC1381: Avoid `$COMP_WORDS`/`$COMP_CWORD` — Zsh uses `words`/`$CURRENT`](#zc1381)
 - [ZC1382: Avoid `$READLINE_LINE`/`$READLINE_POINT` — Zsh ZLE uses `$BUFFER`/`$CURSOR`](#zc1382)
-- [ZC1383: Avoid `$TIMEFORMAT` — Zsh uses `$TIMEFMT`](#zc1383)
+- [ZC1383: Avoid `$TIMEFORMAT` — Zsh uses `$TIMEFMT`](#zc1383) · auto-fix
 - [ZC1384: Avoid `$EXECIGNORE` — Bash-only; Zsh uses completion-system ignore patterns](#zc1384)
 - [ZC1385: Avoid `$PS0` — Bash-only; Zsh uses `preexec` hook](#zc1385)
 - [ZC1386: Avoid `$FIGNORE` — Bash-only; Zsh uses compsys tag patterns](#zc1386)
@@ -407,7 +407,7 @@ Auto-fix availability is marked per-entry below as **Auto-fix:** `yes` or `no`. 
 - [ZC1391: Avoid `\[\[ -v VAR \]\]` for Bash set-check — use Zsh `(( ${+VAR} ))`](#zc1391)
 - [ZC1392: Avoid `$CHILD_MAX` — Bash-only; Zsh uses `limit` / `ulimit -u`](#zc1392)
 - [ZC1393: Avoid `$SRANDOM` — Bash 5.1+ only, read `/dev/urandom` in Zsh](#zc1393)
-- [ZC1394: Avoid `$BASH` — Zsh uses `$ZSH_NAME` for the interpreter name](#zc1394)
+- [ZC1394: Avoid `$BASH` — Zsh uses `$ZSH_NAME` for the interpreter name](#zc1394) · auto-fix
 - [ZC1395: Avoid `wait -n` — Bash 4.3+ only; Zsh `wait` on job IDs](#zc1395)
 - [ZC1396: Avoid `unset -n` — Bash nameref semantics not in Zsh](#zc1396)
 - [ZC1397: Avoid `$COMP_TYPE`/`$COMP_KEY` — Bash completion globals, not in Zsh](#zc1397)
@@ -424,7 +424,7 @@ Auto-fix availability is marked per-entry below as **Auto-fix:** `yes` or `no`. 
 - [ZC1408: Avoid `$BASH_FUNC_...%%` — Bash-specific exported-function envvar](#zc1408)
 - [ZC1409: Avoid `\[ -N file \]` / `test -N file` — Bash-only, use Zsh `zstat` for mtime comparison](#zc1409)
 - [ZC1410: Avoid `compopt` — Bash programmable-completion modifier, not in Zsh](#zc1410)
-- [ZC1411: Use Zsh `disable` instead of Bash `enable -n` to hide builtins](#zc1411)
+- [ZC1411: Use Zsh `disable` instead of Bash `enable -n` to hide builtins](#zc1411) · auto-fix
 - [ZC1412: Avoid `$COMPREPLY` — Bash completion output, use Zsh `compadd`](#zc1412)
 - [ZC1413: Use Zsh `whence -p cmd` instead of `hash -t cmd` for resolved path](#zc1413)
 - [ZC1414: Beware `hash -d` — Bash deletes from hash table, Zsh defines named directory](#zc1414)
@@ -461,7 +461,7 @@ Auto-fix availability is marked per-entry below as **Auto-fix:** `yes` or `no`. 
 - [ZC1445: Dangerous: `dropdb` / `mysqladmin drop` — deletes a database](#zc1445)
 - [ZC1446: Dangerous: `aws s3 rm --recursive` / `s3 rb --force` — bulk S3 deletion](#zc1446)
 - [ZC1447: Avoid deprecated `ifconfig` / `netstat` — prefer `ip` / `ss`](#zc1447)
-- [ZC1448: `apt-get install` / `apt install` without `-y` hangs in non-interactive scripts](#zc1448)
+- [ZC1448: `apt-get install` / `apt install` without `-y` hangs in non-interactive scripts](#zc1448) · auto-fix
 - [ZC1449: `dnf`/`yum` install without `-y` hangs in non-interactive scripts](#zc1449)
 - [ZC1450: `pacman -S` / `zypper install` without non-interactive flag hangs in scripts](#zc1450)
 - [ZC1451: Avoid `pip install` without `--user` or virtualenv](#zc1451)
@@ -514,7 +514,7 @@ Auto-fix availability is marked per-entry below as **Auto-fix:** `yes` or `no`. 
 - [ZC1498: Warn on `mount -o remount,rw /` — makes read-only root filesystem writable](#zc1498)
 - [ZC1499: Style: `docker pull <image>` / `:latest` — unpinned image tag](#zc1499)
 - [ZC1500: Warn on `systemctl edit <unit>` in scripts — requires interactive editor](#zc1500)
-- [ZC1501: Style: `docker-compose` (hyphen) — use `docker compose` (space, built-in plugin)](#zc1501)
+- [ZC1501: Style: `docker-compose` (hyphen) — use `docker compose` (space, built-in plugin)](#zc1501) · auto-fix
 - [ZC1502: Warn on `grep "$var" file` without `--` — flag injection when `$var` starts with `-`](#zc1502)
 - [ZC1503: Error on `groupadd -g 0` / `groupmod -g 0` — creates duplicate root group](#zc1503)
 - [ZC1504: Warn on `git push --mirror` — overwrites every remote ref](#zc1504)
@@ -578,7 +578,7 @@ Auto-fix availability is marked per-entry below as **Auto-fix:** `yes` or `no`. 
 - [ZC1562: Warn on `env -u PATH` / `-u LD_LIBRARY_PATH` — clears security-relevant env](#zc1562)
 - [ZC1563: Warn on `swapoff -a` — disables swap (memory pressure, potential OOM)](#zc1563)
 - [ZC1564: Warn on `date -s` / `timedatectl set-time` — manual clock change breaks TLS / cron](#zc1564)
-- [ZC1565: Style: use `command -v` instead of `whereis` / `locate` for command existence](#zc1565)
+- [ZC1565: Style: use `command -v` instead of `whereis` / `locate` for command existence](#zc1565) · auto-fix
 - [ZC1566: Error on `gem install -P NoSecurity\|LowSecurity` / `--trust-policy NoSecurity`](#zc1566)
 - [ZC1567: Warn on `python -m http.server` without `--bind 127.0.0.1` — serves to all interfaces](#zc1567)
 - [ZC1568: Error on `useradd -o` / `usermod -o` — allows non-unique UID (alias user)](#zc1568)
@@ -1192,7 +1192,7 @@ Disable by adding `ZC1014` to `disabled_katas` in `.zshellcheckrc`.
 ### ZC1015 — Use `$(...)` for command substitution instead of backticks
 
 **Severity:** `style`  
-**Auto-fix:** `no`
+**Auto-fix:** `yes`
 
 The `$(...)` syntax is the modern, recommended way to perform command substitution. It is more readable and can be nested easily, unlike backticks.
 
@@ -1420,7 +1420,7 @@ Disable by adding `ZC1033` to `disabled_katas` in `.zshellcheckrc`.
 ### ZC1034 — Use `command -v` instead of `which`
 
 **Severity:** `style`  
-**Auto-fix:** `no`
+**Auto-fix:** `yes`
 
 `which` is an external command and may not be available or consistent across all systems. `command -v` is a POSIX standard and a shell builtin, making it more portable and reliable for checking if a command exists.
 
@@ -2836,7 +2836,7 @@ Disable by adding `ZC1154` to `disabled_katas` in `.zshellcheckrc`.
 ### ZC1155 — Use `whence -a` instead of `which -a`
 
 **Severity:** `info`  
-**Auto-fix:** `no`
+**Auto-fix:** `yes`
 
 `which -a` may be an external command on some systems. Zsh builtin `whence -a` reliably lists all command locations.
 
@@ -2932,7 +2932,7 @@ Disable by adding `ZC1162` to `disabled_katas` in `.zshellcheckrc`.
 ### ZC1163 — Use `grep -m 1` instead of `grep | head -1`
 
 **Severity:** `style`  
-**Auto-fix:** `no`
+**Auto-fix:** `yes`
 
 `grep pattern | head -1` spawns two processes when `grep -m 1` does the same. The `-m` flag stops after the first match, avoiding the pipeline.
 
@@ -3268,7 +3268,7 @@ Disable by adding `ZC1190` to `disabled_katas` in `.zshellcheckrc`.
 ### ZC1191 — Avoid `clear` command — use ANSI escape sequences
 
 **Severity:** `style`  
-**Auto-fix:** `no`
+**Auto-fix:** `yes`
 
 `clear` spawns an external process for screen clearing. Use `print -n '\e[2J\e[H'` for faster terminal clearing.
 
@@ -3400,7 +3400,7 @@ Disable by adding `ZC1201` to `disabled_katas` in `.zshellcheckrc`.
 ### ZC1202 — Avoid `ifconfig` — use `ip` for network configuration
 
 **Severity:** `info`  
-**Auto-fix:** `no`
+**Auto-fix:** `yes`
 
 `ifconfig` is deprecated on modern Linux. Use `ip addr`, `ip link`, or `ip route` from iproute2 for network operations.
 
@@ -3412,7 +3412,7 @@ Disable by adding `ZC1202` to `disabled_katas` in `.zshellcheckrc`.
 ### ZC1203 — Avoid `netstat` — use `ss` for socket statistics
 
 **Severity:** `info`  
-**Auto-fix:** `no`
+**Auto-fix:** `yes`
 
 `netstat` is deprecated on modern Linux in favor of `ss` from iproute2. `ss` is faster and provides more detailed socket information.
 
@@ -3568,7 +3568,7 @@ Disable by adding `ZC1215` to `disabled_katas` in `.zshellcheckrc`.
 ### ZC1216 — Avoid `nslookup` — use `dig` or `host` for DNS queries
 
 **Severity:** `info`  
-**Auto-fix:** `no`
+**Auto-fix:** `yes`
 
 `nslookup` is deprecated in many distributions. `dig` provides more detailed output and `host` is simpler for basic lookups.
 
@@ -3604,7 +3604,7 @@ Disable by adding `ZC1218` to `disabled_katas` in `.zshellcheckrc`.
 ### ZC1219 — Use `curl -fsSL` instead of `wget -O -` for piped downloads
 
 **Severity:** `style`  
-**Auto-fix:** `no`
+**Auto-fix:** `yes`
 
 `wget -O -` outputs to stdout but lacks `curl`'s error handling. `curl -fsSL` fails on HTTP errors, is silent, follows redirects, and is more portable.
 
@@ -3796,7 +3796,7 @@ Disable by adding `ZC1234` to `disabled_katas` in `.zshellcheckrc`.
 ### ZC1235 — Use `git push --force-with-lease` instead of `--force`
 
 **Severity:** `warning`  
-**Auto-fix:** `no`
+**Auto-fix:** `yes`
 
 `git push --force` overwrites remote history unconditionally. `--force-with-lease` is safer as it fails if the remote has changed.
 
@@ -4096,7 +4096,7 @@ Disable by adding `ZC1259` to `disabled_katas` in `.zshellcheckrc`.
 ### ZC1260 — Use `git branch -d` instead of `-D` for safe deletion
 
 **Severity:** `warning`  
-**Auto-fix:** `no`
+**Auto-fix:** `yes`
 
 `git branch -D` force-deletes branches even if unmerged. Use `-d` which refuses to delete unmerged branches, preventing data loss.
 
@@ -4228,7 +4228,7 @@ Disable by adding `ZC1270` to `disabled_katas` in `.zshellcheckrc`.
 ### ZC1271 — Use `command -v` instead of `which` for command existence checks
 
 **Severity:** `style`  
-**Auto-fix:** `no`
+**Auto-fix:** `yes`
 
 `which` is not POSIX-standard and behaves inconsistently across systems. Use `command -v` which is portable and built into Zsh.
 
@@ -4288,7 +4288,7 @@ Disable by adding `ZC1275` to `disabled_katas` in `.zshellcheckrc`.
 ### ZC1276 — Use Zsh `{start..end}` instead of `seq`
 
 **Severity:** `style`  
-**Auto-fix:** `no`
+**Auto-fix:** `yes`
 
 Zsh natively supports `{start..end}` brace expansion for generating number sequences, avoiding the overhead of forking the external `seq` command.
 
@@ -4540,7 +4540,7 @@ Disable by adding `ZC1296` to `disabled_katas` in `.zshellcheckrc`.
 ### ZC1297 — Avoid `$BASH_SOURCE` — use `$0` or `${(%):-%x}` in Zsh
 
 **Severity:** `warning`  
-**Auto-fix:** `no`
+**Auto-fix:** `yes`
 
 `$BASH_SOURCE` is a Bash-specific variable that does not exist in Zsh. In Zsh, use `$0` inside a sourced file to get the script path, or `${(%):-%x}` for the current file regardless of sourcing context.
 
@@ -4984,7 +4984,7 @@ Disable by adding `ZC1333` to `disabled_katas` in `.zshellcheckrc`.
 ### ZC1334 — Avoid `type -p` — use `whence -p` in Zsh
 
 **Severity:** `warning`  
-**Auto-fix:** `no`
+**Auto-fix:** `yes`
 
 `type -p` is a Bash flag that prints the path of a command. Zsh `type` does not support `-p`. Use `whence -p` to get the path of an external command in Zsh.
 
@@ -5500,7 +5500,7 @@ Disable by adding `ZC1376` to `disabled_katas` in `.zshellcheckrc`.
 ### ZC1377 — Avoid `$BASH_ALIASES` — use Zsh `$aliases` associative array
 
 **Severity:** `warning`  
-**Auto-fix:** `no`
+**Auto-fix:** `yes`
 
 Bash's `$BASH_ALIASES` is an associative array of alias→value mappings. Zsh exposes the same information via `$aliases` (also an assoc array). `$BASH_ALIASES` is unset in Zsh; reading it yields nothing.
 
@@ -5512,7 +5512,7 @@ Disable by adding `ZC1377` to `disabled_katas` in `.zshellcheckrc`.
 ### ZC1378 — Avoid uppercase `$DIRSTACK` — Zsh uses lowercase `$dirstack`
 
 **Severity:** `error`  
-**Auto-fix:** `no`
+**Auto-fix:** `yes`
 
 Bash's `$DIRSTACK` is the `pushd`/`popd` directory stack. Zsh exposes the same stack as lowercase `$dirstack` (per zsh/parameter module). Using uppercase `$DIRSTACK` in Zsh accesses an unrelated (and usually empty) variable.
 
@@ -5572,7 +5572,7 @@ Disable by adding `ZC1382` to `disabled_katas` in `.zshellcheckrc`.
 ### ZC1383 — Avoid `$TIMEFORMAT` — Zsh uses `$TIMEFMT`
 
 **Severity:** `warning`  
-**Auto-fix:** `no`
+**Auto-fix:** `yes`
 
 Bash's `$TIMEFORMAT` controls the output of the `time` builtin. Zsh uses a shorter name, `$TIMEFMT`, for the same purpose. Setting `TIMEFORMAT` in a Zsh script has no effect; the Zsh `time` builtin reads `$TIMEFMT`.
 
@@ -5704,7 +5704,7 @@ Disable by adding `ZC1393` to `disabled_katas` in `.zshellcheckrc`.
 ### ZC1394 — Avoid `$BASH` — Zsh uses `$ZSH_NAME` for the interpreter name
 
 **Severity:** `info`  
-**Auto-fix:** `no`
+**Auto-fix:** `yes`
 
 Bash's `$BASH` holds the path to the running Bash executable. Zsh's equivalent is `$ZSH_NAME` (for the binary name) or `$0` (interactive shell). Using `$BASH` in a Zsh script yields empty output.
 
@@ -5908,7 +5908,7 @@ Disable by adding `ZC1410` to `disabled_katas` in `.zshellcheckrc`.
 ### ZC1411 — Use Zsh `disable` instead of Bash `enable -n` to hide builtins
 
 **Severity:** `style`  
-**Auto-fix:** `no`
+**Auto-fix:** `yes`
 
 Bash's `enable -n name` disables a builtin so that the external of the same name is used. Zsh provides a dedicated `disable` builtin: `disable name` achieves the same in one verb. Re-enable later with `enable name`.
 
@@ -6352,7 +6352,7 @@ Disable by adding `ZC1447` to `disabled_katas` in `.zshellcheckrc`.
 ### ZC1448 — `apt-get install` / `apt install` without `-y` hangs in non-interactive scripts
 
 **Severity:** `warning`  
-**Auto-fix:** `no`
+**Auto-fix:** `yes`
 
 In provisioning scripts, `apt-get install foo` (no `-y`) waits for interactive confirmation and stalls CI/Dockerfiles indefinitely. Always pass `-y` (or `--yes`), and for unattended upgrades also set `DEBIAN_FRONTEND=noninteractive` in the environment.
 
@@ -6988,7 +6988,7 @@ Disable by adding `ZC1500` to `disabled_katas` in `.zshellcheckrc`.
 ### ZC1501 — Style: `docker-compose` (hyphen) — use `docker compose` (space, built-in plugin)
 
 **Severity:** `style`  
-**Auto-fix:** `no`
+**Auto-fix:** `yes`
 
 `docker-compose` is the Python Compose V1 binary. Docker stopped shipping it with Docker Desktop in 2023 and Compose V2 is now the first-class `docker compose` subcommand. Scripts that invoke `docker-compose` silently degrade on fresh installs and miss V2-only options (`--profile`, `--wait`, richer env interpolation). Call `docker compose` (space) or pin the V2 binary explicitly.
 
@@ -7756,7 +7756,7 @@ Disable by adding `ZC1564` to `disabled_katas` in `.zshellcheckrc`.
 ### ZC1565 — Style: use `command -v` instead of `whereis` / `locate` for command existence
 
 **Severity:** `style`  
-**Auto-fix:** `no`
+**Auto-fix:** `yes`
 
 `whereis` searches a hard-coded list of binary/manual/source directories and returns everything it finds, including stale paths on custom `$PATH` layouts. `locate` relies on a cron-maintained index that may be hours or days stale. For a scripted "does this command exist?" check, `command -v <cmd>` respects the current `$PATH`, returns the selected resolution, and has no index-refresh coupling.
 
