@@ -1385,3 +1385,11 @@ func TestFixIntegration_ZC1043_AlreadyLocal(t *testing.T) {
 		t.Errorf("already-local input should be idempotent, got %q", got)
 	}
 }
+
+func TestFixIntegration_ZC1637_ReadonlyToTypesetR(t *testing.T) {
+	src := "readonly MAX=100\n"
+	want := "typeset -r MAX=100\n"
+	if got := runFix(t, src); got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}

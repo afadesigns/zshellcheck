@@ -15,7 +15,36 @@ func init() {
 			"global from inside a function). `readonly` works but reads as a Bash / POSIX-ism " +
 			"in a Zsh codebase.",
 		Check: checkZC1637,
+		Fix:   fixZC1637,
 	})
+}
+
+// fixZC1637 rewrites the `readonly` command name to `typeset -r`.
+// Single-edit replacement at the violation column. Detector gates on
+// the bare command name match, so the rewrite is idempotent on a
+// re-run (the new line starts with `typeset` not `readonly`).
+func fixZC1637(node ast.Node, v Violation, source []byte) []FixEdit {
+	cmd, ok := node.(*ast.SimpleCommand)
+	if !ok {
+		return nil
+	}
+	ident, ok := cmd.Name.(*ast.Identifier)
+	if !ok || ident.Value != "readonly" {
+		return nil
+	}
+	off := LineColToByteOffset(source, v.Line, v.Column)
+	if off < 0 || off+len("readonly") > len(source) {
+		return nil
+	}
+	if string(source[off:off+len("readonly")]) != "readonly" {
+		return nil
+	}
+	return []FixEdit{{
+		Line:    v.Line,
+		Column:  v.Column,
+		Length:  len("readonly"),
+		Replace: "typeset -r",
+	}}
 }
 
 func checkZC1637(node ast.Node) []Violation {
