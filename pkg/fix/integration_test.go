@@ -1322,3 +1322,11 @@ func TestFixIntegration_ZC1273_GrepDevNullToDashQ(t *testing.T) {
 		t.Errorf("got %q, want %q", got, want)
 	}
 }
+
+func TestFixIntegration_ZC1717_DockerPullStripDct(t *testing.T) {
+	src := "docker pull --disable-content-trust alpine\n"
+	want := "docker pull alpine\n"
+	if got := runFix(t, src); got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}

@@ -11,7 +11,7 @@ Auto-generated list of all 1000 implemented checks. Do not edit by hand — rege
 | `info` | 64 |
 | `style` | 257 |
 | **total** | **1000** |
-| **with auto-fix** | **107** |
+| **with auto-fix** | **108** |
 
 Auto-fix availability is marked per-entry below as **Auto-fix:** `yes` or `no`. Run `zshellcheck -fix path/...` to apply every available rewrite, or `-diff` to preview without writing.
 
@@ -730,7 +730,7 @@ Auto-fix availability is marked per-entry below as **Auto-fix:** `yes` or `no`. 
 - [ZC1714: Error on `gh repo delete --yes` / `gh release delete --yes` — bypassed confirmation](#zc1714)
 - [ZC1715: Error on `read -p "prompt"` — Zsh `-p` reads from coprocess, not a prompt](#zc1715)
 - [ZC1716: Use Zsh `$CPUTYPE` / `$MACHTYPE` instead of `uname -m` / `-p`](#zc1716)
-- [ZC1717: Warn on `docker pull/push --disable-content-trust` — bypasses image signature checks](#zc1717)
+- [ZC1717: Warn on `docker pull/push --disable-content-trust` — bypasses image signature checks](#zc1717) · auto-fix
 - [ZC1718: Error on `gh secret set --body SECRET` / `-b SECRET` — secret in process list](#zc1718)
 - [ZC1719: Warn on `git filter-branch` — deprecated since Git 2.24, use `git filter-repo`](#zc1719)
 - [ZC1720: Use Zsh `$COLUMNS` / `$LINES` instead of `tput cols` / `tput lines`](#zc1720)
@@ -9580,7 +9580,7 @@ Disable by adding `ZC1716` to `disabled_katas` in `.zshellcheckrc`.
 ### ZC1717 — Warn on `docker pull/push --disable-content-trust` — bypasses image signature checks
 
 **Severity:** `warning`  
-**Auto-fix:** `no`
+**Auto-fix:** `yes`
 
 When `DOCKER_CONTENT_TRUST=1` is enforced on a host (or set via `/etc/docker/daemon.json`), Docker rejects unsigned image pulls and signs every push. The `--disable-content-trust` flag overrides that per command: a `pull` accepts a replaced or unsigned image into local storage, a `push` lands an unsigned tag in the registry where downstream pulls cannot verify provenance. Drop the flag and sign the artifact (`docker trust sign IMAGE:TAG`) instead, or scope the bypass with a tight Notary signer policy.
 
