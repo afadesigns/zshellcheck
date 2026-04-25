@@ -91,10 +91,6 @@ zshellcheck -fix  path/to/script.zsh    # apply it
 ```
 
 
-## ShellCheck vs ZShellCheck
-
-Use **ShellCheck** for portable `sh` / `bash`. Use **ZShellCheck** for native Zsh — parameter-expansion flags (`${(U)x}`, `${(f)x}`), glob qualifiers (`*.zsh(.)`), `[[`, `(( ))`, `print -r --`, modifiers (`:t`, `:h`, `:r`), associative arrays, `setopt` options, hook functions. Full matrix: [docs/REFERENCE.md#comparison-vs-shellcheck](docs/REFERENCE.md#comparison-vs-shellcheck).
-
 ## Tested integrations
 
 ZShellCheck is verified against the script corpora of these popular Zsh ecosystems. Every release runs a parse + lint sweep over each — no panics, no crashes, deterministic output.
