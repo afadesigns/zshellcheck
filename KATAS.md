@@ -11,7 +11,7 @@ Auto-generated list of all 1000 implemented checks. Do not edit by hand — rege
 | `info` | 64 |
 | `style` | 257 |
 | **total** | **1000** |
-| **with auto-fix** | **126** |
+| **with auto-fix** | **127** |
 
 Auto-fix availability is marked per-entry below as **Auto-fix:** `yes` or `no`. Run `zshellcheck -fix path/...` to apply every available rewrite, or `-diff` to preview without writing.
 
@@ -24,7 +24,7 @@ Auto-fix availability is marked per-entry below as **Auto-fix:** `yes` or `no`. 
 - [ZC1005: Use whence instead of which](#zc1005) · auto-fix
 - [ZC1006: Prefer \[\[ over test for tests](#zc1006)
 - [ZC1007: Avoid using `chmod 777`](#zc1007)
-- [ZC1008: Use `\$(())` for arithmetic operations](#zc1008)
+- [ZC1008: Use `\$(())` for arithmetic operations](#zc1008) · auto-fix
 - [ZC1009: Use `((...))` for C-style arithmetic](#zc1009)
 - [ZC1010: Use \[\[ ... \]\] instead of \[ ... \]](#zc1010) · auto-fix
 - [ZC1011: Use `git` porcelain commands instead of plumbing commands](#zc1011)
@@ -1108,7 +1108,7 @@ Disable by adding `ZC1007` to `disabled_katas` in `.zshellcheckrc`.
 ### ZC1008 — Use `\$(())` for arithmetic operations
 
 **Severity:** `style`  
-**Auto-fix:** `no`
+**Auto-fix:** `yes`
 
 The `let` command is a shell builtin, but the `\$(())` syntax is more portable and generally preferred for arithmetic operations in Zsh. It's also more powerful as it can be used in more contexts.
 
