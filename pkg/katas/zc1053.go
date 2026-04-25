@@ -14,6 +14,7 @@ func init() {
 			"Use `grep -q` (or `> /dev/null`) to silence output if you only care about the exit code.",
 		Severity: SeverityStyle,
 		Check:    checkZC1053,
+		Fix:      fixZC1053,
 	})
 	RegisterKata(ast.WhileLoopStatementNode, Kata{
 		ID:    "ZC1053",
@@ -22,7 +23,71 @@ func init() {
 			"Use `grep -q` (or `> /dev/null`) to silence output if you only care about the exit code.",
 		Severity: SeverityStyle,
 		Check:    checkZC1053,
+		Fix:      fixZC1053,
 	})
+}
+
+// fixZC1053 inserts ` -q` directly after the grep / egrep / fgrep /
+// zgrep command name reported at the violation column. Idempotent —
+// once `-q` is present the detector's hasQuiet check short-circuits
+// and the kata no longer fires. Defensive byte-match guard refuses
+// to insert unless the source at the offset is one of the recognised
+// grep variants followed by whitespace.
+func fixZC1053(_ ast.Node, v Violation, source []byte) []FixEdit {
+	off := LineColToByteOffset(source, v.Line, v.Column)
+	if off < 0 {
+		return nil
+	}
+	var name string
+	for _, n := range []string{"grep", "egrep", "fgrep", "zgrep"} {
+		end := off + len(n)
+		if end > len(source) {
+			continue
+		}
+		if string(source[off:end]) != n {
+			continue
+		}
+		// Boundary: next byte must be whitespace, newline, or end of file.
+		if end < len(source) {
+			c := source[end]
+			if c != ' ' && c != '\t' && c != '\n' {
+				continue
+			}
+		}
+		name = n
+		break
+	}
+	if name == "" {
+		return nil
+	}
+	insertAt := off + len(name)
+	line, col := offsetLineColZC1053(source, insertAt)
+	if line < 0 {
+		return nil
+	}
+	return []FixEdit{{
+		Line:    line,
+		Column:  col,
+		Length:  0,
+		Replace: " -q",
+	}}
+}
+
+func offsetLineColZC1053(source []byte, offset int) (int, int) {
+	if offset < 0 || offset > len(source) {
+		return -1, -1
+	}
+	line := 1
+	col := 1
+	for i := 0; i < offset; i++ {
+		if source[i] == '\n' {
+			line++
+			col = 1
+			continue
+		}
+		col++
+	}
+	return line, col
 }
 
 func checkZC1053(node ast.Node) []Violation {

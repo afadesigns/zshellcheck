@@ -1566,6 +1566,29 @@ func TestFixIntegration_ZC1403_HistfilesizeToSavehist(t *testing.T) {
 	}
 }
 
+func TestFixIntegration_ZC1053_GrepInIfAddsQ(t *testing.T) {
+	src := "if grep PAT FILE; then :; fi\n"
+	want := "if grep -q PAT FILE; then :; fi\n"
+	if got := runFix(t, src); got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}
+
+func TestFixIntegration_ZC1053_GrepInWhileAddsQ(t *testing.T) {
+	src := "while grep PAT FILE; do :; done\n"
+	want := "while grep -q PAT FILE; do :; done\n"
+	if got := runFix(t, src); got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}
+
+func TestFixIntegration_ZC1053_AlreadyQuiet(t *testing.T) {
+	src := "if grep -q PAT FILE; then :; fi\n"
+	if got := runFix(t, src); got != src {
+		t.Errorf("already-quiet input should be idempotent, got %q", got)
+	}
+}
+
 func TestFixIntegration_ZC1252_PipedCatHandledByZC1146(t *testing.T) {
 	// `cat /etc/group | head` lets ZC1146 win the overlap and collapse
 	// the pipe into `head /etc/group`. ZC1252's two-edit rewrite would

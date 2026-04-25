@@ -11,7 +11,7 @@ Auto-generated list of all 1000 implemented checks. Do not edit by hand — rege
 | `info` | 64 |
 | `style` | 257 |
 | **total** | **1000** |
-| **with auto-fix** | **124** |
+| **with auto-fix** | **125** |
 
 Auto-fix availability is marked per-entry below as **Auto-fix:** `yes` or `no`. Run `zshellcheck -fix path/...` to apply every available rewrite, or `-diff` to preview without writing.
 
@@ -69,7 +69,7 @@ Auto-fix availability is marked per-entry below as **Auto-fix:** `yes` or `no`. 
 - [ZC1050: Avoid iterating over `ls` output](#zc1050)
 - [ZC1051: Quote variables in `rm` to avoid globbing](#zc1051) · auto-fix
 - [ZC1052: Avoid `sed -i` for portability](#zc1052)
-- [ZC1053: Silence `grep` output in conditions](#zc1053)
+- [ZC1053: Silence `grep` output in conditions](#zc1053) · auto-fix
 - [ZC1054: Use POSIX classes in regex/glob](#zc1054)
 - [ZC1055: Use `\[\[ -n/-z \]\]` for empty string checks](#zc1055) · auto-fix
 - [ZC1056: Avoid `$((...))` as a statement](#zc1056)
@@ -1648,7 +1648,7 @@ Disable by adding `ZC1052` to `disabled_katas` in `.zshellcheckrc`.
 ### ZC1053 — Silence `grep` output in conditions
 
 **Severity:** `style`  
-**Auto-fix:** `no`
+**Auto-fix:** `yes`
 
 Using `grep` in a condition prints matches to stdout. Use `grep -q` (or `> /dev/null`) to silence output if you only care about the exit code.
 
