@@ -5,6 +5,8 @@ dbe = "dbe"
 ede = "ede"
 # Hashi is the short form used in vendor name HashiCorp
 Hashi = "Hashi"
+# `mis` is a legitimate English prefix, e.g. `mis-nesting`, `mis-typed`
+mis = "mis"
 # passin / passout are openssl password-source flag names
 passin = "passin"
 passout = "passout"
