@@ -11,7 +11,7 @@ Auto-generated list of all 1000 implemented checks. Do not edit by hand — rege
 | `info` | 64 |
 | `style` | 257 |
 | **total** | **1000** |
-| **with auto-fix** | **125** |
+| **with auto-fix** | **126** |
 
 Auto-fix availability is marked per-entry below as **Auto-fix:** `yes` or `no`. Run `zshellcheck -fix path/...` to apply every available rewrite, or `-diff` to preview without writing.
 
@@ -38,7 +38,7 @@ Auto-fix availability is marked per-entry below as **Auto-fix:** `yes` or `no`. 
 - [ZC1019: Superseded by ZC1005 — retired duplicate](#zc1019)
 - [ZC1020: Use `\[\[ ... \]\]` for tests instead of `test`](#zc1020)
 - [ZC1021: Use symbolic permissions with `chmod` instead of octal](#zc1021)
-- [ZC1022: Use `$((...))` for arithmetic expansion](#zc1022)
+- [ZC1022: Use `$((...))` for arithmetic expansion](#zc1022) · auto-fix
 - [ZC1023: Superseded by ZC1022 — retired duplicate `let` detector](#zc1023)
 - [ZC1024: Superseded by ZC1022 — retired duplicate `let` detector](#zc1024)
 - [ZC1025: Superseded by ZC1022 — retired duplicate `let` detector](#zc1025)
@@ -1276,7 +1276,7 @@ Disable by adding `ZC1021` to `disabled_katas` in `.zshellcheckrc`.
 ### ZC1022 — Use `$((...))` for arithmetic expansion
 
 **Severity:** `style`  
-**Auto-fix:** `no`
+**Auto-fix:** `yes`
 
 The `$((...))` syntax is the modern, recommended way to perform arithmetic expansion. It is more readable and can be nested easily, unlike `let`.
 

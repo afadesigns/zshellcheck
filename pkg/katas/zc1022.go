@@ -12,6 +12,11 @@ func init() {
 			"It is more readable and can be nested easily, unlike `let`.",
 		Severity: SeverityStyle,
 		Check:    checkZC1022,
+		// Reuse ZC1013's `let NAME=EXPR` → `(( NAME = EXPR ))` rewrite.
+		// For a standalone arithmetic statement the `(( ))` command
+		// form is the right shape; the `$((...))` text in the message
+		// reads as the broader "use Zsh arithmetic" recommendation.
+		Fix: fixZC1013,
 	})
 }
 
