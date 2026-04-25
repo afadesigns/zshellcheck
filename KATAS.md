@@ -11,7 +11,7 @@ Auto-generated list of all 1000 implemented checks. Do not edit by hand — rege
 | `info` | 64 |
 | `style` | 257 |
 | **total** | **1000** |
-| **with auto-fix** | **120** |
+| **with auto-fix** | **121** |
 
 Auto-fix availability is marked per-entry below as **Auto-fix:** `yes` or `no`. Run `zshellcheck -fix path/...` to apply every available rewrite, or `-diff` to preview without writing.
 
@@ -394,7 +394,7 @@ Auto-fix availability is marked per-entry below as **Auto-fix:** `yes` or `no`. 
 - [ZC1378: Avoid uppercase `$DIRSTACK` — Zsh uses lowercase `$dirstack`](#zc1378) · auto-fix
 - [ZC1379: Avoid `$PROMPT_COMMAND` — use Zsh `precmd` function](#zc1379)
 - [ZC1380: Avoid `$HISTIGNORE` — use Zsh `$HISTORY_IGNORE`](#zc1380) · auto-fix
-- [ZC1381: Avoid `$COMP_WORDS`/`$COMP_CWORD` — Zsh uses `words`/`$CURRENT`](#zc1381)
+- [ZC1381: Avoid `$COMP_WORDS`/`$COMP_CWORD` — Zsh uses `words`/`$CURRENT`](#zc1381) · auto-fix
 - [ZC1382: Avoid `$READLINE_LINE`/`$READLINE_POINT` — Zsh ZLE uses `$BUFFER`/`$CURSOR`](#zc1382)
 - [ZC1383: Avoid `$TIMEFORMAT` — Zsh uses `$TIMEFMT`](#zc1383) · auto-fix
 - [ZC1384: Avoid `$EXECIGNORE` — Bash-only; Zsh uses completion-system ignore patterns](#zc1384)
@@ -5548,7 +5548,7 @@ Disable by adding `ZC1380` to `disabled_katas` in `.zshellcheckrc`.
 ### ZC1381 — Avoid `$COMP_WORDS`/`$COMP_CWORD` — Zsh uses `words`/`$CURRENT`
 
 **Severity:** `error`  
-**Auto-fix:** `no`
+**Auto-fix:** `yes`
 
 Bash programmable completion reads the partial command via `$COMP_WORDS` (array of tokens) and `$COMP_CWORD` (index of cursor). Zsh's completion system exposes the same via `words` (array) and `$CURRENT` (1-based cursor index). Using the Bash names in Zsh completion functions produces empty expansions.
 

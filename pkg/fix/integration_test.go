@@ -1500,6 +1500,28 @@ func TestFixIntegration_ZC1374_FuncnestToFuncstack(t *testing.T) {
 	}
 }
 
+func TestFixIntegration_ZC1381_CompWordsToWords(t *testing.T) {
+	src := "print $COMP_WORDS\n"
+	got := runFix(t, src)
+	if !strings.Contains(got, "$words") {
+		t.Errorf("expected $words, got %q", got)
+	}
+	if strings.Contains(got, "COMP_WORDS") {
+		t.Errorf("COMP_WORDS still present, got %q", got)
+	}
+}
+
+func TestFixIntegration_ZC1381_CompCwordToCurrent(t *testing.T) {
+	src := "print $COMP_CWORD\n"
+	got := runFix(t, src)
+	if !strings.Contains(got, "$CURRENT") {
+		t.Errorf("expected $CURRENT, got %q", got)
+	}
+	if strings.Contains(got, "COMP_CWORD") {
+		t.Errorf("COMP_CWORD still present, got %q", got)
+	}
+}
+
 func TestFixIntegration_ZC1252_PipedCatHandledByZC1146(t *testing.T) {
 	// `cat /etc/group | head` lets ZC1146 win the overlap and collapse
 	// the pipe into `head /etc/group`. ZC1252's two-edit rewrite would
