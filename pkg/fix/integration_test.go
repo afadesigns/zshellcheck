@@ -1330,3 +1330,19 @@ func TestFixIntegration_ZC1717_DockerPullStripDct(t *testing.T) {
 		t.Errorf("got %q, want %q", got, want)
 	}
 }
+
+func TestFixIntegration_ZC1512_ServiceToSystemctl(t *testing.T) {
+	src := "service nginx start\n"
+	want := "systemctl start nginx\n"
+	if got := runFix(t, src); got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}
+
+func TestFixIntegration_ZC1512_RestartVerb(t *testing.T) {
+	src := "service postgresql restart\n"
+	want := "systemctl restart postgresql\n"
+	if got := runFix(t, src); got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}

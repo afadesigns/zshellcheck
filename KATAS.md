@@ -11,7 +11,7 @@ Auto-generated list of all 1000 implemented checks. Do not edit by hand — rege
 | `info` | 64 |
 | `style` | 257 |
 | **total** | **1000** |
-| **with auto-fix** | **108** |
+| **with auto-fix** | **109** |
 
 Auto-fix availability is marked per-entry below as **Auto-fix:** `yes` or `no`. Run `zshellcheck -fix path/...` to apply every available rewrite, or `-diff` to preview without writing.
 
@@ -525,7 +525,7 @@ Auto-fix availability is marked per-entry below as **Auto-fix:** `yes` or `no`. 
 - [ZC1509: Warn on `trap '' TERM` / `trap - TERM` — ignores/resets fatal signal](#zc1509)
 - [ZC1510: Error on `auditctl -e 0` / `auditctl -D` — disables kernel audit logging](#zc1510)
 - [ZC1511: Error on `nmcli ... <wireless/vpn secret>` on command line](#zc1511)
-- [ZC1512: Style: `service <unit> <verb>` — use `systemctl <verb> <unit>` on systemd hosts](#zc1512)
+- [ZC1512: Style: `service <unit> <verb>` — use `systemctl <verb> <unit>` on systemd hosts](#zc1512) · auto-fix
 - [ZC1513: Style: `make install` without `DESTDIR=` — unmanaged system-wide install](#zc1513)
 - [ZC1514: Error on `useradd -p <hash>` / `usermod -p <hash>` — password hash on cmdline](#zc1514)
 - [ZC1515: Warn on `md5sum` / `sha1sum` for integrity check — collision-vulnerable](#zc1515)
@@ -7120,7 +7120,7 @@ Disable by adding `ZC1511` to `disabled_katas` in `.zshellcheckrc`.
 ### ZC1512 — Style: `service <unit> <verb>` — use `systemctl <verb> <unit>` on systemd hosts
 
 **Severity:** `style`  
-**Auto-fix:** `no`
+**Auto-fix:** `yes`
 
 `service` is the SysV init compatibility wrapper. On a systemd-managed host (every mainstream distro since ~2016) it translates to `systemctl` anyway, but reverses argument order, loses `--user` scope, ignores unit templating, and can't restart sockets or timers. Prefer `systemctl start|stop|restart|reload <unit>` for consistency across scripts and interactive shells.
 
