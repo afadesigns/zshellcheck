@@ -11,7 +11,7 @@ Auto-generated list of all 1000 implemented checks. Do not edit by hand — rege
 | `info` | 64 |
 | `style` | 257 |
 | **total** | **1000** |
-| **with auto-fix** | **111** |
+| **with auto-fix** | **112** |
 
 Auto-fix availability is marked per-entry below as **Auto-fix:** `yes` or `no`. Run `zshellcheck -fix path/...` to apply every available rewrite, or `-diff` to preview without writing.
 
@@ -650,7 +650,7 @@ Auto-fix availability is marked per-entry below as **Auto-fix:** `yes` or `no`. 
 - [ZC1634: Warn on `umask NNN` that fails to mask world-write — mask-inversion footgun](#zc1634)
 - [ZC1635: Error on `mysql -pSECRET` / `--password=SECRET` — password in process list](#zc1635)
 - [ZC1636: Warn on `virsh destroy DOMAIN` — force-stops VM (no graceful shutdown)](#zc1636)
-- [ZC1637: Style: prefer Zsh `typeset -r NAME=value` over POSIX `readonly NAME=value`](#zc1637)
+- [ZC1637: Style: prefer Zsh `typeset -r NAME=value` over POSIX `readonly NAME=value`](#zc1637) · auto-fix
 - [ZC1638: Error on `docker/podman build --build-arg SECRET=VALUE` — secret baked into image layer](#zc1638)
 - [ZC1639: Error on `curl -H 'Authorization: ...'` — credential header in process list](#zc1639)
 - [ZC1640: Style: `${!var}` Bash indirect expansion — prefer Zsh `${(P)var}`](#zc1640)
@@ -8620,7 +8620,7 @@ Disable by adding `ZC1636` to `disabled_katas` in `.zshellcheckrc`.
 ### ZC1637 — Style: prefer Zsh `typeset -r NAME=value` over POSIX `readonly NAME=value`
 
 **Severity:** `style`  
-**Auto-fix:** `no`
+**Auto-fix:** `yes`
 
 Both `readonly NAME` and `typeset -r NAME` create a read-only parameter. In Zsh the idiomatic form is `typeset -r` — it composes with other typeset flags (`-ir` for readonly integer, `-xr` for readonly export, `-gr` to pin a readonly global from inside a function). `readonly` works but reads as a Bash / POSIX-ism in a Zsh codebase.
 
