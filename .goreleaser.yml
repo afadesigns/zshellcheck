@@ -36,6 +36,124 @@ archives:
       - completions/zsh/_zshellcheck
       - completions/bash/zshellcheck-completion.bash
 
+# Linux distro packages — produces .deb (Debian/Ubuntu), .rpm (Fedora/RHEL/Rocky/openSUSE),
+# and .apk (Alpine) artifacts on every tag. Uploaded alongside the tarballs.
+# Users install with: dpkg -i / rpm -i / apk add --allow-untrusted.
+nfpms:
+  - id: zshellcheck-pkg
+    package_name: zshellcheck
+    file_name_template: >-
+      {{ .ProjectName }}_{{ .Version }}_{{ .Os }}_
+      {{- if eq .Arch "amd64" }}x86_64
+      {{- else if eq .Arch "386" }}i386
+      {{- else }}{{ .Arch }}{{ end }}
+    homepage: https://github.com/afadesigns/zshellcheck
+    description: |-
+      Static analysis and auto-fix for the setopts, hooks, and globs Bash never learned.
+      ZShellCheck lints Zsh scripts with compiler-grade precision: 1000 Zsh-specific katas,
+      67 deterministic auto-fixes, signed releases, SLSA Level 3 provenance.
+    maintainer: Andreas Fahl <github@afadesign.co>
+    license: MIT
+    vendor: afadesigns
+    section: devel
+    priority: optional
+    formats:
+      - deb
+      - rpm
+      - apk
+    contents:
+      - src: ./man/man1/zshellcheck.1
+        dst: /usr/share/man/man1/zshellcheck.1
+        file_info:
+          mode: 0644
+      - src: ./completions/zsh/_zshellcheck
+        dst: /usr/share/zsh/site-functions/_zshellcheck
+        file_info:
+          mode: 0644
+      - src: ./completions/bash/zshellcheck-completion.bash
+        dst: /usr/share/bash-completion/completions/zshellcheck
+        file_info:
+          mode: 0644
+      - src: ./LICENSE
+        dst: /usr/share/doc/zshellcheck/LICENSE
+        file_info:
+          mode: 0644
+      - src: ./README.md
+        dst: /usr/share/doc/zshellcheck/README.md
+        file_info:
+          mode: 0644
+
+# Multi-arch Docker image — published to GitHub Container Registry on every tag.
+# `FROM scratch` keeps the image at ~2 MB; the binary is fully static (CGO_ENABLED=0).
+dockers:
+  - id: zshellcheck-amd64
+    use: buildx
+    goos: linux
+    goarch: amd64
+    image_templates:
+      - "ghcr.io/afadesigns/zshellcheck:{{ .Version }}-amd64"
+      - "ghcr.io/afadesigns/zshellcheck:latest-amd64"
+    build_flag_templates:
+      - "--platform=linux/amd64"
+      - "--label=org.opencontainers.image.title={{ .ProjectName }}"
+      - "--label=org.opencontainers.image.description=Static analysis and auto-fix for the setopts, hooks, and globs Bash never learned."
+      - "--label=org.opencontainers.image.source=https://github.com/afadesigns/zshellcheck"
+      - "--label=org.opencontainers.image.url=https://github.com/afadesigns/zshellcheck"
+      - "--label=org.opencontainers.image.licenses=MIT"
+      - "--label=org.opencontainers.image.version={{ .Version }}"
+      - "--label=org.opencontainers.image.revision={{ .FullCommit }}"
+  - id: zshellcheck-arm64
+    use: buildx
+    goos: linux
+    goarch: arm64
+    image_templates:
+      - "ghcr.io/afadesigns/zshellcheck:{{ .Version }}-arm64"
+      - "ghcr.io/afadesigns/zshellcheck:latest-arm64"
+    build_flag_templates:
+      - "--platform=linux/arm64"
+      - "--label=org.opencontainers.image.title={{ .ProjectName }}"
+      - "--label=org.opencontainers.image.description=Static analysis and auto-fix for the setopts, hooks, and globs Bash never learned."
+      - "--label=org.opencontainers.image.source=https://github.com/afadesigns/zshellcheck"
+      - "--label=org.opencontainers.image.url=https://github.com/afadesigns/zshellcheck"
+      - "--label=org.opencontainers.image.licenses=MIT"
+      - "--label=org.opencontainers.image.version={{ .Version }}"
+      - "--label=org.opencontainers.image.revision={{ .FullCommit }}"
+
+docker_manifests:
+  - name_template: "ghcr.io/afadesigns/zshellcheck:{{ .Version }}"
+    image_templates:
+      - "ghcr.io/afadesigns/zshellcheck:{{ .Version }}-amd64"
+      - "ghcr.io/afadesigns/zshellcheck:{{ .Version }}-arm64"
+  - name_template: "ghcr.io/afadesigns/zshellcheck:latest"
+    image_templates:
+      - "ghcr.io/afadesigns/zshellcheck:latest-amd64"
+      - "ghcr.io/afadesigns/zshellcheck:latest-arm64"
+
+# AUR (Arch Linux User Repository) — pushes a PKGBUILD to
+# aur.archlinux.org/zshellcheck-bin.git on every tag. Requires:
+#   - one-time AUR account creation at https://aur.archlinux.org
+#   - SSH key uploaded to the AUR account
+#   - private key stored as the AUR_KEY repository secret
+# Disabled until those credentials are in place; uncomment to activate.
+#
+# aurs:
+#   - name: zshellcheck-bin
+#     ids:
+#       - zshellcheck
+#     homepage: https://github.com/afadesigns/zshellcheck
+#     description: Static analysis and auto-fix for the setopts, hooks, and globs Bash never learned.
+#     maintainers:
+#       - 'Andreas Fahl <github@afadesign.co>'
+#     license: MIT
+#     private_key: '{{ .Env.AUR_KEY }}'
+#     git_url: 'ssh://aur@aur.archlinux.org/zshellcheck-bin.git'
+#     package: |-
+#       install -Dm755 "./zshellcheck" "${pkgdir}/usr/bin/zshellcheck"
+#       install -Dm644 "./LICENSE" "${pkgdir}/usr/share/licenses/${pkgname}/LICENSE"
+#       install -Dm644 "./man/man1/zshellcheck.1" "${pkgdir}/usr/share/man/man1/zshellcheck.1"
+#       install -Dm644 "./completions/zsh/_zshellcheck" "${pkgdir}/usr/share/zsh/site-functions/_zshellcheck"
+#       install -Dm644 "./completions/bash/zshellcheck-completion.bash" "${pkgdir}/usr/share/bash-completion/completions/zshellcheck"
+
 sboms:
   - artifacts: archive
 
@@ -49,6 +167,16 @@ signs:
       - '${artifact}'
       - "--yes" # needed on cosign 2.0.0+
     artifacts: all
+    output: true
+
+# Sign the multi-arch Docker manifest with cosign keyless OIDC.
+docker_signs:
+  - cmd: cosign
+    args:
+      - sign
+      - '${artifact}@${digest}'
+      - "--yes"
+    artifacts: manifests
     output: true
 
 checksum:
