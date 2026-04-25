@@ -11,7 +11,7 @@ Auto-generated list of all 1000 implemented checks. Do not edit by hand — rege
 | `info` | 64 |
 | `style` | 257 |
 | **total** | **1000** |
-| **with auto-fix** | **117** |
+| **with auto-fix** | **118** |
 
 Auto-fix availability is marked per-entry below as **Auto-fix:** `yes` or `no`. Run `zshellcheck -fix path/...` to apply every available rewrite, or `-diff` to preview without writing.
 
@@ -228,7 +228,7 @@ Auto-fix availability is marked per-entry below as **Auto-fix:** `yes` or `no`. 
 - [ZC1212: Avoid `git add .` — use explicit paths or `git add -p`](#zc1212)
 - [ZC1213: Use `apt-get -y` in scripts for non-interactive installs](#zc1213) · auto-fix
 - [ZC1214: Avoid `su` in scripts — use `sudo -u` for user switching](#zc1214)
-- [ZC1215: Source `/etc/os-release` instead of parsing with `cat`/`grep`](#zc1215)
+- [ZC1215: Source `/etc/os-release` instead of parsing with `cat`/`grep`](#zc1215) · auto-fix
 - [ZC1216: Avoid `nslookup` — use `dig` or `host` for DNS queries](#zc1216) · auto-fix
 - [ZC1217: Avoid `service` command — use `systemctl` on systemd](#zc1217)
 - [ZC1218: Avoid `useradd` without `--shell /sbin/nologin` for service accounts](#zc1218)
@@ -3556,7 +3556,7 @@ Disable by adding `ZC1214` to `disabled_katas` in `.zshellcheckrc`.
 ### ZC1215 — Source `/etc/os-release` instead of parsing with `cat`/`grep`
 
 **Severity:** `style`  
-**Auto-fix:** `no`
+**Auto-fix:** `yes`
 
 `/etc/os-release` is designed to be sourced directly. Use `. /etc/os-release` to get variables like `$ID`, `$VERSION_ID` without parsing.
 
