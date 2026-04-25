@@ -108,13 +108,17 @@ fi
 }
 
 func TestFixIntegration_ZC1013_LetToArith(t *testing.T) {
+	// `let counter=counter+1` matches ZC1032's C-style increment
+	// shape; ZC1013's fix yields to it so the output uses the
+	// idiomatic `(( counter++ ))` form. The first two lines fall
+	// through to ZC1013's generic `((NAME = EXPR))` rewrite.
 	src := `let x=5
 let y=$((x + 1))
 let counter=counter+1
 `
 	want := `(( x = 5 ))
 (( y = $((x + 1)) ))
-(( counter = counter+1 ))
+(( counter++ ))
 `
 	if got := runFix(t, src); got != want {
 		t.Errorf("got %q, want %q", got, want)
@@ -1221,5 +1225,76 @@ func TestFixIntegration_ZC1380_HistignoreRename(t *testing.T) {
 	want := "export HISTORY_IGNORE='ls:cd'\n"
 	if got := runFix(t, src); got != want {
 		t.Errorf("got %q, want %q", got, want)
+	}
+}
+
+func TestFixIntegration_ZC1032_LetIncrementToCStyle(t *testing.T) {
+	src := "let i=i+1\n"
+	want := "(( i++ ))\n"
+	if got := runFix(t, src); got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}
+
+func TestFixIntegration_ZC1032_LetDecrementToCStyle(t *testing.T) {
+	src := "let counter=counter-1\n"
+	want := "(( counter-- ))\n"
+	if got := runFix(t, src); got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}
+
+func TestFixIntegration_ZC1032_AlreadyArithIdempotent(t *testing.T) {
+	// `(( i++ ))` is no longer a LetStatement so neither ZC1013 nor
+	// ZC1032 fires on it; the rewrite is its own fixed point.
+	src := "(( i++ ))\n"
+	if got := runFix(t, src); got != src {
+		t.Errorf("already-fixed input should be idempotent, got %q", got)
+	}
+}
+
+func TestFixIntegration_ZC1107_BracketCmpDelegatesToZC1091(t *testing.T) {
+	// ZC1107 reuses ZC1091's Fix shape — both katas detect the same
+	// dashed-comparison-in-`[[…]]` pattern, so the rewrite emerges
+	// once and the conflict resolver dedupes the duplicate edit.
+	src := "[[ a -lt b ]]\n"
+	want := "(( a < b ))\n"
+	if got := runFix(t, src); got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}
+
+func TestFixIntegration_ZC1153_DiffQToCmpS(t *testing.T) {
+	src := "diff -q a.txt b.txt\n"
+	want := "cmp -s a.txt b.txt\n"
+	if got := runFix(t, src); got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}
+
+func TestFixIntegration_ZC1153_AlreadyCmpUnchanged(t *testing.T) {
+	src := "cmp -s a.txt b.txt\n"
+	if got := runFix(t, src); got != src {
+		t.Errorf("already-cmp input should be idempotent, got %q", got)
+	}
+}
+
+func TestFixIntegration_ZC1643_CatSubstitutionToReadRedirect(t *testing.T) {
+	// Detector fires on SimpleCommand args containing the literal
+	// `$(cat ` substring. Assignment-form `x=$(cat …)` parses with
+	// the cat command nested as a DollarParenExpression child, not as
+	// an argument of any SimpleCommand at the outer level — that
+	// shape is intentionally left detection-only here.
+	src := "echo $(cat /etc/hostname)\n"
+	want := "print -r -- $(</etc/hostname)\n"
+	if got := runFix(t, src); got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}
+
+func TestFixIntegration_ZC1643_AlreadyReadRedirectUnchanged(t *testing.T) {
+	src := "print -r -- $(</etc/hostname)\n"
+	if got := runFix(t, src); got != src {
+		t.Errorf("already-fixed input should be idempotent, got %q", got)
 	}
 }

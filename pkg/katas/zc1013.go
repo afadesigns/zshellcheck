@@ -31,6 +31,15 @@ func fixZC1013(node ast.Node, v Violation, source []byte) []FixEdit {
 	if stmt.Name == nil || stmt.Value == nil {
 		return nil
 	}
+	// Defer to ZC1032 when the value matches the C-style
+	// increment/decrement shape so the rewrite produces the
+	// idiomatic `(( i++ ))` / `(( i-- ))` form rather than the
+	// generic `(( i = i+1 ))` form. Both fixes span the same source
+	// range, so emitting both would lose ZC1032's narrower output to
+	// the conflict resolver's deterministic tie-break.
+	if _, increment := zc1032Op(stmt); increment {
+		return nil
+	}
 	start := LineColToByteOffset(source, v.Line, v.Column)
 	if start < 0 {
 		return nil

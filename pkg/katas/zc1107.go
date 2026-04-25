@@ -11,6 +11,7 @@ func init() {
 		Description: "Use `(( ... ))` for arithmetic comparisons instead of `[[ ... -gt ... ]]`. The double parenthesis syntax supports standard math operators (`>`, `<`, `==`, `!=`) and is optimized.",
 		Severity:    SeverityStyle,
 		Check:       checkZC1107DoubleBracket,
+		Fix:         fixZC1091,
 	})
 
 	RegisterKata(ast.SimpleCommandNode, Kata{
