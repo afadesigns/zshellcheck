@@ -43,6 +43,7 @@ func run() int {
 	showVersion := flag.Bool("version", false, "Show version and exit")
 	verbose := flag.Bool("verbose", false, "Show detailed Kata descriptions in text output")
 	noColor := flag.Bool("no-color", false, "Disable colored output")
+	noBanner := flag.Bool("no-banner", false, "Suppress the startup banner (useful for CI and scripted invocations)")
 	severityFilter := flag.String("severity", "", "Comma-separated list of severities to show (error,warning,info,style)")
 	fixMode := flag.Bool("fix", false, "Apply auto-fixes in place for katas that declare a Fix")
 	diffMode := flag.Bool("diff", false, "Print a unified diff of the fixes instead of writing them")
@@ -69,15 +70,16 @@ func run() int {
 	}
 
 	if len(flag.Args()) < 1 {
-		fmt.Fprint(os.Stderr, config.Banner)
+		if !*noBanner {
+			fmt.Fprint(os.Stderr, config.Banner)
+		}
 		fmt.Println("Usage: zshellcheck [flags] <file1.zsh> [file2.zsh]...")
 		fmt.Println("Try 'zshellcheck --help' for more information.")
 		return 1
 	}
 
-	// Print banner on successful run too, as per original request
-	// But suppress it for JSON/SARIF output to keep it clean for parsing
-	if *format != "json" && *format != "sarif" && !*noColor {
+	// Banner suppressed for JSON/SARIF (parser-friendly) and for explicit -no-banner.
+	if *format != "json" && *format != "sarif" && !*noColor && !*noBanner {
 		fmt.Fprint(os.Stderr, config.Banner)
 	}
 

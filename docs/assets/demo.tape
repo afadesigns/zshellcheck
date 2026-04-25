@@ -13,11 +13,15 @@ Set Padding 24
 Set TypingSpeed 45ms
 Set CursorBlink false
 
-# Hidden setup — load p10k via ~/.zshrc (which sources 90-zshellcheck.zsh, exposing the bare command), cd to demo dir
+# Hidden setup — load p10k via ~/.zshrc, alias zshellcheck to suppress the banner
+# (the banner is shown above this GIF as banner.png; xterm.js renders block glyphs
+# with sub-pixel gaps so embedding the chafa banner here looks bad).
 Hide
 Type "source ~/.zshrc 2>/dev/null"
 Enter
 Sleep 1800ms
+Type "alias zshellcheck='/home/rtx/.config/zsh/zshellcheck/bin/zshellcheck -no-banner'"
+Enter
 Type "cd ~/.config/zsh/zshellcheck/samples"
 Enter
 Type "clear"
@@ -29,31 +33,22 @@ Sleep 800ms
 Type "zshellcheck -severity warning deploy.zsh"
 Sleep 300ms
 Enter
-Sleep 4.5s
+Sleep 5s
 
-# 2. Preview the fix (unified diff)
-Type "clear"
-Enter
-Sleep 200ms
-Type "zshellcheck -severity warning -diff deploy.zsh"
+# 2. Preview the fix (unified diff). Inline `clear;` removes the dead empty-prompt frame.
+Type "clear; zshellcheck -severity warning -diff deploy.zsh"
 Sleep 300ms
 Enter
-Sleep 4.5s
+Sleep 5s
 
 # 3. Apply the fix
-Type "clear"
-Enter
-Sleep 200ms
-Type "zshellcheck -fix deploy.zsh"
+Type "clear; zshellcheck -severity warning -fix deploy.zsh"
 Sleep 300ms
 Enter
-Sleep 2.5s
+Sleep 3s
 
 # 4. Re-lint — one warning remains (rm -rf guard needs human judgment)
-Type "clear"
-Enter
-Sleep 200ms
-Type "zshellcheck -severity warning deploy.zsh"
+Type "clear; zshellcheck -severity warning deploy.zsh"
 Sleep 300ms
 Enter
-Sleep 4s
+Sleep 4.5s
