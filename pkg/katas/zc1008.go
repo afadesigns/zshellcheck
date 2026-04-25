@@ -13,6 +13,11 @@ func init() {
 			"can be used in more contexts.",
 		Severity: SeverityStyle,
 		Check:    checkZC1008,
+		// Reuse ZC1013's `let NAME=EXPR` → `(( NAME = EXPR ))` rewrite.
+		// All three of ZC1008, ZC1013, ZC1022 fire on the same `let`
+		// shape and want the same arithmetic-command form; the
+		// conflict resolver dedupes overlapping edits.
+		Fix: fixZC1013,
 	})
 }
 
