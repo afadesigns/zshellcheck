@@ -13,7 +13,30 @@ func init() {
 			"In Zsh, use `$0` inside a sourced file to get the script path, or " +
 			"`${(%):-%x}` for the current file regardless of sourcing context.",
 		Check: checkZC1297,
+		Fix:   fixZC1297,
 	})
+}
+
+// fixZC1297 renames the Bash `$BASH_SOURCE` identifier to the Zsh
+// `${(%):-%x}` prompt-flag expansion that resolves to the current file
+// regardless of sourcing context. Only the dollar-prefixed form is
+// rewritten — the bare `BASH_SOURCE` form (inside `${...}` or as an
+// assignment target) is left to manual review because the surrounding
+// braces would need adjusting too.
+func fixZC1297(node ast.Node, v Violation, _ []byte) []FixEdit {
+	ident, ok := node.(*ast.Identifier)
+	if !ok || ident == nil {
+		return nil
+	}
+	if ident.Value != "$BASH_SOURCE" {
+		return nil
+	}
+	return []FixEdit{{
+		Line:    v.Line,
+		Column:  v.Column,
+		Length:  len("$BASH_SOURCE"),
+		Replace: "${(%):-%x}",
+	}}
 }
 
 func checkZC1297(node ast.Node) []Violation {

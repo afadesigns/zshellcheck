@@ -16,7 +16,32 @@ func init() {
 			"current `$PATH`, returns the selected resolution, and has no index-refresh " +
 			"coupling.",
 		Check: checkZC1565,
+		Fix:   fixZC1565,
 	})
+}
+
+// fixZC1565 rewrites a `whereis` / `locate` / `mlocate` / `plocate`
+// command-name lookup into `command -v`. The detector restricts to the
+// four index-based forms so the swap is safe; arguments stay untouched.
+func fixZC1565(node ast.Node, v Violation, _ []byte) []FixEdit {
+	cmd, ok := node.(*ast.SimpleCommand)
+	if !ok {
+		return nil
+	}
+	ident, ok := cmd.Name.(*ast.Identifier)
+	if !ok {
+		return nil
+	}
+	switch ident.Value {
+	case "whereis", "locate", "mlocate", "plocate":
+		return []FixEdit{{
+			Line:    v.Line,
+			Column:  v.Column,
+			Length:  len(ident.Value),
+			Replace: "command -v",
+		}}
+	}
+	return nil
 }
 
 func checkZC1565(node ast.Node) []Violation {

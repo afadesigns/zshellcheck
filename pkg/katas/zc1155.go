@@ -12,7 +12,28 @@ func init() {
 		Description: "`which -a` may be an external command on some systems. " +
 			"Zsh builtin `whence -a` reliably lists all command locations.",
 		Check: checkZC1155,
+		Fix:   fixZC1155,
 	})
+}
+
+// fixZC1155 rewrites the `which` command name to `whence`, leaving the
+// `-a` flag and any other arguments in place. Detector already
+// guarantees the shape (which + -a anywhere in argv).
+func fixZC1155(node ast.Node, v Violation, _ []byte) []FixEdit {
+	cmd, ok := node.(*ast.SimpleCommand)
+	if !ok {
+		return nil
+	}
+	ident, ok := cmd.Name.(*ast.Identifier)
+	if !ok || ident.Value != "which" {
+		return nil
+	}
+	return []FixEdit{{
+		Line:    v.Line,
+		Column:  v.Column,
+		Length:  len("which"),
+		Replace: "whence",
+	}}
 }
 
 func checkZC1155(node ast.Node) []Violation {

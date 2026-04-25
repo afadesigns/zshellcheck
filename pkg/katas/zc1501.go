@@ -15,7 +15,28 @@ func init() {
 			"fresh installs and miss V2-only options (`--profile`, `--wait`, richer env " +
 			"interpolation). Call `docker compose` (space) or pin the V2 binary explicitly.",
 		Check: checkZC1501,
+		Fix:   fixZC1501,
 	})
+}
+
+// fixZC1501 rewrites the hyphenated `docker-compose` command name into
+// the space-separated `docker compose` subcommand form. Arguments stay
+// untouched — the V2 plugin accepts the same shape.
+func fixZC1501(node ast.Node, v Violation, _ []byte) []FixEdit {
+	cmd, ok := node.(*ast.SimpleCommand)
+	if !ok {
+		return nil
+	}
+	ident, ok := cmd.Name.(*ast.Identifier)
+	if !ok || ident.Value != "docker-compose" {
+		return nil
+	}
+	return []FixEdit{{
+		Line:    v.Line,
+		Column:  v.Column,
+		Length:  len("docker-compose"),
+		Replace: "docker compose",
+	}}
 }
 
 func checkZC1501(node ast.Node) []Violation {

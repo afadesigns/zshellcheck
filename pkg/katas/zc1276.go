@@ -12,6 +12,7 @@ func init() {
 		Description: "Zsh natively supports `{start..end}` brace expansion for generating number " +
 			"sequences, avoiding the overhead of forking the external `seq` command.",
 		Check: checkZC1276,
+		Fix:   fixZC1061,
 	})
 }
 

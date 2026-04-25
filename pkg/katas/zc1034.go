@@ -13,7 +13,31 @@ func init() {
 			"and reliable for checking if a command exists.",
 		Severity: SeverityStyle,
 		Check:    checkZC1034,
+		Fix:      fixZC1034,
 	})
+}
+
+// fixZC1034 rewrites `which` to `command -v` at the command name
+// position inside an ExpressionStatement. Single replacement — arguments
+// stay untouched.
+func fixZC1034(node ast.Node, v Violation, source []byte) []FixEdit {
+	es, ok := node.(*ast.ExpressionStatement)
+	if !ok {
+		return nil
+	}
+	cmd, ok := es.Expression.(*ast.SimpleCommand)
+	if !ok {
+		return nil
+	}
+	if cmd.Name == nil || cmd.Name.TokenLiteral() != "which" {
+		return nil
+	}
+	return []FixEdit{{
+		Line:    v.Line,
+		Column:  v.Column,
+		Length:  len("which"),
+		Replace: "command -v",
+	}}
 }
 
 func checkZC1034(node ast.Node) []Violation {

@@ -14,7 +14,60 @@ func init() {
 			"(or `--yes`), and for unattended upgrades also set " +
 			"`DEBIAN_FRONTEND=noninteractive` in the environment.",
 		Check: checkZC1448,
+		Fix:   fixZC1448,
 	})
+}
+
+// fixZC1448 inserts ` -y` after the `apt` command name so install /
+// upgrade / dist-upgrade / full-upgrade run without interactive
+// confirmation. Only fires for plain `apt` — for `apt-get` the legacy
+// ZC1213 fix already handles the rewrite, and emitting a duplicate
+// zero-length insert here would yield ` -y -y` after both edits apply.
+func fixZC1448(node ast.Node, v Violation, source []byte) []FixEdit {
+	cmd, ok := node.(*ast.SimpleCommand)
+	if !ok {
+		return nil
+	}
+	ident, ok := cmd.Name.(*ast.Identifier)
+	if !ok || ident.Value != "apt" {
+		return nil
+	}
+	nameOff := LineColToByteOffset(source, v.Line, v.Column)
+	if nameOff < 0 {
+		return nil
+	}
+	nameLen := IdentLenAt(source, nameOff)
+	if nameLen != len("apt") {
+		return nil
+	}
+	insertAt := nameOff + nameLen
+	insLine, insCol := offsetLineColZC1448(source, insertAt)
+	if insLine < 0 {
+		return nil
+	}
+	return []FixEdit{{
+		Line:    insLine,
+		Column:  insCol,
+		Length:  0,
+		Replace: " -y",
+	}}
+}
+
+func offsetLineColZC1448(source []byte, offset int) (int, int) {
+	if offset < 0 || offset > len(source) {
+		return -1, -1
+	}
+	line := 1
+	col := 1
+	for i := 0; i < offset; i++ {
+		if source[i] == '\n' {
+			line++
+			col = 1
+			continue
+		}
+		col++
+	}
+	return line, col
 }
 
 func checkZC1448(node ast.Node) []Violation {

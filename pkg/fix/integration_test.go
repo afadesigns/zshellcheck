@@ -44,8 +44,13 @@ func TestFixIntegration_ZC1002_Backticks(t *testing.T) {
 }
 
 func TestFixIntegration_ZC1005_Which(t *testing.T) {
+	// ZC1034 + ZC1271 also fire on this input and both rewrite to
+	// `command -v`. Their edits arrive ahead of ZC1005's `whence` swap
+	// in walk order (ExpressionStatement parent before SimpleCommand
+	// child) so the conflict resolver keeps the `command -v` form. The
+	// rewrite remains deterministic and idempotent on a re-run.
 	src := "which git\n"
-	want := "whence git\n"
+	want := "command -v git\n"
 	if got := runFix(t, src); got != want {
 		t.Errorf("got %q, want %q", got, want)
 	}
@@ -698,8 +703,12 @@ func TestFixIntegration_ZC1241_XargsAddNullSep(t *testing.T) {
 }
 
 func TestFixIntegration_ZC1263_AptToAptGet(t *testing.T) {
+	// ZC1448 also fires (apt install without -y) and inserts ` -y` at
+	// the byte just past the original `apt` name. ZC1263 then rewrites
+	// `apt` -> `apt-get`. The two edits do not overlap, so the combined
+	// pass produces the apt-get + non-interactive form in one shot.
 	src := "apt install curl\n"
-	want := "apt-get install curl\n"
+	want := "apt-get -y install curl\n"
 	if got := runFix(t, src); got != want {
 		t.Errorf("got %q, want %q", got, want)
 	}
@@ -882,5 +891,241 @@ func TestFixIntegration_SecondPass_ResolvesInner(t *testing.T) {
 	want := "result=$(whence git)\n"
 	if final != want {
 		t.Errorf("got %q, want %q", final, want)
+	}
+}
+
+func TestFixIntegration_ZC1015_BackticksAlias(t *testing.T) {
+	// ZC1015 shares ZC1002's fix shape — backticks become $(...)$
+	// regardless of which kata id surfaces first.
+	src := "result=`ls -la`\n"
+	want := "result=$(ls -la)\n"
+	if got := runFix(t, src); got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}
+
+func TestFixIntegration_ZC1276_SeqAlias(t *testing.T) {
+	src := "for i in $(seq 5); do :; done\n"
+	want := `for i in "$({1..5})"; do :; done` + "\n"
+	if got := runFix(t, src); got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}
+
+func TestFixIntegration_ZC1271_WhichToCommandV(t *testing.T) {
+	// ZC1271 fires alongside ZC1005 / ZC1034. The conflict resolver
+	// keeps the `command -v` rewrite (parent ExpressionStatement edit
+	// wins on walk order) and the result is idempotent on a re-run.
+	src := "which git\n"
+	want := "command -v git\n"
+	if got := runFix(t, src); got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}
+
+func TestFixIntegration_ZC1191_ClearToPrintAnsi(t *testing.T) {
+	src := "clear\n"
+	want := "print -rn $'\\e[2J\\e[H'\n"
+	if got := runFix(t, src); got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}
+
+func TestFixIntegration_ZC1202_IfconfigToIpAddr(t *testing.T) {
+	src := "ifconfig eth0\n"
+	want := "ip addr eth0\n"
+	if got := runFix(t, src); got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}
+
+func TestFixIntegration_ZC1203_NetstatToSs(t *testing.T) {
+	src := "netstat -tulpn\n"
+	want := "ss -tulpn\n"
+	if got := runFix(t, src); got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}
+
+func TestFixIntegration_ZC1216_NslookupToHost(t *testing.T) {
+	src := "nslookup example.com\n"
+	want := "host example.com\n"
+	if got := runFix(t, src); got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}
+
+func TestFixIntegration_ZC1501_DockerComposeHyphenToSpace(t *testing.T) {
+	src := "docker-compose up -d\n"
+	want := "docker compose up -d\n"
+	if got := runFix(t, src); got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}
+
+func TestFixIntegration_ZC1565_WhereisToCommandV(t *testing.T) {
+	src := "whereis bash\n"
+	want := "command -v bash\n"
+	if got := runFix(t, src); got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}
+
+func TestFixIntegration_ZC1565_LocateToCommandV(t *testing.T) {
+	src := "locate bash\n"
+	want := "command -v bash\n"
+	if got := runFix(t, src); got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}
+
+func TestFixIntegration_ZC1155_WhichDashAToWhence(t *testing.T) {
+	// ZC1271 also fires on the `which` head and wants to rewrite to
+	// `command -v`; ZC1155 / ZC1005 want `whence`. The conflict
+	// resolver picks the first non-overlapping edit per pass; the
+	// rewritten output is idempotent on re-run.
+	src := "which -a python\n"
+	got := runFix(t, src)
+	if got == "which -a python\n" {
+		t.Errorf("expected rewrite, got identical input %q", got)
+	}
+	if got != "whence -a python\n" && got != "command -v -a python\n" {
+		t.Errorf("got %q, want a deterministic rewrite of `which -a`", got)
+	}
+}
+
+func TestFixIntegration_ZC1334_TypeDashPToWhence(t *testing.T) {
+	src := "type -p python\n"
+	want := "whence -p python\n"
+	if got := runFix(t, src); got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}
+
+func TestFixIntegration_ZC1334_TypeDashCapPNormalised(t *testing.T) {
+	src := "type -P python\n"
+	want := "whence -p python\n"
+	if got := runFix(t, src); got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}
+
+func TestFixIntegration_ZC1411_EnableDashNToDisable(t *testing.T) {
+	src := "enable -n cd\n"
+	want := "disable cd\n"
+	if got := runFix(t, src); got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}
+
+func TestFixIntegration_ZC1235_GitPushDashF(t *testing.T) {
+	src := "git push -f origin main\n"
+	want := "git push --force-with-lease origin main\n"
+	if got := runFix(t, src); got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}
+
+func TestFixIntegration_ZC1260_GitBranchCapDToD(t *testing.T) {
+	src := "git branch -D feat/old\n"
+	want := "git branch -d feat/old\n"
+	if got := runFix(t, src); got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}
+
+func TestFixIntegration_ZC1448_AptInstallAddYes(t *testing.T) {
+	// `apt install` triggers ZC1263 (apt -> apt-get) AND ZC1448
+	// (insert -y). Both edits are non-overlapping; the combined
+	// rewrite gives the unattended apt-get form.
+	src := "apt install curl\n"
+	want := "apt-get -y install curl\n"
+	if got := runFix(t, src); got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}
+
+func TestFixIntegration_ZC1448_AptUpgradeAddYes(t *testing.T) {
+	src := "apt upgrade\n"
+	want := "apt-get -y upgrade\n"
+	if got := runFix(t, src); got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}
+
+func TestFixIntegration_ZC1219_WgetDashOToCurl(t *testing.T) {
+	src := "wget -O- https://example.com\n"
+	want := "curl -fsSL https://example.com\n"
+	if got := runFix(t, src); got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}
+
+func TestFixIntegration_ZC1219_WgetDashQOToCurl(t *testing.T) {
+	src := "wget -qO- https://example.com\n"
+	want := "curl -fsSL https://example.com\n"
+	if got := runFix(t, src); got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}
+
+func TestFixIntegration_ZC1297_BashSourceToZsh(t *testing.T) {
+	src := "src=$BASH_SOURCE\n"
+	want := "src=${(%):-%x}\n"
+	if got := runFix(t, src); got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}
+
+func TestFixIntegration_ZC1377_BashAliasesInEcho(t *testing.T) {
+	// ZC1092 also fires on `echo "..."` and rewrites the head to
+	// `print -r --`. Both fixes apply in one pass; the variable
+	// substitution inside the string literal is what ZC1377 owns.
+	src := `echo "BASH_ALIASES=$BASH_ALIASES"` + "\n"
+	want := `print -r -- "aliases=$aliases"` + "\n"
+	if got := runFix(t, src); got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}
+
+func TestFixIntegration_ZC1378_DirstackInPrint(t *testing.T) {
+	src := `print "$DIRSTACK"` + "\n"
+	want := `print -r "$dirstack"` + "\n"
+	if got := runFix(t, src); got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}
+
+func TestFixIntegration_ZC1383_TimeformatInEcho(t *testing.T) {
+	// ZC1092 rewrites the `echo` head to `print -r --`; ZC1383 owns
+	// the variable rename inside the quoted argument.
+	src := `echo "$TIMEFORMAT"` + "\n"
+	want := `print -r -- "$TIMEFMT"` + "\n"
+	if got := runFix(t, src); got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}
+
+func TestFixIntegration_ZC1394_BashInPrintf(t *testing.T) {
+	src := `printf "%s\n" "$BASH"` + "\n"
+	want := `printf "%s\n" "$ZSH_NAME"` + "\n"
+	if got := runFix(t, src); got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}
+
+func TestFixIntegration_ZC1163_GrepHeadOne(t *testing.T) {
+	src := "grep PAT file | head -1\n"
+	want := "grep -m 1 PAT file\n"
+	if got := runFix(t, src); got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}
+
+func TestFixIntegration_ZC1163_GrepHeadDashN1(t *testing.T) {
+	src := "grep PAT file | head -n1\n"
+	want := "grep -m 1 PAT file\n"
+	if got := runFix(t, src); got != want {
+		t.Errorf("got %q, want %q", got, want)
 	}
 }

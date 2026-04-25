@@ -12,6 +12,7 @@ func init() {
 			"It is more readable and can be nested easily, unlike backticks.",
 		Severity: SeverityStyle,
 		Check:    checkZC1015,
+		Fix:      fixZC1002,
 	})
 }
 
