@@ -8,11 +8,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- **Auto-fix coverage now at 117/1000 katas.** New rewrites since 1.0.15, every one deterministic and idempotent on a re-run:
+- **Auto-fix coverage now at 118/1000 katas.** New rewrites since 1.0.15, every one deterministic and idempotent on a re-run:
   - `ZC1015` backticks → `$(...)`.
   - `ZC1016` inserts `-s` after `read` when the variable looks sensitive (`password`, `secret`, `token`, …).
   - `ZC1032` `let i=i+1` → `(( i++ ))` (and `i-1` → `i--`).
   - `ZC1043` prepends `local ` to unscoped function-body assignments.
+  - `ZC1095` `seq N` → `{1..N}` (reuses the ZC1061 brace-expansion rewrite).
   - `ZC1034` / `ZC1271` `which` → `command -v`.
   - `ZC1107` `[[ a -lt b ]]` → `(( a < b ))`.
   - `ZC1146` `cat F | sed/awk/sort/head/tail` → `tool ... F`.

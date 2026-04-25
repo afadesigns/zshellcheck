@@ -12,6 +12,11 @@ func init() {
 			"It is cleaner than `for i in {1..N}` or C-style for loops when the iterator variable is unused.",
 		Severity: SeverityStyle,
 		Check:    checkZC1095,
+		// Reuse the seq → {start..end} rewrite from ZC1061. The detector
+		// here fires on a single-numeric-arg `seq N`, which fixZC1061
+		// rewrites to `{1..N}` — exactly the brace expansion this kata
+		// suggests for `for i in {1..N}`.
+		Fix: fixZC1061,
 	})
 }
 

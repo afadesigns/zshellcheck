@@ -11,7 +11,7 @@ Auto-generated list of all 1000 implemented checks. Do not edit by hand — rege
 | `info` | 64 |
 | `style` | 257 |
 | **total** | **1000** |
-| **with auto-fix** | **116** |
+| **with auto-fix** | **117** |
 
 Auto-fix availability is marked per-entry below as **Auto-fix:** `yes` or `no`. Run `zshellcheck -fix path/...` to apply every available rewrite, or `-diff` to preview without writing.
 
@@ -111,7 +111,7 @@ Auto-fix availability is marked per-entry below as **Auto-fix:** `yes` or `no`. 
 - [ZC1092: Prefer `print` or `printf` over `echo` in Zsh](#zc1092) · auto-fix
 - [ZC1093: Superseded by ZC1038 — retired duplicate](#zc1093)
 - [ZC1094: Use parameter expansion instead of `sed` for simple substitutions](#zc1094)
-- [ZC1095: Use `repeat N` for simple repetition](#zc1095)
+- [ZC1095: Use `repeat N` for simple repetition](#zc1095) · auto-fix
 - [ZC1096: Warn on `bc` for simple arithmetic](#zc1096)
 - [ZC1097: Declare loop variables as `local` in functions](#zc1097)
 - [ZC1098: Use `(q)` flag for quoting variables in eval](#zc1098)
@@ -2152,7 +2152,7 @@ Disable by adding `ZC1094` to `disabled_katas` in `.zshellcheckrc`.
 ### ZC1095 — Use `repeat N` for simple repetition
 
 **Severity:** `style`  
-**Auto-fix:** `no`
+**Auto-fix:** `yes`
 
 Zsh provides `repeat N do ... done` for running a block a fixed number of times. It is cleaner than `for i in {1..N}` or C-style for loops when the iterator variable is unused.
 

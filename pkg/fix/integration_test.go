@@ -1465,6 +1465,14 @@ func TestFixIntegration_ZC1279_AlreadyRealpath(t *testing.T) {
 	}
 }
 
+func TestFixIntegration_ZC1095_SeqNToBraceRange(t *testing.T) {
+	src := "seq 5\n"
+	want := "{1..5}\n"
+	if got := runFix(t, src); got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}
+
 func TestFixIntegration_ZC1252_PipedCatHandledByZC1146(t *testing.T) {
 	// `cat /etc/group | head` lets ZC1146 win the overlap and collapse
 	// the pipe into `head /etc/group`. ZC1252's two-edit rewrite would
