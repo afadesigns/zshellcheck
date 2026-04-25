@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- **Auto-fix coverage now at 114/1000 katas.** New rewrites since 1.0.15, every one deterministic and idempotent on a re-run:
+- **Auto-fix coverage now at 115/1000 katas.** New rewrites since 1.0.15, every one deterministic and idempotent on a re-run:
   - `ZC1015` backticks → `$(...)`.
   - `ZC1016` inserts `-s` after `read` when the variable looks sensitive (`password`, `secret`, `token`, …).
   - `ZC1032` `let i=i+1` → `(( i++ ))` (and `i-1` → `i--`).
@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `ZC1153` `diff -q F1 F2` → `cmp -s F1 F2`.
   - `ZC1155` `which -a` → `whence -a`.
   - `ZC1163` `grep PAT | head -1` → `grep -m 1 PAT`.
+  - `ZC1172` `read -a ARR` → `read -A ARR` (Zsh array form).
   - `ZC1190` `grep -v p1 | grep -v p2` → `grep -v -e p1 -e p2`.
   - `ZC1191` `clear` → `print -rn $'\e[2J\e[H'`.
   - `ZC1202` `ifconfig` → `ip addr`.

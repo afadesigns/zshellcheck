@@ -1418,6 +1418,23 @@ func TestFixIntegration_ZC1252_CatShadowToGetent(t *testing.T) {
 	}
 }
 
+func TestFixIntegration_ZC1172_ReadDashAToDashCapA(t *testing.T) {
+	src := "read -a arr\n"
+	want := "read -r -A arr\n"
+	if got := runFix(t, src); got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}
+
+func TestFixIntegration_ZC1172_AlreadyDashCapA(t *testing.T) {
+	src := "read -A arr\n"
+	want := "read -r -A arr\n"
+	// ZC1012 still inserts -r; the -a/-A swap is the no-op part.
+	if got := runFix(t, src); got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}
+
 func TestFixIntegration_ZC1252_PipedCatHandledByZC1146(t *testing.T) {
 	// `cat /etc/group | head` lets ZC1146 win the overlap and collapse
 	// the pipe into `head /etc/group`. ZC1252's two-edit rewrite would

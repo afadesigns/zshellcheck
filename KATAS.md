@@ -11,7 +11,7 @@ Auto-generated list of all 1000 implemented checks. Do not edit by hand — rege
 | `info` | 64 |
 | `style` | 257 |
 | **total** | **1000** |
-| **with auto-fix** | **113** |
+| **with auto-fix** | **114** |
 
 Auto-fix availability is marked per-entry below as **Auto-fix:** `yes` or `no`. Run `zshellcheck -fix path/...` to apply every available rewrite, or `-diff` to preview without writing.
 
@@ -185,7 +185,7 @@ Auto-fix availability is marked per-entry below as **Auto-fix:** `yes` or `no`. 
 - [ZC1169: Avoid `install` for simple copy+chmod — use `cp` then `chmod`](#zc1169)
 - [ZC1170: Avoid `pushd`/`popd` without `-q` flag](#zc1170) · auto-fix
 - [ZC1171: Use `print` instead of `echo -e` for escape sequences](#zc1171) · auto-fix
-- [ZC1172: Use `read -A` instead of Bash `read -a` for arrays](#zc1172)
+- [ZC1172: Use `read -A` instead of Bash `read -a` for arrays](#zc1172) · auto-fix
 - [ZC1173: Avoid `column` command — use Zsh `print -C` for columnar output](#zc1173)
 - [ZC1174: Use Zsh `${(j:delim:)}` instead of `paste -sd`](#zc1174)
 - [ZC1175: Avoid `tput` for simple ANSI colors — use Zsh `%F{color}`](#zc1175)
@@ -3040,7 +3040,7 @@ Disable by adding `ZC1171` to `disabled_katas` in `.zshellcheckrc`.
 ### ZC1172 — Use `read -A` instead of Bash `read -a` for arrays
 
 **Severity:** `info`  
-**Auto-fix:** `no`
+**Auto-fix:** `yes`
 
 Bash uses `read -a` to read into an array, but Zsh uses `read -A`. Using `-a` in Zsh reads into a scalar, not an array.
 
