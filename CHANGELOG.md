@@ -346,7 +346,7 @@ Filed during release prep for community resolution:
 ### Added
 - **Kata ZC1004**: Use `return` instead of `exit` in functions.
 - **Kata ZC1016**: Use `read -s` when reading sensitive information.
-- **Kata ZC1074**: Prefer modifiers `:h`/:`t` over `dirname`/`basename`.
+- **Kata ZC1074**: Prefer modifiers `:h` / `:t` over `dirname` / `basename`.
 - **Kata ZC1075**: Quote variable expansions to prevent globbing.
 - **Kata ZC1076**: Use `autoload -Uz` for lazy loading.
 - **Kata ZC1077**: Prefer `${var:u/l}` over `tr` for case conversion.
