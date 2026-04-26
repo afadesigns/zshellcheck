@@ -13,7 +13,7 @@ Static analysis and auto-fix for the setopts, hooks, and globs Bash never learne
 [![Go Report](https://goreportcard.com/badge/github.com/afadesigns/zshellcheck)](https://goreportcard.com/report/github.com/afadesigns/zshellcheck)
 [![codecov](https://codecov.io/gh/afadesigns/zshellcheck/graph/badge.svg)](https://codecov.io/gh/afadesigns/zshellcheck)
 [![Scorecard](https://api.securityscorecards.dev/projects/github.com/afadesigns/zshellcheck/badge)](https://securityscorecards.dev/viewer/?uri=github.com/afadesigns/zshellcheck)
-<a href="https://www.bestpractices.dev/projects/12657"><img src="https://www.bestpractices.dev/projects/12657/badge" alt="OpenSSF Best Practices"></a>
+[![OpenSSF Best Practices](https://www.bestpractices.dev/projects/12657/badge?v=gold)](https://www.bestpractices.dev/projects/12657)
 [![SLSA](https://img.shields.io/badge/SLSA-Level%203-brightgreen)](https://slsa.dev)
 
 [**Install**](INSTALL.md) · [**User guide**](docs/USER_GUIDE.md) · [**Katas**](KATAS.md) · [**Integrations**](INTEGRATIONS.md) · [**Roadmap**](ROADMAP.md) · [**Changelog**](CHANGELOG.md)

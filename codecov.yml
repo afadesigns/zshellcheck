@@ -1,60 +1,150 @@
+# Codecov configuration — OpenSSF gold-tier coverage floor (90.0%).
+#
+# Public truth: https://app.codecov.io/gh/afadesigns/zshellcheck
+# Spec sync:    .claude/rules/quality-gates.md (gate definition)
+# Validate:     curl --data-binary @codecov.yml https://codecov.io/validate
+#
+# Hierarchy: repo YAML deep-merges with team / global YAML.
+# Reference: https://docs.codecov.com/docs/codecovyml-reference
+
 codecov:
+  branch: main
   require_ci_to_pass: true
+  max_report_age: 12h
   notify:
+    after_n_builds: 3            # ubuntu + macos + windows uploads must all land first
     wait_for_ci: true
+    notify_error: true           # surface upload failures as a separate comment
 
 coverage:
   precision: 2
   round: down
-  range: "90...100"
+  range: 90..100                 # gold-tier floor at the green edge — anything below is yellow/red
+
   status:
     project:
       default:
-        target: 95%
-        threshold: 1%
+        target: 90%              # OpenSSF gold-tier test_statement_coverage90 hardline
+        threshold: 0%            # zero slack — a 0.01% drop fails the gate
+        base: auto
         if_ci_failed: error
-        informational: false
+        if_not_found: failure    # missing upload is a regression, never a silent pass
         only_pulls: false
+        informational: false
+        removed_code_behavior: adjust_base   # subtract removed-code coverage from the base before comparing — file deletions never inflate the delta
     patch:
       default:
-        # Patch target is intentionally lower than project target: a
-        # single-kata PR adds ~30 lines of Check function where the
-        # first guard (non-matching node type) is structurally
-        # unreachable via testutil.Check (which filters by node type).
-        # 80 gives room for these guards without accepting real
-        # regressions.
-        target: 80%
-        threshold: 2%
+        target: 90%              # new code held to the same gold-tier floor
+        threshold: 0%
+        base: auto
         if_ci_failed: error
+        if_not_found: failure
+        only_pulls: true
         informational: false
+        removed_code_behavior: removals_only
     changes:
       default:
-        if_not_found: success
         if_ci_failed: error
+        if_not_found: success    # "indirect-change" detector — only meaningful when present
+
+parsers:
+  go:
+    # Go's `go test -cover` records partially-executed lines as
+    # partial hits (e.g. when a `switch` covers some arms). Treating
+    # partials as hits aligns Codecov's percentage with the local
+    # `go tool cover -func=cov.out | tail -1` value the gold-gates
+    # skill prints.
+    partials_as_hits: true
+
+flag_management:
+  default_rules:
+    carryforward: true           # carry coverage from base when a flag's upload is skipped
+    statuses:
+      - type: project
+        target: auto
+        threshold: 0%
+        if_ci_failed: error
+        flag_coverage_not_uploaded_behavior: exclude
+  individual_flags:
+    - name: unit
+      paths:
+        - pkg/
+        - cmd/
+      carryforward: true
+
+component_management:
+  default_rules:
+    statuses:
+      - type: project
+        target: auto             # baseline auto-tracks each component's last green head
+        threshold: 0%
+        if_ci_failed: error
+  individual_components:
+    - component_id: katas
+      name: Kata library
+      paths:
+        - pkg/katas/zc*.go
+        - pkg/katas/fixutil.go
+        - pkg/katas/katas.go
+    - component_id: lexer_parser
+      name: Lexer + Parser
+      paths:
+        - pkg/lexer/**
+        - pkg/parser/**
+    - component_id: ast
+      name: AST
+      paths:
+        - pkg/ast/**
+    - component_id: fix
+      name: Auto-fix engine
+      paths:
+        - pkg/fix/**
+    - component_id: cli
+      name: CLI front-end
+      paths:
+        - cmd/zshellcheck/**
+        - pkg/config/**
+        - pkg/reporter/**
 
 comment:
-  layout: "reach, diff, flags, files, footer"
+  layout: "header, diff, flags, components, files, footer"
   behavior: default
-  require_changes: true
-  require_base: true
-  require_head: true
+  require_changes: "coverage_drop"   # only post when the PR actually drops coverage
+  require_base: yes
+  require_head: yes
   show_carryforward_flags: true
-
-flags:
-  unit:
-    paths:
-      - pkg/
-    carryforward: true
+  show_critical_paths: true
+  hide_project_coverage: false
 
 github_checks:
-  annotations: true
+  annotations: true              # inline per-line annotations on the diff view
 
+# Files / paths excluded from coverage measurement.
+# Each entry is justified — never expand to mask a regression.
 ignore:
+  # Single hand-bumped const, no logic worth measuring.
+  - "pkg/version/**"
+
+  # Test helpers exercised transitively through every kata test;
+  # adding direct tests inflates the metric without hardening the
+  # surface.
+  - "pkg/testutil/**"
+
+  # Shell-driven integration harness — not Go-coverable.
+  - "tests/**"
+
+  # CLI shim. main() in cmd/zshellcheck/main.go is structurally
+  # untestable from `go test` (it calls os.Exit). The covered
+  # surface (run, processFile, processPath, applyFixesUntilStable,
+  # collectEdits, loadConfig) lives in the same package and gets
+  # measured via the rest of cmd/zshellcheck/.
   - "cmd/zshellcheck/main.go"
-  - "pkg/testutil"
-  - "pkg/version"
-  - "tests"
-  - "pkg/parser/parser_test_helpers.go"
-  - "pkg/parser/parser_test_minimal.go"
-  - "internal/tools/**"        # build-time generators, not shipped — invoked manually by `go run`
-  - "scripts/**"               # ad-hoc maintenance scripts
+
+  # Build-time generators. Invoked at release time via `go run`,
+  # never compiled into the runtime binary, never reachable from
+  # the published archive.
+  - "internal/tools/**"
+
+  # Ad-hoc maintenance helpers (consolidate-katatests.py,
+  # consolidate-katas-source.py). Not Go.
+  - "scripts/**"
