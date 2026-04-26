@@ -1,22 +1,22 @@
 # Integrations
 
-ZShellCheck is verified against the script trees of these popular Zsh projects.
+ZShellCheck is verified against the script trees of these popular Zsh integrations.
 Every release runs a parse + lint sweep over each — no panics, no crashes, deterministic output.
-The list grows each release; the goal is 300+ projects before v2.
+The list grows each release; the goal is 300+ integrations before v2.
 
 ## Summary
 
 |   |   |
 | ---: | :--- |
-| **19** | projects verified today |
+| **19** | integrations verified today |
 | **0** | panics on the current sweep |
 | **300+** | targeted before v2 — see [ROADMAP.md](ROADMAP.md) |
 
 ## Featured
 
-The projects we test most heavily and link from the docs.
+The integrations we test most heavily and link from the docs.
 
-| Project | Category | Files |
+| Integration | Category | Files |
 | :--- | :--- | ---: |
 | [oh-my-zsh](https://github.com/ohmyzsh/ohmyzsh) | Framework | 497 |
 | [prezto](https://github.com/sorin-ionescu/prezto) | Framework | 41 |
@@ -27,7 +27,7 @@ The projects we test most heavily and link from the docs.
 
 ## Frameworks
 
-| Project | Files |
+| Integration | Files |
 | :--- | ---: |
 | [oh-my-zsh](https://github.com/ohmyzsh/ohmyzsh) | 497 |
 | [prezto](https://github.com/sorin-ionescu/prezto) | 41 |
@@ -37,14 +37,14 @@ The projects we test most heavily and link from the docs.
 
 ## Plugin / theme managers
 
-| Project | Files |
+| Integration | Files |
 | :--- | ---: |
 | [antidote](https://github.com/mattmc3/antidote) | 24 |
 | [zinit](https://github.com/zdharma-continuum/zinit) | 9 |
 
 ## Plugin / theme tooling
 
-| Project | Files |
+| Integration | Files |
 | :--- | ---: |
 | [fzf](https://github.com/junegunn/fzf) | 2 |
 | [fzf-tab](https://github.com/Aloxaf/fzf-tab) | 5 |
@@ -52,7 +52,7 @@ The projects we test most heavily and link from the docs.
 
 ## Plugins
 
-| Project | Files |
+| Integration | Files |
 | :--- | ---: |
 | [zsh-autosuggestions](https://github.com/zsh-users/zsh-autosuggestions) | 13 |
 | [zsh-syntax-highlighting](https://github.com/zsh-users/zsh-syntax-highlighting) | 301 |
@@ -63,7 +63,7 @@ The projects we test most heavily and link from the docs.
 
 ## Prompts
 
-| Project | Files |
+| Integration | Files |
 | :--- | ---: |
 | [powerlevel10k](https://github.com/romkatv/powerlevel10k) | 16 |
 | [spaceship-prompt](https://github.com/spaceship-prompt/spaceship-prompt) | 119 |
@@ -80,17 +80,15 @@ The projects we test most heavily and link from the docs.
 
 ## How the sweep runs
 
-Each release tag triggers a parse + lint pass over every project listed in the **Featured** + per-category tables above.
-Sandbox lives at `~/.config/zsh/zshellcheck/integration/` (local-only) and never touches the user's actual `~/.config/zsh` modules.
-A run produces:
+Each release tag triggers a parse + lint pass over every integration listed in the **Featured** + per-category tables above.
+Each pass produces:
 
-- `parse_errors` — total parser failures across the project.
+- `parse_errors` — total parser failures across the integration.
 - `violations` — total kata hits (all severities).
-- A per-project markdown report under `~/.config/zsh/zshellcheck/integration/reports/`.
 
-A bug surfaced by the sweep gets a GitHub issue, a PR fixes it, and the project stays in the matrix on every subsequent release.
+A bug surfaced by the sweep gets a GitHub issue, a PR fixes it, and the integration stays in the matrix on every subsequent release.
 
 ## Adding an integration
 
-If you maintain (or rely on) a popular Zsh project not listed above and want it covered by every release sweep, open an issue tagged `integration` with the repo URL and a short note on what it covers.
+If you maintain (or rely on) a popular Zsh integration not listed above and want it covered by every release sweep, open an issue tagged `integration` with the repo URL and a short note on what it covers.
 We add it to the next sweep and credit the request in the changelog entry.
