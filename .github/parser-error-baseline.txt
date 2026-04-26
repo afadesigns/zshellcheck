@@ -1,0 +1,15 @@
+# Parser-error baseline. Regenerate with scripts/parser-corpus-sweep.sh --update-baseline
+# Format: <relpath>\t<count>
+fast-syntax-highlighting/test/to-parse.zsh	5
+fzf/shell/completion.zsh	1
+fzf/shell/key-bindings.zsh	6
+fzf-tab/test/ztst.zsh	1
+zephyr/plugins/compstyle/compstyle.plugin.zsh	1
+zimfw/zimfw.zsh	21
+zinit/share/git-process-output.zsh	10
+zinit/zinit-autoload.zsh	20
+zinit/zinit-install.zsh	35
+zinit/zinit-side.zsh	2
+zinit/zinit.zsh	30
+zsh-utils/utility/utility.plugin.zsh	1
+zsh-vi-mode/zsh-vi-mode.zsh	37

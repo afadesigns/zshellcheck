@@ -1,0 +1,17 @@
+# Pinned upstream corpora for the parser-error gate.
+# Format: name<TAB>sha<TAB>url<TAB>globs(space-separated)
+# The sweep clones each at the pinned SHA, runs zshellcheck, and compares
+# per-file parser-error counts against .github/parser-error-baseline.txt.
+# Update SHAs deliberately — every bump rewrites the baseline.
+antidote	4913257e0ae3	https://github.com/mattmc3/antidote.git	*.zsh *.plugin.zsh
+fast-syntax-highlighting	3d574ccf4880	https://github.com/zdharma-continuum/fast-syntax-highlighting.git	*.zsh
+fzf	27dab2422e5f	https://github.com/junegunn/fzf.git	*.zsh
+fzf-tab	0983009f8666	https://github.com/Aloxaf/fzf-tab.git	*.zsh *.plugin.zsh
+starship	c97455d9debe	https://github.com/starship/starship.git	*.zsh
+zephyr	bdc1ad9cffad	https://github.com/mattmc3/zephyr.git	*.zsh *.plugin.zsh
+zimfw	472e884b9348	https://github.com/zimfw/zimfw.git	*.zsh
+zinit	6c9ac1c4bc9b	https://github.com/zdharma-continuum/zinit.git	*.zsh
+zsh-autocomplete	20f6c34f2027	https://github.com/marlonrichert/zsh-autocomplete.git	*.zsh *.plugin.zsh
+zsh-history-substring-search	14c8d2e0ffae	https://github.com/zsh-users/zsh-history-substring-search.git	*.zsh *.plugin.zsh
+zsh-utils	be71275c5050	https://github.com/belak/zsh-utils.git	*.zsh *.plugin.zsh
+zsh-vi-mode	08bd1c045204	https://github.com/jeffreytse/zsh-vi-mode.git	*.zsh *.plugin.zsh
