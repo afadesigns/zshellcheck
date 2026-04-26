@@ -1935,54 +1935,60 @@ func init() {
 	})
 }
 
+var (
+	zc1536AddVerbs   = map[string]struct{}{
+		"-A": {}, "-I": {}, "-R": {},
+		"--append": {}, "--insert": {}, "--replace": {},
+	}
+	zc1536DnatTargets = map[string]struct{}{"DNAT": {}, "REDIRECT": {}, "NETMAP": {}}
+	zc1536Tools       = map[string]struct{}{"iptables": {}, "ip6tables": {}}
+)
+
 func checkZC1536(node ast.Node) []Violation {
 	cmd, ok := node.(*ast.SimpleCommand)
 	if !ok {
 		return nil
 	}
-
-	ident, ok := cmd.Name.(*ast.Identifier)
-	if !ok {
+	if _, hit := zc1536Tools[CommandIdentifier(cmd)]; !hit {
 		return nil
 	}
-	if ident.Value != "iptables" && ident.Value != "ip6tables" {
+	args := zc1464StringArgs(cmd)
+	if !zc1536HasAddVerb(args) {
 		return nil
 	}
-
-	args := make([]string, 0, len(cmd.Arguments))
-	for _, a := range cmd.Arguments {
-		args = append(args, a.String())
+	tgt := zc1536FirstDnatTarget(args)
+	if tgt == "" {
+		return nil
 	}
+	return []Violation{{
+		KataID: "ZC1536",
+		Message: "`iptables -j " + tgt + "` rewrites packet destination — " +
+			"silent redirect surface. Use declarative nftables/firewalld config.",
+		Line:   cmd.Token.Line,
+		Column: cmd.Token.Column,
+		Level:  SeverityWarning,
+	}}
+}
 
-	// Must see an add/insert verb to avoid flagging -L listings.
-	var hasAdd bool
+func zc1536HasAddVerb(args []string) bool {
 	for _, a := range args {
-		if a == "-A" || a == "-I" || a == "-R" || a == "--append" ||
-			a == "--insert" || a == "--replace" {
-			hasAdd = true
-			break
+		if _, hit := zc1536AddVerbs[a]; hit {
+			return true
 		}
 	}
-	if !hasAdd {
-		return nil
-	}
+	return false
+}
 
+func zc1536FirstDnatTarget(args []string) string {
 	for i, a := range args {
-		if a == "-j" && i+1 < len(args) {
-			tgt := args[i+1]
-			if tgt == "DNAT" || tgt == "REDIRECT" || tgt == "NETMAP" {
-				return []Violation{{
-					KataID: "ZC1536",
-					Message: "`iptables -j " + tgt + "` rewrites packet destination — " +
-						"silent redirect surface. Use declarative nftables/firewalld config.",
-					Line:   cmd.Token.Line,
-					Column: cmd.Token.Column,
-					Level:  SeverityWarning,
-				}}
-			}
+		if a != "-j" || i+1 >= len(args) {
+			continue
+		}
+		if _, hit := zc1536DnatTargets[args[i+1]]; hit {
+			return args[i+1]
 		}
 	}
-	return nil
+	return ""
 }
 
 func init() {
@@ -2428,52 +2434,56 @@ func init() {
 	})
 }
 
+var (
+	zc1545Runtimes      = map[string]struct{}{"docker": {}, "podman": {}, "nerdctl": {}}
+	zc1545PruneSubcmds  = map[string]struct{}{"system": {}, "volume": {}}
+	zc1545AllVolFlags   = map[string]struct{}{
+		"--volumes": {}, "-a": {}, "--all": {},
+		"-af": {}, "-fa": {}, "--all --volumes": {},
+	}
+)
+
 func checkZC1545(node ast.Node) []Violation {
 	cmd, ok := node.(*ast.SimpleCommand)
 	if !ok {
 		return nil
 	}
-
-	ident, ok := cmd.Name.(*ast.Identifier)
-	if !ok {
+	tool := CommandIdentifier(cmd)
+	if _, hit := zc1545Runtimes[tool]; !hit {
 		return nil
 	}
-	if ident.Value != "docker" && ident.Value != "podman" && ident.Value != "nerdctl" {
-		return nil
-	}
-
-	args := make([]string, 0, len(cmd.Arguments))
-	for _, a := range cmd.Arguments {
-		args = append(args, a.String())
-	}
-
-	if len(args) < 2 {
-		return nil
-	}
-	// docker system prune / volume prune
-	if !((args[0] == "system" && args[1] == "prune") ||
-		(args[0] == "volume" && args[1] == "prune")) {
-		return nil
-	}
-
-	var hasAllVolumes bool
-	for _, a := range args[2:] {
-		if a == "--volumes" || a == "-a" || a == "--all" ||
-			a == "-af" || a == "-fa" || a == "--all --volumes" {
-			hasAllVolumes = true
-		}
-	}
-	if !hasAllVolumes {
+	args := zc1464StringArgs(cmd)
+	pruneTarget, ok := zc1545PruneTarget(args)
+	if !ok || !zc1545HasAllOrVolumes(args[2:]) {
 		return nil
 	}
 	return []Violation{{
 		KataID: "ZC1545",
-		Message: "`" + ident.Value + " " + args[0] + " prune` with `-a`/`--volumes` drops " +
+		Message: "`" + tool + " " + pruneTarget + " prune` with `-a`/`--volumes` drops " +
 			"unused volumes — stopped stacks lose their databases. Scope the prune.",
 		Line:   cmd.Token.Line,
 		Column: cmd.Token.Column,
 		Level:  SeverityWarning,
 	}}
+}
+
+func zc1545PruneTarget(args []string) (string, bool) {
+	if len(args) < 2 || args[1] != "prune" {
+		return "", false
+	}
+	if _, hit := zc1545PruneSubcmds[args[0]]; !hit {
+		return "", false
+	}
+	return args[0], true
+}
+
+func zc1545HasAllOrVolumes(args []string) bool {
+	for _, a := range args {
+		if _, hit := zc1545AllVolFlags[a]; hit {
+			return true
+		}
+	}
+	return false
 }
 
 func init() {

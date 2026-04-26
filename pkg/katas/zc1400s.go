@@ -1071,21 +1071,18 @@ func init() {
 	})
 }
 
+var zc1420SymbolicSetuid = map[string]struct{}{
+	"+s": {}, "u+s": {}, "g+s": {}, "+st": {}, "u+st": {},
+}
+
 func checkZC1420(node ast.Node) []Violation {
 	cmd, ok := node.(*ast.SimpleCommand)
-	if !ok {
+	if !ok || CommandIdentifier(cmd) != "chmod" {
 		return nil
 	}
-
-	ident, ok := cmd.Name.(*ast.Identifier)
-	if !ok || ident.Value != "chmod" {
-		return nil
-	}
-
 	for _, arg := range cmd.Arguments {
 		v := strings.Trim(arg.String(), "'\"")
-		// Symbolic setuid/setgid
-		if v == "+s" || v == "u+s" || v == "g+s" || v == "+st" || v == "u+st" {
+		if _, hit := zc1420SymbolicSetuid[v]; hit {
 			return []Violation{{
 				KataID: "ZC1420",
 				Message: "`chmod +s` / `u+s` / `g+s` sets setuid/setgid — privilege-escalation risk. " +
@@ -1095,9 +1092,7 @@ func checkZC1420(node ast.Node) []Violation {
 				Level:  SeverityWarning,
 			}}
 		}
-		// Numeric modes starting with 4xxx or 2xxx (setuid/setgid)
-		if len(v) == 4 && (v[0] == '4' || v[0] == '2' || v[0] == '6') &&
-			v[1] >= '0' && v[1] <= '7' && v[2] >= '0' && v[2] <= '7' && v[3] >= '0' && v[3] <= '7' {
+		if zc1420IsNumericSetuid(v) {
 			return []Violation{{
 				KataID:  "ZC1420",
 				Message: "Numeric mode with leading 4/2/6 sets setuid/setgid — privilege-escalation risk.",
@@ -1107,8 +1102,22 @@ func checkZC1420(node ast.Node) []Violation {
 			}}
 		}
 	}
-
 	return nil
+}
+
+func zc1420IsNumericSetuid(v string) bool {
+	if len(v) != 4 {
+		return false
+	}
+	if v[0] != '4' && v[0] != '2' && v[0] != '6' {
+		return false
+	}
+	for i := 1; i < 4; i++ {
+		if v[i] < '0' || v[i] > '7' {
+			return false
+		}
+	}
+	return true
 }
 
 func init() {
