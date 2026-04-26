@@ -1659,6 +1659,14 @@ func TestFixIntegration_ZC1685_SleepInfinityToExecTail(t *testing.T) {
 	}
 }
 
+func TestFixIntegration_ZC1069_LocalToTypesetAtFileScope(t *testing.T) {
+	src := "local x=1\n"
+	want := "typeset x=1\n"
+	if got := runFix(t, src); got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}
+
 func TestFixIntegration_ZC1252_PipedCatHandledByZC1146(t *testing.T) {
 	// `cat /etc/group | head` lets ZC1146 win the overlap and collapse
 	// the pipe into `head /etc/group`. ZC1252's two-edit rewrite would

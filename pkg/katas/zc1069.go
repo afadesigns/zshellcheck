@@ -12,7 +12,29 @@ func init() {
 			"Using it in the global scope causes an error.",
 		Severity: SeverityInfo,
 		Check:    checkZC1069,
+		Fix:      fixZC1069,
 	})
+}
+
+// fixZC1069 rewrites `local` to `typeset` when used at file scope.
+// `typeset` works in both function and global contexts, so the
+// rewrite is safe wherever the detector fires. Single-edit name
+// swap at the violation column. Idempotent — a re-run sees
+// `typeset`, not `local`. Defensive byte-match guard.
+func fixZC1069(_ ast.Node, v Violation, source []byte) []FixEdit {
+	off := LineColToByteOffset(source, v.Line, v.Column)
+	if off < 0 || off+len("local") > len(source) {
+		return nil
+	}
+	if string(source[off:off+len("local")]) != "local" {
+		return nil
+	}
+	return []FixEdit{{
+		Line:    v.Line,
+		Column:  v.Column,
+		Length:  len("local"),
+		Replace: "typeset",
+	}}
 }
 
 func checkZC1069(node ast.Node) []Violation {

@@ -11,7 +11,7 @@ Auto-generated list of all 1000 implemented checks. Do not edit by hand — rege
 | `info` | 64 |
 | `style` | 257 |
 | **total** | **1000** |
-| **with auto-fix** | **135** |
+| **with auto-fix** | **136** |
 
 Auto-fix availability is marked per-entry below as **Auto-fix:** `yes` or `no`. Run `zshellcheck -fix path/...` to apply every available rewrite, or `-diff` to preview without writing.
 
@@ -85,7 +85,7 @@ Auto-fix availability is marked per-entry below as **Auto-fix:** `yes` or `no`. 
 - [ZC1066: Avoid iterating over `cat` output](#zc1066)
 - [ZC1067: Separate `export` and assignment to avoid masking return codes](#zc1067)
 - [ZC1068: Use `add-zsh-hook` instead of defining hook functions directly](#zc1068)
-- [ZC1069: Avoid `local` outside of functions](#zc1069)
+- [ZC1069: Avoid `local` outside of functions](#zc1069) · auto-fix
 - [ZC1070: Use `builtin` or `command` to avoid infinite recursion in wrapper functions](#zc1070)
 - [ZC1071: Use `+=` for appending to arrays](#zc1071)
 - [ZC1072: Use `awk` instead of `grep \| awk`](#zc1072)
@@ -1840,7 +1840,7 @@ Disable by adding `ZC1068` to `disabled_katas` in `.zshellcheckrc`.
 ### ZC1069 — Avoid `local` outside of functions
 
 **Severity:** `info`  
-**Auto-fix:** `no`
+**Auto-fix:** `yes`
 
 The `local` builtin can only be used inside functions. Using it in the global scope causes an error.
 
