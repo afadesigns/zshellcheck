@@ -18,8 +18,11 @@ If you discover a vulnerability in ZShellCheck, disclose it responsibly using th
 
 1. **Do not open a public GitHub issue.**
    Public disclosure before a fix lets the issue be exploited.
-2. **Email the maintainer at `github@afadesign.co`.**
-   GitHub private contact is also available via [@afadesigns](https://github.com/afadesigns).
+2. **Use one of the two private channels.**
+   - GitHub Private Vulnerability Reporting (preferred): submit at [Security → Advisories → Report a vulnerability](https://github.com/afadesigns/zshellcheck/security/advisories/new).
+     The form is encrypted in transit and visible only to maintainers.
+   - Email the maintainer at `github@afadesign.co`.
+     GitHub private contact is also available via [@afadesigns](https://github.com/afadesigns).
 3. **Include as much detail as possible.**
    - The type of vulnerability.
    - Full reproduction steps.
