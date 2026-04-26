@@ -257,28 +257,30 @@ ast.Walk(rootNode, func(node ast.Node) bool {
 Since v1.0.10 ZShellCheck follows standard [semantic versioning](https://semver.org) and `pkg/version/version.go` is **hand-maintained** — the kata-count formula is retired.
 Tags are cut **manually** by the maintainer.
 
+In the steps below, substitute `vX.Y.Z` for the new release version (e.g. `v1.0.16`).
+
 1.  **Hand-bump** `pkg/version/version.go`:
     ```go
-    const Version = "1.0.14"
+    const Version = "X.Y.Z"
     ```
-2.  **Update** `CHANGELOG.md` with a new `[1.0.15] - YYYY-MM-DD` section.
+2.  **Update** `CHANGELOG.md` with a new `[X.Y.Z] - YYYY-MM-DD` section.
 3.  **Commit** the bump via PR → merge to main:
     ```bash
-    git switch -c chore/bump-v1.0.15
+    git switch -c chore/bump-vX.Y.Z
     git add pkg/version/version.go CHANGELOG.md
-    git commit -S -m "chore: bump version to 1.0.15"
-    git push -u origin chore/bump-v1.0.15
+    git commit -S -m "chore: bump version to X.Y.Z"
+    git push -u origin chore/bump-vX.Y.Z
     gh pr create --fill && gh pr merge --squash --auto
     ```
 4.  **Sign + push the tag** at the merge SHA:
     ```bash
     git switch main && git pull --ff-only
-    git tag -s v1.0.15 $(git rev-parse main) -m 'v1.0.15'
-    git push origin v1.0.15
+    git tag -s vX.Y.Z $(git rev-parse main) -m 'vX.Y.Z'
+    git push origin vX.Y.Z
     ```
 5.  **Release workflow fires** on tag push: GoReleaser builds signed binaries for Linux/macOS/Windows × x86_64/arm64/i386, attaches cosign signatures + SBOMs, and publishes SLSA provenance.
 6. **Release title** = tag name only (e.g.
-   `v1.0.15`).
+   `vX.Y.Z`).
    No descriptive suffix.
 
 ### Gotchas

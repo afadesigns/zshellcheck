@@ -6,7 +6,7 @@ authors:
   alias: "afadesigns"
   email: "github@afadesign.co"
 title: "ZShellCheck"
-version: 1.0.15
+version: 1.0.16
 date-released: 2026-04-25
 url: "https://github.com/afadesigns/zshellcheck"
 repository-code: "https://github.com/afadesigns/zshellcheck"
