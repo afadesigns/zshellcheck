@@ -376,102 +376,16 @@ func (p *Parser) parseGroupedExpression() ast.Expression {
 
 func (p *Parser) parseArrayAccess() ast.Expression {
 	exp := &ast.ArrayAccess{Token: p.curToken}
+	p.consumeArrayAccessFlags()
+	hasLengthOp := p.consumeLengthOp()
+	p.consumePreflags()
 
-	// Handle Zsh flags: ${(flags)...}
-	if p.peekTokenIs(token.LPAREN) {
-		p.nextToken() // consume (
-		// consume until )
-		for !p.peekTokenIs(token.RPAREN) && !p.peekTokenIs(token.EOF) {
-			p.nextToken()
-		}
-		if p.peekTokenIs(token.RPAREN) {
-			p.nextToken() // consume )
-		}
-	}
-
-	// Handle length operator #
-	hasLengthOp := false
-	if p.peekTokenIs(token.HASH) {
-		p.nextToken() // consume #
-		hasLengthOp = true
-	}
-
-	// Zsh single-character pre-flags inside `${X name}` that modify the
-	// expansion rather than naming a parameter: `=` (split), `~` (glob
-	// interpret), `^` (rc-style expansion). They precede the subject and
-	// are consumed without producing an AST node — detection katas that
-	// care about them walk the source directly. Without this guard the
-	// generic prefix-expression path rejects `=` and `^`, breaking real
-	// scripts like `strategies=(${=VAR})` from zsh-autosuggestions.
-	for p.peekTokenIs(token.ASSIGN) || p.peekTokenIs(token.TILDE) ||
-		p.peekTokenIs(token.CARET) || p.peekTokenIs(token.EQ) {
-		// `${==X}` is the double-`=` form (strip an outer `=`
-		// flag); the lexer fuses `==` into a single EQ token, so
-		// allow that as a pre-flag here too.
-		p.nextToken()
-	}
-
-	// The subject is optional when the only body is a modifier tail
-	// applied to an empty parameter, as in `${(%):-default}` where
-	// the `(%)` flag group is followed directly by `:-`. Without
-	// this guard, parseExpression tries to find a prefix for `:` and
-	// errors out. If the peek is a modifier punctuator, skip straight
-	// to the opaque modifier-tail scanner below.
-	if p.peekTokenIs(token.COLON) || p.peekTokenIs(token.HASH) ||
-		p.peekTokenIs(token.PERCENT) || p.peekTokenIs(token.SLASH) {
-		// Nothing to parse for the subject; the modifier tail loop
-		// will consume the rest of the body.
+	if p.subjectIsEmpty() {
 		exp.Left = nil
 	} else {
-		p.nextToken() // move to subject
-		// Parse the subject narrowly. Using parseExpression(LOWEST)
-		// pulls modifier operators (`%`, `#`, `/`) into an infix
-		// chain, which then misreads patterns like `${a%%[[:space:]]*}`
-		// (PERCENT then `[` → LBRACKET prefix calls parseSingleCommand
-		// on the bracket class). The modifier-tail scanner below is
-		// the right home for that body. Limit the subject to the
-		// minimal shapes it can be — IDENT (with optional adjacent
-		// subscript), VARIABLE, INT — and let the opaque scanner
-		// consume the rest.
-		switch {
-		case p.curTokenIs(token.IDENT) && strings.Contains(p.curToken.Literal, "/"):
-			// Pattern-substitution head like `line//` already
-			// absorbed the slashes; bracket that follows is a
-			// glob class, not a subscript.
-			exp.Left = &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
-		case p.curTokenIs(token.IDENT):
-			id := &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
-			exp.Left = id
-			// Allow a single adjacent subscript so `${arr[i]}` keeps
-			// its IndexExpression shape that katas walk for array
-			// access. The subscript closes at the matching `]`; the
-			// modifier tail (if any) starts after it.
-			if p.peekTokenIs(token.LBRACKET) && !p.peekToken.HasPrecedingSpace {
-				p.nextToken() // onto [
-				if idx, ok := p.parseIndexExpression(id).(*ast.IndexExpression); ok {
-					exp.Left = idx.Left
-					exp.Index = idx.Index
-				}
-			}
-		case p.curTokenIs(token.VARIABLE), p.curTokenIs(token.INT),
-			p.curTokenIs(token.ASTERISK), p.curTokenIs(token.QUESTION),
-			p.curTokenIs(token.MINUS), p.curTokenIs(token.BANG):
-			// Special positional / array-style subject names like
-			// `${#*}`, `${?}`, `${-}`, `${!}`. Treat the
-			// punctuation as a literal subject so the modifier tail
-			// scanner takes over.
-			exp.Left = &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
-		default:
-			expr := p.parseExpression(LOWEST)
-			if idxExpr, ok := expr.(*ast.IndexExpression); ok {
-				exp.Left = idxExpr.Left
-				exp.Index = idxExpr.Index
-			} else {
-				exp.Left = expr
-			}
-		}
+		p.nextToken()
+		exp.Left, exp.Index = p.parseArrayAccessSubject()
 	}
-
 	if hasLengthOp && exp.Left != nil {
 		exp.Left = &ast.PrefixExpression{
 			Token:    token.Token{Type: token.HASH, Literal: "#"},
@@ -502,30 +416,110 @@ func (p *Parser) parseArrayAccess() ast.Expression {
 		return exp
 	}
 	if !p.peekTokenIs(token.RBRACE) {
-		depth := 0
-		for !p.peekTokenIs(token.EOF) {
-			switch {
-			case p.peekTokenIs(token.DollarLbrace) || p.peekTokenIs(token.LBRACE):
-				depth++
-				p.nextToken()
-			case p.peekTokenIs(token.RBRACE):
-				if depth == 0 {
-					goto done
-				}
-				depth--
-				p.nextToken()
-			default:
-				p.nextToken()
-			}
-		}
-	done:
+		p.consumeArrayAccessModifierTail()
 	}
-
 	if !p.expectPeek(token.RBRACE) {
 		return nil
 	}
-
 	return exp
+}
+
+// consumeArrayAccessFlags drains the optional `(flags)` group between
+// `${` and the subject, used by Zsh parameter-expansion flag tuples
+// like `${(j:,:)arr}`.
+func (p *Parser) consumeArrayAccessFlags() {
+	if !p.peekTokenIs(token.LPAREN) {
+		return
+	}
+	p.nextToken()
+	for !p.peekTokenIs(token.RPAREN) && !p.peekTokenIs(token.EOF) {
+		p.nextToken()
+	}
+	if p.peekTokenIs(token.RPAREN) {
+		p.nextToken()
+	}
+}
+
+// consumeLengthOp consumes the `#` length operator if present.
+func (p *Parser) consumeLengthOp() bool {
+	if p.peekTokenIs(token.HASH) {
+		p.nextToken()
+		return true
+	}
+	return false
+}
+
+// consumePreflags drains Zsh single-character pre-flags `=`, `~`, `^`
+// that precede the subject inside `${ … }`.
+func (p *Parser) consumePreflags() {
+	for p.peekTokenIs(token.ASSIGN) || p.peekTokenIs(token.TILDE) ||
+		p.peekTokenIs(token.CARET) || p.peekTokenIs(token.EQ) {
+		p.nextToken()
+	}
+}
+
+// subjectIsEmpty reports whether the upcoming token starts a modifier
+// tail directly (no parameter name).
+func (p *Parser) subjectIsEmpty() bool {
+	return p.peekTokenIs(token.COLON) || p.peekTokenIs(token.HASH) ||
+		p.peekTokenIs(token.PERCENT) || p.peekTokenIs(token.SLASH)
+}
+
+// parseArrayAccessSubject parses the parameter-name subject and
+// returns (left, index) so callers can populate ArrayAccess.Left
+// and ArrayAccess.Index.
+func (p *Parser) parseArrayAccessSubject() (ast.Expression, ast.Expression) {
+	switch {
+	case p.curTokenIs(token.IDENT) && strings.Contains(p.curToken.Literal, "/"):
+		return &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}, nil
+	case p.curTokenIs(token.IDENT):
+		return p.parseArrayAccessIdent()
+	case p.subjectIsSpecialName():
+		return &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}, nil
+	}
+	expr := p.parseExpression(LOWEST)
+	if idx, ok := expr.(*ast.IndexExpression); ok {
+		return idx.Left, idx.Index
+	}
+	return expr, nil
+}
+
+func (p *Parser) parseArrayAccessIdent() (ast.Expression, ast.Expression) {
+	id := &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
+	if !p.peekTokenIs(token.LBRACKET) || p.peekToken.HasPrecedingSpace {
+		return id, nil
+	}
+	p.nextToken()
+	idx, ok := p.parseIndexExpression(id).(*ast.IndexExpression)
+	if !ok {
+		return id, nil
+	}
+	return idx.Left, idx.Index
+}
+
+func (p *Parser) subjectIsSpecialName() bool {
+	return p.curTokenIs(token.VARIABLE) || p.curTokenIs(token.INT) ||
+		p.curTokenIs(token.ASTERISK) || p.curTokenIs(token.QUESTION) ||
+		p.curTokenIs(token.MINUS) || p.curTokenIs(token.BANG)
+}
+
+func (p *Parser) consumeArrayAccessModifierTail() {
+	depth := 0
+	for !p.peekTokenIs(token.EOF) {
+		switch {
+		case p.peekTokenIs(token.DollarLbrace) || p.peekTokenIs(token.LBRACE):
+			depth++
+			p.nextToken()
+		case p.peekTokenIs(token.RBRACE):
+			if depth == 0 {
+				return
+			}
+			depth--
+			p.nextToken()
+		default:
+			p.nextToken()
+		}
+	}
 }
 
 func (p *Parser) parseInvalidArrayAccessPrefix() ast.Expression {
