@@ -49,6 +49,30 @@ func TestFlagValueType(t *testing.T) {
 	}
 }
 
+func TestPrintUsageContainsCoreSections(t *testing.T) {
+	fs := flag.NewFlagSet("zshellcheck", flag.ContinueOnError)
+	fs.String("format", "text", "Output format")
+	fs.String("severity", "", "Severity filter")
+	fs.Bool("fix", false, "Apply auto-fixes")
+	fs.Bool("diff", false, "Preview diff")
+	fs.Bool("dry-run", false, "Dry-run")
+	fs.String("cpuprofile", "", "CPU profile path")
+	fs.Bool("version", false, "Print version")
+	fs.Bool("no-color", false, "Disable colour")
+	fs.Bool("no-banner", false, "Suppress banner")
+	fs.Bool("verbose", false, "Verbose")
+
+	var buf bytes.Buffer
+	printUsage(&buf, fs, false)
+	out := buf.String()
+
+	for _, want := range []string{"USAGE", "OUTPUT", "FILTER", "AUTO-FIX", "DIAGNOSTICS", "EXAMPLES", "DOCUMENTATION"} {
+		if !strings.Contains(out, want) {
+			t.Errorf("printUsage missing %q section", want)
+		}
+	}
+}
+
 func TestRenderFlag(t *testing.T) {
 	fs := flag.NewFlagSet("t", flag.ContinueOnError)
 	fs.String("config", "default.yml", "Path to the config file")
