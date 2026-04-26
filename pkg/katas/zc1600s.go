@@ -2391,12 +2391,11 @@ func init() {
 // Idempotent because the literal `$(cat ` no longer appears in the
 // rewritten text — the second-pass detector sees `$(<…)` and stays
 // silent.
-func fixZC1643(node ast.Node, v Violation, source []byte) []FixEdit {
+func fixZC1643(node ast.Node, _ Violation, source []byte) []FixEdit {
 	cmd, ok := node.(*ast.SimpleCommand)
 	if !ok {
 		return nil
 	}
-	const needle = "$(cat "
 	var edits []FixEdit
 	for _, arg := range cmd.Arguments {
 		tok := arg.TokenLiteralNode()
@@ -2404,77 +2403,91 @@ func fixZC1643(node ast.Node, v Violation, source []byte) []FixEdit {
 		if argOff < 0 {
 			continue
 		}
-		// Constrain the search window to the argument's literal text
-		// span. arg.String() may include AST decorations (parens for
-		// expressions) so use the byte slice directly: walk forward
-		// from the start of the argument until a delimiter that ends
-		// the unquoted argument context.
-		end := argOff
-		// Track quoting so the search does not stop inside a quoted
-		// substring. The argument span runs to the next unquoted
-		// whitespace, `;`, `&`, `|`, `)` (when paren depth = 0), or
-		// newline.
-		inSingle := false
-		inDouble := false
-		parenDepth := 0
-		for end < len(source) {
-			c := source[end]
-			if c == '\\' && end+1 < len(source) {
-				end += 2
-				continue
-			}
-			switch {
-			case inSingle:
-				if c == '\'' {
-					inSingle = false
-				}
-			case inDouble:
-				if c == '"' {
-					inDouble = false
-				}
-			default:
-				switch c {
-				case '\'':
-					inSingle = true
-				case '"':
-					inDouble = true
-				case '(':
-					parenDepth++
-				case ')':
-					if parenDepth == 0 {
-						goto done
-					}
-					parenDepth--
-				case ' ', '\t', '\n', ';', '&', '|':
-					if parenDepth == 0 {
-						goto done
-					}
-				}
-			}
-			end++
+		end := zc1643UnquotedArgEnd(source, argOff)
+		edits = append(edits, zc1643CatEditsIn(source, argOff, end)...)
+	}
+	return edits
+}
+
+// zc1643UnquotedArgEnd walks forward from offset until it leaves the
+// current command-argument span. Quoting and balanced `(...)` are
+// tracked so a needle inside `"…"` or a nested `$(…)` doesn't escape
+// the search window prematurely.
+func zc1643UnquotedArgEnd(source []byte, offset int) int {
+	st := zc1643ArgScan{}
+	end := offset
+	for end < len(source) {
+		c := source[end]
+		if c == '\\' && end+1 < len(source) {
+			end += 2
+			continue
 		}
-	done:
-		// Find every `$(cat ` occurrence inside [argOff, end).
-		i := argOff
-		for i+len(needle) <= end {
-			if string(source[i:i+len(needle)]) != needle {
-				i++
-				continue
-			}
-			// Replace the `cat ` portion (4 bytes after `$(`) with `<`.
-			line, col := offsetLineColZC1643(source, i+2)
-			if line < 0 {
-				i += len(needle)
-				continue
-			}
+		if st.absorb(c) {
+			return end
+		}
+		end++
+	}
+	return end
+}
+
+type zc1643ArgScan struct {
+	inSingle, inDouble bool
+	parenDepth         int
+}
+
+// absorb returns true when the byte ends the argument span.
+func (s *zc1643ArgScan) absorb(c byte) bool {
+	switch {
+	case s.inSingle:
+		if c == '\'' {
+			s.inSingle = false
+		}
+		return false
+	case s.inDouble:
+		if c == '"' {
+			s.inDouble = false
+		}
+		return false
+	}
+	switch c {
+	case '\'':
+		s.inSingle = true
+	case '"':
+		s.inDouble = true
+	case '(':
+		s.parenDepth++
+	case ')':
+		if s.parenDepth == 0 {
+			return true
+		}
+		s.parenDepth--
+	case ' ', '\t', '\n', ';', '&', '|':
+		if s.parenDepth == 0 {
+			return true
+		}
+	}
+	return false
+}
+
+func zc1643CatEditsIn(source []byte, start, end int) []FixEdit {
+	const needle = "$(cat "
+	var edits []FixEdit
+	i := start
+	for i+len(needle) <= end {
+		if string(source[i:i+len(needle)]) != needle {
+			i++
+			continue
+		}
+		line, col := offsetLineColZC1643(source, i+2)
+		if line >= 0 {
 			edits = append(edits, FixEdit{
 				Line:    line,
 				Column:  col,
 				Length:  4,
 				Replace: "<",
 			})
-			i += len(needle)
 		}
+		i += len(needle)
 	}
 	return edits
 }

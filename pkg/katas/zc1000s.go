@@ -2542,6 +2542,16 @@ func walkZC1044(node ast.Node, isChecked bool, violations *[]Violation) {
 	if v := reflect.ValueOf(node); v.Kind() == reflect.Ptr && v.IsNil() {
 		return
 	}
+	if walkZC1044Compound(node, isChecked, violations) {
+		return
+	}
+	walkZC1044Leaf(node, isChecked, violations)
+}
+
+// walkZC1044Compound covers the block-shaped node types and reports
+// whether it consumed the node. Splitting the dispatch keeps each
+// helper under the gocyclo > 15 floor.
+func walkZC1044Compound(node ast.Node, isChecked bool, violations *[]Violation) bool {
 	switch n := node.(type) {
 	case *ast.Program:
 		walkZC1044StatementSlice(n.Statements, false, violations)
@@ -2558,14 +2568,22 @@ func walkZC1044(node ast.Node, isChecked bool, violations *[]Violation) {
 		walkZC1044(n.Body, false, violations)
 	case *ast.ForLoopStatement:
 		walkZC1044ForLoop(n, violations)
+	case *ast.FunctionDefinition:
+		walkZC1044(n.Body, false, violations)
+	default:
+		return false
+	}
+	return true
+}
+
+func walkZC1044Leaf(node ast.Node, isChecked bool, violations *[]Violation) {
+	switch n := node.(type) {
 	case *ast.ExpressionStatement:
 		walkZC1044(n.Expression, isChecked, violations)
 	case *ast.InfixExpression:
 		walkZC1044Infix(n, isChecked, violations)
 	case *ast.PrefixExpression:
 		walkZC1044(n.Right, n.Operator == "!" || (n.Operator == "" && isChecked), violations)
-	case *ast.FunctionDefinition:
-		walkZC1044(n.Body, false, violations)
 	case *ast.SimpleCommand:
 		checkCommandZC1044(n, isChecked, violations)
 		for _, arg := range n.Arguments {
@@ -3524,56 +3542,17 @@ func checkZC1055(node ast.Node) []Violation {
 // left-side and right-side empty-string positions.
 func fixZC1055(node ast.Node, v Violation, source []byte) []FixEdit {
 	expr, ok := node.(*ast.InfixExpression)
+	if !ok || (expr.Operator != "==" && expr.Operator != "!=") {
+		return nil
+	}
+	varNode, emptyNode, emptyLen, ok := zc1055SplitOperands(expr)
 	if !ok {
 		return nil
 	}
-	if expr.Operator != "==" && expr.Operator != "!=" {
+	varOffset, emptyOffset, ok := zc1055OperandOffsets(source, varNode, emptyNode)
+	if !ok {
 		return nil
 	}
-	isEmpty := func(n ast.Node) (bool, int) {
-		str, ok := n.(*ast.StringLiteral)
-		if !ok {
-			return false, 0
-		}
-		if str.Value == `""` || str.Value == `''` {
-			return true, len(str.Value)
-		}
-		return false, 0
-	}
-
-	var varNode ast.Node
-	var emptyNode ast.Node
-	var emptyLen int
-	if ok, n := isEmpty(expr.Left); ok {
-		varNode = expr.Right
-		emptyNode = expr.Left
-		emptyLen = n
-	} else if ok, n := isEmpty(expr.Right); ok {
-		varNode = expr.Left
-		emptyNode = expr.Right
-		emptyLen = n
-	} else {
-		return nil
-	}
-
-	varExpr, vok := varNode.(ast.Expression)
-	emptyExpr, eok := emptyNode.(ast.Expression)
-	if !vok || !eok {
-		return nil
-	}
-	var varTok, emptyTok token.Token = varExpr.TokenLiteralNode(), emptyExpr.TokenLiteralNode()
-	if varTok.Line == 0 || emptyTok.Line == 0 {
-		return nil
-	}
-	varOffset := LineColToByteOffset(source, varTok.Line, varTok.Column)
-	emptyOffset := LineColToByteOffset(source, emptyTok.Line, emptyTok.Column)
-	if varOffset < 0 || emptyOffset < 0 {
-		return nil
-	}
-
-	// Determine span start / end based on which side is the empty
-	// literal. The span covers varNode + operator + emptyNode in
-	// source order.
 	start := varOffset
 	if emptyOffset < start {
 		start = emptyOffset
@@ -3582,12 +3561,10 @@ func fixZC1055(node ast.Node, v Violation, source []byte) []FixEdit {
 	if varEnd := varOffset + identOrVarLen(source, varOffset); varEnd > end {
 		end = varEnd
 	}
-
 	op := "-z"
 	if expr.Operator == "!=" {
 		op = "-n"
 	}
-
 	varText := string(source[varOffset : varOffset+identOrVarLen(source, varOffset)])
 	line, col := v.Line, v.Column
 	if startLine, startCol := byteOffsetToLineColZC1055(source, start); startLine > 0 {
@@ -3599,6 +3576,49 @@ func fixZC1055(node ast.Node, v Violation, source []byte) []FixEdit {
 		Length:  end - start,
 		Replace: op + " " + varText,
 	}}
+}
+
+// zc1055SplitOperands locates the empty-string literal side of a
+// `==` / `!=` infix and returns the variable side, the empty side,
+// and the length of the empty literal.
+func zc1055SplitOperands(expr *ast.InfixExpression) (varNode, emptyNode ast.Node, emptyLen int, ok bool) {
+	if hit, n := zc1055IsEmptyLiteral(expr.Left); hit {
+		return expr.Right, expr.Left, n, true
+	}
+	if hit, n := zc1055IsEmptyLiteral(expr.Right); hit {
+		return expr.Left, expr.Right, n, true
+	}
+	return nil, nil, 0, false
+}
+
+func zc1055IsEmptyLiteral(n ast.Node) (bool, int) {
+	str, ok := n.(*ast.StringLiteral)
+	if !ok {
+		return false, 0
+	}
+	if str.Value == `""` || str.Value == `''` {
+		return true, len(str.Value)
+	}
+	return false, 0
+}
+
+func zc1055OperandOffsets(source []byte, varNode, emptyNode ast.Node) (int, int, bool) {
+	varExpr, vok := varNode.(ast.Expression)
+	emptyExpr, eok := emptyNode.(ast.Expression)
+	if !vok || !eok {
+		return 0, 0, false
+	}
+	varTok := varExpr.TokenLiteralNode()
+	emptyTok := emptyExpr.TokenLiteralNode()
+	if varTok.Line == 0 || emptyTok.Line == 0 {
+		return 0, 0, false
+	}
+	varOff := LineColToByteOffset(source, varTok.Line, varTok.Column)
+	emptyOff := LineColToByteOffset(source, emptyTok.Line, emptyTok.Column)
+	if varOff < 0 || emptyOff < 0 {
+		return 0, 0, false
+	}
+	return varOff, emptyOff, true
 }
 
 // identOrVarLen returns the byte length of an identifier or variable
