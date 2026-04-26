@@ -405,6 +405,29 @@ func TestProcessFile_SarifFormat(t *testing.T) {
 	_ = count
 }
 
+func TestCollectEdits_ParseError(t *testing.T) {
+	// Unbalanced brace forces the parser into an error state.
+	src := "if true; then echo \"unterminated\n"
+	registry := katas.Registry
+	cfg := config.DefaultConfig()
+	edits := collectEdits(src, registry, nil, cfg, nil)
+	if edits != nil {
+		t.Errorf("expected nil edits on parse error, got %d", len(edits))
+	}
+}
+
+func TestCollectEdits_FileWideDirective(t *testing.T) {
+	src := "# noka: ZC1002\nx=`date`\n"
+	registry := katas.Registry
+	cfg := config.DefaultConfig()
+	edits := collectEdits(src, registry, nil, cfg, nil)
+	for _, e := range edits {
+		if e.KataID == "ZC1002" {
+			t.Errorf("file-wide directive failed to silence ZC1002: %#v", e)
+		}
+	}
+}
+
 func TestApplyFixesUntilStable_Idempotent(t *testing.T) {
 	src := "#!/bin/zsh\necho hello\n"
 	cfg := config.DefaultConfig()
