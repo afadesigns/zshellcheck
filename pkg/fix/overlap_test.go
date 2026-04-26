@@ -60,3 +60,31 @@ func TestDiff_PropagatesApplyError(t *testing.T) {
 		t.Errorf("expected error for out-of-range edit")
 	}
 }
+
+func TestApply_NegativeLengthRejected(t *testing.T) {
+	edits := []katas.FixEdit{{Line: 1, Column: 1, Length: -1, Replace: ""}}
+	if _, err := Apply("echo hi\n", edits); err == nil {
+		t.Errorf("expected error for negative length")
+	}
+}
+
+func TestApply_NonPositiveColumnRejected(t *testing.T) {
+	edits := []katas.FixEdit{{Line: 1, Column: 0, Length: 1, Replace: ""}}
+	if _, err := Apply("echo hi\n", edits); err == nil {
+		t.Errorf("expected error for non-positive column")
+	}
+}
+
+func TestApply_StartPastEndRejected(t *testing.T) {
+	edits := []katas.FixEdit{{Line: 1, Column: 999, Length: 0, Replace: ""}}
+	if _, err := Apply("echo hi\n", edits); err == nil {
+		t.Errorf("expected error for start past end of source")
+	}
+}
+
+func TestApply_EndPastEndRejected(t *testing.T) {
+	edits := []katas.FixEdit{{Line: 1, Column: 1, Length: 999, Replace: ""}}
+	if _, err := Apply("echo hi\n", edits); err == nil {
+		t.Errorf("expected error for end past end of source")
+	}
+}
