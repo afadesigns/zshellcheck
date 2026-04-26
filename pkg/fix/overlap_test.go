@@ -32,7 +32,7 @@ func TestOverlapDifferentLines(t *testing.T) {
 	}
 }
 
-func TestDiff_NoChange(t *testing.T) {
+func TestDiff_EmptyEditsReturnsBlank(t *testing.T) {
 	out, err := Diff("file.zsh", "echo hi\n", nil)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -42,7 +42,7 @@ func TestDiff_NoChange(t *testing.T) {
 	}
 }
 
-func TestDiff_SingleEdit(t *testing.T) {
+func TestDiff_NonEmptyChange(t *testing.T) {
 	src := "echo hi\n"
 	edits := []katas.FixEdit{{Line: 1, Column: 1, Length: 4, Replace: "print"}}
 	out, err := Diff("file.zsh", src, edits)
