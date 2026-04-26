@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- **Auto-fix coverage now at 134/1000 katas.** New rewrites since 1.0.15, every one deterministic and idempotent on a re-run:
+- **Auto-fix coverage now at 135/1000 katas.** New rewrites since 1.0.15, every one deterministic and idempotent on a re-run:
   - `ZC1015` backticks → `$(...)`.
   - `ZC1016` inserts `-s` after `read` when the variable looks sensitive (`password`, `secret`, `token`, …).
   - `ZC1008` and `ZC1022` share ZC1013's `let NAME=EXPR` → `(( NAME = EXPR ))` rewrite.
@@ -70,6 +70,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `ZC1637` `readonly NAME=value` → `typeset -r NAME=value`.
   - `ZC1643` `$(cat FILE)` → `$(<FILE)` inside SimpleCommand argument strings.
   - `ZC1675` `export -f FUNC` → `typeset -fx FUNC`, `export -n VAR` → `typeset +x VAR`.
+  - `ZC1685` `sleep infinity` → `exec tail -f /dev/null`.
   - `ZC1717` strips `--disable-content-trust` from `docker pull` / `push` / `build` / `create` / `run`.
   - `ZC1773` `xargs CMD` → `xargs -r CMD`.
   - `ZC1334` collapses `type -p`'s flag with the rename so it wins over `ZC1064`'s narrower `type` → `command -v` form.

@@ -11,7 +11,7 @@ Auto-generated list of all 1000 implemented checks. Do not edit by hand — rege
 | `info` | 64 |
 | `style` | 257 |
 | **total** | **1000** |
-| **with auto-fix** | **134** |
+| **with auto-fix** | **135** |
 
 Auto-fix availability is marked per-entry below as **Auto-fix:** `yes` or `no`. Run `zshellcheck -fix path/...` to apply every available rewrite, or `-diff` to preview without writing.
 
@@ -698,7 +698,7 @@ Auto-fix availability is marked per-entry below as **Auto-fix:** `yes` or `no`. 
 - [ZC1682: Error on `npm install --unsafe-perm` — npm lifecycle scripts keep root privileges](#zc1682)
 - [ZC1683: Error on `npm/yarn/pnpm config set registry http://...` — plaintext package index](#zc1683)
 - [ZC1684: Error on `redis-cli -a PASSWORD` — authentication password in process list](#zc1684)
-- [ZC1685: Info: `sleep infinity` — container keep-alive pattern that ignores SIGTERM](#zc1685)
+- [ZC1685: Info: `sleep infinity` — container keep-alive pattern that ignores SIGTERM](#zc1685) · auto-fix
 - [ZC1686: Warn on `compinit -C` / `compinit -u` — skips / ignores `$fpath` integrity checks](#zc1686)
 - [ZC1687: Warn on `snap install --classic` / `--devmode` — weakens snap confinement](#zc1687)
 - [ZC1688: Warn on `aws s3 sync --delete` — destination objects deleted when source diverges](#zc1688)
@@ -9196,7 +9196,7 @@ Disable by adding `ZC1684` to `disabled_katas` in `.zshellcheckrc`.
 ### ZC1685 — Info: `sleep infinity` — container keep-alive pattern that ignores SIGTERM
 
 **Severity:** `info`  
-**Auto-fix:** `no`
+**Auto-fix:** `yes`
 
 `sleep infinity` is most often used as a container or systemd-unit keep-alive. Problem: GNU `sleep` does not install a SIGTERM handler, so when `docker stop` / `systemctl stop` sends SIGTERM the process sits unresponsive until the grace period expires and SIGKILL lands. The orchestrator reports a hung stop, logs look wrong, and any cleanup registered on signal handlers in a wrapping shell never runs. Replace with `exec tail -f /dev/null` (signal-handles cleanly) or front with `tini` / `dumb-init` when PID 1 must stay.
 
