@@ -102,350 +102,361 @@ func (l *Lexer) NextToken() (tok token.Token) {
 	// skipWhitespace sets pendingContinuation when a `\<NL>` pair
 	// was absorbed; stamp the flag onto the returned token via this
 	// named-return defer so every early return path inherits it.
-	// Also clear suppressLparenFusion unless the returned token is
-	// another `$(` — the flag is one-shot: the NEXT `(` (paren
-	// token) should skip fusion, any other token drops the flag so
-	// later `((` pairs (e.g. a fresh arithmetic open) fuse normally.
 	prevSuppress := l.suppressLparenFusion
 	defer func() {
 		if l.pendingContinuation {
 			tok.HasPrecedingContinuation = true
 			l.pendingContinuation = false
 		}
-		// If the just-emitted token is LPAREN (we consumed the
-		// suppress), or anything that doesn't open another `$(`,
-		// clear the flag. DOLLAR_LPAREN re-sets it explicitly.
 		if prevSuppress && tok.Type != token.DOLLAR_LPAREN {
 			l.suppressLparenFusion = false
 		}
 	}()
 	hasSpace := l.skipWhitespace()
-
-	if l.ch == '#' {
-		if l.peekChar() == '!' {
-			start := l.position
-			for l.ch != 10 && l.ch != 0 { // \n
-				l.readChar()
-			}
-			literal := l.input[start:l.position]
-			return token.Token{Type: token.SHEBANG, Literal: literal, Line: l.line, Column: l.column}
-		}
-
-		if hasSpace || l.column == 1 {
-			l.skipComment()
-			return l.NextToken()
-		}
+	if shebang, ok := l.tryShebangOrComment(hasSpace); ok {
+		return shebang
 	}
-
-	switch l.ch {
-	case '#':
-		tok = newToken(token.HASH, l.ch, l.line, l.column)
-	case '=':
-		switch l.peekChar() {
-		case '=':
-			ch := l.ch
-			l.readChar()
-			literal := string(ch) + string(l.ch)
-			tok = token.Token{Type: token.EQ, Literal: literal, Line: l.line, Column: l.column}
-		case '~':
-			ch := l.ch
-			l.readChar()
-			literal := string(ch) + string(l.ch)
-			tok = token.Token{Type: token.EQTILDE, Literal: literal, Line: l.line, Column: l.column}
-		case '(':
-			if hasSpace {
-				ch := l.ch
-				l.readChar()
-				literal := string(ch) + string(l.ch)
-				tok = token.Token{Type: token.EQ_LPAREN, Literal: literal, Line: l.line, Column: l.column}
-				l.parenStack = append(l.parenStack, 'P')
-			} else {
-				tok = newToken(token.ASSIGN, l.ch, l.line, l.column)
-			}
-		default:
-			tok = newToken(token.ASSIGN, l.ch, l.line, l.column)
-		}
-	case ';':
-		if l.peekChar() == ';' {
-			ch := l.ch
-			l.readChar()
-			literal := string(ch) + string(l.ch)
-			tok = token.Token{Type: token.DSEMI, Literal: literal, Line: l.line, Column: l.column}
-		} else {
-			tok = newToken(token.SEMICOLON, l.ch, l.line, l.column)
-		}
-	case ':':
-		tok = newToken(token.COLON, l.ch, l.line, l.column)
-	case '?':
-		tok = newToken(token.QUESTION, l.ch, l.line, l.column)
-	case '(':
-		if l.peekChar() == '(' && !l.suppressLparenFusion {
-			ch := l.ch
-			l.readChar()
-			literal := string(ch) + string(l.ch)
-			tok = token.Token{Type: token.DoubleLparen, Literal: literal, Line: l.line, Column: l.column}
-			l.parenStack = append(l.parenStack, 'D')
-		} else {
-			tok = newToken(token.LPAREN, l.ch, l.line, l.column)
-			l.parenStack = append(l.parenStack, 'P')
-		}
-		l.suppressLparenFusion = false
-	case ')':
-		tok = l.readCloseParen()
-	case ',':
-		tok = newToken(token.COMMA, l.ch, l.line, l.column)
-	case '+':
-		switch l.peekChar() {
-		case '+':
-			ch := l.ch
-			l.readChar()
-			literal := string(ch) + string(l.ch)
-			tok = token.Token{Type: token.INC, Literal: literal, Line: l.line, Column: l.column}
-		case '=':
-			ch := l.ch
-			l.readChar()
-			literal := string(ch) + string(l.ch)
-			tok = token.Token{Type: token.PLUSEQ, Literal: literal, Line: l.line, Column: l.column}
-		default:
-			tok = newToken(token.PLUS, l.ch, l.line, l.column)
-		}
-	case '-':
-		if isLetter(l.peekChar()) {
-			savedLexer := *l
-			literal := l.readIdentifier()
-			tokType := token.LookupIdent(literal)
-			if tokType != token.IDENT {
-				tok.Type = tokType
-				tok.Literal = literal
-				tok.Line = savedLexer.line
-				tok.Column = savedLexer.column
-				tok.HasPrecedingSpace = hasSpace
-				return tok
-			}
-			*l = savedLexer
-		}
-
-		switch l.peekChar() {
-		case '-':
-			ch := l.ch
-			l.readChar()
-			literal := string(ch) + string(l.ch)
-			tok = token.Token{Type: token.DEC, Literal: literal, Line: l.line, Column: l.column}
-		case '=':
-			// Zsh arithmetic compound-assign `-=`. Fuse into
-			// PLUSEQ like the other compound forms.
-			ch := l.ch
-			l.readChar()
-			literal := string(ch) + string(l.ch)
-			tok = token.Token{Type: token.PLUSEQ, Literal: literal, Line: l.line, Column: l.column}
-		default:
-			tok = newToken(token.MINUS, l.ch, l.line, l.column)
-		}
-	case '!':
-		if l.peekChar() == '=' {
-			ch := l.ch
-			l.readChar()
-			literal := string(ch) + string(l.ch)
-			tok = token.Token{Type: token.NotEq, Literal: literal, Line: l.line, Column: l.column}
-		} else {
-			tok = newToken(token.BANG, l.ch, l.line, l.column)
-		}
-	case '*':
-		// Zsh compound-assign `*=`. Inside arithmetic
-		// `(( x *= 2 ))`, `*=` updates-with-multiply; outside,
-		// bare `*` keeps its ASTERISK role for globs / expansions.
-		// Fuse the two-char form into PLUSEQ so the parser's
-		// existing compound-assign infix covers modulo/multiply/
-		// divide variants uniformly.
-		if l.peekChar() == '=' {
-			ch := l.ch
-			l.readChar()
-			literal := string(ch) + string(l.ch)
-			tok = token.Token{Type: token.PLUSEQ, Literal: literal, Line: l.line, Column: l.column}
-		} else {
-			tok = newToken(token.ASTERISK, l.ch, l.line, l.column)
-		}
-	case '<':
-		tok = l.readAngleBracket(true)
-	case '>':
-		tok = l.readAngleBracket(false)
-	case '{':
-		tok = newToken(token.LBRACE, l.ch, l.line, l.column)
-	case '}':
-		tok = newToken(token.RBRACE, l.ch, l.line, l.column)
-	case '[':
-		// Fuse `[[` into LDBRACKET unless it opens a POSIX
-		// character class like `[[:alnum:]]`. The keyword `[[` is
-		// always followed by whitespace (and never by `:`); a
-		// `[[:` run belongs to a glob bracket expression where the
-		// outer `[` opens the class and `[:name:]` is the POSIX
-		// indicator. Emit two independent LBRACKETs in that case
-		// so parseCommandWord can pack them into the pattern word.
-		if l.peekChar() == '[' && l.peekAt(2) != ':' {
-			ch := l.ch
-			l.readChar()
-			literal := string(ch) + string(l.ch)
-			tok = token.Token{Type: token.LDBRACKET, Literal: literal, Line: l.line, Column: l.column}
-			l.dbracketDepth++
-			l.bracketStack = append(l.bracketStack, 'D')
-		} else {
-			tok = newToken(token.LBRACKET, l.ch, l.line, l.column)
-			l.bracketStack = append(l.bracketStack, 'B')
-		}
-	case ']':
-		// `]]` fuses to RDBRACKET only when the innermost open
-		// bracket is a `[[`. Plain `[` / glob bracket classes
-		// close one at a time, so `[[:alnum:]]` inside a `[[ ]]`
-		// conditional keeps the outer close intact instead of
-		// collapsing the class's `]]` into the conditional's.
-		top := byte(0)
-		if n := len(l.bracketStack); n > 0 {
-			top = l.bracketStack[n-1]
-		}
-		if l.peekChar() == ']' && top == 'D' {
-			ch := l.ch
-			l.readChar()
-			literal := string(ch) + string(l.ch)
-			tok = token.Token{Type: token.RDBRACKET, Literal: literal, Line: l.line, Column: l.column}
-			if l.dbracketDepth > 0 {
-				l.dbracketDepth--
-			}
-			l.bracketStack = l.bracketStack[:len(l.bracketStack)-1]
-		} else {
-			tok = newToken(token.RBRACKET, l.ch, l.line, l.column)
-			if len(l.bracketStack) > 0 {
-				l.bracketStack = l.bracketStack[:len(l.bracketStack)-1]
-			}
-		}
-	case '$':
-		if dollarTok, ok := l.readDollarToken(hasSpace); ok {
-			return dollarTok
-		}
-		tok = newToken(token.DOLLAR, l.ch, l.line, l.column)
-
-	case '&':
-		switch l.peekChar() {
-		case '&':
-			ch := l.ch
-			l.readChar()
-			literal := string(ch) + string(l.ch)
-			tok = token.Token{Type: token.AND, Literal: literal, Line: l.line, Column: l.column}
-		case '|', '!':
-			// Zsh disown-in-background shortcuts: `&|` and `&!` both
-			// background the command AND disown it in one step. Fuse
-			// with AMPERSAND so the parser treats them like a plain
-			// `&` terminator; the trailing `|` / `!` is semantic
-			// metadata that downstream katas can read from the
-			// Literal if needed.
-			ch := l.ch
-			l.readChar()
-			literal := string(ch) + string(l.ch)
-			tok = token.Token{Type: token.AMPERSAND, Literal: literal, Line: l.line, Column: l.column}
-		default:
-			tok = newToken(token.AMPERSAND, l.ch, l.line, l.column)
-		}
-	case '|':
-		if l.peekChar() == '|' {
-			ch := l.ch
-			l.readChar()
-			literal := string(ch) + string(l.ch)
-			tok = token.Token{Type: token.OR, Literal: literal, Line: l.line, Column: l.column}
-		} else {
-			tok = newToken(token.PIPE, l.ch, l.line, l.column)
-		}
-	case '`':
-		tok = newToken(token.BACKTICK, l.ch, l.line, l.column)
-	case '~':
-		tok = newToken(token.TILDE, l.ch, l.line, l.column)
-	case '^':
-		tok = newToken(token.CARET, l.ch, l.line, l.column)
-	case '%':
-		// Zsh arithmetic compound-assign `%=`: `(( x %= 60 ))`.
-		// Fuse into PLUSEQ like the other compound-assign forms
-		// so the parser reuses its existing EQUALS-level infix.
-		if l.peekChar() == '=' {
-			ch := l.ch
-			l.readChar()
-			literal := string(ch) + string(l.ch)
-			tok = token.Token{Type: token.PLUSEQ, Literal: literal, Line: l.line, Column: l.column}
-		} else {
-			tok = newToken(token.PERCENT, l.ch, l.line, l.column)
-		}
-	case '.':
-		tok = newToken(token.DOT, l.ch, l.line, l.column)
-	case '"':
-		tok.Type = token.STRING
-		tok.Line = l.line
-		tok.Column = l.column
-		tok.Literal = l.readString('"')
-		tok.EndLine = l.line
-	case '\'':
-		tok.Type = token.STRING
-		tok.Line = l.line
-		tok.Column = l.column
-		tok.Literal = l.readString('\'')
-		tok.EndLine = l.line
-	case 0:
-		tok.Literal = ""
-		tok.Type = token.EOF
-		tok.Line = l.line
-		tok.Column = l.column
-	default:
-		switch {
-		case isLetter(l.ch):
-			line, col := l.line, l.column
-			tok.Literal = l.readIdentifier()
-			tok.Type = token.LookupIdent(tok.Literal)
-			// An identifier that happens to match a keyword but is immediately
-			// followed by `=` is a flag/argument assignment (e.g. `if=foo`
-			// inside `dd if=foo of=bar`), not the keyword itself. Demote it
-			// to a plain identifier so the parser treats the following `=`
-			// as part of the same word rather than trying to open an
-			// if-statement.
-			if tok.Type != token.IDENT && l.ch == '=' {
-				tok.Type = token.IDENT
-			}
-			tok.Line = line
-			tok.Column = col
-			tok.HasPrecedingSpace = hasSpace
-			return tok
-		case isDigit(l.ch):
-			line, col := l.line, l.column
-			tok.Type = token.INT
-			tok.Literal = l.readNumber()
-			tok.Line = line
-			tok.Column = col
-			tok.HasPrecedingSpace = hasSpace
-			return tok
-		case l.ch == '\\':
-			tok = l.readBackslashEscape()
-		case l.ch >= 0x80:
-			// Non-ASCII byte (UTF-8 continuation or any
-			// multibyte char). Treat as part of an identifier
-			// word so prompt strings and theme code that include
-			// emoji / accented chars don't crash with ILLEGAL.
-			line, col := l.line, l.column
-			start := l.position
-			for l.ch >= 0x80 || isLetter(l.ch) || isDigit(l.ch) {
-				l.readChar()
-			}
-			literal := l.input[start:l.position]
-			tok = token.Token{
-				Type:    token.IDENT,
-				Literal: literal,
-				Line:    line,
-				Column:  col,
-			}
-			tok.HasPrecedingSpace = hasSpace
-			return tok
-		default:
-			tok = newToken(token.ILLEGAL, l.ch, l.line, l.column)
-		}
+	if early, ok := l.dispatchEarlyReturn(hasSpace); ok {
+		return early
 	}
-
+	tok = l.dispatchSimpleByte(hasSpace)
 	l.readChar()
 	tok.HasPrecedingSpace = hasSpace
 	return tok
+}
+
+// tryShebangOrComment returns the SHEBANG token when the cursor sits
+// on `#!` and reports the result; for a regular comment it consumes
+// the comment and recurses into NextToken. ok=false leaves state
+// unchanged for callers to continue the dispatch.
+func (l *Lexer) tryShebangOrComment(hasSpace bool) (token.Token, bool) {
+	if l.ch != '#' {
+		return token.Token{}, false
+	}
+	if l.peekChar() == '!' {
+		start := l.position
+		for l.ch != 10 && l.ch != 0 {
+			l.readChar()
+		}
+		return token.Token{Type: token.SHEBANG, Literal: l.input[start:l.position], Line: l.line, Column: l.column}, true
+	}
+	if hasSpace || l.column == 1 {
+		l.skipComment()
+		return l.NextToken(), true
+	}
+	return token.Token{}, false
+}
+
+// dispatchEarlyReturn covers the byte categories whose handler fully
+// owns the return — they advance the cursor themselves and the
+// outer NextToken must skip the trailing readChar. The simple-byte
+// switch in dispatchSimpleByte runs first; this path only fires when
+// the character is part of an identifier / number / dollar-form / or
+// the dash-keyword shortcut. The narrower letter check
+// (isAsciiLetterOrUnderscore) keeps `~`, `:`, `.`, `/`, `@` —
+// which `isLetter` accepts mid-word — out of the identifier path so
+// those bytes hit their own switch arms first.
+func (l *Lexer) dispatchEarlyReturn(hasSpace bool) (token.Token, bool) {
+	if l.ch == '-' && isLetter(l.peekChar()) {
+		if tok, ok := l.tryDashKeyword(hasSpace); ok {
+			return tok, true
+		}
+	}
+	switch {
+	case l.ch == '$':
+		if tok, ok := l.readDollarToken(hasSpace); ok {
+			return tok, true
+		}
+		return token.Token{}, false
+	case isAsciiLetterOrUnderscore(l.ch):
+		return l.readIdentifierToken(hasSpace), true
+	case isDigit(l.ch):
+		return l.readNumberToken(hasSpace), true
+	case l.ch >= 0x80:
+		return l.readUnicodeIdent(hasSpace), true
+	}
+	return token.Token{}, false
+}
+
+// isAsciiLetterOrUnderscore is the narrower letter test used by
+// dispatchEarlyReturn to decide whether to consume an identifier
+// run. It deliberately excludes the punctuation aliases that the
+// wider isLetter accepts mid-word but that have their own explicit
+// switch arm in dispatchSimpleByte / dispatchBracketsAndOps
+// (`~`, `:`, `.`). It includes `/` and `@` because the original
+// switch had no explicit arm for them — they only ever entered the
+// identifier path via the wide isLetter check.
+func isAsciiLetterOrUnderscore(ch byte) bool {
+	if ('a' <= ch && ch <= 'z') || ('A' <= ch && ch <= 'Z') || ch == '_' {
+		return true
+	}
+	return ch == '/' || ch == '@'
+}
+
+// dispatchSimpleByte handles the per-byte switch where the handler
+// only sets tok and the outer NextToken advances the cursor.
+func (l *Lexer) dispatchSimpleByte(hasSpace bool) token.Token {
+	switch l.ch {
+	case '#':
+		return newToken(token.HASH, l.ch, l.line, l.column)
+	case '=':
+		return l.readEqualsLead(hasSpace)
+	case ';':
+		return l.readSemicolonLead()
+	case ':':
+		return newToken(token.COLON, l.ch, l.line, l.column)
+	case '?':
+		return newToken(token.QUESTION, l.ch, l.line, l.column)
+	case '(':
+		return l.readOpenParen()
+	case ')':
+		return l.readCloseParen()
+	case ',':
+		return newToken(token.COMMA, l.ch, l.line, l.column)
+	case '+':
+		return l.readPlusLead()
+	case '-':
+		return l.readMinusLead(hasSpace)
+	case '!':
+		return l.readBangLead()
+	case '*':
+		return l.readArithCompoundOr(token.ASTERISK)
+	case '<':
+		return l.readAngleBracket(true)
+	case '>':
+		return l.readAngleBracket(false)
+	}
+	return l.dispatchBracketsAndOps(hasSpace)
+}
+
+func (l *Lexer) dispatchBracketsAndOps(hasSpace bool) token.Token {
+	switch l.ch {
+	case '{':
+		return newToken(token.LBRACE, l.ch, l.line, l.column)
+	case '}':
+		return newToken(token.RBRACE, l.ch, l.line, l.column)
+	case '[':
+		return l.readOpenBracket()
+	case ']':
+		return l.readCloseBracket()
+	case '&':
+		return l.readAmpersandLead()
+	case '|':
+		return l.readPipeLead()
+	case '`':
+		return newToken(token.BACKTICK, l.ch, l.line, l.column)
+	case '~':
+		return newToken(token.TILDE, l.ch, l.line, l.column)
+	case '^':
+		return newToken(token.CARET, l.ch, l.line, l.column)
+	case '%':
+		return l.readArithCompoundOr(token.PERCENT)
+	case '.':
+		return newToken(token.DOT, l.ch, l.line, l.column)
+	case '"', '\'':
+		return l.readQuotedString(l.ch)
+	case '$':
+		// readDollarToken claimed `$` early when it recognised one of
+		// the specialised forms; falling through here means the
+		// generic DOLLAR token is the right answer.
+		return newToken(token.DOLLAR, l.ch, l.line, l.column)
+	case 0:
+		return token.Token{Type: token.EOF, Line: l.line, Column: l.column}
+	}
+	return l.dispatchTerminalDefault(hasSpace)
+}
+
+func (l *Lexer) dispatchTerminalDefault(_ bool) token.Token {
+	if l.ch == '\\' {
+		return l.readBackslashEscape()
+	}
+	return newToken(token.ILLEGAL, l.ch, l.line, l.column)
+}
+
+func (l *Lexer) readEqualsLead(hasSpace bool) token.Token {
+	switch l.peekChar() {
+	case '=':
+		return l.readFusedToken(token.EQ)
+	case '~':
+		return l.readFusedToken(token.EQTILDE)
+	case '(':
+		if !hasSpace {
+			return newToken(token.ASSIGN, l.ch, l.line, l.column)
+		}
+		tok := l.readFusedToken(token.EQ_LPAREN)
+		l.parenStack = append(l.parenStack, 'P')
+		return tok
+	}
+	return newToken(token.ASSIGN, l.ch, l.line, l.column)
+}
+
+func (l *Lexer) readSemicolonLead() token.Token {
+	if l.peekChar() == ';' {
+		return l.readFusedToken(token.DSEMI)
+	}
+	return newToken(token.SEMICOLON, l.ch, l.line, l.column)
+}
+
+func (l *Lexer) readOpenParen() token.Token {
+	defer func() { l.suppressLparenFusion = false }()
+	if l.peekChar() == '(' && !l.suppressLparenFusion {
+		tok := l.readFusedToken(token.DoubleLparen)
+		l.parenStack = append(l.parenStack, 'D')
+		return tok
+	}
+	tok := newToken(token.LPAREN, l.ch, l.line, l.column)
+	l.parenStack = append(l.parenStack, 'P')
+	return tok
+}
+
+func (l *Lexer) readPlusLead() token.Token {
+	switch l.peekChar() {
+	case '+':
+		return l.readFusedToken(token.INC)
+	case '=':
+		return l.readFusedToken(token.PLUSEQ)
+	}
+	return newToken(token.PLUS, l.ch, l.line, l.column)
+}
+
+func (l *Lexer) readMinusLead(_ bool) token.Token {
+	switch l.peekChar() {
+	case '-':
+		return l.readFusedToken(token.DEC)
+	case '=':
+		return l.readFusedToken(token.PLUSEQ)
+	}
+	return newToken(token.MINUS, l.ch, l.line, l.column)
+}
+
+func (l *Lexer) tryDashKeyword(hasSpace bool) (token.Token, bool) {
+	saved := *l
+	literal := l.readIdentifier()
+	if t := token.LookupIdent(literal); t != token.IDENT {
+		return token.Token{
+			Type: t, Literal: literal,
+			Line: saved.line, Column: saved.column,
+			HasPrecedingSpace: hasSpace,
+		}, true
+	}
+	*l = saved
+	return token.Token{}, false
+}
+
+func (l *Lexer) readBangLead() token.Token {
+	if l.peekChar() == '=' {
+		return l.readFusedToken(token.NotEq)
+	}
+	return newToken(token.BANG, l.ch, l.line, l.column)
+}
+
+func (l *Lexer) readArithCompoundOr(plain token.Type) token.Token {
+	if l.peekChar() == '=' {
+		return l.readFusedToken(token.PLUSEQ)
+	}
+	return newToken(plain, l.ch, l.line, l.column)
+}
+
+func (l *Lexer) readOpenBracket() token.Token {
+	if l.peekChar() == '[' && l.peekAt(2) != ':' {
+		tok := l.readFusedToken(token.LDBRACKET)
+		l.dbracketDepth++
+		l.bracketStack = append(l.bracketStack, 'D')
+		return tok
+	}
+	tok := newToken(token.LBRACKET, l.ch, l.line, l.column)
+	l.bracketStack = append(l.bracketStack, 'B')
+	return tok
+}
+
+func (l *Lexer) readCloseBracket() token.Token {
+	top := byte(0)
+	if n := len(l.bracketStack); n > 0 {
+		top = l.bracketStack[n-1]
+	}
+	if l.peekChar() == ']' && top == 'D' {
+		tok := l.readFusedToken(token.RDBRACKET)
+		if l.dbracketDepth > 0 {
+			l.dbracketDepth--
+		}
+		l.bracketStack = l.bracketStack[:len(l.bracketStack)-1]
+		return tok
+	}
+	tok := newToken(token.RBRACKET, l.ch, l.line, l.column)
+	if len(l.bracketStack) > 0 {
+		l.bracketStack = l.bracketStack[:len(l.bracketStack)-1]
+	}
+	return tok
+}
+
+func (l *Lexer) readAmpersandLead() token.Token {
+	switch l.peekChar() {
+	case '&':
+		return l.readFusedToken(token.AND)
+	case '|', '!':
+		return l.readFusedToken(token.AMPERSAND)
+	}
+	return newToken(token.AMPERSAND, l.ch, l.line, l.column)
+}
+
+func (l *Lexer) readPipeLead() token.Token {
+	if l.peekChar() == '|' {
+		return l.readFusedToken(token.OR)
+	}
+	return newToken(token.PIPE, l.ch, l.line, l.column)
+}
+
+func (l *Lexer) readQuotedString(quote byte) token.Token {
+	line, col := l.line, l.column
+	literal := l.readString(quote)
+	return token.Token{
+		Type: token.STRING, Literal: literal,
+		Line: line, Column: col, EndLine: l.line,
+	}
+}
+
+// readFusedToken consumes the two-byte run starting at the current
+// cursor and returns a fused token of the requested type.
+func (l *Lexer) readFusedToken(t token.Type) token.Token {
+	ch := l.ch
+	l.readChar()
+	return token.Token{
+		Type:    t,
+		Literal: string(ch) + string(l.ch),
+		Line:    l.line,
+		Column:  l.column,
+	}
+}
+
+func (l *Lexer) readIdentifierToken(hasSpace bool) token.Token {
+	line, col := l.line, l.column
+	tok := token.Token{Line: line, Column: col, HasPrecedingSpace: hasSpace}
+	tok.Literal = l.readIdentifier()
+	tok.Type = token.LookupIdent(tok.Literal)
+	if tok.Type != token.IDENT && l.ch == '=' {
+		tok.Type = token.IDENT
+	}
+	return tok
+}
+
+func (l *Lexer) readNumberToken(hasSpace bool) token.Token {
+	line, col := l.line, l.column
+	return token.Token{
+		Type: token.INT, Literal: l.readNumber(),
+		Line: line, Column: col, HasPrecedingSpace: hasSpace,
+	}
+}
+
+func (l *Lexer) readUnicodeIdent(hasSpace bool) token.Token {
+	line, col := l.line, l.column
+	start := l.position
+	for l.ch >= 0x80 || isLetter(l.ch) || isDigit(l.ch) {
+		l.readChar()
+	}
+	return token.Token{
+		Type: token.IDENT, Literal: l.input[start:l.position],
+		Line: line, Column: col, HasPrecedingSpace: hasSpace,
+	}
 }
 
 // readAngleBracket emits the token for a leading `<` or `>` and the
