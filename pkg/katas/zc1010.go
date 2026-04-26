@@ -54,46 +54,77 @@ func fixZC1010(node ast.Node, v Violation, source []byte) []FixEdit {
 // double-quoted strings, and `${…}` braces are respected so the scan
 // doesn't match `]` inside `"$arr[idx]"`.
 func findTestCloseBracket(source []byte, open int) int {
-	inSingle := false
-	inDouble := false
-	braceDepth := 0
+	st := bracketScan{}
 	for i := open + 1; i < len(source); i++ {
-		c := source[i]
-		switch {
-		case inSingle:
-			if c == '\'' {
-				inSingle = false
-			}
-		case inDouble:
-			if c == '\\' && i+1 < len(source) {
-				i++
-				continue
-			}
-			if c == '"' {
-				inDouble = false
-			}
-		default:
-			switch c {
-			case '\'':
-				inSingle = true
-			case '"':
-				inDouble = true
-			case '{':
-				braceDepth++
-			case '}':
-				if braceDepth > 0 {
-					braceDepth--
-				}
-			case '\n', ';':
-				return -1
-			case ']':
-				if braceDepth == 0 {
-					return i
-				}
-			}
+		if next, ok := st.advance(source, i); ok {
+			i = next
+			continue
+		}
+		if st.closedAt(source, i) {
+			return i
+		}
+		if st.terminated(source, i) {
+			return -1
 		}
 	}
 	return -1
+}
+
+type bracketScan struct {
+	inSingle, inDouble bool
+	braceDepth         int
+}
+
+// advance returns (newIndex, true) when the byte at i drives the scanner
+// forward past quoted/escaped material without further classification.
+func (s *bracketScan) advance(source []byte, i int) (int, bool) {
+	c := source[i]
+	switch {
+	case s.inSingle:
+		if c == '\'' {
+			s.inSingle = false
+		}
+		return i, true
+	case s.inDouble:
+		if c == '\\' && i+1 < len(source) {
+			return i + 1, true
+		}
+		if c == '"' {
+			s.inDouble = false
+		}
+		return i, true
+	}
+	return i, false
+}
+
+// closedAt reports whether the unquoted byte at i is the matching `]`.
+// Side effect: classifies opening / closing braces to track depth.
+func (s *bracketScan) closedAt(source []byte, i int) bool {
+	switch source[i] {
+	case '\'':
+		s.inSingle = true
+	case '"':
+		s.inDouble = true
+	case '{':
+		s.braceDepth++
+	case '}':
+		if s.braceDepth > 0 {
+			s.braceDepth--
+		}
+	case ']':
+		if s.braceDepth == 0 {
+			return true
+		}
+	}
+	return false
+}
+
+func (s *bracketScan) terminated(source []byte, i int) bool {
+	if s.inSingle || s.inDouble {
+		return false
+	}
+	c := source[i]
+	return c == '\n' || c == ';'
 }
 
 // offsetToEdit builds a FixEdit whose Line/Column correspond to the

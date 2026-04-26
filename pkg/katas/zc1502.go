@@ -30,27 +30,10 @@ func init() {
 // re-insert.
 func fixZC1502(node ast.Node, _ Violation, source []byte) []FixEdit {
 	cmd, ok := node.(*ast.SimpleCommand)
-	if !ok {
+	if !ok || !zc1502IsGrepFamily(cmd) {
 		return nil
 	}
-	ident, ok := cmd.Name.(*ast.Identifier)
-	if !ok {
-		return nil
-	}
-	if ident.Value != "grep" && ident.Value != "egrep" && ident.Value != "fgrep" &&
-		ident.Value != "rg" && ident.Value != "ag" {
-		return nil
-	}
-	var firstVar ast.Expression
-	for _, arg := range cmd.Arguments {
-		v := arg.String()
-		if v == "--" {
-			return nil
-		}
-		if firstVar == nil && (strings.HasPrefix(v, "\"$") || strings.HasPrefix(v, "$")) {
-			firstVar = arg
-		}
-	}
+	firstVar := zc1502FirstVarArg(cmd)
 	if firstVar == nil {
 		return nil
 	}
@@ -63,12 +46,30 @@ func fixZC1502(node ast.Node, _ Violation, source []byte) []FixEdit {
 	if insLine < 0 {
 		return nil
 	}
-	return []FixEdit{{
-		Line:    insLine,
-		Column:  insCol,
-		Length:  0,
-		Replace: "-- ",
-	}}
+	return []FixEdit{{Line: insLine, Column: insCol, Length: 0, Replace: "-- "}}
+}
+
+var zc1502GrepFamily = map[string]struct{}{
+	"grep": {}, "egrep": {}, "fgrep": {}, "rg": {}, "ag": {},
+}
+
+func zc1502IsGrepFamily(cmd *ast.SimpleCommand) bool {
+	_, hit := zc1502GrepFamily[CommandIdentifier(cmd)]
+	return hit
+}
+
+func zc1502FirstVarArg(cmd *ast.SimpleCommand) ast.Expression {
+	var first ast.Expression
+	for _, arg := range cmd.Arguments {
+		v := arg.String()
+		if v == "--" {
+			return nil
+		}
+		if first == nil && (strings.HasPrefix(v, "\"$") || strings.HasPrefix(v, "$")) {
+			first = arg
+		}
+	}
+	return first
 }
 
 func offsetLineColZC1502(source []byte, offset int) (int, int) {
@@ -90,39 +91,16 @@ func offsetLineColZC1502(source []byte, offset int) (int, int) {
 
 func checkZC1502(node ast.Node) []Violation {
 	cmd, ok := node.(*ast.SimpleCommand)
-	if !ok {
+	if !ok || !zc1502IsGrepFamily(cmd) {
 		return nil
 	}
-
-	ident, ok := cmd.Name.(*ast.Identifier)
-	if !ok {
-		return nil
-	}
-	if ident.Value != "grep" && ident.Value != "egrep" && ident.Value != "fgrep" &&
-		ident.Value != "rg" && ident.Value != "ag" {
-		return nil
-	}
-
-	hasDashDash := false
-	firstVarArg := ""
-	for _, arg := range cmd.Arguments {
-		v := arg.String()
-		if v == "--" {
-			hasDashDash = true
-			break
-		}
-		// First variable-like pattern argument (no surrounding single quote means interpolation)
-		if firstVarArg == "" && (strings.HasPrefix(v, "\"$") || strings.HasPrefix(v, "$")) {
-			firstVarArg = v
-		}
-	}
-
-	if firstVarArg == "" || hasDashDash {
+	firstVar := zc1502FirstVarArg(cmd)
+	if firstVar == nil {
 		return nil
 	}
 	return []Violation{{
 		KataID: "ZC1502",
-		Message: "Variable `" + firstVarArg + "` used as pattern without `--` end-of-flags " +
+		Message: "Variable `" + firstVar.String() + "` used as pattern without `--` end-of-flags " +
 			"marker — attacker-controlled leading `-` becomes a flag. Write `grep -- \"$var\"`.",
 		Line:   cmd.Token.Line,
 		Column: cmd.Token.Column,

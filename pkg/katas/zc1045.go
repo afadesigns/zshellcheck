@@ -94,37 +94,43 @@ func hasCommandSubstitutionAssignment(arg ast.Expression) bool {
 
 func isCommandSubstitution(node ast.Node) bool {
 	switch n := node.(type) {
-	case *ast.CommandSubstitution:
-		return true
-	case *ast.DollarParenExpression:
+	case *ast.CommandSubstitution, *ast.DollarParenExpression:
 		return true
 	case *ast.ConcatenatedExpression:
-		// Recursively check parts? e.g. `var="foo $(cmd)"`
-		for _, p := range n.Parts {
-			if isCommandSubstitution(p) {
+		return zc1045ConcatHasSub(n)
+	case *ast.StringLiteral:
+		return zc1045StringHasSub(n.Value)
+	}
+	return false
+}
+
+func zc1045ConcatHasSub(n *ast.ConcatenatedExpression) bool {
+	for _, p := range n.Parts {
+		if isCommandSubstitution(p) {
+			return true
+		}
+	}
+	return false
+}
+
+// zc1045StringHasSub scans a double-quoted string literal for embedded
+// `$(...)` or backtick command substitutions, ignoring backslash-
+// escaped bytes.
+func zc1045StringHasSub(val string) bool {
+	if len(val) < 2 || val[0] != '"' || val[len(val)-1] != '"' {
+		return false
+	}
+	for i := 0; i < len(val); i++ {
+		switch val[i] {
+		case '\\':
+			i++
+		case '`':
+			return true
+		case '$':
+			if i+1 < len(val) && val[i+1] == '(' {
 				return true
 			}
 		}
-	case *ast.StringLiteral:
-		// Check for interpolation in double-quoted strings
-		val := n.Value
-		if len(val) >= 2 && val[0] == '"' && val[len(val)-1] == '"' {
-			// Scan for $(...) or `...`
-			// Simple heuristic: unescaped $ followed by ( or unescaped `
-			for i := 0; i < len(val); i++ {
-				if val[i] == '\\' {
-					i++ // skip next
-					continue
-				}
-				if val[i] == '`' {
-					return true
-				}
-				if val[i] == '$' && i+1 < len(val) && val[i+1] == '(' {
-					return true
-				}
-			}
-		}
-		return false
 	}
 	return false
 }

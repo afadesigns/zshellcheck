@@ -24,62 +24,67 @@ func init() {
 // `[[ x -lt 10 ]]` → `(( x < 10 ))`. Only fires when exactly one
 // recognised operator appears inside the brackets to keep the
 // rewrite unambiguous.
-func fixZC1091(node ast.Node, v Violation, source []byte) []FixEdit {
+func fixZC1091(node ast.Node, _ Violation, source []byte) []FixEdit {
 	dbe, ok := node.(*ast.DoubleBracketExpression)
 	if !ok {
 		return nil
 	}
-	openLine := dbe.Token.Line
-	openCol := dbe.Token.Column
-	openOff := LineColToByteOffset(source, openLine, openCol)
-	if openOff < 0 {
-		return nil
-	}
-	// The lexer stamps `[[` at the second bracket (two-char fusion).
-	// Step back one column when needed so the edit covers the whole
-	// opener.
-	if openOff > 0 && source[openOff] == '[' && source[openOff-1] == '[' {
-		openOff--
-		openCol--
-	}
-	if openOff+2 > len(source) || source[openOff] != '[' || source[openOff+1] != '[' {
+	openOff, openLine, openCol, ok := zc1091OpenBracket(source, dbe)
+	if !ok {
 		return nil
 	}
 	closeOff := findDoubleBracketClose(source, openOff+2)
 	if closeOff < 0 {
 		return nil
 	}
-	// Find the single `-eq`/etc. operator token and replace.
-	var opTok ast.Expression
-	var opStr string
-	opCount := 0
-	for _, el := range dbe.Elements {
-		if infix, ok := el.(*ast.InfixExpression); ok {
-			if repl, found := arithCmpReplacements[infix.Operator]; found {
-				opTok = el
-				opStr = infix.Operator
-				_ = repl
-				opCount++
-			}
-		}
-	}
-	if opCount != 1 || opTok == nil {
+	infix, ok := zc1091SingleArithOp(dbe)
+	if !ok {
 		return nil
 	}
-	// opTok points at the infix expression; its TokenLiteralNode is
-	// the operator token (e.g. `-eq`). Row/col is already 1-based.
-	infix := opTok.(*ast.InfixExpression)
-	opLine := infix.Token.Line
-	opCol := infix.Token.Column
 	closeLine, closeCol := offsetLineColZC1091(source, closeOff)
 	if closeLine < 0 {
 		return nil
 	}
 	return []FixEdit{
 		{Line: openLine, Column: openCol, Length: 2, Replace: "(("},
-		{Line: opLine, Column: opCol, Length: len(opStr), Replace: arithCmpReplacements[opStr]},
+		{Line: infix.Token.Line, Column: infix.Token.Column, Length: len(infix.Operator), Replace: arithCmpReplacements[infix.Operator]},
 		{Line: closeLine, Column: closeCol, Length: 2, Replace: "))"},
 	}
+}
+
+func zc1091OpenBracket(source []byte, dbe *ast.DoubleBracketExpression) (off, line, col int, ok bool) {
+	line = dbe.Token.Line
+	col = dbe.Token.Column
+	off = LineColToByteOffset(source, line, col)
+	if off < 0 {
+		return 0, 0, 0, false
+	}
+	if off > 0 && source[off] == '[' && source[off-1] == '[' {
+		off--
+		col--
+	}
+	if off+2 > len(source) || source[off] != '[' || source[off+1] != '[' {
+		return 0, 0, 0, false
+	}
+	return off, line, col, true
+}
+
+func zc1091SingleArithOp(dbe *ast.DoubleBracketExpression) (*ast.InfixExpression, bool) {
+	var found *ast.InfixExpression
+	for _, el := range dbe.Elements {
+		infix, ok := el.(*ast.InfixExpression)
+		if !ok {
+			continue
+		}
+		if _, hit := arithCmpReplacements[infix.Operator]; !hit {
+			continue
+		}
+		if found != nil {
+			return nil, false
+		}
+		found = infix
+	}
+	return found, found != nil
 }
 
 // findDoubleBracketClose scans source for the matching `]]` that

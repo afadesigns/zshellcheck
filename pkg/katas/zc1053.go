@@ -119,51 +119,45 @@ func walkZC1053(node ast.Node, isSilenced bool, violations *[]Violation) {
 	if node == nil {
 		return
 	}
-
 	switch n := node.(type) {
 	case *ast.BlockStatement:
 		for _, stmt := range n.Statements {
-			// In a block (condition), usually all statements execute, but only the last one's exit code
-			// matters for the condition?
-			// No, `if cmd1; cmd2; then`. Both execute. `cmd1` prints. `cmd2` prints.
-			// Should we check ALL commands in condition?
-			// Yes, because `grep` printing in a condition is usually unwanted noise.
 			walkZC1053(stmt, isSilenced, violations)
 		}
 	case *ast.ExpressionStatement:
 		walkZC1053(n.Expression, isSilenced, violations)
 	case *ast.InfixExpression:
-		if n.Operator == "|" {
-			// Left side of pipe is silenced (stdout goes to pipe)
-			walkZC1053(n.Left, true, violations)
-			// Right side inherits current silence state
-			walkZC1053(n.Right, isSilenced, violations)
-		} else {
-			// &&, || etc. inherit state
-			walkZC1053(n.Left, isSilenced, violations)
-			walkZC1053(n.Right, isSilenced, violations)
-		}
+		zc1053WalkInfix(n, isSilenced, violations)
 	case *ast.PrefixExpression:
 		if n.Operator == "!" {
 			walkZC1053(n.Right, isSilenced, violations)
 		}
 	case *ast.Redirection:
-		// Check if redirection silences stdout
-		newSilenced := isSilenced
-		if n.Operator == ">" || n.Operator == ">>" || n.Operator == "&>" {
-			// Check if Right is /dev/null
-			if isDevNull(n.Right) {
-				newSilenced = true
-			}
-		}
-		walkZC1053(n.Left, newSilenced, violations)
+		walkZC1053(n.Left, isSilenced || zc1053SilencesStdout(n), violations)
 	case *ast.SimpleCommand:
 		checkCommandZC1053(n, isSilenced, violations)
 	case *ast.GroupedExpression:
 		walkZC1053(n.Expression, isSilenced, violations)
-		// case *ast.Subshell:
-		// Handled by BlockStatement
 	}
+}
+
+func zc1053WalkInfix(n *ast.InfixExpression, isSilenced bool, violations *[]Violation) {
+	if n.Operator == "|" {
+		// Left side of pipe is silenced (stdout goes to pipe).
+		walkZC1053(n.Left, true, violations)
+		walkZC1053(n.Right, isSilenced, violations)
+		return
+	}
+	walkZC1053(n.Left, isSilenced, violations)
+	walkZC1053(n.Right, isSilenced, violations)
+}
+
+func zc1053SilencesStdout(n *ast.Redirection) bool {
+	switch n.Operator {
+	case ">", ">>", "&>":
+		return isDevNull(n.Right)
+	}
+	return false
 }
 
 func checkCommandZC1053(cmd *ast.SimpleCommand, isSilenced bool, violations *[]Violation) {
