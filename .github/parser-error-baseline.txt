@@ -10,5 +10,5 @@ zinit/share/git-process-output.zsh	10
 zinit/zinit-autoload.zsh	7
 zinit/zinit-install.zsh	21
 zinit/zinit-side.zsh	2
-zinit/zinit.zsh	22
+zinit/zinit.zsh	15
 zsh-vi-mode/zsh-vi-mode.zsh	5
