@@ -11,5 +11,4 @@ zinit/zinit-autoload.zsh	17
 zinit/zinit-install.zsh	23
 zinit/zinit-side.zsh	2
 zinit/zinit.zsh	29
-zsh-utils/utility/utility.plugin.zsh	1
 zsh-vi-mode/zsh-vi-mode.zsh	5

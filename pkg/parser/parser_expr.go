@@ -710,6 +710,19 @@ func (p *Parser) parseFunctionLiteral() ast.Expression {
 		p.skipDollarBraceBody()
 		lit.Name = &ast.Identifier{Token: nameTok, Value: nameTok.Literal}
 	}
+	// Zsh allows function names that start with `-` (e.g.
+	// `function -coreutils-alias-setup { … }`). The lexer emits the
+	// leading `-` as a MINUS token followed by an IDENT (with no
+	// space between them), so glue the pair into the name.
+	if p.peekTokenIs(token.MINUS) {
+		dashTok := p.peekToken
+		p.nextToken()
+		if p.peekTokenIs(token.IDENT) && !p.peekToken.HasPrecedingSpace {
+			p.nextToken()
+			lit.Name = &ast.Identifier{Token: dashTok, Value: "-" + p.curToken.Literal}
+			p.consumeCompositeFunctionName()
+		}
+	}
 	if p.peekTokenIs(token.IDENT) {
 		p.nextToken()
 		lit.Name = &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}

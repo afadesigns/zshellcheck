@@ -47,3 +47,10 @@ func TestParseForLoopBraceStyle(t *testing.T) {
 func TestParseForLoopArithmeticHeader(t *testing.T) {
 	parseSourceClean(t, "for ((i=0; i<3; i++)); do echo $i; done\n")
 }
+
+// Zsh function names can start with `-` (e.g.
+// `function -coreutils-alias-setup { … }`). zsh-utils uses this
+// pattern for internal-only helpers.
+func TestParseFunctionDashPrefixedName(t *testing.T) {
+	parseSourceClean(t, "function -coreutils-alias-setup { :; }\n")
+}
