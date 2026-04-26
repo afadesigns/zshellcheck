@@ -11,37 +11,25 @@ import (
 	"github.com/afadesigns/zshellcheck/pkg/token"
 )
 
+// expressionTerminators lists the tokens that end the current
+// expression silently — usually because they belong to the enclosing
+// statement frame (`]]`, `&&`, keyword openers, …).
+var expressionTerminators = map[token.Type]struct{}{
+	token.RDBRACKET: {}, token.AND: {}, token.OR: {},
+	token.THEN: {}, token.ELSE: {}, token.ELIF: {}, token.Fi: {},
+	token.DO: {}, token.DONE: {}, token.ESAC: {},
+	token.SEMICOLON: {}, token.DSEMI: {},
+	token.FOR: {}, token.WHILE: {}, token.If: {}, token.CASE: {},
+	token.SELECT: {}, token.LET: {}, token.RETURN: {},
+	token.TYPESET: {}, token.DECLARE: {},
+}
+
 func (p *Parser) parseExpression(precedence int) ast.Expression {
-	// The infix chain may recurse into parseInfixExpression's
-	// right-hand side just before a statement terminator or
-	// block-structure keyword (`]]`, `&&`, `||`, `then`, `else`,
-	// `elif`, `fi`, `do`, `done`, `esac`). Bail silently in all
-	// those cases so the caller's partial infix result stays
-	// well-formed and the outer statement parser resumes cleanly.
-	// Typical trigger: a bare `VAR=` at end of line followed by
-	// the next statement's keyword, or a glob pattern inside a
-	// conditional like `"foo"* && …`.
-	switch p.curToken.Type {
-	case token.RDBRACKET, token.AND, token.OR,
-		token.THEN, token.ELSE, token.ELIF, token.Fi,
-		token.DO, token.DONE, token.ESAC,
-		token.SEMICOLON, token.DSEMI,
-		// Statement keywords on the next line indicate the previous
-		// expression's RHS was empty (`name=<NL>for x in …; do`).
-		// Return nil so the InfixExpression's Right stays unset and
-		// the dispatcher picks up FOR/IF/etc. as a fresh statement.
-		token.FOR, token.WHILE, token.If, token.CASE,
-		token.SELECT, token.LET, token.RETURN,
-		token.TYPESET, token.DECLARE:
+	if _, hit := expressionTerminators[p.curToken.Type]; hit {
 		return nil
 	}
 	prefix := p.prefixParseFns[p.curToken.Type]
 	if prefix == nil {
-		// Inside a `[[ … ]]` conditional, tokens without a prefix
-		// (`--`, `++`, `,`, bare punctuation words) routinely
-		// appear as literal test arguments: `[[ $1 == -- ]]`,
-		// `[[ $x != ++ ]]`. Treat them as identifiers rather than
-		// errroring so the bracket expression closes cleanly.
 		if p.inDoubleBracket {
 			tok := p.curToken
 			return &ast.Identifier{Token: tok, Value: tok.Literal}
@@ -50,61 +38,10 @@ func (p *Parser) parseExpression(precedence int) ast.Expression {
 		return nil
 	}
 	leftExp := prefix()
-
 	for !p.peekTokenIs(token.SEMICOLON) && precedence < p.peekPrecedence() {
-		if !p.inArithmetic && p.peekTokenIs(token.LBRACKET) && p.peekToken.HasPrecedingSpace {
+		if p.expressionInfixShouldBreak() {
 			break
 		}
-		// Stop an infix chain at `]]`. Inside a `[[ … ]]`
-		// conditional the expression parser would otherwise
-		// consume `*]]` as an infix multiplication with a
-		// non-existent right-hand side, producing
-		// "no prefix parse function for ]]" on glob patterns
-		// like `.*` or `*.zsh`. RDBRACKET has no precedence
-		// entry, but ASTERISK's PRODUCT outranks LOWEST and
-		// lures the loop in before the peek check fires.
-		if p.peekTokenIs(token.RDBRACKET) {
-			break
-		}
-		// When the infix chain has already landed curToken on
-		// `]]`, the conditional is finished. Stop the outer loop
-		// before it reaches across the bracket and picks up the
-		// next statement's `&&` / `||` as a continuation of the
-		// bracket expression. Without this, patterns that end in
-		// an ASTERISK (`[[ $x = /* ]]`) left curToken on RDBRACKET
-		// with peek on OR, and LOWEST's precedence table let OR
-		// win, swallowing the following command into the bracket
-		// body.
-		if p.curTokenIs(token.RDBRACKET) {
-			break
-		}
-		// Outside arithmetic, a `/` glued to the previous token is
-		// a path separator, not a division operator. Treat
-		// `$(cmd)/` or `x/y` at statement level as end-of-
-		// expression so SLASH's PRODUCT precedence doesn't sweep
-		// the next line's keyword (`if`, `for`, etc.) in as the
-		// division RHS. Spaced forms `5 / 5` still enter the infix
-		// path so arithmetic tests keep working.
-		if !p.inArithmetic && p.peekTokenIs(token.SLASH) && !p.peekToken.HasPrecedingSpace {
-			break
-		}
-		// Inside a `[[ … ]]` conditional, adjacent `(…)` groups are
-		// glob alternations being concatenated — not function calls
-		// on the left-hand expression. Stop the infix loop from
-		// picking up the LPAREN as a CALL so parseGroupedExpression
-		// handles the pattern group on its own.
-		if p.inDoubleBracket && p.peekTokenIs(token.LPAREN) {
-			break
-		}
-		// `cmd (subshell)` with space between `cmd` and `(` is a
-		// command followed by a subshell argument, not a function
-		// call (`cmd(args)` with no space). The caller's
-		// parseSingleCommand handles argument gathering; bail out
-		// here so LPAREN doesn't get treated as a CALL infix.
-		if p.peekTokenIs(token.LPAREN) && p.peekToken.HasPrecedingSpace {
-			break
-		}
-
 		infix := p.infixParseFns[p.peekToken.Type]
 		if infix == nil {
 			return leftExp
@@ -113,6 +50,29 @@ func (p *Parser) parseExpression(precedence int) ast.Expression {
 		leftExp = infix(leftExp)
 	}
 	return leftExp
+}
+
+// expressionInfixShouldBreak reports whether the infix chain in
+// parseExpression should stop before the next infix call. It captures
+// the various Zsh syntactic guards that prevent the infix loop from
+// crossing a statement / bracket / glob boundary.
+func (p *Parser) expressionInfixShouldBreak() bool {
+	if !p.inArithmetic && p.peekTokenIs(token.LBRACKET) && p.peekToken.HasPrecedingSpace {
+		return true
+	}
+	if p.peekTokenIs(token.RDBRACKET) || p.curTokenIs(token.RDBRACKET) {
+		return true
+	}
+	if !p.inArithmetic && p.peekTokenIs(token.SLASH) && !p.peekToken.HasPrecedingSpace {
+		return true
+	}
+	if p.inDoubleBracket && p.peekTokenIs(token.LPAREN) {
+		return true
+	}
+	if p.peekTokenIs(token.LPAREN) && p.peekToken.HasPrecedingSpace {
+		return true
+	}
+	return false
 }
 
 func (p *Parser) parseIdentifier() ast.Expression {

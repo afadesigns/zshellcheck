@@ -253,22 +253,23 @@ func (p *Parser) nextToken() {
 	p.peekToken = p.l.NextToken()
 }
 
-func (p *Parser) isCommandDelimiter(t token.Token) bool {
-	if t.Type == token.BACKTICK && p.inBackticks > 0 {
-		return true // Terminating backtick is a delimiter
-	}
-	// If NOT in backticks, start backtick is NOT a delimiter (it starts a substitution)
-	if t.Type == token.BACKTICK && p.inBackticks == 0 {
-		return false
-	}
+// commandDelimiterTokens lists every token type that terminates a
+// command-word run independently of backtick state.
+var commandDelimiterTokens = map[token.Type]struct{}{
+	token.EOF: {}, token.SEMICOLON: {}, token.PIPE: {},
+	token.AND: {}, token.OR: {},
+	token.RPAREN: {}, token.RBRACE: {}, token.HASH: {},
+	token.THEN: {}, token.ELSE: {}, token.ELIF: {}, token.Fi: {},
+	token.DO: {}, token.DONE: {},
+	token.ESAC: {}, token.DSEMI: {},
+}
 
-	return t.Type == token.EOF || t.Type == token.SEMICOLON || t.Type == token.PIPE ||
-		t.Type == token.AND || t.Type == token.OR ||
-		t.Type == token.RPAREN || t.Type == token.RBRACE ||
-		t.Type == token.HASH ||
-		t.Type == token.THEN || t.Type == token.ELSE || t.Type == token.ELIF || t.Type == token.Fi ||
-		t.Type == token.DO || t.Type == token.DONE ||
-		t.Type == token.ESAC || t.Type == token.DSEMI
+func (p *Parser) isCommandDelimiter(t token.Token) bool {
+	if t.Type == token.BACKTICK {
+		return p.inBackticks > 0
+	}
+	_, hit := commandDelimiterTokens[t.Type]
+	return hit
 }
 
 func (p *Parser) curTokenIs(t token.Type) bool {
