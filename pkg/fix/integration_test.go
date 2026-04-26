@@ -1627,6 +1627,30 @@ func TestFixIntegration_ZC1591_PrintfArrayToPrintL(t *testing.T) {
 	}
 }
 
+func TestFixIntegration_ZC1201_RshToSsh(t *testing.T) {
+	src := "rsh host command\n"
+	want := "ssh host command\n"
+	if got := runFix(t, src); got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}
+
+func TestFixIntegration_ZC1201_RcpToScp(t *testing.T) {
+	src := "rcp src dst\n"
+	want := "scp src dst\n"
+	if got := runFix(t, src); got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}
+
+func TestFixIntegration_ZC1201_RloginToSsh(t *testing.T) {
+	src := "rlogin host\n"
+	want := "ssh host\n"
+	if got := runFix(t, src); got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}
+
 func TestFixIntegration_ZC1252_PipedCatHandledByZC1146(t *testing.T) {
 	// `cat /etc/group | head` lets ZC1146 win the overlap and collapse
 	// the pipe into `head /etc/group`. ZC1252's two-edit rewrite would

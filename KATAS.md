@@ -11,7 +11,7 @@ Auto-generated list of all 1000 implemented checks. Do not edit by hand — rege
 | `info` | 64 |
 | `style` | 257 |
 | **total** | **1000** |
-| **with auto-fix** | **133** |
+| **with auto-fix** | **134** |
 
 Auto-fix availability is marked per-entry below as **Auto-fix:** `yes` or `no`. Run `zshellcheck -fix path/...` to apply every available rewrite, or `-diff` to preview without writing.
 
@@ -214,7 +214,7 @@ Auto-fix availability is marked per-entry below as **Auto-fix:** `yes` or `no`. 
 - [ZC1198: Avoid interactive editors in scripts](#zc1198)
 - [ZC1199: Avoid `telnet` in scripts — use `curl` or `zsh/net/tcp`](#zc1199)
 - [ZC1200: Avoid `ftp` — use `sftp` or `curl` for secure transfers](#zc1200)
-- [ZC1201: Avoid `rsh`/`rlogin`/`rcp` — use `ssh`/`scp`](#zc1201)
+- [ZC1201: Avoid `rsh`/`rlogin`/`rcp` — use `ssh`/`scp`](#zc1201) · auto-fix
 - [ZC1202: Avoid `ifconfig` — use `ip` for network configuration](#zc1202) · auto-fix
 - [ZC1203: Avoid `netstat` — use `ss` for socket statistics](#zc1203) · auto-fix
 - [ZC1204: Avoid `route` — use `ip route` for routing](#zc1204)
@@ -3388,7 +3388,7 @@ Disable by adding `ZC1200` to `disabled_katas` in `.zshellcheckrc`.
 ### ZC1201 — Avoid `rsh`/`rlogin`/`rcp` — use `ssh`/`scp`
 
 **Severity:** `warning`  
-**Auto-fix:** `no`
+**Auto-fix:** `yes`
 
 `rsh`, `rlogin`, and `rcp` are insecure legacy protocols. Use `ssh`, `scp`, or `rsync` over SSH for encrypted remote operations.
 
