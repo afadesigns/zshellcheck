@@ -83,3 +83,25 @@ func TestParseTopLevelSemicolonChain(t *testing.T) {
 func TestParseTopLevelSemicolonAfterIf(t *testing.T) {
 	parseSourceClean(t, "if [[ 1 ]] { :; }; (( x = 1 ))\n")
 }
+
+// Nested case inside a case clause body. Previously the inner `esac`
+// was treated as the outer body's terminator, collapsing the outer
+// case prematurely. zsh-vi-mode uses this pattern in its
+// range-handler dispatch.
+func TestParseNestedCase(t *testing.T) {
+	src := "case $x in\n" +
+		"  a)\n" +
+		"    case $y in\n" +
+		"      b) :;;\n" +
+		"    esac\n" +
+		"    :\n" +
+		"    ;;\n" +
+		"  c) :;;\n" +
+		"esac\n"
+	parseSourceClean(t, src)
+}
+
+// Pipeline tail after case must still work after the nested-case fix.
+func TestParseCasePipelineTail(t *testing.T) {
+	parseSourceClean(t, "case $x in a) echo a;; esac | tr a-z A-Z\n")
+}
