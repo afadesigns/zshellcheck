@@ -162,7 +162,6 @@ signs:
     certificate: '${artifact}.pem'
     args:
       - sign-blob
-      - '--new-bundle-format=false'
       - '--output-certificate=${certificate}'
       - '--output-signature=${signature}'
       - '${artifact}'
