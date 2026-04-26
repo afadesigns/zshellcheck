@@ -150,7 +150,8 @@ jobs:
         if: runner.os == 'Linux'
         shell: bash
         run: |
-          go test -coverpkg=./... -coverprofile=cov-total.out ./... > /dev/null 2>&1
+          go clean -testcache
+          go test -count=1 -coverpkg=./... -coverprofile=cov-total.out ./... > /dev/null 2>&1
           total=$(go tool cover -func=cov-total.out | tail -1 | awk '{print $NF}' | tr -d '%')
           echo "project-wide statement coverage: ${total}%"
           awk -v t="$total" 'BEGIN { exit (t >= 90.0) ? 0 : 1 }' || {
