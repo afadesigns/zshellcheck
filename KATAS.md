@@ -11,7 +11,7 @@ Auto-generated list of all 1000 implemented checks. Do not edit by hand — rege
 | `info` | 64 |
 | `style` | 257 |
 | **total** | **1000** |
-| **with auto-fix** | **136** |
+| **with auto-fix** | **137** |
 
 Auto-fix availability is marked per-entry below as **Auto-fix:** `yes` or `no`. Run `zshellcheck -fix path/...` to apply every available rewrite, or `-diff` to preview without writing.
 
@@ -53,7 +53,7 @@ Auto-fix availability is marked per-entry below as **Auto-fix:** `yes` or `no`. 
 - [ZC1034: Use `command -v` instead of `which`](#zc1034) · auto-fix
 - [ZC1035: Superseded by ZC1022 — retired duplicate `let` detector](#zc1035)
 - [ZC1036: Prefer `\[\[ ... \]\]` over `test` command](#zc1036) · auto-fix
-- [ZC1037: Use 'print -r --' for variable expansion](#zc1037)
+- [ZC1037: Use 'print -r --' for variable expansion](#zc1037) · auto-fix
 - [ZC1038: Avoid useless use of cat](#zc1038)
 - [ZC1039: Avoid `rm` with root path](#zc1039)
 - [ZC1040: Use (N) nullglob qualifier for globs in loops](#zc1040) · auto-fix
@@ -1456,7 +1456,7 @@ Disable by adding `ZC1036` to `disabled_katas` in `.zshellcheckrc`.
 ### ZC1037 — Use 'print -r --' for variable expansion
 
 **Severity:** `style`  
-**Auto-fix:** `no`
+**Auto-fix:** `yes`
 
 Using 'echo' to print strings containing variables can lead to unexpected behavior if the variable contains special characters or flags. A safer, more reliable alternative is 'print -r --'.
 

@@ -16,6 +16,11 @@ func init() {
 			"is 'print -r --'.",
 		Severity: SeverityStyle,
 		Check:    checkZC1037,
+		// Reuse ZC1092's `echo` → `print -r --` rewrite. The detector
+		// here is a stricter subset (only fires when echo prints a
+		// variable expansion) but the rewrite is identical; the
+		// conflict resolver dedupes overlapping edits.
+		Fix: fixZC1092,
 	})
 }
 
