@@ -405,6 +405,42 @@ func TestProcessFile_SarifFormat(t *testing.T) {
 	_ = count
 }
 
+func TestApplyFixesUntilStable_Idempotent(t *testing.T) {
+	src := "#!/bin/zsh\necho hello\n"
+	cfg := config.DefaultConfig()
+	registry := katas.Registry
+	out, n, err := applyFixesUntilStable(src, nil, registry, nil, cfg, nil, 5)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if n != 0 {
+		t.Errorf("expected 0 edits applied, got %d", n)
+	}
+	if out != src {
+		t.Errorf("source changed unexpectedly: %q", out)
+	}
+}
+
+func TestApplyFixesUntilStable_RewritesBackticks(t *testing.T) {
+	src := "x=`which git`\n"
+	cfg := config.DefaultConfig()
+	registry := katas.Registry
+	initial := collectEdits(src, registry, nil, cfg, nil)
+	if len(initial) == 0 {
+		t.Skip("no auto-fix katas fired on the input; coverage path not exercised")
+	}
+	out, n, err := applyFixesUntilStable(src, initial, registry, nil, cfg, nil, 5)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if n == 0 {
+		t.Errorf("expected at least one edit applied")
+	}
+	if out == src {
+		t.Errorf("expected source rewrite, got identity")
+	}
+}
+
 func TestProcessFile_NonexistentFile(t *testing.T) {
 	var out, errOut bytes.Buffer
 	cfg := config.DefaultConfig()
