@@ -7,8 +7,8 @@ fzf-tab/test/ztst.zsh	1
 zephyr/plugins/compstyle/compstyle.plugin.zsh	1
 zimfw/zimfw.zsh	15
 zinit/share/git-process-output.zsh	10
-zinit/zinit-autoload.zsh	17
-zinit/zinit-install.zsh	23
+zinit/zinit-autoload.zsh	7
+zinit/zinit-install.zsh	21
 zinit/zinit-side.zsh	2
-zinit/zinit.zsh	29
+zinit/zinit.zsh	22
 zsh-vi-mode/zsh-vi-mode.zsh	5

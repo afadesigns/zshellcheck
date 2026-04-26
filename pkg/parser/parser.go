@@ -256,6 +256,15 @@ func (p *Parser) ParseProgram() *ast.Program {
 		if stmt != nil {
 			program.Statements = append(program.Statements, stmt)
 		}
+		// Brace-form statements advance past their own closing `}` and
+		// set consumedBraceTerminator. Skipping the trailing nextToken
+		// keeps the next statement's head on curToken; otherwise we
+		// over-advance and parseStatement starts on the second token
+		// (e.g. `+=` in `if {} ; x+=1`).
+		if p.consumedBraceTerminator {
+			p.consumedBraceTerminator = false
+			continue
+		}
 		p.nextToken()
 	}
 	return program

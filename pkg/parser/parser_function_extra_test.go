@@ -54,3 +54,21 @@ func TestParseForLoopArithmeticHeader(t *testing.T) {
 func TestParseFunctionDashPrefixedName(t *testing.T) {
 	parseSourceClean(t, "function -coreutils-alias-setup { :; }\n")
 }
+
+// Brace-form `if X { } elif Y { }` chain. zinit relies on this Zsh
+// shorthand. Previously the parser handled `if X { } else { }` only.
+func TestParseBraceFormIfElif(t *testing.T) {
+	parseSourceClean(t, "if [[ 1 ]] {\n  echo a\n} elif [[ 2 ]] {\n  echo b\n}\n")
+}
+
+func TestParseBraceFormIfElifElse(t *testing.T) {
+	parseSourceClean(t, "if [[ 1 ]] {\n  echo a\n} elif [[ 2 ]] {\n  echo b\n} else {\n  echo c\n}\n")
+}
+
+// `IDENT+=value` immediately after a brace-form if. Previously failed
+// because ParseProgram unconditionally advanced past the head token
+// after parseStatement returned, despite the consumedBraceTerminator
+// flag indicating the brace-form had already advanced.
+func TestParseBraceFormIfFollowedByPlusEq(t *testing.T) {
+	parseSourceClean(t, "if [[ 1 ]] {\n  echo a\n}\nx+=1\n")
+}

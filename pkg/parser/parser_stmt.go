@@ -632,19 +632,14 @@ func (p *Parser) parseIfStatement() *ast.IfStatement {
 	p.nextToken()
 	stmt.Condition = p.parseBlockStatement(token.THEN, token.LBRACE)
 
-	// Zsh short form `if cond { body } [else { body }]` uses brace
-	// blocks instead of `then … fi`. Detect by curToken being
-	// LBRACE after the condition.
+	// Zsh short form `if cond { body } [elif cond { body }]…
+	// [else { body }]` uses brace blocks instead of `then … fi`.
+	// Detect by curToken being LBRACE after the condition.
 	if p.curTokenIs(token.LBRACE) {
 		p.nextToken() // into body
 		stmt.Consequence = p.parseBlockStatement(token.RBRACE)
-		if p.peekTokenIs(token.ELSE) {
-			p.nextToken() // onto else
-			p.nextToken() // expect {
-			if p.curTokenIs(token.LBRACE) {
-				p.nextToken() // into else body
-				stmt.Alternative = p.parseBlockStatement(token.RBRACE)
-			}
+		if alt := p.parseBraceFormElifChain(); alt != nil {
+			stmt.Alternative = alt
 		}
 		// Step past the closing RBRACE so an enclosing brace-scoped
 		// body (for/while/subshell brace body) does not mistake the
@@ -703,6 +698,47 @@ func (p *Parser) parseIfStatement() *ast.IfStatement {
 		return nil
 	}
 	return stmt
+}
+
+// parseBraceFormElifChain walks any `} elif COND { BODY }` chain plus
+// an optional trailing `} else { BODY }` for the Zsh brace-form `if`.
+// Caller has just parsed the consequence body and curToken is RBRACE.
+// Returns the head Alternative (right-nested IfStatement chain), or
+// nil when no chain is present.
+func (p *Parser) parseBraceFormElifChain() ast.Statement {
+	var head ast.Statement
+	var tail *ast.IfStatement
+	for p.peekTokenIs(token.ELIF) {
+		p.nextToken() // onto elif
+		elifTok := p.curToken
+		p.nextToken() // into condition
+		elif := &ast.IfStatement{Token: elifTok}
+		elif.Condition = p.parseBlockStatement(token.LBRACE)
+		if !p.curTokenIs(token.LBRACE) {
+			return head
+		}
+		p.nextToken() // into body
+		elif.Consequence = p.parseBlockStatement(token.RBRACE)
+		if head == nil {
+			head = elif
+		} else {
+			tail.Alternative = elif
+		}
+		tail = elif
+	}
+	if p.peekTokenIs(token.ELSE) {
+		p.nextToken() // onto else
+		p.nextToken() // expect {
+		if p.curTokenIs(token.LBRACE) {
+			p.nextToken() // into else body
+			elseBody := p.parseBlockStatement(token.RBRACE)
+			if head == nil {
+				return elseBody
+			}
+			tail.Alternative = elseBody
+		}
+	}
+	return head
 }
 
 func (p *Parser) parseBlockStatement(terminators ...token.Type) *ast.BlockStatement {
