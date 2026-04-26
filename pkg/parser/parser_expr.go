@@ -524,128 +524,137 @@ func (p *Parser) consumeArrayAccessModifierTail() {
 
 func (p *Parser) parseInvalidArrayAccessPrefix() ast.Expression {
 	dollarToken := p.curToken
-
-	// A bare `$` followed by a command terminator or EOF is a
-	// literal dollar character. Real code in the oh-my-zsh corpus
-	// writes `echo $` (print a literal `$`) or splits long
-	// expressions with `= $` at end of line. Return a $ identifier
-	// so downstream walkers see a well-formed expression rather
-	// than the "expected next token to be IDENT" path below.
-	if p.peekTokenIs(token.SEMICOLON) || p.peekTokenIs(token.EOF) ||
-		p.peekTokenIs(token.PIPE) || p.peekTokenIs(token.AMPERSAND) ||
-		p.peekTokenIs(token.AND) || p.peekTokenIs(token.OR) ||
-		p.peekTokenIs(token.RPAREN) || p.peekTokenIs(token.RBRACE) ||
-		p.peekTokenIs(token.RDBRACKET) || p.peekTokenIs(token.RBRACKET) {
+	if p.peekIsDollarTerminator() {
 		return &ast.Identifier{Token: dollarToken, Value: "$"}
 	}
-
-	// `$[expr]` — Zsh's older / deprecated arithmetic expansion
-	// form, equivalent to `$((expr))`. Consume the body opaquely
-	// to the matching `]` so callers see a single Identifier and
-	// the rest of the line keeps parsing.
 	if p.peekTokenIs(token.LBRACKET) {
-		p.nextToken() // onto [
-		bdepth := 1
-		for bdepth > 0 && !p.peekTokenIs(token.EOF) {
+		return p.parseDollarArithExpansion(dollarToken)
+	}
+	if p.peekIsDollarSpecialOp() {
+		return p.parseDollarSpecialOp(dollarToken)
+	}
+	if p.peekTokenIs(token.PLUS) {
+		return p.parseDollarPlusName(dollarToken)
+	}
+	return p.parseDollarIdent(dollarToken)
+}
+
+func (p *Parser) peekIsDollarTerminator() bool {
+	switch {
+	case p.peekTokenIs(token.SEMICOLON), p.peekTokenIs(token.EOF):
+		return true
+	case p.peekTokenIs(token.PIPE), p.peekTokenIs(token.AMPERSAND):
+		return true
+	case p.peekTokenIs(token.AND), p.peekTokenIs(token.OR):
+		return true
+	case p.peekTokenIs(token.RPAREN), p.peekTokenIs(token.RBRACE):
+		return true
+	case p.peekTokenIs(token.RDBRACKET), p.peekTokenIs(token.RBRACKET):
+		return true
+	}
+	return false
+}
+
+func (p *Parser) peekIsDollarSpecialOp() bool {
+	return p.peekTokenIs(token.HASH) || p.peekTokenIs(token.INT) ||
+		p.peekTokenIs(token.ASTERISK) || p.peekTokenIs(token.BANG) ||
+		p.peekTokenIs(token.MINUS)
+}
+
+func (p *Parser) parseDollarArithExpansion(dollarToken token.Token) ast.Expression {
+	p.nextToken() // onto [
+	bdepth := 1
+	for bdepth > 0 && !p.peekTokenIs(token.EOF) {
+		p.nextToken()
+		switch {
+		case p.curTokenIs(token.LBRACKET):
+			bdepth++
+		case p.curTokenIs(token.RBRACKET):
+			bdepth--
+		}
+	}
+	return &ast.Identifier{Token: dollarToken, Value: "$[…]"}
+}
+
+func (p *Parser) parseDollarSpecialOp(dollarToken token.Token) ast.Expression {
+	p.nextToken()
+	opToken := p.curToken
+	if opToken.Type == token.HASH && p.peekTokenIs(token.IDENT) {
+		p.nextToken()
+		name := &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
+		return &ast.PrefixExpression{
+			Token:    dollarToken,
+			Operator: "$",
+			Right: &ast.PrefixExpression{
+				Token:    opToken,
+				Operator: "#",
+				Right:    name,
+			},
+		}
+	}
+	ident := &ast.Identifier{Token: opToken, Value: opToken.Literal}
+	return &ast.PrefixExpression{Token: dollarToken, Operator: "$", Right: ident}
+}
+
+func (p *Parser) parseDollarPlusName(dollarToken token.Token) ast.Expression {
+	p.nextToken()
+	plusToken := p.curToken
+	if !p.expectPeek(token.IDENT) {
+		return nil
+	}
+	ident := &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
+	plus := &ast.PrefixExpression{Token: plusToken, Operator: "+", Right: ident}
+	if !p.peekTokenIs(token.LBRACKET) {
+		return &ast.PrefixExpression{Token: dollarToken, Operator: "$", Right: plus}
+	}
+	p.nextToken()
+	exp := &ast.InvalidArrayAccess{Token: dollarToken, Left: plus}
+	p.nextToken()
+	exp.Index = p.parseExpression(LOWEST)
+	return p.finalizeInvalidArrayAccess(exp)
+}
+
+func (p *Parser) parseDollarIdent(dollarToken token.Token) ast.Expression {
+	if !p.expectPeek(token.IDENT) {
+		return nil
+	}
+	ident := &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
+	if !p.peekTokenIs(token.LBRACKET) {
+		return &ast.PrefixExpression{Token: dollarToken, Operator: "$", Right: ident}
+	}
+	p.nextToken()
+	exp := &ast.InvalidArrayAccess{Token: dollarToken, Left: ident}
+	p.nextToken()
+	exp.Index = p.parseExpression(LOWEST)
+	if !p.expectPeek(token.RBRACKET) {
+		return nil
+	}
+	return exp
+}
+
+// finalizeInvalidArrayAccess closes the subscript body, draining
+// trailing tokens to the matching `]` so the caller does not leak
+// half-parsed input back into the dispatch loop.
+func (p *Parser) finalizeInvalidArrayAccess(exp *ast.InvalidArrayAccess) ast.Expression {
+	if !p.peekTokenIs(token.RBRACKET) {
+		bdepth := 0
+		for !p.peekTokenIs(token.EOF) {
 			p.nextToken()
 			switch {
 			case p.curTokenIs(token.LBRACKET):
 				bdepth++
 			case p.curTokenIs(token.RBRACKET):
+				if bdepth == 0 {
+					return exp
+				}
 				bdepth--
 			}
 		}
-		return &ast.Identifier{Token: dollarToken, Value: "$[…]"}
-	}
-
-	if p.peekTokenIs(token.HASH) || p.peekTokenIs(token.INT) || p.peekTokenIs(token.ASTERISK) || p.peekTokenIs(token.BANG) || p.peekTokenIs(token.MINUS) {
-		p.nextToken()
-		opToken := p.curToken
-		// `$#name` is Zsh's length-of operator. When the special char
-		// is followed by an identifier, the identifier names the
-		// parameter being measured and belongs to the same expression
-		// — don't leak it back into the caller's token stream.
-		if opToken.Type == token.HASH && p.peekTokenIs(token.IDENT) {
-			p.nextToken()
-			name := &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
-			return &ast.PrefixExpression{
-				Token:    dollarToken,
-				Operator: "$",
-				Right: &ast.PrefixExpression{
-					Token:    opToken,
-					Operator: "#",
-					Right:    name,
-				},
-			}
-		}
-		ident := &ast.Identifier{Token: opToken, Value: opToken.Literal}
-		return &ast.PrefixExpression{Token: dollarToken, Operator: "$", Right: ident}
-	}
-
-	// `$+name` / `$+name[key]` — parameter-existence test, equivalent to
-	// `${+name}` / `${+name[key]}`. Commonly used inside `(( ... ))`.
-	if p.peekTokenIs(token.PLUS) {
-		p.nextToken() // move to '+'
-		plusToken := p.curToken
-		if !p.expectPeek(token.IDENT) {
-			return nil
-		}
-		ident := &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
-		plus := &ast.PrefixExpression{Token: plusToken, Operator: "+", Right: ident}
-		if !p.peekTokenIs(token.LBRACKET) {
-			return &ast.PrefixExpression{Token: dollarToken, Operator: "$", Right: plus}
-		}
-		p.nextToken() // consume [
-		exp := &ast.InvalidArrayAccess{Token: dollarToken, Left: plus}
-		p.nextToken()
-		exp.Index = p.parseExpression(LOWEST)
-		// Subscript body may carry tokens the arithmetic expression
-		// parser didn't consume — e.g. `_$cmd` lexes as IDENT +
-		// VARIABLE; the first IDENT returns from parseExpression
-		// and the VARIABLE falls out. Drain opaquely to the
-		// matching `]` so `$+name[_$cmd]` parses cleanly.
-		if !p.peekTokenIs(token.RBRACKET) {
-			bdepth := 0
-			for !p.peekTokenIs(token.EOF) {
-				p.nextToken()
-				switch {
-				case p.curTokenIs(token.LBRACKET):
-					bdepth++
-				case p.curTokenIs(token.RBRACKET):
-					if bdepth == 0 {
-						return exp
-					}
-					bdepth--
-				}
-			}
-			return exp
-		}
-		if !p.expectPeek(token.RBRACKET) {
-			return nil
-		}
 		return exp
 	}
-
-	if !p.expectPeek(token.IDENT) {
-		return nil
-	}
-	ident := &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
-
-	if !p.peekTokenIs(token.LBRACKET) {
-		return &ast.PrefixExpression{Token: dollarToken, Operator: "$", Right: ident}
-	}
-
-	p.nextToken()
-
-	exp := &ast.InvalidArrayAccess{Token: dollarToken, Left: ident}
-
-	p.nextToken()
-	exp.Index = p.parseExpression(LOWEST)
-
 	if !p.expectPeek(token.RBRACKET) {
 		return nil
 	}
-
 	return exp
 }
 
