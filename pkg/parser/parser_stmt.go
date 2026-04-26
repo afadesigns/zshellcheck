@@ -12,162 +12,190 @@ func (p *Parser) parseStatement() ast.Statement {
 		p.nextToken()
 		return nil
 	}
+	if stmt, ok := p.parseSimpleStatement(); ok {
+		return stmt
+	}
+	if stmt, ok := p.parsePipelineHeadStatement(); ok {
+		return stmt
+	}
+	return p.parseStatementBranch()
+}
+
+// parseSimpleStatement covers the cases whose dispatch is just a token
+// match plus a single helper call.
+func (p *Parser) parseSimpleStatement() (ast.Statement, bool) {
 	switch p.curToken.Type {
 	case token.RETURN:
-		return p.parseReturnStatement()
+		return p.parseReturnStatement(), true
 	case token.LET:
-		return p.parseLetStatement()
+		return p.parseLetStatement(), true
+	case token.SHEBANG:
+		return p.parseShebangStatement(), true
+	case token.HASH:
+		return nil, true
+	case token.COPROC:
+		return p.parseCoprocStatement(), true
+	case token.TYPESET, token.DECLARE:
+		return p.parseDeclarationStatement(), true
+	case token.LPAREN:
+		return p.parseSubshellStatement(), true
+	}
+	return nil, false
+}
+
+// parsePipelineHeadStatement covers block-shaped statements that may
+// head a trailing pipeline tail.
+func (p *Parser) parsePipelineHeadStatement() (ast.Statement, bool) {
+	switch p.curToken.Type {
 	case token.If:
 		stmt := p.parseIfStatement()
 		p.consumePipelineTail()
-		return stmt
-	case token.SHEBANG:
-		return p.parseShebangStatement()
-	case token.HASH:
-		// Skip comments for now
-		return nil
+		return stmt, true
 	case token.FOR:
 		stmt := p.parseForLoopStatement()
 		p.consumePipelineTail()
-		return stmt
+		return stmt, true
 	case token.WHILE:
 		stmt := p.parseWhileLoopStatement()
 		p.consumePipelineTail()
-		return stmt
+		return stmt, true
 	case token.SELECT:
 		stmt := p.parseSelectStatement()
 		p.consumePipelineTail()
-		return stmt
-	case token.COPROC:
-		return p.parseCoprocStatement()
-	case token.TYPESET, token.DECLARE:
-		return p.parseDeclarationStatement()
-	case token.LBRACE:
-		tok := p.curToken
-		p.nextToken()
-		block := p.parseBlockStatement(token.RBRACE)
-		block.Token = tok
-		// A brace group can head a pipeline or logical chain:
-		// `{ cmd1; cmd2 } | sort`, `{ a || b } | awk`. Consume any
-		// trailing pipeline / logical continuations opaquely so
-		// parseStatement doesn't choke on the leading `|` / `&&`
-		// / `||` as an unknown prefix. The AST keeps the block as
-		// the statement; detection katas that care about the full
-		// pipeline can walk source.
-		for p.peekTokenIs(token.PIPE) || p.peekTokenIs(token.AND) || p.peekTokenIs(token.OR) {
-			p.nextToken() // onto op
-			p.nextToken() // onto RHS head
-			_ = p.parseCommandPipeline()
-		}
-		if p.peekTokenIs(token.SEMICOLON) {
-			p.nextToken()
-		}
-		return block
-	case token.LPAREN:
-		return p.parseSubshellStatement()
-	case token.DoubleLparen:
-		cmd := p.parseArithmeticCommand()
-		if cmd == nil {
-			return nil
-		}
-		if chained := p.chainLogical(cmd, cmd.Token); chained != nil {
-			return chained
-		}
-		return cmd
-	case token.LDBRACKET:
-		// `[[ … ]]` is a prefix expression by default. As a statement
-		// we need to capture the bracketed expression AND the `&&` /
-		// `||` continuations without letting the generic
-		// parseExpression loop pick OR/AND up as internal infix
-		// operators — that swallows the continuation's right-hand
-		// command (e.g. `|| return 0`) into a single expression
-		// whose RHS starts at `return`, which has no prefix parse
-		// entry and errors out.
-		//
-		// Call the prefix function directly so the expression stops
-		// exactly at `]]`, then route post-`]]` logical chains
-		// through chainLogical, which uses parseCommandPipeline for
-		// the RHS — the command-aware path that knows how to handle
-		// `return`, builtins, simple commands, and so on.
-		startTok := p.curToken
-		expr := p.parseDoubleBracketExpression()
-		if expr == nil {
-			return nil
-		}
-		if chained := p.chainLogical(expr, startTok); chained != nil {
-			return chained
-		}
-		stmt := &ast.ExpressionStatement{Token: startTok, Expression: expr}
-		if p.peekTokenIs(token.SEMICOLON) {
-			p.nextToken()
-		}
-		return stmt
-	case token.COLON, token.DOT, token.LBRACKET,
-		token.GT, token.LT, token.GTGT, token.LTLT, token.GTAMP, token.LTAMP, token.AMPERSAND, token.SLASH:
-		return p.parseSimpleCommandStatement()
-	case token.BANG:
-		// Shell `!` negates the exit status of the following
-		// pipeline: `! cmd 2>/dev/null | grep`. Route through the
-		// command-pipeline path so redirects and pipes on the
-		// right chain correctly. Keep the expression-level prefix
-		// behaviour for C-style inputs like `!5` / `!true` by
-		// checking peek: IDENT / LPAREN / LBRACKET / LDBRACKET /
-		// DoubleLparen / VARIABLE / DollarLbrace / BACKTICK /
-		// DOLLAR_LPAREN are command starts; anything else falls
-		// back to the expression parser.
-		if p.peekTokenIs(token.IDENT) || p.peekTokenIs(token.LPAREN) ||
-			p.peekTokenIs(token.LBRACKET) || p.peekTokenIs(token.LDBRACKET) ||
-			p.peekTokenIs(token.DoubleLparen) || p.peekTokenIs(token.VARIABLE) ||
-			p.peekTokenIs(token.DollarLbrace) || p.peekTokenIs(token.BACKTICK) ||
-			p.peekTokenIs(token.DOLLAR_LPAREN) {
-			return p.parseSimpleCommandStatement()
-		}
-		return p.parseExpressionOrFunctionDefinition()
-	case token.BACKTICK, token.DOLLAR_LPAREN, token.VARIABLE, token.DollarLbrace:
-		// A command-producing expression (`cmd`, $(cmd), $name,
-		// ${name}) can stand on its own as a statement, but can
-		// also head a pipeline or a logical chain:
-		// `` `_cmd` | sed … ``, `$(date) && ...`, `$VAR | awk`.
-		// Parse the expression via the normal prefix path, then
-		// fold any pipeline / AND / OR continuations into an infix
-		// tree so the trailing `|` / `&&` / `||` do not leak back
-		// into parseStatement's next-iteration dispatch.
-		return p.parsePipelineStartingWithExpression()
+		return stmt, true
 	case token.CASE:
 		stmt := p.parseCaseStatement()
 		p.consumePipelineTail()
-		return stmt
+		return stmt, true
+	}
+	return nil, false
+}
+
+func (p *Parser) parseStatementBranch() ast.Statement {
+	switch p.curToken.Type {
+	case token.LBRACE:
+		return p.parseBraceGroupStatement()
+	case token.DoubleLparen:
+		return p.parseDoubleLparenStatement()
+	case token.LDBRACKET:
+		return p.parseLDBracketStatement()
+	case token.COLON, token.DOT, token.LBRACKET,
+		token.GT, token.LT, token.GTGT, token.LTLT,
+		token.GTAMP, token.LTAMP, token.AMPERSAND, token.SLASH:
+		return p.parseSimpleCommandStatement()
+	case token.BANG:
+		return p.parseBangStatement()
+	case token.BACKTICK, token.DOLLAR_LPAREN, token.VARIABLE, token.DollarLbrace:
+		return p.parsePipelineStartingWithExpression()
 	case token.IDENT:
-		if p.curToken.Literal == "test" {
-			return p.parseSimpleCommandStatement()
-		}
-		if p.peekTokenIs(token.IDENT) || p.peekTokenIs(token.STRING) || p.peekTokenIs(token.INT) ||
-			p.peekTokenIs(token.MINUS) || p.peekTokenIs(token.DOT) || p.peekTokenIs(token.VARIABLE) ||
-			p.peekTokenIs(token.DOLLAR) || p.peekTokenIs(token.DollarLbrace) ||
-			p.peekTokenIs(token.DOLLAR_LPAREN) || p.peekTokenIs(token.SLASH) ||
-			p.peekTokenIs(token.TILDE) || p.peekTokenIs(token.ASTERISK) ||
-			p.peekTokenIs(token.BANG) || p.peekTokenIs(token.LBRACE) ||
-			// `cmd --flag arg` / `cmd ++foo`. DEC / INC are long-
-			// option prefixes here. Without this routing the
-			// expression-level postfix path turned `cmd--` into a
-			// PostfixExpression and the rest of the line leaked
-			// into sibling statements. Each kata that walked the
-			// mangled SimpleCommand.Name-as-flag shape now sees
-			// the correct cmd-name + flag-arg pair.
-			p.peekTokenIs(token.DEC) || p.peekTokenIs(token.INC) ||
-			// Zero-arg commands followed by a pipe / logical chain
-			// must route through parseSimpleCommandStatement so the
-			// pipeline / AND / OR chain is parsed at the command
-			// layer. Without this `cmd1 |\n cmd2` left `cmd1` as a
-			// bare Identifier expression, and the block loop then
-			// tried to start a new statement at `|`.
-			p.peekTokenIs(token.PIPE) || p.peekTokenIs(token.AND) || p.peekTokenIs(token.OR) {
-			return p.parseSimpleCommandStatement()
-		}
-		return p.parseExpressionOrFunctionDefinition()
+		return p.parseIdentStatement()
 	default:
 		return p.parseExpressionOrFunctionDefinition()
 	}
+}
+
+func (p *Parser) parseBraceGroupStatement() ast.Statement {
+	tok := p.curToken
+	p.nextToken()
+	block := p.parseBlockStatement(token.RBRACE)
+	block.Token = tok
+	for p.peekTokenIs(token.PIPE) || p.peekTokenIs(token.AND) || p.peekTokenIs(token.OR) {
+		p.nextToken()
+		p.nextToken()
+		_ = p.parseCommandPipeline()
+	}
+	if p.peekTokenIs(token.SEMICOLON) {
+		p.nextToken()
+	}
+	return block
+}
+
+func (p *Parser) parseDoubleLparenStatement() ast.Statement {
+	cmd := p.parseArithmeticCommand()
+	if cmd == nil {
+		return nil
+	}
+	if chained := p.chainLogical(cmd, cmd.Token); chained != nil {
+		return chained
+	}
+	return cmd
+}
+
+func (p *Parser) parseLDBracketStatement() ast.Statement {
+	startTok := p.curToken
+	expr := p.parseDoubleBracketExpression()
+	if expr == nil {
+		return nil
+	}
+	if chained := p.chainLogical(expr, startTok); chained != nil {
+		return chained
+	}
+	stmt := &ast.ExpressionStatement{Token: startTok, Expression: expr}
+	if p.peekTokenIs(token.SEMICOLON) {
+		p.nextToken()
+	}
+	return stmt
+}
+
+func (p *Parser) parseBangStatement() ast.Statement {
+	if p.peekStartsCommand() {
+		return p.parseSimpleCommandStatement()
+	}
+	return p.parseExpressionOrFunctionDefinition()
+}
+
+func (p *Parser) peekStartsCommand() bool {
+	switch {
+	case p.peekTokenIs(token.IDENT), p.peekTokenIs(token.LPAREN):
+		return true
+	case p.peekTokenIs(token.LBRACKET), p.peekTokenIs(token.LDBRACKET):
+		return true
+	case p.peekTokenIs(token.DoubleLparen), p.peekTokenIs(token.VARIABLE):
+		return true
+	case p.peekTokenIs(token.DollarLbrace), p.peekTokenIs(token.BACKTICK):
+		return true
+	case p.peekTokenIs(token.DOLLAR_LPAREN):
+		return true
+	}
+	return false
+}
+
+func (p *Parser) parseIdentStatement() ast.Statement {
+	if p.curToken.Literal == "test" {
+		return p.parseSimpleCommandStatement()
+	}
+	if p.peekStartsSimpleCommand() {
+		return p.parseSimpleCommandStatement()
+	}
+	return p.parseExpressionOrFunctionDefinition()
+}
+
+func (p *Parser) peekStartsSimpleCommand() bool {
+	if p.peekStartsArgPrefix() {
+		return true
+	}
+	if p.peekTokenIs(token.DEC) || p.peekTokenIs(token.INC) {
+		return true
+	}
+	return p.peekTokenIs(token.PIPE) || p.peekTokenIs(token.AND) || p.peekTokenIs(token.OR)
+}
+
+func (p *Parser) peekStartsArgPrefix() bool {
+	switch {
+	case p.peekTokenIs(token.IDENT), p.peekTokenIs(token.STRING), p.peekTokenIs(token.INT):
+		return true
+	case p.peekTokenIs(token.MINUS), p.peekTokenIs(token.DOT), p.peekTokenIs(token.VARIABLE):
+		return true
+	case p.peekTokenIs(token.DOLLAR), p.peekTokenIs(token.DollarLbrace):
+		return true
+	case p.peekTokenIs(token.DOLLAR_LPAREN), p.peekTokenIs(token.SLASH):
+		return true
+	case p.peekTokenIs(token.TILDE), p.peekTokenIs(token.ASTERISK):
+		return true
+	case p.peekTokenIs(token.BANG), p.peekTokenIs(token.LBRACE):
+		return true
+	}
+	return false
 }
 
 // chainLogical threads `&&` / `||` continuations onto an arbitrary
