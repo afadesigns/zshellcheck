@@ -910,189 +910,150 @@ func (p *Parser) parseShebangStatement() *ast.Shebang {
 
 func (p *Parser) parseForLoopStatement() *ast.ForLoopStatement {
 	stmt := &ast.ForLoopStatement{Token: p.curToken}
-
 	if p.peekTokenIs(token.DoubleLparen) {
-		// Arithmetic for loop: for (( init; cond; post ))
-		p.nextToken() // consume ((
-
-		// Init (optional)
-		if !p.peekTokenIs(token.SEMICOLON) {
-			p.nextToken()
-			if p.prefixParseFns[p.curToken.Type] != nil {
-				stmt.Init = p.parseExpression(LOWEST)
-			} else {
-				p.noPrefixParseFnError(p.curToken.Type)
-				return nil
-			}
-		}
-		if !p.expectPeek(token.SEMICOLON) {
-			return nil
-		}
-
-		// Condition (optional)
-		if !p.peekTokenIs(token.SEMICOLON) {
-			p.nextToken()
-			if p.prefixParseFns[p.curToken.Type] != nil {
-				stmt.Condition = p.parseExpression(LOWEST)
-			} else {
-				p.noPrefixParseFnError(p.curToken.Type)
-				return nil
-			}
-		}
-		if !p.expectPeek(token.SEMICOLON) {
-			return nil
-		}
-
-		// Post (optional)
-		if !p.peekTokenIs(token.DoubleRparen) {
-			p.nextToken()
-			if p.prefixParseFns[p.curToken.Type] != nil {
-				stmt.Post = p.parseExpression(LOWEST)
-			} else {
-				p.noPrefixParseFnError(p.curToken.Type)
-				return nil
-			}
-		}
-
-		if !p.expectPeek(token.DoubleRparen) {
-			return nil
-		}
-
-		// Optional semicolon before DO
-		if p.peekTokenIs(token.SEMICOLON) {
-			p.nextToken()
-		}
-
-		if !p.expectPeek(token.DO) {
-			return nil
-		}
-		p.nextToken() // consume DO
-		stmt.Body = p.parseBlockStatement(token.DONE)
-		return stmt
+		return p.parseArithmeticForLoop(stmt)
 	}
-
-	// For-each loop: for name [in words]; do
-	// Zsh accepts numeric positional names like `for 1 in "$@"; do`
-	// (shorthand to iterate over positionals). Allow INT as the
-	// binding name alongside IDENT.
-	if p.peekTokenIs(token.IDENT) || p.peekTokenIs(token.INT) {
-		p.nextToken()
-	} else {
-		p.peekError(token.IDENT)
+	if !p.consumeForLoopName(stmt) {
 		return nil
 	}
-	stmt.Name = &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
-
-	// Zsh multi-variable for loop: `for k v in …` / `for a b c in …`
-	// pairs each element of the item list against the declared
-	// variables in turn. The implicit-list form `for k v w; do …`
-	// (no `in` — iterates over `$@`) allows numeric positional
-	// names as well, e.g. `for 1 2 3; do …` in
-	// zsh-syntax-highlighting. Accept IDENT and INT alike; the AST
-	// only models a single Name, so extras are skipped. Detection
-	// katas that need the full name list can read source directly.
-	for p.peekTokenIs(token.IDENT) || p.peekTokenIs(token.INT) {
-		p.nextToken()
-	}
-
-	// Zsh short form: `for NAME ( items ) body`. The item list is
-	// wrapped in parentheses and the body is a single command (or
-	// block) with no `do`/`done`. Real-world example in prezto
-	// init.zsh: `for zmodule ("$zmodules[@]") zmodload "zsh/…"`.
 	if p.peekTokenIs(token.LPAREN) {
-		p.nextToken() // consume (
-		stmt.Items = []ast.Expression{}
-		for !p.peekTokenIs(token.RPAREN) && !p.peekTokenIs(token.EOF) {
-			p.nextToken()
-			if p.curTokenIs(token.RPAREN) {
-				break
-			}
-			arg := p.parseCommandWord()
-			stmt.Items = append(stmt.Items, arg)
-		}
-		if !p.expectPeek(token.RPAREN) {
-			return nil
-		}
-
-		// Body form varies. Some Zsh code uses the pure short form
-		// (`for x (items) body`); other code mixes short-form items
-		// with a classic `do/done` body (`for x (items); do … done`).
-		// A leading `;` and `do` indicates the latter.
-		if p.peekTokenIs(token.SEMICOLON) {
-			p.nextToken()
-		}
-		if p.peekTokenIs(token.DO) {
-			p.nextToken() // onto DO
-			p.nextToken() // into body
-			stmt.Body = p.parseBlockStatement(token.DONE)
-			return stmt
-		}
-
-		// Body is a single statement on the same line (usually a
-		// command) or a braced block. Wrap non-block statements in
-		// a BlockStatement so the Body field stays homogeneous.
-		p.nextToken()
-		body := p.parseStatement()
-		if block, ok := body.(*ast.BlockStatement); ok {
-			stmt.Body = block
-		} else if body != nil {
-			stmt.Body = &ast.BlockStatement{
-				Token:      stmt.Token,
-				Statements: []ast.Statement{body},
-			}
-		}
-		return stmt
+		return p.parseShortFormForLoop(stmt)
 	}
-
 	if p.peekTokenIs(token.IN) {
-		p.nextToken()
-		stmt.Items = []ast.Expression{}
-		for !p.peekTokenIs(token.SEMICOLON) && !p.peekTokenIs(token.DO) && !p.peekTokenIs(token.EOF) &&
-			p.peekOnSameLogicalLine() {
-			p.nextToken()
-			arg := p.parseCommandWord()
-			stmt.Items = append(stmt.Items, arg)
-		}
+		p.consumeForLoopInItems(stmt)
 	}
-
 	if p.peekTokenIs(token.SEMICOLON) {
 		p.nextToken()
 	}
+	return p.consumeForLoopBody(stmt)
+}
 
-	// Zsh short body form: `for x in items; { body }` replaces
-	// `do … done` with a brace block. Accept LBRACE here alongside
-	// the classic DO keyword.
-	if p.peekTokenIs(token.LBRACE) {
-		p.nextToken() // onto {
-		p.nextToken() // into body
-		stmt.Body = p.parseBlockStatement(token.RBRACE)
-		return stmt
+func (p *Parser) parseArithmeticForLoop(stmt *ast.ForLoopStatement) *ast.ForLoopStatement {
+	p.nextToken() // consume ((
+	if !p.parseArithSlot(&stmt.Init, token.SEMICOLON) {
+		return nil
 	}
-
-	// Zsh shortest body form: `for x in items <NL> body` where
-	// the body is a single statement on the next line, no `do` /
-	// `done`. Detected by peek being on a different line and not
-	// being DO / SEMICOLON / EOF.
-	if !p.peekTokenIs(token.DO) && !p.peekTokenIs(token.EOF) && !p.peekOnSameLogicalLine() {
-		p.nextToken() // onto body head
-		body := p.parseStatement()
-		if body != nil {
-			if block, ok := body.(*ast.BlockStatement); ok {
-				stmt.Body = block
-			} else {
-				stmt.Body = &ast.BlockStatement{Token: stmt.Token, Statements: []ast.Statement{body}}
-			}
-		}
-		return stmt
+	if !p.expectPeek(token.SEMICOLON) {
+		return nil
 	}
-
+	if !p.parseArithSlot(&stmt.Condition, token.SEMICOLON) {
+		return nil
+	}
+	if !p.expectPeek(token.SEMICOLON) {
+		return nil
+	}
+	if !p.parseArithSlot(&stmt.Post, token.DoubleRparen) {
+		return nil
+	}
+	if !p.expectPeek(token.DoubleRparen) {
+		return nil
+	}
+	if p.peekTokenIs(token.SEMICOLON) {
+		p.nextToken()
+	}
 	if !p.expectPeek(token.DO) {
 		return nil
 	}
-
 	p.nextToken()
 	stmt.Body = p.parseBlockStatement(token.DONE)
 	return stmt
+}
+
+// parseArithSlot fills the optional init / cond / post slot of an
+// arithmetic for loop. Empty slot = peek already at terminator.
+func (p *Parser) parseArithSlot(target *ast.Expression, terminator token.Type) bool {
+	if p.peekTokenIs(terminator) {
+		return true
+	}
+	p.nextToken()
+	if p.prefixParseFns[p.curToken.Type] == nil {
+		p.noPrefixParseFnError(p.curToken.Type)
+		return false
+	}
+	*target = p.parseExpression(LOWEST)
+	return true
+}
+
+func (p *Parser) consumeForLoopName(stmt *ast.ForLoopStatement) bool {
+	if !p.peekTokenIs(token.IDENT) && !p.peekTokenIs(token.INT) {
+		p.peekError(token.IDENT)
+		return false
+	}
+	p.nextToken()
+	stmt.Name = &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
+	for p.peekTokenIs(token.IDENT) || p.peekTokenIs(token.INT) {
+		p.nextToken()
+	}
+	return true
+}
+
+func (p *Parser) parseShortFormForLoop(stmt *ast.ForLoopStatement) *ast.ForLoopStatement {
+	p.nextToken() // consume (
+	stmt.Items = []ast.Expression{}
+	for !p.peekTokenIs(token.RPAREN) && !p.peekTokenIs(token.EOF) {
+		p.nextToken()
+		if p.curTokenIs(token.RPAREN) {
+			break
+		}
+		stmt.Items = append(stmt.Items, p.parseCommandWord())
+	}
+	if !p.expectPeek(token.RPAREN) {
+		return nil
+	}
+	if p.peekTokenIs(token.SEMICOLON) {
+		p.nextToken()
+	}
+	if p.peekTokenIs(token.DO) {
+		p.nextToken()
+		p.nextToken()
+		stmt.Body = p.parseBlockStatement(token.DONE)
+		return stmt
+	}
+	p.nextToken()
+	stmt.Body = wrapForLoopBody(stmt.Token, p.parseStatement())
+	return stmt
+}
+
+func (p *Parser) consumeForLoopInItems(stmt *ast.ForLoopStatement) {
+	p.nextToken()
+	stmt.Items = []ast.Expression{}
+	for !p.peekTokenIs(token.SEMICOLON) && !p.peekTokenIs(token.DO) &&
+		!p.peekTokenIs(token.EOF) && p.peekOnSameLogicalLine() {
+		p.nextToken()
+		stmt.Items = append(stmt.Items, p.parseCommandWord())
+	}
+}
+
+func (p *Parser) consumeForLoopBody(stmt *ast.ForLoopStatement) *ast.ForLoopStatement {
+	if p.peekTokenIs(token.LBRACE) {
+		p.nextToken()
+		p.nextToken()
+		stmt.Body = p.parseBlockStatement(token.RBRACE)
+		return stmt
+	}
+	if !p.peekTokenIs(token.DO) && !p.peekTokenIs(token.EOF) && !p.peekOnSameLogicalLine() {
+		p.nextToken()
+		stmt.Body = wrapForLoopBody(stmt.Token, p.parseStatement())
+		return stmt
+	}
+	if !p.expectPeek(token.DO) {
+		return nil
+	}
+	p.nextToken()
+	stmt.Body = p.parseBlockStatement(token.DONE)
+	return stmt
+}
+
+// wrapForLoopBody normalises a single-statement body into a
+// BlockStatement so ForLoopStatement.Body stays homogeneous.
+func wrapForLoopBody(tok token.Token, body ast.Statement) *ast.BlockStatement {
+	if body == nil {
+		return nil
+	}
+	if block, ok := body.(*ast.BlockStatement); ok {
+		return block
+	}
+	return &ast.BlockStatement{Token: tok, Statements: []ast.Statement{body}}
 }
 
 func (p *Parser) parseWhileLoopStatement() *ast.WhileLoopStatement {
