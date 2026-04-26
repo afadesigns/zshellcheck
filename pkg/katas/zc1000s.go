@@ -4606,131 +4606,132 @@ func checkZC1069(node ast.Node) []Violation {
 	if !ok {
 		return nil
 	}
+	w := zc1069Walker{}
+	w.walk(program, false)
+	return w.violations
+}
 
-	violations := []Violation{}
+type zc1069Walker struct {
+	violations []Violation
+}
 
-	// Helper to walk and track scope
-	var walk func(n ast.Node, inFunction bool)
-	walk = func(n ast.Node, inFunction bool) {
-		if n == nil {
-			return
-		}
-
-		// Check for local usage
-		if cmd, ok := n.(*ast.SimpleCommand); ok {
-			if name, ok := cmd.Name.(*ast.Identifier); ok && (name.Value == "local" || name.Value == "typeset") {
-				if name.Value == "local" && !inFunction {
-					violations = append(violations, Violation{
-						KataID: "ZC1069",
-						Message: "`local` can only be used inside functions. " +
-							"Use `typeset`, `declare`, or just assignment for global variables.",
-						Line:   name.Token.Line,
-						Column: name.Token.Column,
-						Level:  SeverityInfo,
-					})
-				}
-			}
-		}
-
-		// Determine if we are entering a function
-		// We handle scope change in the switch below explicitly for definition nodes.
-
-		switch t := n.(type) {
-		case *ast.Program:
-			for _, s := range t.Statements {
-				walk(s, inFunction)
-			}
-		case *ast.BlockStatement:
-			for _, s := range t.Statements {
-				walk(s, inFunction)
-			}
-		case *ast.IfStatement:
-			if t.Condition != nil {
-				walk(t.Condition, inFunction)
-			}
-			if t.Consequence != nil {
-				walk(t.Consequence, inFunction)
-			}
-			if t.Alternative != nil {
-				walk(t.Alternative, inFunction)
-			}
-		case *ast.ForLoopStatement:
-			if t.Init != nil {
-				walk(t.Init, inFunction)
-			}
-			if t.Condition != nil {
-				walk(t.Condition, inFunction)
-			}
-			if t.Post != nil {
-				walk(t.Post, inFunction)
-			}
-			for _, item := range t.Items {
-				walk(item, inFunction)
-			}
-			if t.Body != nil {
-				walk(t.Body, inFunction)
-			}
-		case *ast.WhileLoopStatement:
-			if t.Condition != nil {
-				walk(t.Condition, inFunction)
-			}
-			if t.Body != nil {
-				walk(t.Body, inFunction)
-			}
-		case *ast.FunctionDefinition:
-			if t.Name != nil {
-				walk(t.Name, inFunction)
-			}
-			if t.Body != nil {
-				walk(t.Body, true)
-			}
-		case *ast.FunctionLiteral:
-			for _, p := range t.Params {
-				walk(p, inFunction)
-			}
-			if t.Body != nil {
-				walk(t.Body, true)
-			}
-		case *ast.SimpleCommand:
-			walk(t.Name, inFunction)
-			for _, arg := range t.Arguments {
-				walk(arg, inFunction)
-			}
-		case *ast.ExpressionStatement:
-			walk(t.Expression, inFunction)
-		case *ast.InfixExpression:
-			walk(t.Left, inFunction)
-			walk(t.Right, inFunction)
-		case *ast.PrefixExpression:
-			walk(t.Right, inFunction)
-		case *ast.PostfixExpression:
-			walk(t.Left, inFunction)
-		case *ast.GroupedExpression:
-			walk(t.Expression, inFunction)
-		case *ast.CaseStatement:
-			walk(t.Value, inFunction)
-			for _, clause := range t.Clauses {
-				for _, p := range clause.Patterns {
-					walk(p, inFunction)
-				}
-				walk(clause.Body, inFunction)
-			}
-		case *ast.ConcatenatedExpression:
-			for _, p := range t.Parts {
-				walk(p, inFunction)
-			}
-		case *ast.CommandSubstitution:
-			walk(t.Command, inFunction)
-		case *ast.DollarParenExpression:
-			walk(t.Command, inFunction)
-		case *ast.Subshell:
-			walk(t.Command, inFunction)
-		}
+func (w *zc1069Walker) walk(n ast.Node, inFunction bool) {
+	if n == nil {
+		return
 	}
+	w.recordIfBareLocal(n, inFunction)
+	w.descendChildren(n, inFunction)
+}
 
-	walk(program, false)
+func (w *zc1069Walker) recordIfBareLocal(n ast.Node, inFunction bool) {
+	cmd, ok := n.(*ast.SimpleCommand)
+	if !ok {
+		return
+	}
+	name, ok := cmd.Name.(*ast.Identifier)
+	if !ok {
+		return
+	}
+	if name.Value != "local" || inFunction {
+		return
+	}
+	w.violations = append(w.violations, Violation{
+		KataID: "ZC1069",
+		Message: "`local` can only be used inside functions. " +
+			"Use `typeset`, `declare`, or just assignment for global variables.",
+		Line:   name.Token.Line,
+		Column: name.Token.Column,
+		Level:  SeverityInfo,
+	})
+}
 
-	return violations
+func (w *zc1069Walker) descendChildren(n ast.Node, inFunction bool) {
+	switch t := n.(type) {
+	case *ast.Program:
+		w.walkStatements(t.Statements, inFunction)
+	case *ast.BlockStatement:
+		w.walkStatements(t.Statements, inFunction)
+	case *ast.IfStatement:
+		w.walk(t.Condition, inFunction)
+		w.walk(t.Consequence, inFunction)
+		w.walk(t.Alternative, inFunction)
+	case *ast.ForLoopStatement:
+		w.walkForLoop(t, inFunction)
+	case *ast.WhileLoopStatement:
+		w.walk(t.Condition, inFunction)
+		w.walk(t.Body, inFunction)
+	case *ast.FunctionDefinition:
+		w.walk(t.Name, inFunction)
+		w.walk(t.Body, true)
+	case *ast.FunctionLiteral:
+		w.walkFunctionLiteral(t)
+	case *ast.SimpleCommand:
+		w.walk(t.Name, inFunction)
+		w.walkExpressions(t.Arguments, inFunction)
+	default:
+		w.descendOtherChildren(n, inFunction)
+	}
+}
+
+func (w *zc1069Walker) descendOtherChildren(n ast.Node, inFunction bool) {
+	switch t := n.(type) {
+	case *ast.ExpressionStatement:
+		w.walk(t.Expression, inFunction)
+	case *ast.InfixExpression:
+		w.walk(t.Left, inFunction)
+		w.walk(t.Right, inFunction)
+	case *ast.PrefixExpression:
+		w.walk(t.Right, inFunction)
+	case *ast.PostfixExpression:
+		w.walk(t.Left, inFunction)
+	case *ast.GroupedExpression:
+		w.walk(t.Expression, inFunction)
+	case *ast.CaseStatement:
+		w.walkCaseStatement(t, inFunction)
+	case *ast.ConcatenatedExpression:
+		w.walkExpressions(t.Parts, inFunction)
+	case *ast.CommandSubstitution:
+		w.walk(t.Command, inFunction)
+	case *ast.DollarParenExpression:
+		w.walk(t.Command, inFunction)
+	case *ast.Subshell:
+		w.walk(t.Command, inFunction)
+	}
+}
+
+func (w *zc1069Walker) walkStatements(stmts []ast.Statement, inFunction bool) {
+	for _, s := range stmts {
+		w.walk(s, inFunction)
+	}
+}
+
+func (w *zc1069Walker) walkExpressions(exprs []ast.Expression, inFunction bool) {
+	for _, e := range exprs {
+		w.walk(e, inFunction)
+	}
+}
+
+func (w *zc1069Walker) walkForLoop(t *ast.ForLoopStatement, inFunction bool) {
+	w.walk(t.Init, inFunction)
+	w.walk(t.Condition, inFunction)
+	w.walk(t.Post, inFunction)
+	w.walkExpressions(t.Items, inFunction)
+	w.walk(t.Body, inFunction)
+}
+
+func (w *zc1069Walker) walkFunctionLiteral(t *ast.FunctionLiteral) {
+	for _, p := range t.Params {
+		w.walk(p, false)
+	}
+	w.walk(t.Body, true)
+}
+
+func (w *zc1069Walker) walkCaseStatement(t *ast.CaseStatement, inFunction bool) {
+	w.walk(t.Value, inFunction)
+	for _, clause := range t.Clauses {
+		w.walkExpressions(clause.Patterns, inFunction)
+		w.walk(clause.Body, inFunction)
+	}
 }
 
 func init() {
