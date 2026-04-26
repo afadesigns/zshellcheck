@@ -1619,6 +1619,14 @@ func TestFixIntegration_ZC1502_AlreadyDashDash(t *testing.T) {
 	}
 }
 
+func TestFixIntegration_ZC1591_PrintfArrayToPrintL(t *testing.T) {
+	src := "printf '%s\\n' \"${arr[@]}\"\n"
+	want := "print -l -r -- \"${arr[@]}\"\n"
+	if got := runFix(t, src); got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}
+
 func TestFixIntegration_ZC1252_PipedCatHandledByZC1146(t *testing.T) {
 	// `cat /etc/group | head` lets ZC1146 win the overlap and collapse
 	// the pipe into `head /etc/group`. ZC1252's two-edit rewrite would

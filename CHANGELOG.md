@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- **Auto-fix coverage now at 132/1000 katas.** New rewrites since 1.0.15, every one deterministic and idempotent on a re-run:
+- **Auto-fix coverage now at 133/1000 katas.** New rewrites since 1.0.15, every one deterministic and idempotent on a re-run:
   - `ZC1015` backticks → `$(...)`.
   - `ZC1016` inserts `-s` after `read` when the variable looks sensitive (`password`, `secret`, `token`, …).
   - `ZC1008` and `ZC1022` share ZC1013's `let NAME=EXPR` → `(( NAME = EXPR ))` rewrite.
@@ -65,6 +65,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `ZC1501` `docker-compose` → `docker compose`.
   - `ZC1512` `service UNIT VERB` → `systemctl VERB UNIT` (rename + arg swap).
   - `ZC1565` `whereis` / `locate` / `mlocate` / `plocate` → `command -v`.
+  - `ZC1591` `printf '%s\n' "${array[@]}"` → `print -l -r -- "${array[@]}"`.
   - `ZC1637` `readonly NAME=value` → `typeset -r NAME=value`.
   - `ZC1643` `$(cat FILE)` → `$(<FILE)` inside SimpleCommand argument strings.
   - `ZC1675` `export -f FUNC` → `typeset -fx FUNC`, `export -n VAR` → `typeset +x VAR`.

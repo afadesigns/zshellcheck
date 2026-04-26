@@ -11,7 +11,7 @@ Auto-generated list of all 1000 implemented checks. Do not edit by hand — rege
 | `info` | 64 |
 | `style` | 257 |
 | **total** | **1000** |
-| **with auto-fix** | **132** |
+| **with auto-fix** | **133** |
 
 Auto-fix availability is marked per-entry below as **Auto-fix:** `yes` or `no`. Run `zshellcheck -fix path/...` to apply every available rewrite, or `-diff` to preview without writing.
 
@@ -604,7 +604,7 @@ Auto-fix availability is marked per-entry below as **Auto-fix:** `yes` or `no`. 
 - [ZC1588: Error on `nsenter --target 1` — joins host init namespaces (container escape)](#zc1588)
 - [ZC1589: Warn on `trap 'set -x' ERR/RETURN/EXIT/ZERR` — trace hook leaks env to stderr](#zc1589)
 - [ZC1590: Error on `sshpass -p SECRET` — password in process list and history](#zc1590)
-- [ZC1591: Style: use Zsh `print -l` / `${(F)array}` instead of `printf '%s\n' "${array\[@\]}"`](#zc1591)
+- [ZC1591: Style: use Zsh `print -l` / `${(F)array}` instead of `printf '%s\n' "${array\[@\]}"`](#zc1591) · auto-fix
 - [ZC1592: Warn on `faillock --reset` / `pam_tally2 -r` — clears failed-auth counter](#zc1592)
 - [ZC1593: Error on `blkdiscard` — issues TRIM/DISCARD across the whole device (data loss)](#zc1593)
 - [ZC1594: Warn on `docker/podman run --security-opt=systempaths=unconfined` — unhides host kernel knobs](#zc1594)
@@ -8068,7 +8068,7 @@ Disable by adding `ZC1590` to `disabled_katas` in `.zshellcheckrc`.
 ### ZC1591 — Style: use Zsh `print -l` / `${(F)array}` instead of `printf '%s\n' "${array[@]}"`
 
 **Severity:** `style`  
-**Auto-fix:** `no`
+**Auto-fix:** `yes`
 
 `printf '%s\n' "${array[@]}"` is the Bash-idiomatic way to print one element per line. Zsh has `print -l -r -- "${array[@]}"` (one element per line, raw, sentinel-safe) and the parameter-expansion flag `${(F)array}` (newline-join, fine for `$(...)`). Both are shorter than the printf incantation and avoid format-string surprises if the array ever contains a literal `%`.
 
