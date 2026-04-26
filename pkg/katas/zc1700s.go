@@ -3262,69 +3262,66 @@ func init() {
 	})
 }
 
+var (
+	zc1751RpmEraseFlags = map[string]struct{}{"-e": {}, "--erase": {}}
+	zc1751DnfRemove     = map[string]struct{}{"remove": {}, "erase": {}}
+	zc1751ZypperRemove  = map[string]struct{}{"remove": {}, "rm": {}}
+	zc1751NodepsFlags   = map[string]struct{}{"--nodeps": {}, "--no-deps": {}}
+)
+
 func checkZC1751(node ast.Node) []Violation {
 	cmd, ok := node.(*ast.SimpleCommand)
 	if !ok {
 		return nil
 	}
-
-	ident, ok := cmd.Name.(*ast.Identifier)
+	tool, ok := zc1751RemoveVerb(cmd)
 	if !ok {
 		return nil
 	}
+	flag := zc1751FirstNodepsFlag(cmd)
+	if flag == "" {
+		return nil
+	}
+	return []Violation{{
+		KataID: "ZC1751",
+		Message: "`" + tool + " ... " + flag + "` removes the package without the " +
+			"dependency solver — dependents break (libc, openssl, systemd " +
+			"units). Resolve the conflict explicitly instead of bypassing.",
+		Line:   cmd.Token.Line,
+		Column: cmd.Token.Column,
+		Level:  SeverityError,
+	}}
+}
 
-	var tool string
-	var verbOK bool
-	switch ident.Value {
+func zc1751RemoveVerb(cmd *ast.SimpleCommand) (string, bool) {
+	tool := CommandIdentifier(cmd)
+	switch tool {
 	case "rpm":
-		tool = "rpm"
-		for _, arg := range cmd.Arguments {
-			v := arg.String()
-			if v == "-e" || v == "--erase" {
-				verbOK = true
-				break
-			}
-		}
+		return tool, HasArgFlag(cmd, zc1751RpmEraseFlags)
 	case "dnf", "yum", "microdnf":
-		tool = ident.Value
 		if len(cmd.Arguments) == 0 {
-			return nil
+			return "", false
 		}
-		sub := cmd.Arguments[0].String()
-		if sub == "remove" || sub == "erase" {
-			verbOK = true
-		}
+		_, ok := zc1751DnfRemove[cmd.Arguments[0].String()]
+		return tool, ok
 	case "zypper":
-		tool = "zypper"
 		if len(cmd.Arguments) == 0 {
-			return nil
+			return "", false
 		}
-		sub := cmd.Arguments[0].String()
-		if sub == "remove" || sub == "rm" {
-			verbOK = true
-		}
-	default:
-		return nil
+		_, ok := zc1751ZypperRemove[cmd.Arguments[0].String()]
+		return tool, ok
 	}
-	if !verbOK {
-		return nil
-	}
+	return "", false
+}
 
+func zc1751FirstNodepsFlag(cmd *ast.SimpleCommand) string {
 	for _, arg := range cmd.Arguments {
 		v := arg.String()
-		if v == "--nodeps" || v == "--no-deps" {
-			return []Violation{{
-				KataID: "ZC1751",
-				Message: "`" + tool + " ... " + v + "` removes the package without the " +
-					"dependency solver — dependents break (libc, openssl, systemd " +
-					"units). Resolve the conflict explicitly instead of bypassing.",
-				Line:   cmd.Token.Line,
-				Column: cmd.Token.Column,
-				Level:  SeverityError,
-			}}
+		if _, hit := zc1751NodepsFlags[v]; hit {
+			return v
 		}
 	}
-	return nil
+	return ""
 }
 
 var zc1752ForceFlags = map[string]bool{
@@ -5330,44 +5327,44 @@ func init() {
 	})
 }
 
+var zc1783AllFlags = map[string]struct{}{"-af": {}, "-fa": {}, "-a": {}, "--all": {}}
+
 func checkZC1783(node ast.Node) []Violation {
 	cmd, ok := node.(*ast.SimpleCommand)
 	if !ok {
 		return nil
 	}
-	ident, ok := cmd.Name.(*ast.Identifier)
-	if !ok {
-		return nil
-	}
-
-	switch ident.Value {
+	switch CommandIdentifier(cmd) {
 	case "podman":
-		if len(cmd.Arguments) >= 2 &&
-			cmd.Arguments[0].String() == "system" &&
-			cmd.Arguments[1].String() == "reset" {
+		if zc1783IsSystemSubcmd(cmd, "reset") {
 			return zc1783Hit(cmd, "podman system reset")
 		}
 	case "nerdctl":
-		if len(cmd.Arguments) >= 2 &&
-			cmd.Arguments[0].String() == "system" &&
-			cmd.Arguments[1].String() == "prune" {
-			hasAll := false
-			hasVolumes := false
-			for _, arg := range cmd.Arguments[2:] {
-				v := arg.String()
-				if v == "-af" || v == "-fa" || v == "-a" || v == "--all" {
-					hasAll = true
-				}
-				if v == "--volumes" {
-					hasVolumes = true
-				}
-			}
-			if hasAll && hasVolumes {
-				return zc1783Hit(cmd, "nerdctl system prune -a --volumes")
-			}
+		if zc1783IsSystemSubcmd(cmd, "prune") && zc1783NerdctlAllVolumes(cmd) {
+			return zc1783Hit(cmd, "nerdctl system prune -a --volumes")
 		}
 	}
 	return nil
+}
+
+func zc1783IsSystemSubcmd(cmd *ast.SimpleCommand, sub string) bool {
+	return len(cmd.Arguments) >= 2 &&
+		cmd.Arguments[0].String() == "system" &&
+		cmd.Arguments[1].String() == sub
+}
+
+func zc1783NerdctlAllVolumes(cmd *ast.SimpleCommand) bool {
+	hasAll, hasVolumes := false, false
+	for _, arg := range cmd.Arguments[2:] {
+		v := arg.String()
+		if _, hit := zc1783AllFlags[v]; hit {
+			hasAll = true
+		}
+		if v == "--volumes" {
+			hasVolumes = true
+		}
+	}
+	return hasAll && hasVolumes
 }
 
 func zc1783Hit(cmd *ast.SimpleCommand, what string) []Violation {
@@ -5538,49 +5535,15 @@ func checkZC1786(node ast.Node) []Violation {
 	if !ok {
 		return nil
 	}
-	ident, ok := cmd.Name.(*ast.Identifier)
-	if !ok {
+	tool := CommandIdentifier(cmd)
+	if !zc1786IsCifsMount(tool, cmd) {
 		return nil
 	}
-
-	switch ident.Value {
-	case "mount.cifs":
-		// direct form
-	case "mount":
-		isCifs := false
-		for i, arg := range cmd.Arguments {
-			v := arg.String()
-			if (v == "-t" || v == "--types") && i+1 < len(cmd.Arguments) {
-				t := cmd.Arguments[i+1].String()
-				if t == "cifs" || t == "smb3" {
-					isCifs = true
-					break
-				}
-			}
-		}
-		if !isCifs {
-			return nil
-		}
-	default:
-		return nil
-	}
-
-	for i, arg := range cmd.Arguments {
-		v := arg.String()
-		var opts string
-		if strings.HasPrefix(v, "-o") && len(v) > 2 {
-			opts = v[2:]
-		} else if v == "-o" && i+1 < len(cmd.Arguments) {
-			opts = cmd.Arguments[i+1].String()
-		}
-		if opts == "" {
-			continue
-		}
-		opts = strings.Trim(opts, "\"'")
+	for _, opts := range zc1786CollectOptions(cmd.Arguments) {
 		if zc1786OptsHavePassword(opts) {
 			return []Violation{{
 				KataID: "ZC1786",
-				Message: "`" + ident.Value + " ... password=…` leaks the SMB password " +
+				Message: "`" + tool + " ... password=…` leaks the SMB password " +
 					"into argv / `ps` / `/proc/PID/cmdline`. Use `credentials=/path/" +
 					"to/creds` (mode 0600) or `$PASSWD` env var instead.",
 				Line:   cmd.Token.Line,
@@ -5590,6 +5553,43 @@ func checkZC1786(node ast.Node) []Violation {
 		}
 	}
 	return nil
+}
+
+func zc1786IsCifsMount(tool string, cmd *ast.SimpleCommand) bool {
+	if tool == "mount.cifs" {
+		return true
+	}
+	if tool != "mount" {
+		return false
+	}
+	for i, arg := range cmd.Arguments {
+		v := arg.String()
+		if (v == "-t" || v == "--types") && i+1 < len(cmd.Arguments) {
+			t := cmd.Arguments[i+1].String()
+			if t == "cifs" || t == "smb3" {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func zc1786CollectOptions(args []ast.Expression) []string {
+	var out []string
+	for i, arg := range args {
+		v := arg.String()
+		var opts string
+		switch {
+		case strings.HasPrefix(v, "-o") && len(v) > 2:
+			opts = v[2:]
+		case v == "-o" && i+1 < len(args):
+			opts = args[i+1].String()
+		default:
+			continue
+		}
+		out = append(out, strings.Trim(opts, "\"'"))
+	}
+	return out
 }
 
 func zc1786OptsHavePassword(opts string) bool {
