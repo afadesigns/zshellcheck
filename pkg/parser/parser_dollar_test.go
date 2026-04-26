@@ -163,3 +163,24 @@ func TestParseArithBareHashCompare(t *testing.T) {
 func TestParseHashIsCommentOutsideArith(t *testing.T) {
 	parseSourceClean(t, "echo before # this is a comment\n")
 }
+
+// `$+3` — Zsh existence test for positional `$3` inside arithmetic.
+// fzf-tab's ls-colors.zsh uses `if (($+3)); then …`.
+func TestParseDollarPlusInt(t *testing.T) {
+	parseSourceClean(t, "(( $+3 ))\n")
+}
+
+// Bitwise `&` and `^` are infix operators inside `((…))`.
+// zinit-autoload's mode-flag tests use `(( unpacked[3] & 0x1 ))`.
+func TestParseArithBitwiseAnd(t *testing.T) {
+	parseSourceClean(t, "(( unpacked[3] & 0x1 ))\n")
+}
+
+func TestParseArithBitwiseXor(t *testing.T) {
+	parseSourceClean(t, "(( a ^ b ))\n")
+}
+
+// `&` outside arithmetic still backgrounds the command.
+func TestParseAmpersandStillBackgrounds(t *testing.T) {
+	parseSourceClean(t, "sleep 5 &\n")
+}

@@ -57,19 +57,33 @@ func (p *Parser) parseExpression(precedence int) ast.Expression {
 // the various Zsh syntactic guards that prevent the infix loop from
 // crossing a statement / bracket / glob boundary.
 func (p *Parser) expressionInfixShouldBreak() bool {
-	if !p.inArithmetic && p.peekTokenIs(token.LBRACKET) && p.peekToken.HasPrecedingSpace {
-		return true
-	}
 	if p.peekTokenIs(token.RDBRACKET) || p.curTokenIs(token.RDBRACKET) {
-		return true
-	}
-	if !p.inArithmetic && p.peekTokenIs(token.SLASH) && !p.peekToken.HasPrecedingSpace {
 		return true
 	}
 	if p.inDoubleBracket && p.peekTokenIs(token.LPAREN) {
 		return true
 	}
 	if p.peekTokenIs(token.LPAREN) && p.peekToken.HasPrecedingSpace {
+		return true
+	}
+	if !p.inArithmetic && p.peekShouldBreakInfix() {
+		return true
+	}
+	return false
+}
+
+// peekShouldBreakInfix groups the not-in-arithmetic infix breaks so
+// expressionInfixShouldBreak stays under the gocyclo threshold. The
+// SLASH/LBRACKET arms guard glob-context shapes; AMPERSAND/CARET arms
+// guard shell-control bytes that are only infix inside `((…))`.
+func (p *Parser) peekShouldBreakInfix() bool {
+	if p.peekTokenIs(token.LBRACKET) && p.peekToken.HasPrecedingSpace {
+		return true
+	}
+	if p.peekTokenIs(token.SLASH) && !p.peekToken.HasPrecedingSpace {
+		return true
+	}
+	if p.peekTokenIs(token.AMPERSAND) || p.peekTokenIs(token.CARET) {
 		return true
 	}
 	return false
@@ -624,9 +638,14 @@ func (p *Parser) peekIsHashLengthOperand() bool {
 func (p *Parser) parseDollarPlusName(dollarToken token.Token) ast.Expression {
 	p.nextToken()
 	plusToken := p.curToken
-	if !p.expectPeek(token.IDENT) {
+	// Zsh accepts a name (`$+commands`), a positional digit
+	// (`$+3`), or `$+*` / `$+@` / `$+?` for the existence test of the
+	// special parameter. The lexer emits these as IDENT/INT plus a
+	// punctuation token; we accept either.
+	if !p.peekTokenIs(token.IDENT) && !p.peekTokenIs(token.INT) {
 		return nil
 	}
+	p.nextToken()
 	ident := &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
 	plus := &ast.PrefixExpression{Token: plusToken, Operator: "+", Right: ident}
 	if !p.peekTokenIs(token.LBRACKET) {

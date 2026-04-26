@@ -53,6 +53,12 @@ var precedences = map[token.Type]int{
 	token.INC:           POSTFIX,
 	token.DEC:           POSTFIX,
 	token.PIPE:          LOWEST + 1,
+	// Bitwise operators inside `((…))`. Outside arithmetic these
+	// tokens carry shell-control meanings (`&` background, `^`
+	// caret-glob); expressionInfixShouldBreak keeps the infix loop
+	// from invoking them in non-arithmetic context.
+	token.AMPERSAND: LOGICAL,
+	token.CARET:     LOGICAL,
 	// Zsh arithmetic ternary `cond ? a : b`. QUESTION uses LOGICAL
 	// precedence; COLON is consumed inside parseInfixExpression's
 	// right-hand parse so it doesn't need its own infix entry (and
@@ -228,6 +234,8 @@ func New(l *lexer.Lexer) *Parser {
 	p.registerInfix(token.LTLT, p.parseRedirection)
 	p.registerInfix(token.GTAMP, p.parseRedirection)
 	p.registerInfix(token.LTAMP, p.parseRedirection)
+	p.registerInfix(token.AMPERSAND, p.parseInfixExpression)
+	p.registerInfix(token.CARET, p.parseInfixExpression)
 
 	p.nextToken() // Initialize curToken
 	p.nextToken() // Initialize peekToken
