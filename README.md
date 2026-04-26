@@ -79,7 +79,7 @@ Three forms (trailing, preceding, file-wide) → [USER_GUIDE](docs/USER_GUIDE.md
 
 ```yaml
 # .github/workflows/lint.yml
-- uses: afadesigns/zshellcheck@v1.0.15
+- uses: afadesigns/zshellcheck@v1.0.16
   with:
     args: -format sarif -severity warning ./scripts
 ```
@@ -87,7 +87,7 @@ Three forms (trailing, preceding, file-wide) → [USER_GUIDE](docs/USER_GUIDE.md
 ```yaml
 # .pre-commit-config.yaml
 -   repo: https://github.com/afadesigns/zshellcheck
-    rev: v1.0.15
+    rev: v1.0.16
     hooks:
       - id: zshellcheck
 ```

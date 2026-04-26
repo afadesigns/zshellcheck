@@ -43,9 +43,10 @@ Our mission is to provide the most comprehensive, fast, and reliable tooling for
   - [ ] **Homebrew (homebrew-core)** — the project will be submitted once the [Homebrew notability threshold](https://docs.brew.sh/Acceptable-Formulae) is met (≥75 stars / ≥30 forks / ≥30 watchers for a third-party submission, or ≥225 stars / ≥90 forks / ≥90 watchers for a self-submission).
     The `homebrew-eligibility` workflow files a tracking issue automatically the week the threshold is crossed.
     A community member is welcome to file the new-formula PR on the project's behalf — third-party submissions face the lower bar.
-  - [ ] **Linux packages** — `.deb`, `.rpm`, `.apk` produced via goreleaser `nfpms:` and shipped on every Releases tag; AUR `zshellcheck-bin` published via goreleaser `aurs:` for Arch / Manjaro users.
-  - [ ] **PowerShell installer** — `install.ps1` mirroring `install.sh` for Windows users.
-  - [ ] **Docker image** — `FROM scratch` static binary published to `ghcr.io/afadesigns/zshellcheck` on tag, signed by cosign.
+  - [x] **Linux packages** — `.deb`, `.rpm`, `.apk` produced via goreleaser `nfpms:` and shipped on every Releases tag.
+  - [ ] **AUR** — `zshellcheck-bin` published via goreleaser `aurs:` for Arch / Manjaro users.
+  - [x] **PowerShell installer** — `install.ps1` mirroring `install.sh` for Windows users.
+  - [x] **Docker image** — `FROM scratch` static binary published to `ghcr.io/afadesigns/zshellcheck` on tag, signed by cosign.
 
 ## Long-Term Vision
 - **Type Checking**: Experimental static type inference for Zsh scripts.
@@ -53,7 +54,7 @@ Our mission is to provide the most comprehensive, fast, and reliable tooling for
 
 ## Progress Tracking
 
-**Current release:** v1.0.15 — 1000 katas.
+**Current release:** v1.0.16 — 1000 katas.
 
 ```
 [================================================================================] 1000/1000

@@ -36,7 +36,7 @@ When run as root, the same script installs to `/usr/local/bin` for system-wide u
 ### Pin a specific version
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/afadesigns/zshellcheck/main/install.sh | bash -s -- --version v1.0.15
+curl -fsSL https://raw.githubusercontent.com/afadesigns/zshellcheck/main/install.sh | bash -s -- --version v1.0.16
 ```
 
 ### Uninstall
@@ -87,7 +87,7 @@ What it does:
 $ErrorActionPreference = 'Stop'
 $installer = "$env:TEMP\zshellcheck-install.ps1"
 irm https://raw.githubusercontent.com/afadesigns/zshellcheck/main/install.ps1 -OutFile $installer
-& $installer -Version v1.0.15 -Yes
+& $installer -Version v1.0.16 -Yes
 ```
 
 ### Uninstall
@@ -186,7 +186,7 @@ curl -fsSL https://raw.githubusercontent.com/afadesigns/zshellcheck/main/install
 Installs to `~/.local/bin/zshellcheck` (or `/usr/local/bin/zshellcheck` when run as root).
 Same SHA-256 + cosign verification as macOS.
 
-Pin a version: `bash -s -- --version v1.0.15`.
+Pin a version: `bash -s -- --version v1.0.16`.
 Uninstall: `bash -s -- --uninstall`.
 
 ### Manual archive
@@ -226,7 +226,7 @@ This is the only channel that requires a Go toolchain — every other channel is
 ### GitHub Actions
 
 ```yaml
-- uses: afadesigns/zshellcheck@v1.0.15
+- uses: afadesigns/zshellcheck@v1.0.16
   with:
     args: -format sarif -severity warning ./scripts
 ```
@@ -239,7 +239,7 @@ Pin to a tag, never `@main`, for reproducibility.
 ```yaml
 # .pre-commit-config.yaml
 -   repo: https://github.com/afadesigns/zshellcheck
-    rev: v1.0.15
+    rev: v1.0.16
     hooks:
       - id: zshellcheck
 ```
