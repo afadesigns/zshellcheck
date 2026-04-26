@@ -7,7 +7,6 @@
 # Documentation
 /docs/       @afadesigns
 /*.md        @afadesigns
-/wiki/       @afadesigns
 
 # Core Logic
 /pkg/        @afadesigns
