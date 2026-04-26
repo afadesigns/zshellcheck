@@ -13,6 +13,7 @@ func init() {
 			"splitting and globbing more intuitively and supports advanced features like regex matching.",
 		Severity: SeverityStyle,
 		Check:    checkZC1036,
+		Fix:      fixZC1293,
 	})
 }
 

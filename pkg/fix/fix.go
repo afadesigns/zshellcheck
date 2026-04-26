@@ -73,6 +73,17 @@ func resolveConflicts(edits []resolvedEdit) []resolvedEdit {
 			// Overlaps with an already-kept edit; drop it.
 			continue
 		}
+		// Dedupe identical zero-length insertions at the same offset:
+		// when several detectors share a Fix function (e.g. ZC1293
+		// wired to ZC1006 / ZC1020 / ZC1036), each fires its own copy
+		// of the trailing ` ]]` insertion. The overlap test above
+		// can't drop them because zero-width spans don't overlap.
+		if len(kept) > 0 {
+			prev := kept[len(kept)-1]
+			if prev.start == e.start && prev.length == 0 && e.length == 0 && prev.replace == e.replace {
+				continue
+			}
+		}
 		kept = append(kept, e)
 		lastEnd = e.start + e.length
 	}

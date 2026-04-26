@@ -14,6 +14,10 @@ func init() {
 			"expansion, and supports advanced features like regex matching.",
 		Severity: SeverityStyle,
 		Check:    checkZC1006,
+		// All three of ZC1006 / ZC1020 / ZC1036 fire on the same `test`
+		// shape and want the same `[[ … ]]` rewrite that ZC1293 ships.
+		// The conflict resolver dedupes overlapping edits.
+		Fix: fixZC1293,
 	})
 }
 

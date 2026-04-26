@@ -11,7 +11,7 @@ Auto-generated list of all 1000 implemented checks. Do not edit by hand — rege
 | `info` | 64 |
 | `style` | 257 |
 | **total** | **1000** |
-| **with auto-fix** | **128** |
+| **with auto-fix** | **131** |
 
 Auto-fix availability is marked per-entry below as **Auto-fix:** `yes` or `no`. Run `zshellcheck -fix path/...` to apply every available rewrite, or `-diff` to preview without writing.
 
@@ -22,7 +22,7 @@ Auto-fix availability is marked per-entry below as **Auto-fix:** `yes` or `no`. 
 - [ZC1003: Use `((...))` for arithmetic comparisons instead of `\[` or `test`](#zc1003) · auto-fix
 - [ZC1004: Use `return` instead of `exit` in functions](#zc1004) · auto-fix
 - [ZC1005: Use whence instead of which](#zc1005) · auto-fix
-- [ZC1006: Prefer \[\[ over test for tests](#zc1006)
+- [ZC1006: Prefer \[\[ over test for tests](#zc1006) · auto-fix
 - [ZC1007: Avoid using `chmod 777`](#zc1007)
 - [ZC1008: Use `\$(())` for arithmetic operations](#zc1008) · auto-fix
 - [ZC1009: Use `((...))` for C-style arithmetic](#zc1009)
@@ -36,7 +36,7 @@ Auto-fix availability is marked per-entry below as **Auto-fix:** `yes` or `no`. 
 - [ZC1017: Use `print -r` to print strings literally](#zc1017) · auto-fix
 - [ZC1018: Superseded by ZC1009 — retired duplicate](#zc1018)
 - [ZC1019: Superseded by ZC1005 — retired duplicate](#zc1019)
-- [ZC1020: Use `\[\[ ... \]\]` for tests instead of `test`](#zc1020)
+- [ZC1020: Use `\[\[ ... \]\]` for tests instead of `test`](#zc1020) · auto-fix
 - [ZC1021: Use symbolic permissions with `chmod` instead of octal](#zc1021)
 - [ZC1022: Use `$((...))` for arithmetic expansion](#zc1022) · auto-fix
 - [ZC1023: Superseded by ZC1022 — retired duplicate `let` detector](#zc1023)
@@ -52,7 +52,7 @@ Auto-fix availability is marked per-entry below as **Auto-fix:** `yes` or `no`. 
 - [ZC1033: Superseded by ZC1022 — retired duplicate `let` detector](#zc1033)
 - [ZC1034: Use `command -v` instead of `which`](#zc1034) · auto-fix
 - [ZC1035: Superseded by ZC1022 — retired duplicate `let` detector](#zc1035)
-- [ZC1036: Prefer `\[\[ ... \]\]` over `test` command](#zc1036)
+- [ZC1036: Prefer `\[\[ ... \]\]` over `test` command](#zc1036) · auto-fix
 - [ZC1037: Use 'print -r --' for variable expansion](#zc1037)
 - [ZC1038: Avoid useless use of cat](#zc1038)
 - [ZC1039: Avoid `rm` with root path](#zc1039)
@@ -1084,7 +1084,7 @@ Disable by adding `ZC1005` to `disabled_katas` in `.zshellcheckrc`.
 ### ZC1006 — Prefer [[ over test for tests
 
 **Severity:** `style`  
-**Auto-fix:** `no`
+**Auto-fix:** `yes`
 
 The `test` command is an external command and may not be available on all systems. The `[[...]]` construct is a Zsh keyword, offering safer and more powerful conditional expressions than the traditional `test` command. It prevents word splitting and pathname expansion, and supports advanced features like regex matching.
 
@@ -1252,7 +1252,7 @@ Disable by adding `ZC1019` to `disabled_katas` in `.zshellcheckrc`.
 ### ZC1020 — Use `[[ ... ]]` for tests instead of `test`
 
 **Severity:** `style`  
-**Auto-fix:** `no`
+**Auto-fix:** `yes`
 
 The `test` command is an external command and may not be available on all systems. The `[[...]]` construct is a Zsh keyword, offering safer and more powerful conditional expressions than the traditional `test` command.
 
@@ -1444,7 +1444,7 @@ Disable by adding `ZC1035` to `disabled_katas` in `.zshellcheckrc`.
 ### ZC1036 — Prefer `[[ ... ]]` over `test` command
 
 **Severity:** `style`  
-**Auto-fix:** `no`
+**Auto-fix:** `yes`
 
 The `[[ ... ]]` construct is a more powerful and safer alternative to the `test` command (or `[ ... ]`) for conditional expressions in modern shells. It handles word splitting and globbing more intuitively and supports advanced features like regex matching.
 

@@ -13,6 +13,7 @@ func init() {
 			"expressions than the traditional `test` command.",
 		Severity: SeverityStyle,
 		Check:    checkZC1020,
+		Fix:      fixZC1293,
 	})
 }
 
