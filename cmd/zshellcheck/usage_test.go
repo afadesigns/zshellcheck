@@ -7,6 +7,25 @@ import (
 	"testing"
 )
 
+func TestWrapShort(t *testing.T) {
+	got := wrap("short line", 80)
+	if len(got) != 1 || got[0] != "short line" {
+		t.Errorf("short line wrapped unexpectedly: %#v", got)
+	}
+}
+
+func TestWrapBreaks(t *testing.T) {
+	got := wrap("alpha beta gamma delta epsilon", 12)
+	if len(got) < 2 {
+		t.Errorf("expected wrap to break, got: %#v", got)
+	}
+	for _, line := range got {
+		if len(line) > 12 {
+			t.Errorf("wrap exceeded width: %q", line)
+		}
+	}
+}
+
 func TestPaletteDisabled(t *testing.T) {
 	p := palette{enabled: false}
 	if got := p.bold("x"); got != "x" {
