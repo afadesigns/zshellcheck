@@ -110,6 +110,31 @@ Short form:
 Go code follows [Effective Go](https://go.dev/doc/effective_go) and the [Go Code Review Comments](https://github.com/golang/go/wiki/CodeReviewComments).
 Compliance is enforced automatically by [.golangci.yml](.golangci.yml), which runs gofumpt, govet, errcheck, staticcheck, gosec, ineffassign, unparam, gocyclo, dupl, revive, thelper, unconvert, and prealloc on every push and PR.
 
+Every Go source file carries a copyright statement and an SPDX licence identifier on the two lines immediately preceding the `package` declaration:
+
+```go
+// SPDX-License-Identifier: MIT
+// Copyright the ZShellCheck contributors.
+
+package katas
+```
+
+### Code review standards
+
+Reviewers check every PR against the rubric below.
+A PR is mergeable when each item passes or has an explicit waiver in the PR description.
+
+- **Scope.** Single concern per PR. Title matches the [Conventional Commits](https://www.conventionalcommits.org/) prefix.
+- **Tests.** Behaviour changes ship with regression tests. Coverage on the touched files does not regress.
+- **Style.** `gofumpt`, `goimports`, and the full `golangci-lint` suite pass with zero violations.
+- **Safety.** No `panic()` outside `main` or test files; `Check` functions use `ok`-checked type assertions; no new `unsafe` imports; no shell-out from linter logic.
+- **Public-surface hygiene.** Exported identifiers carry doc comments; backward-incompatible changes are flagged in CHANGELOG and require a version-major or version-minor bump.
+- **Trace hygiene.** No banned tokens (claude, anthropic, gemini, etc.) anywhere in tracked surface; the trace-scan gate passes.
+- **Headers.** Every new Go file carries the SPDX and copyright lines from the [coding standards](#coding-standards) section.
+- **Security.** No leaked secrets, no plaintext credentials, no broken cryptography. Vulnerability fixes follow the disclosure process in [SECURITY.md](SECURITY.md).
+- **Documentation.** User-visible changes update README, INSTALL, USER_GUIDE, or KATAS.md as appropriate; KATAS.md is regenerated rather than hand-edited.
+- **Signatures.** Every commit is GPG-signed and carries a DCO `Signed-off-by:` trailer.
+
 ### Test policy
 
 Formal policy: every PR that adds or modifies non-trivial functionality must add or update tests in the same change.

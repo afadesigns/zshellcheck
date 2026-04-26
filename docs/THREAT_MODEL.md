@@ -107,3 +107,14 @@ Common implementation weaknesses each have a concrete counter or an explicit not
 
 This document is the canonical assurance case.
 Updates to it are required whenever the trust boundaries change — for example, if the linter ever gains a network-fetching feature, the boundaries table must be revised in the same PR.
+
+## Security review log
+
+The project conducts a security review against this assurance case at least every twelve months and after any change that crosses a trust boundary.
+Each review re-walks the threats table, the trust boundaries, and the CWE/SANS-Top-25 mapping; updates this document with any new mitigations; and is recorded below with date, scope, and reviewer.
+
+| Date | Scope | Reviewer | Notes |
+| :--- | :--- | :--- | :--- |
+| 2026-04-26 | Full review against the OpenSSF Best Practices gold criteria. Threat model, trust boundaries, secure-design principles, and CWE/SANS Top 25 mapping re-walked end-to-end. CodeQL, gosec, govulncheck, OSV-Scanner, and golangci-lint clean on `main` at commit `aefcedc`. Fuzz-nightly green. | Andreas Fahl (@afadesigns) | Initial review. No outstanding issues. |
+
+A formal external review may be commissioned once the project crosses adoption thresholds that justify it.

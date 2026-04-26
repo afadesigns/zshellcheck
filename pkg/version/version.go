@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+// Copyright the ZShellCheck contributors.
 package version
 
 // Version is the current ZShellCheck release. Bump manually when cutting

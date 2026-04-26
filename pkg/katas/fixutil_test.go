@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+// Copyright the ZShellCheck contributors.
 package katas
 
 import "testing"

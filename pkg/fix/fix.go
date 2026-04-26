@@ -2,6 +2,8 @@
 // source files. It handles offset math (1-based Line/Column to absolute
 // byte offsets), sorts edits bottom-up so earlier offsets stay valid,
 // and renders either a rewritten source string or a unified diff.
+// SPDX-License-Identifier: MIT
+// Copyright the ZShellCheck contributors.
 package fix
 
 import (

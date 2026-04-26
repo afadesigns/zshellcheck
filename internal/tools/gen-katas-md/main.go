@@ -6,6 +6,8 @@
 // path passed via -o. Every kata's ID, title, severity, and description are
 // sourced directly from the RegisterKata() calls in pkg/katas/zc*.go so
 // the generated file cannot drift from the implementation.
+// SPDX-License-Identifier: MIT
+// Copyright the ZShellCheck contributors.
 package main
 
 import (
