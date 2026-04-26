@@ -56,98 +56,98 @@ var directiveRe = regexp.MustCompile(`\bnoka\b\s*(?::\s*([A-Za-z0-9_,\s]+))?`)
 
 // ParseDirectives scans source text for `# noka` annotations and returns
 // the file-wide and per-line sets.
+type directiveScan struct {
+	d           Directives
+	pendingIDs  []string
+	pendingAll  bool
+	pendingFrom int
+}
+
 func ParseDirectives(source string) Directives {
-	d := Directives{
-		PerLine:    make(map[int][]string),
-		PerLineAll: make(map[int]bool),
+	scan := &directiveScan{
+		d: Directives{
+			PerLine:    make(map[int][]string),
+			PerLineAll: make(map[int]bool),
+		},
 	}
-
 	scanner := bufio.NewScanner(strings.NewReader(source))
-	// Guard against single very-long lines overflowing the default buffer.
 	scanner.Buffer(make([]byte, 0, 64*1024), 1024*1024)
-
 	lineNo := 0
-	pendingFrom := 0 // line number of a "preceding" directive waiting for a target
-	var pendingIDs []string
-	pendingAll := false
-
-	flushPending := func(targetLine int) {
-		if pendingAll {
-			d.PerLineAll[targetLine] = true
-		}
-		if len(pendingIDs) > 0 {
-			d.PerLine[targetLine] = append(d.PerLine[targetLine], pendingIDs...)
-		}
-		pendingIDs = nil
-		pendingAll = false
-		pendingFrom = 0
-	}
-
 	for scanner.Scan() {
 		lineNo++
-		raw := scanner.Text()
-		trimmed := strings.TrimSpace(raw)
-
-		hashIdx := strings.Index(raw, "#")
-		if hashIdx < 0 {
-			// No comment on this line. If a pending directive is waiting,
-			// it applies to this line (assuming the line has content).
-			if (pendingAll || len(pendingIDs) > 0) && trimmed != "" {
-				flushPending(lineNo)
-			}
-			continue
-		}
-
-		comment := raw[hashIdx+1:]
-		match := directiveRe.FindStringSubmatch(comment)
-		if match == nil {
-			// A regular comment on this line "consumes" a pending directive
-			// only if the line has code before the comment.
-			if (pendingAll || len(pendingIDs) > 0) && strings.TrimSpace(raw[:hashIdx]) != "" {
-				flushPending(lineNo)
-			}
-			continue
-		}
-
-		ids, all := parseDirectiveIDs(match[1])
-
-		// Determine whether the directive is trailing (has code on the same
-		// line) or standalone (comment-only line).
-		before := strings.TrimSpace(raw[:hashIdx])
-		if before != "" {
-			// Trailing comment — applies to this line.
-			if all {
-				d.PerLineAll[lineNo] = true
-			}
-			if len(ids) > 0 {
-				d.PerLine[lineNo] = append(d.PerLine[lineNo], ids...)
-			}
-			continue
-		}
-
-		// Comment-only directive. If it sits above another directive, the
-		// earlier one also applied to the upcoming code line; merge them.
-		if all {
-			pendingAll = true
-		}
-		if len(ids) > 0 {
-			pendingIDs = append(pendingIDs, ids...)
-		}
-		pendingFrom = lineNo
+		scan.consumeLine(lineNo, scanner.Text())
 	}
+	scan.absorbTail()
+	return scan.d
+}
 
-	// Any directive that never found a target line (empty file tail, or
-	// the whole source is just directives) becomes file-wide.
-	if pendingFrom > 0 {
-		if pendingAll {
-			d.FileAll = true
-		}
-		if len(pendingIDs) > 0 {
-			d.File = append(d.File, pendingIDs...)
-		}
+func (s *directiveScan) consumeLine(lineNo int, raw string) {
+	hashIdx := strings.Index(raw, "#")
+	if hashIdx < 0 {
+		s.consumeCodeLine(lineNo, strings.TrimSpace(raw) != "")
+		return
 	}
+	match := directiveRe.FindStringSubmatch(raw[hashIdx+1:])
+	if match == nil {
+		s.consumeCodeLine(lineNo, strings.TrimSpace(raw[:hashIdx]) != "")
+		return
+	}
+	ids, all := parseDirectiveIDs(match[1])
+	if strings.TrimSpace(raw[:hashIdx]) != "" {
+		s.recordTrailing(lineNo, ids, all)
+		return
+	}
+	s.recordPending(lineNo, ids, all)
+}
 
-	return d
+func (s *directiveScan) consumeCodeLine(lineNo int, hasContent bool) {
+	if !hasContent || (!s.pendingAll && len(s.pendingIDs) == 0) {
+		return
+	}
+	s.flushPending(lineNo)
+}
+
+func (s *directiveScan) flushPending(targetLine int) {
+	if s.pendingAll {
+		s.d.PerLineAll[targetLine] = true
+	}
+	if len(s.pendingIDs) > 0 {
+		s.d.PerLine[targetLine] = append(s.d.PerLine[targetLine], s.pendingIDs...)
+	}
+	s.pendingIDs = nil
+	s.pendingAll = false
+	s.pendingFrom = 0
+}
+
+func (s *directiveScan) recordTrailing(lineNo int, ids []string, all bool) {
+	if all {
+		s.d.PerLineAll[lineNo] = true
+	}
+	if len(ids) > 0 {
+		s.d.PerLine[lineNo] = append(s.d.PerLine[lineNo], ids...)
+	}
+}
+
+func (s *directiveScan) recordPending(lineNo int, ids []string, all bool) {
+	if all {
+		s.pendingAll = true
+	}
+	if len(ids) > 0 {
+		s.pendingIDs = append(s.pendingIDs, ids...)
+	}
+	s.pendingFrom = lineNo
+}
+
+func (s *directiveScan) absorbTail() {
+	if s.pendingFrom == 0 {
+		return
+	}
+	if s.pendingAll {
+		s.d.FileAll = true
+	}
+	if len(s.pendingIDs) > 0 {
+		s.d.File = append(s.d.File, s.pendingIDs...)
+	}
 }
 
 // parseDirectiveIDs extracts the kata-ID list from the directive's optional

@@ -180,15 +180,25 @@ func resolveOffsets(source string, edits []katas.FixEdit) ([]resolvedEdit, error
 func unifiedDiff(filename, a, b string) string {
 	al := splitLines(a)
 	bl := splitLines(b)
-
-	// Myers-style LCS would be ideal; for short files the line-by-line
-	// longest-common-subsequence table below is plenty fast.
 	lcs := lcsTable(al, bl)
+	hunks := buildHunks(al, bl, lcs)
 
+	var out strings.Builder
+	fmt.Fprintf(&out, "--- %s\n", filename)
+	fmt.Fprintf(&out, "+++ %s (fixed)\n", filename)
+	for _, h := range hunks {
+		writeHunk(&out, al, bl, h)
+	}
+	return out.String()
+}
+
+// buildHunks walks the two line slices side by side and emits a hunk
+// for every divergent run, using lcs to decide which side moves on
+// the unequal step.
+func buildHunks(al, bl []string, lcs [][]int) []hunk {
 	var hunks []hunk
 	i, j := 0, 0
 	for i < len(al) || j < len(bl) {
-		// Matching run — accumulate context but do not start a hunk yet.
 		for i < len(al) && j < len(bl) && al[i] == bl[j] {
 			i++
 			j++
@@ -196,56 +206,57 @@ func unifiedDiff(filename, a, b string) string {
 		if i >= len(al) && j >= len(bl) {
 			break
 		}
-		// Divergence: walk forward until lines match again.
 		h := hunk{aStart: i, bStart: j}
-		for i < len(al) || j < len(bl) {
-			if i < len(al) && j < len(bl) && al[i] == bl[j] {
-				break
-			}
-			// Choose the side with more remaining lcs; fallback to
-			// deletion then insertion to keep output stable when the
-			// table is square.
-			switch {
-			case j >= len(bl) || (i < len(al) && lcs[i+1][j] >= lcs[i][j+1]):
-				h.edits = append(h.edits, diffEdit{op: '-', text: al[i]})
-				i++
-			default:
-				h.edits = append(h.edits, diffEdit{op: '+', text: bl[j]})
-				j++
-			}
-		}
+		i, j = collectHunkEdits(al, bl, lcs, &h, i, j)
 		h.aEnd = i
 		h.bEnd = j
 		hunks = append(hunks, h)
 	}
+	return hunks
+}
 
-	var out strings.Builder
-	fmt.Fprintf(&out, "--- %s\n", filename)
-	fmt.Fprintf(&out, "+++ %s (fixed)\n", filename)
-	for _, h := range hunks {
-		aContextStart := maxInt(0, h.aStart-3)
-		aContextEnd := minInt(len(al), h.aEnd+3)
-		bContextStart := maxInt(0, h.bStart-3)
-		bContextEnd := minInt(len(bl), h.bEnd+3)
-
-		fmt.Fprintf(&out, "@@ -%d,%d +%d,%d @@\n",
-			aContextStart+1, aContextEnd-aContextStart,
-			bContextStart+1, bContextEnd-bContextStart,
-		)
-		// Leading context
-		for k := aContextStart; k < h.aStart; k++ {
-			fmt.Fprintf(&out, " %s\n", al[k])
+func collectHunkEdits(al, bl []string, lcs [][]int, h *hunk, i, j int) (int, int) {
+	for i < len(al) || j < len(bl) {
+		if i < len(al) && j < len(bl) && al[i] == bl[j] {
+			return i, j
 		}
-		// The hunk edits in order
-		for _, e := range h.edits {
-			fmt.Fprintf(&out, "%c%s\n", e.op, e.text)
+		if hunkPicksDeletion(al, bl, lcs, i, j) {
+			h.edits = append(h.edits, diffEdit{op: '-', text: al[i]})
+			i++
+			continue
 		}
-		// Trailing context
-		for k := h.aEnd; k < aContextEnd; k++ {
-			fmt.Fprintf(&out, " %s\n", al[k])
-		}
+		h.edits = append(h.edits, diffEdit{op: '+', text: bl[j]})
+		j++
 	}
-	return out.String()
+	return i, j
+}
+
+func hunkPicksDeletion(al, bl []string, lcs [][]int, i, j int) bool {
+	if j >= len(bl) {
+		return true
+	}
+	return i < len(al) && lcs[i+1][j] >= lcs[i][j+1]
+}
+
+func writeHunk(out *strings.Builder, al, bl []string, h hunk) {
+	aContextStart := maxInt(0, h.aStart-3)
+	aContextEnd := minInt(len(al), h.aEnd+3)
+	bContextStart := maxInt(0, h.bStart-3)
+	bContextEnd := minInt(len(bl), h.bEnd+3)
+
+	fmt.Fprintf(out, "@@ -%d,%d +%d,%d @@\n",
+		aContextStart+1, aContextEnd-aContextStart,
+		bContextStart+1, bContextEnd-bContextStart,
+	)
+	for k := aContextStart; k < h.aStart; k++ {
+		fmt.Fprintf(out, " %s\n", al[k])
+	}
+	for _, e := range h.edits {
+		fmt.Fprintf(out, "%c%s\n", e.op, e.text)
+	}
+	for k := h.aEnd; k < aContextEnd; k++ {
+		fmt.Fprintf(out, " %s\n", al[k])
+	}
 }
 
 type hunk struct {
