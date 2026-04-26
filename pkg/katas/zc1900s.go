@@ -376,49 +376,18 @@ func init() {
 
 func checkZC1905(node ast.Node) []Violation {
 	cmd, ok := node.(*ast.SimpleCommand)
-	if !ok {
+	if !ok || CommandIdentifier(cmd) != "ssh" {
 		return nil
 	}
-	ident, ok := cmd.Name.(*ast.Identifier)
-	if !ok {
-		return nil
-	}
-	if ident.Value != "ssh" {
-		return nil
-	}
-
-	hasG := false
-	hasForward := false
+	hasG, hasForward := false, false
 	for _, arg := range cmd.Arguments {
-		v := arg.String()
-		switch {
-		case v == "-g":
-			hasG = true
-		case strings.HasPrefix(v, "-g") && len(v) > 2 && !strings.HasPrefix(v, "-go"):
-			// clustered short flags, e.g. `-gNL`
-			hasG = true
-		case v == "-L", v == "-D":
-			hasForward = true
-		case strings.HasPrefix(v, "-L") && len(v) > 2:
-			hasForward = true
-		case strings.HasPrefix(v, "-D") && len(v) > 2:
-			hasForward = true
-		}
-		if strings.HasPrefix(v, "-") && len(v) >= 2 && v[1] != '-' {
-			for i := 1; i < len(v); i++ {
-				if v[i] == 'g' {
-					hasG = true
-				}
-				if v[i] == 'L' || v[i] == 'D' {
-					hasForward = true
-				}
-			}
-		}
+		g, f := zc1905FlagBitsFor(arg.String())
+		hasG = hasG || g
+		hasForward = hasForward || f
 	}
 	if !hasG || !hasForward {
 		return nil
 	}
-
 	return []Violation{{
 		KataID: "ZC1905",
 		Message: "`ssh -g` with `-L`/`-D` binds the forward on `0.0.0.0` — anyone on the " +
@@ -428,6 +397,46 @@ func checkZC1905(node ast.Node) []Violation {
 		Column: cmd.Token.Column,
 		Level:  SeverityWarning,
 	}}
+}
+
+// zc1905FlagBitsFor decodes a single ssh argument into (hasG, hasForward).
+func zc1905FlagBitsFor(v string) (hasG, hasForward bool) {
+	hasG = zc1905HasGFlag(v)
+	hasForward = zc1905HasForwardFlag(v)
+	if g, f := zc1905BundleBits(v); g || f {
+		hasG = hasG || g
+		hasForward = hasForward || f
+	}
+	return
+}
+
+func zc1905HasGFlag(v string) bool {
+	if v == "-g" {
+		return true
+	}
+	return strings.HasPrefix(v, "-g") && len(v) > 2 && !strings.HasPrefix(v, "-go")
+}
+
+func zc1905HasForwardFlag(v string) bool {
+	if v == "-L" || v == "-D" {
+		return true
+	}
+	return (strings.HasPrefix(v, "-L") || strings.HasPrefix(v, "-D")) && len(v) > 2
+}
+
+func zc1905BundleBits(v string) (hasG, hasForward bool) {
+	if !strings.HasPrefix(v, "-") || len(v) < 2 || v[1] == '-' {
+		return
+	}
+	for i := 1; i < len(v); i++ {
+		switch v[i] {
+		case 'g':
+			hasG = true
+		case 'L', 'D':
+			hasForward = true
+		}
+	}
+	return
 }
 
 func init() {
@@ -3993,39 +4002,55 @@ func checkZC1960(node ast.Node) []Violation {
 	if !ok {
 		return nil
 	}
-	ident, ok := cmd.Name.(*ast.Identifier)
-	if !ok {
-		return nil
-	}
-
-	switch ident.Value {
+	switch CommandIdentifier(cmd) {
 	case "az":
-		// Look for `az vm run-command invoke` subcommand sequence.
-		if len(cmd.Arguments) >= 3 &&
-			cmd.Arguments[0].String() == "vm" &&
-			cmd.Arguments[1].String() == "run-command" &&
-			(cmd.Arguments[2].String() == "invoke" || cmd.Arguments[2].String() == "create") {
-			return zc1960Hit(cmd, "az vm run-command "+cmd.Arguments[2].String())
+		if form := zc1960AzVmRunCmd(cmd); form != "" {
+			return zc1960Hit(cmd, form)
 		}
 	case "aws":
-		if len(cmd.Arguments) >= 2 &&
-			cmd.Arguments[0].String() == "ssm" &&
-			cmd.Arguments[1].String() == "send-command" {
+		if zc1960IsAwsSsmSendCmd(cmd) {
 			return zc1960Hit(cmd, "aws ssm send-command")
 		}
 	case "gcloud":
-		if len(cmd.Arguments) >= 2 &&
-			cmd.Arguments[0].String() == "compute" &&
-			cmd.Arguments[1].String() == "ssh" {
-			for _, arg := range cmd.Arguments[2:] {
-				v := arg.String()
-				if v == "--command" || len(v) > 10 && v[:10] == "--command=" {
-					return zc1960Hit(cmd, "gcloud compute ssh --command")
-				}
-			}
+		if zc1960IsGcloudSshCmd(cmd) {
+			return zc1960Hit(cmd, "gcloud compute ssh --command")
 		}
 	}
 	return nil
+}
+
+func zc1960AzVmRunCmd(cmd *ast.SimpleCommand) string {
+	if len(cmd.Arguments) < 3 ||
+		cmd.Arguments[0].String() != "vm" ||
+		cmd.Arguments[1].String() != "run-command" {
+		return ""
+	}
+	sub := cmd.Arguments[2].String()
+	if sub != "invoke" && sub != "create" {
+		return ""
+	}
+	return "az vm run-command " + sub
+}
+
+func zc1960IsAwsSsmSendCmd(cmd *ast.SimpleCommand) bool {
+	return len(cmd.Arguments) >= 2 &&
+		cmd.Arguments[0].String() == "ssm" &&
+		cmd.Arguments[1].String() == "send-command"
+}
+
+func zc1960IsGcloudSshCmd(cmd *ast.SimpleCommand) bool {
+	if len(cmd.Arguments) < 2 ||
+		cmd.Arguments[0].String() != "compute" ||
+		cmd.Arguments[1].String() != "ssh" {
+		return false
+	}
+	for _, arg := range cmd.Arguments[2:] {
+		v := arg.String()
+		if v == "--command" || strings.HasPrefix(v, "--command=") {
+			return true
+		}
+	}
+	return false
 }
 
 func zc1960Hit(cmd *ast.SimpleCommand, form string) []Violation {

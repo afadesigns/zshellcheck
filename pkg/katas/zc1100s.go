@@ -3144,53 +3144,62 @@ func init() {
 	})
 }
 
+var (
+	zc1159CreateFlags = map[string]struct{}{"-c": {}, "-cf": {}, "cf": {}}
+	zc1159CompressionFlags = map[string]struct{}{
+		"-z": {}, "-j": {}, "-J": {},
+		"--gzip": {}, "--bzip2": {}, "--xz": {},
+	}
+)
+
 func checkZC1159(node ast.Node) []Violation {
 	cmd, ok := node.(*ast.SimpleCommand)
-	if !ok {
+	if !ok || CommandIdentifier(cmd) != "tar" {
 		return nil
 	}
-
-	ident, ok := cmd.Name.(*ast.Identifier)
-	if !ok || ident.Value != "tar" {
+	hasCreate, hasCompression := zc1159ScanFlags(cmd.Arguments)
+	if !hasCreate || hasCompression {
 		return nil
 	}
+	return []Violation{{
+		KataID: "ZC1159",
+		Message: "Specify an explicit compression flag (`-z`, `-j`, `-J`) when creating tar archives. " +
+			"Relying on auto-detection reduces clarity and portability.",
+		Line:   cmd.Token.Line,
+		Column: cmd.Token.Column,
+		Level:  SeverityInfo,
+	}}
+}
 
-	hasCreate := false
-	hasCompression := false
-
-	for _, arg := range cmd.Arguments {
+func zc1159ScanFlags(args []ast.Expression) (hasCreate, hasCompression bool) {
+	for _, arg := range args {
 		val := arg.String()
-		if val == "-c" || val == "-cf" || val == "cf" {
+		if _, hit := zc1159CreateFlags[val]; hit {
 			hasCreate = true
 		}
-		if val == "-z" || val == "-j" || val == "-J" || val == "--gzip" || val == "--bzip2" || val == "--xz" {
+		if _, hit := zc1159CompressionFlags[val]; hit {
 			hasCompression = true
 		}
-		// Combined flags like czf
-		if len(val) > 1 && val[0] != '-' {
-			for _, ch := range val {
-				if ch == 'c' {
-					hasCreate = true
-				}
-				if ch == 'z' || ch == 'j' || ch == 'J' {
-					hasCompression = true
-				}
-			}
+		c, z := zc1159BundleFlags(val)
+		hasCreate = hasCreate || c
+		hasCompression = hasCompression || z
+	}
+	return
+}
+
+func zc1159BundleFlags(val string) (hasCreate, hasCompression bool) {
+	if len(val) <= 1 || val[0] == '-' {
+		return
+	}
+	for _, ch := range val {
+		switch ch {
+		case 'c':
+			hasCreate = true
+		case 'z', 'j', 'J':
+			hasCompression = true
 		}
 	}
-
-	if hasCreate && !hasCompression {
-		return []Violation{{
-			KataID: "ZC1159",
-			Message: "Specify an explicit compression flag (`-z`, `-j`, `-J`) when creating tar archives. " +
-				"Relying on auto-detection reduces clarity and portability.",
-			Line:   cmd.Token.Line,
-			Column: cmd.Token.Column,
-			Level:  SeverityInfo,
-		}}
-	}
-
-	return nil
+	return
 }
 
 func init() {
@@ -3371,67 +3380,25 @@ func init() {
 // `head -1` invocation; the replacement preserves every original grep
 // argument verbatim and drops the pipe + head suffix in one edit. Only
 // fires for the `-1` / `-n1` shapes the detector already guards.
+var zc1163FirstFlags = map[string]struct{}{"-1": {}, "-n1": {}}
+
 func fixZC1163(node ast.Node, _ Violation, source []byte) []FixEdit {
-	pipe, ok := node.(*ast.InfixExpression)
-	if !ok || pipe.Operator != "|" {
+	grepCmd, headCmd, pipe, ok := zc1163Pipeline(node)
+	if !ok {
 		return nil
 	}
-	grepCmd, ok := pipe.Left.(*ast.SimpleCommand)
-	if !ok || !isCommandName(grepCmd, "grep") {
+	spanStart, ok := zc1163GrepArgsStart(source, grepCmd)
+	if !ok {
 		return nil
 	}
-	headCmd, ok := pipe.Right.(*ast.SimpleCommand)
-	if !ok || !isCommandName(headCmd, "head") {
+	middle, ok := zc1163GrepArgsSlice(source, pipe, spanStart)
+	if !ok {
 		return nil
 	}
-	hasFirst := false
-	for _, arg := range headCmd.Arguments {
-		v := arg.String()
-		if v == "-1" || v == "-n1" {
-			hasFirst = true
-		}
-	}
-	if !hasFirst {
+	spanEnd, ok := zc1163HeadEnd(source, headCmd)
+	if !ok || spanEnd <= spanStart {
 		return nil
 	}
-
-	grepTok := grepCmd.TokenLiteralNode()
-	grepOff := LineColToByteOffset(source, grepTok.Line, grepTok.Column)
-	if grepOff < 0 {
-		return nil
-	}
-	grepLen := IdentLenAt(source, grepOff)
-	if grepLen == 0 {
-		return nil
-	}
-	spanStart := grepOff + grepLen
-
-	pipeOff := LineColToByteOffset(source, pipe.Token.Line, pipe.Token.Column)
-	if pipeOff < 0 || pipeOff >= len(source) || source[pipeOff] != '|' {
-		return nil
-	}
-	argsEnd := pipeOff
-	for argsEnd > spanStart && (source[argsEnd-1] == ' ' || source[argsEnd-1] == '\t') {
-		argsEnd--
-	}
-	middle := string(source[spanStart:argsEnd])
-
-	// End of head -1: the last argument's last byte.
-	if len(headCmd.Arguments) == 0 {
-		return nil
-	}
-	lastArg := headCmd.Arguments[len(headCmd.Arguments)-1]
-	lastTok := lastArg.TokenLiteralNode()
-	lastOff := LineColToByteOffset(source, lastTok.Line, lastTok.Column)
-	if lastOff < 0 {
-		return nil
-	}
-	lastLit := lastArg.String()
-	spanEnd := lastOff + len(lastLit)
-	if spanEnd <= spanStart {
-		return nil
-	}
-
 	startLine, startCol := offsetLineColZC1163(source, spanStart)
 	if startLine < 0 {
 		return nil
@@ -3442,6 +3409,60 @@ func fixZC1163(node ast.Node, _ Violation, source []byte) []FixEdit {
 		Length:  spanEnd - spanStart,
 		Replace: " -m 1" + middle,
 	}}
+}
+
+func zc1163Pipeline(node ast.Node) (*ast.SimpleCommand, *ast.SimpleCommand, *ast.InfixExpression, bool) {
+	pipe, ok := node.(*ast.InfixExpression)
+	if !ok || pipe.Operator != "|" {
+		return nil, nil, nil, false
+	}
+	grepCmd, ok := pipe.Left.(*ast.SimpleCommand)
+	if !ok || !isCommandName(grepCmd, "grep") {
+		return nil, nil, nil, false
+	}
+	headCmd, ok := pipe.Right.(*ast.SimpleCommand)
+	if !ok || !isCommandName(headCmd, "head") || len(headCmd.Arguments) == 0 {
+		return nil, nil, nil, false
+	}
+	if !HasArgFlag(headCmd, zc1163FirstFlags) {
+		return nil, nil, nil, false
+	}
+	return grepCmd, headCmd, pipe, true
+}
+
+func zc1163GrepArgsStart(source []byte, grepCmd *ast.SimpleCommand) (int, bool) {
+	tok := grepCmd.TokenLiteralNode()
+	off := LineColToByteOffset(source, tok.Line, tok.Column)
+	if off < 0 {
+		return 0, false
+	}
+	n := IdentLenAt(source, off)
+	if n == 0 {
+		return 0, false
+	}
+	return off + n, true
+}
+
+func zc1163GrepArgsSlice(source []byte, pipe *ast.InfixExpression, spanStart int) (string, bool) {
+	pipeOff := LineColToByteOffset(source, pipe.Token.Line, pipe.Token.Column)
+	if pipeOff < 0 || pipeOff >= len(source) || source[pipeOff] != '|' {
+		return "", false
+	}
+	end := pipeOff
+	for end > spanStart && (source[end-1] == ' ' || source[end-1] == '\t') {
+		end--
+	}
+	return string(source[spanStart:end]), true
+}
+
+func zc1163HeadEnd(source []byte, headCmd *ast.SimpleCommand) (int, bool) {
+	last := headCmd.Arguments[len(headCmd.Arguments)-1]
+	tok := last.TokenLiteralNode()
+	off := LineColToByteOffset(source, tok.Line, tok.Column)
+	if off < 0 {
+		return 0, false
+	}
+	return off + len(last.String()), true
 }
 
 func offsetLineColZC1163(source []byte, offset int) (int, int) {
