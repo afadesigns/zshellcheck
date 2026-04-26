@@ -2525,8 +2525,8 @@ var zc1839DisableServices = map[string]struct{}{
 }
 
 var (
-	zc1839FalseValues       = map[string]struct{}{"false": {}, "no": {}, "0": {}, "off": {}}
-	zc1839SystemctlActions  = map[string]struct{}{"disable": {}, "mask": {}, "stop": {}}
+	zc1839FalseValues      = map[string]struct{}{"false": {}, "no": {}, "0": {}, "off": {}}
+	zc1839SystemctlActions = map[string]struct{}{"disable": {}, "mask": {}, "stop": {}}
 )
 
 func checkZC1839(node ast.Node) []Violation {
@@ -6223,10 +6223,10 @@ func init() {
 }
 
 var (
-	zc1896Runtimes        = map[string]struct{}{"docker": {}, "podman": {}}
-	zc1896RunSubcmd       = map[string]struct{}{"run": {}, "create": {}}
-	zc1896VolumeFlagsSep  = map[string]struct{}{"-v": {}, "--volume": {}, "--mount": {}}
-	zc1896VolumeFlagsKv   = []string{"--volume=", "--mount=", "-v="}
+	zc1896Runtimes       = map[string]struct{}{"docker": {}, "podman": {}}
+	zc1896RunSubcmd      = map[string]struct{}{"run": {}, "create": {}}
+	zc1896VolumeFlagsSep = map[string]struct{}{"-v": {}, "--volume": {}, "--mount": {}}
+	zc1896VolumeFlagsKv  = []string{"--volume=", "--mount=", "-v="}
 )
 
 func checkZC1896(node ast.Node) []Violation {

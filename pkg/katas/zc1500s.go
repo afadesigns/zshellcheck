@@ -1947,7 +1947,7 @@ func init() {
 }
 
 var (
-	zc1536AddVerbs   = map[string]struct{}{
+	zc1536AddVerbs = map[string]struct{}{
 		"-A": {}, "-I": {}, "-R": {},
 		"--append": {}, "--insert": {}, "--replace": {},
 	}
@@ -2446,9 +2446,9 @@ func init() {
 }
 
 var (
-	zc1545Runtimes      = map[string]struct{}{"docker": {}, "podman": {}, "nerdctl": {}}
-	zc1545PruneSubcmds  = map[string]struct{}{"system": {}, "volume": {}}
-	zc1545AllVolFlags   = map[string]struct{}{
+	zc1545Runtimes     = map[string]struct{}{"docker": {}, "podman": {}, "nerdctl": {}}
+	zc1545PruneSubcmds = map[string]struct{}{"system": {}, "volume": {}}
+	zc1545AllVolFlags  = map[string]struct{}{
 		"--volumes": {}, "-a": {}, "--all": {},
 		"-af": {}, "-fa": {}, "--all --volumes": {},
 	}

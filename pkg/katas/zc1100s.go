@@ -3145,7 +3145,7 @@ func init() {
 }
 
 var (
-	zc1159CreateFlags = map[string]struct{}{"-c": {}, "-cf": {}, "cf": {}}
+	zc1159CreateFlags      = map[string]struct{}{"-c": {}, "-cf": {}, "cf": {}}
 	zc1159CompressionFlags = map[string]struct{}{
 		"-z": {}, "-j": {}, "-J": {},
 		"--gzip": {}, "--bzip2": {}, "--xz": {},

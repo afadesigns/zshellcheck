@@ -575,9 +575,9 @@ func init() {
 }
 
 var (
-	zc1610SystemPrefixes  = []string{"/etc/", "/usr/", "/bin/", "/sbin/", "/lib/", "/lib64/", "/opt/"}
-	zc1610OutputFlagsSep  = map[string]struct{}{"-o": {}, "-O": {}, "--output": {}, "--output-document": {}}
-	zc1610OutputFlagsKv   = []string{"--output=", "--output-document="}
+	zc1610SystemPrefixes = []string{"/etc/", "/usr/", "/bin/", "/sbin/", "/lib/", "/lib64/", "/opt/"}
+	zc1610OutputFlagsSep = map[string]struct{}{"-o": {}, "-O": {}, "--output": {}, "--output-document": {}}
+	zc1610OutputFlagsKv  = []string{"--output=", "--output-document="}
 )
 
 func checkZC1610(node ast.Node) []Violation {

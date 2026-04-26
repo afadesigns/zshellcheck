@@ -5873,9 +5873,9 @@ func zc1083CheckConcat(concat *ast.ConcatenatedExpression) []Violation {
 }
 
 type zc1083Scan struct {
-	startIdx       int
-	dotDotIndices  []int
-	varIndices     []int
+	startIdx      int
+	dotDotIndices []int
+	varIndices    []int
 }
 
 func zc1083ScanParts(parts []ast.Expression) zc1083Scan {
