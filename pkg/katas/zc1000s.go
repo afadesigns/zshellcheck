@@ -2539,82 +2539,77 @@ func walkZC1044(node ast.Node, isChecked bool, violations *[]Violation) {
 	if node == nil {
 		return
 	}
-
-	// Handle nil pointers inside interface
 	if v := reflect.ValueOf(node); v.Kind() == reflect.Ptr && v.IsNil() {
 		return
 	}
-
 	switch n := node.(type) {
 	case *ast.Program:
-		for _, stmt := range n.Statements {
-			walkZC1044(stmt, false, violations)
-		}
+		walkZC1044StatementSlice(n.Statements, false, violations)
 	case *ast.BlockStatement:
-		for i, stmt := range n.Statements {
-			check := false
-			// Only the last statement in a block inherits the "checked" status of the block itself
-			// (e.g. the last command in an `if` condition determines the result).
-			// Previous statements are unchecked unless they have their own handling.
-			if isChecked && i == len(n.Statements)-1 {
-				check = true
-			}
-			walkZC1044(stmt, check, violations)
-		}
+		walkZC1044Block(n.Statements, isChecked, violations)
 	case *ast.GroupedExpression:
 		walkZC1044(n.Expression, isChecked, violations)
 	case *ast.IfStatement:
-		walkZC1044(n.Condition, true, violations) // Condition is checked
+		walkZC1044(n.Condition, true, violations)
 		walkZC1044(n.Consequence, false, violations)
 		walkZC1044(n.Alternative, false, violations)
 	case *ast.WhileLoopStatement:
-		walkZC1044(n.Condition, true, violations) // Condition is checked
+		walkZC1044(n.Condition, true, violations)
 		walkZC1044(n.Body, false, violations)
 	case *ast.ForLoopStatement:
-		walkZC1044(n.Init, false, violations)
-		walkZC1044(n.Condition, true, violations) // Loop condition checked (arithmetic)
-		walkZC1044(n.Post, false, violations)
-		for _, item := range n.Items {
-			walkZC1044(item, false, violations)
-		}
-		walkZC1044(n.Body, false, violations)
+		walkZC1044ForLoop(n, violations)
 	case *ast.ExpressionStatement:
 		walkZC1044(n.Expression, isChecked, violations)
 	case *ast.InfixExpression:
-		switch n.Operator {
-		case "||":
-			walkZC1044(n.Left, true, violations) // Left checked by Right
-			walkZC1044(n.Right, isChecked, violations)
-		case "&&":
-			walkZC1044(n.Left, isChecked, violations) // Left inherits check
-			walkZC1044(n.Right, isChecked, violations)
-		default:
-			walkZC1044(n.Left, false, violations)
-			walkZC1044(n.Right, false, violations)
-		}
+		walkZC1044Infix(n, isChecked, violations)
 	case *ast.PrefixExpression:
-		if n.Operator == "!" {
-			walkZC1044(n.Right, true, violations) // Negation checks it
-		} else {
-			walkZC1044(n.Right, false, violations)
-		}
+		walkZC1044(n.Right, n.Operator == "!" || (n.Operator == "" && isChecked), violations)
 	case *ast.FunctionDefinition:
 		walkZC1044(n.Body, false, violations)
 	case *ast.SimpleCommand:
 		checkCommandZC1044(n, isChecked, violations)
-		// Also walk args? Arguments might contain subshells etc.
 		for _, arg := range n.Arguments {
 			walkZC1044(arg, false, violations)
 		}
 	case *ast.CommandSubstitution:
-		walkZC1044(n.Command, false, violations) // Inner command starts unchecked
+		walkZC1044(n.Command, false, violations)
+	}
+}
 
-	// Recursion for other nodes
+func walkZC1044StatementSlice(stmts []ast.Statement, isChecked bool, violations *[]Violation) {
+	for _, stmt := range stmts {
+		walkZC1044(stmt, isChecked, violations)
+	}
+}
+
+func walkZC1044Block(stmts []ast.Statement, isChecked bool, violations *[]Violation) {
+	for i, stmt := range stmts {
+		check := isChecked && i == len(stmts)-1
+		walkZC1044(stmt, check, violations)
+	}
+}
+
+func walkZC1044ForLoop(n *ast.ForLoopStatement, violations *[]Violation) {
+	walkZC1044(n.Init, false, violations)
+	walkZC1044(n.Condition, true, violations)
+	walkZC1044(n.Post, false, violations)
+	for _, item := range n.Items {
+		walkZC1044(item, false, violations)
+	}
+	walkZC1044(n.Body, false, violations)
+}
+
+func walkZC1044Infix(n *ast.InfixExpression, isChecked bool, violations *[]Violation) {
+	switch n.Operator {
+	case "||":
+		walkZC1044(n.Left, true, violations)
+		walkZC1044(n.Right, isChecked, violations)
+	case "&&":
+		walkZC1044(n.Left, isChecked, violations)
+		walkZC1044(n.Right, isChecked, violations)
 	default:
-		// Use generic walk or manual?
-		// Generic walk doesn't pass state.
-		// We must implement all nodes that contain statements/expressions.
-		// ...
+		walkZC1044(n.Left, false, violations)
+		walkZC1044(n.Right, false, violations)
 	}
 }
 
@@ -6316,68 +6311,81 @@ func init() {
 // `name() { body }` form. Deletes the `function ` prefix and, when
 // the source doesn't already carry `()` after the name, inserts it.
 func fixZC1086(node ast.Node, v Violation, source []byte) []FixEdit {
-	var name string
-	switch n := node.(type) {
-	case *ast.FunctionLiteral:
-		if n.TokenLiteral() != "function" || n.Name == nil {
-			return nil
-		}
-		name = n.Name.Value
-	case *ast.FunctionDefinition:
-		if n.TokenLiteral() != "function" || n.Name == nil {
-			return nil
-		}
-		name = n.Name.Value
-	default:
+	name, ok := zc1086FunctionName(node)
+	if !ok || name == "" {
 		return nil
 	}
-	if name == "" {
+	kwOffset, ok := zc1086KeywordOffset(source, v)
+	if !ok {
 		return nil
 	}
-	kwOffset := LineColToByteOffset(source, v.Line, v.Column)
-	if kwOffset < 0 || kwOffset+len("function ") > len(source) {
-		return nil
-	}
-	if string(source[kwOffset:kwOffset+len("function")]) != "function" {
-		return nil
-	}
-	// Delete `function` + the whitespace run that follows, up to the
-	// name start. Find the name's byte position by scanning forward
-	// past the whitespace.
-	i := kwOffset + len("function")
-	for i < len(source) && (source[i] == ' ' || source[i] == '\t') {
-		i++
-	}
-	if i+len(name) > len(source) || string(source[i:i+len(name)]) != name {
+	nameStart, ok := zc1086NameStart(source, kwOffset, name)
+	if !ok {
 		return nil
 	}
 	edits := []FixEdit{{
 		Line:    v.Line,
 		Column:  v.Column,
-		Length:  i - kwOffset,
+		Length:  nameStart - kwOffset,
 		Replace: "",
 	}}
-	// After the name, check whether `()` already follows. Skip any
-	// whitespace between name and peek byte; Zsh allows
-	// `function foo ()` with a space.
-	after := i + len(name)
+	if extra := zc1086MaybeAppendParens(source, nameStart+len(name)); extra != nil {
+		edits = append(edits, *extra)
+	}
+	return edits
+}
+
+func zc1086FunctionName(node ast.Node) (string, bool) {
+	switch n := node.(type) {
+	case *ast.FunctionLiteral:
+		if n.TokenLiteral() != "function" || n.Name == nil {
+			return "", false
+		}
+		return n.Name.Value, true
+	case *ast.FunctionDefinition:
+		if n.TokenLiteral() != "function" || n.Name == nil {
+			return "", false
+		}
+		return n.Name.Value, true
+	}
+	return "", false
+}
+
+func zc1086KeywordOffset(source []byte, v Violation) (int, bool) {
+	off := LineColToByteOffset(source, v.Line, v.Column)
+	if off < 0 || off+len("function ") > len(source) {
+		return 0, false
+	}
+	if string(source[off:off+len("function")]) != "function" {
+		return 0, false
+	}
+	return off, true
+}
+
+func zc1086NameStart(source []byte, kwOffset int, name string) (int, bool) {
+	i := kwOffset + len("function")
+	for i < len(source) && (source[i] == ' ' || source[i] == '\t') {
+		i++
+	}
+	if i+len(name) > len(source) || string(source[i:i+len(name)]) != name {
+		return 0, false
+	}
+	return i, true
+}
+
+func zc1086MaybeAppendParens(source []byte, after int) *FixEdit {
 	j := after
 	for j < len(source) && (source[j] == ' ' || source[j] == '\t') {
 		j++
 	}
-	if j >= len(source) || source[j] != '(' {
-		afterLine, afterCol := offsetLineColZC1086(source, after)
-		if afterLine < 0 {
-			return nil
-		}
-		edits = append(edits, FixEdit{
-			Line:    afterLine,
-			Column:  afterCol,
-			Length:  0,
-			Replace: "()",
-		})
+	if j < len(source) && source[j] == '(' {
+		return nil
 	}
-	return edits
+	line, col := offsetLineColZC1086(source, after)
+	if line < 0 {
+		return nil
+	}
+	return &FixEdit{Line: line, Column: col, Length: 0, Replace: "()"}
 }
 
 func offsetLineColZC1086(source []byte, offset int) (int, int) {
@@ -6593,59 +6601,21 @@ type zc1088Visitor struct {
 }
 
 func (v *zc1088Visitor) traverse(node ast.Node, expectsStatus bool) {
-	if node == nil {
+	if node == nil || isTypedNilNode(node) {
 		return
 	}
-
-	// Handle typed nil interfaces
-	if t, ok := node.(*ast.BlockStatement); ok && t == nil {
-		return
-	}
-	if t, ok := node.(*ast.IfStatement); ok && t == nil {
-		return
-	}
-	if t, ok := node.(*ast.WhileLoopStatement); ok && t == nil {
-		return
-	}
-	if t, ok := node.(*ast.ExpressionStatement); ok && t == nil {
-		return
-	}
-	if t, ok := node.(*ast.InfixExpression); ok && t == nil {
-		return
-	}
-	if t, ok := node.(*ast.PrefixExpression); ok && t == nil {
-		return
-	}
-	if t, ok := node.(*ast.GroupedExpression); ok && t == nil {
-		return
-	}
-	if t, ok := node.(*ast.Program); ok && t == nil {
-		return
-	}
-	if t, ok := node.(*ast.Subshell); ok && t == nil {
-		return
-	}
-
 	switch n := node.(type) {
 	case *ast.Program:
 		for _, stmt := range n.Statements {
 			v.traverse(stmt, false)
 		}
 	case *ast.Subshell:
-		// ( ... ) in statement context
 		if !expectsStatus {
 			v.checkSubshell(n)
 		}
-		// Traverse content (BlockStatement) with expectsStatus=false for children
 		v.traverse(n.Command, false)
-
 	case *ast.BlockStatement:
-		// Normal block { ... } or implicit (e.g. If Condition)
-		// If this block expects status, only the LAST statement expects status.
-		for i, stmt := range n.Statements {
-			isLast := i == len(n.Statements)-1
-			v.traverse(stmt, expectsStatus && isLast)
-		}
+		v.traverseBlock(n, expectsStatus)
 	case *ast.IfStatement:
 		v.traverse(n.Condition, true)
 		v.traverse(n.Consequence, false)
@@ -6656,28 +6626,57 @@ func (v *zc1088Visitor) traverse(node ast.Node, expectsStatus bool) {
 	case *ast.ExpressionStatement:
 		v.traverse(n.Expression, expectsStatus)
 	case *ast.InfixExpression:
-		if n.Operator == "&&" || n.Operator == "||" {
-			v.traverse(n.Left, true)
-			v.traverse(n.Right, true)
-		} else {
-			v.traverse(n.Left, false)
-			v.traverse(n.Right, false)
-		}
+		v.traverseInfix(n)
 	case *ast.PrefixExpression:
-		if n.Operator == "!" {
-			v.traverse(n.Right, true)
-		} else {
-			v.traverse(n.Right, false)
-		}
+		v.traverse(n.Right, n.Operator == "!")
 	case *ast.GroupedExpression:
-		// ( ... ) expression context
 		if !expectsStatus {
 			v.checkGroupedExpression(n)
 		}
 		v.traverse(n.Expression, false)
-	default:
-		// Do nothing for other nodes
 	}
+}
+
+func (v *zc1088Visitor) traverseBlock(n *ast.BlockStatement, expectsStatus bool) {
+	for i, stmt := range n.Statements {
+		isLast := i == len(n.Statements)-1
+		v.traverse(stmt, expectsStatus && isLast)
+	}
+}
+
+func (v *zc1088Visitor) traverseInfix(n *ast.InfixExpression) {
+	statusContext := n.Operator == "&&" || n.Operator == "||"
+	v.traverse(n.Left, statusContext)
+	v.traverse(n.Right, statusContext)
+}
+
+// isTypedNilNode reports whether node is a typed-nil interface holding
+// one of the AST shapes the zc1088 visitor recurses through. Each
+// concrete type may be passed in as a nil pointer (parser optional
+// bodies); the type-assertion idiom catches it before child fields
+// are accessed.
+func isTypedNilNode(node ast.Node) bool {
+	switch n := node.(type) {
+	case *ast.Program:
+		return n == nil
+	case *ast.Subshell:
+		return n == nil
+	case *ast.BlockStatement:
+		return n == nil
+	case *ast.IfStatement:
+		return n == nil
+	case *ast.WhileLoopStatement:
+		return n == nil
+	case *ast.ExpressionStatement:
+		return n == nil
+	case *ast.InfixExpression:
+		return n == nil
+	case *ast.PrefixExpression:
+		return n == nil
+	case *ast.GroupedExpression:
+		return n == nil
+	}
+	return false
 }
 
 func (v *zc1088Visitor) checkSubshell(sub *ast.Subshell) {
