@@ -872,21 +872,30 @@ func (p *Parser) parseCaseStatement() *ast.CaseStatement {
 	}
 	// Consume the closing ESAC so a caller parsing a nested case
 	// (`case x in a) case y in …;; esac ;; esac`) doesn't see the
-	// inner `esac` as the outer's terminator. Without this advance
-	// parseBlockStatement's terminator check would fire on the
-	// inner ESAC and collapse the outer case body.
-	if p.curTokenIs(token.ESAC) {
-		// Leave at-ESAC if we're the outermost call (no advance
-		// necessary — parseBlockStatement will re-check peek);
-		// but always leave curToken pointing at ESAC's successor
-		// when there is one so the outer DSEMI check works.
-		// Peek past ESAC only if there's a trailing `;;` pattern
-		// terminator or ;/newline.
-		if p.peekTokenIs(token.DSEMI) || p.peekTokenIs(token.SEMICOLON) {
-			p.nextToken()
-		}
+	// inner `esac` as the outer's terminator. parseBlockStatement
+	// includes ESAC in its terminator set so a clause body whose
+	// final `;;` is replaced by `esac` stops cleanly; without the
+	// advance below, an inner `esac` would close the outer body too.
+	// Skip the advance when the successor is a pipeline / logical
+	// continuation — consumePipelineTail expects peek=PIPE/AND/OR
+	// — or EOF, where there is nothing to advance onto.
+	if p.curTokenIs(token.ESAC) && p.shouldAdvancePastEsac() {
+		p.nextToken()
+		p.consumedBraceTerminator = true
 	}
 	return stmt
+}
+
+// shouldAdvancePastEsac reports whether parseCaseStatement should step
+// past ESAC. It must NOT advance when peek is a pipeline / logical
+// continuation (those need peek=PIPE/AND/OR for consumePipelineTail)
+// or EOF (nothing to advance onto).
+func (p *Parser) shouldAdvancePastEsac() bool {
+	switch p.peekToken.Type {
+	case token.EOF, token.PIPE, token.AND, token.OR:
+		return false
+	}
+	return true
 }
 
 func (p *Parser) parseShebangStatement() *ast.Shebang {
