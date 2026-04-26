@@ -23,52 +23,51 @@ func init() {
 	})
 }
 
+var zc1498Roots = map[string]struct{}{"/": {}, "/root": {}, "/boot": {}}
+
 func checkZC1498(node ast.Node) []Violation {
 	cmd, ok := node.(*ast.SimpleCommand)
-	if !ok {
+	if !ok || CommandIdentifier(cmd) != "mount" {
 		return nil
 	}
-
-	ident, ok := cmd.Name.(*ast.Identifier)
-	if !ok {
+	args := zc1464StringArgs(cmd)
+	hasRemount, hasRW := zc1498RemountFlags(args)
+	target := zc1498SystemTarget(args)
+	if !hasRemount || !hasRW || target == "" {
 		return nil
 	}
-	if ident.Value != "mount" {
-		return nil
-	}
+	return []Violation{{
+		KataID: "ZC1498",
+		Message: "`mount -o remount,rw " + target + "` makes a read-only system path " +
+			"writable — use ostree / systemd-sysext or fix /etc/fstab.",
+		Line:   cmd.Token.Line,
+		Column: cmd.Token.Column,
+		Level:  SeverityWarning,
+	}}
+}
 
-	args := make([]string, 0, len(cmd.Arguments))
-	for _, a := range cmd.Arguments {
-		args = append(args, a.String())
-	}
-
-	var hasRemount, hasRW bool
-	var target string
+func zc1498RemountFlags(args []string) (hasRemount, hasRW bool) {
 	for i, a := range args {
-		if a == "-o" && i+1 < len(args) {
-			opts := strings.Split(args[i+1], ",")
-			for _, o := range opts {
-				if o == "remount" {
-					hasRemount = true
-				}
-				if o == "rw" {
-					hasRW = true
-				}
+		if a != "-o" || i+1 >= len(args) {
+			continue
+		}
+		for _, o := range strings.Split(args[i+1], ",") {
+			switch o {
+			case "remount":
+				hasRemount = true
+			case "rw":
+				hasRW = true
 			}
 		}
-		if (a == "/" || a == "/root" || a == "/boot") && !strings.HasPrefix(a, "-") {
-			target = a
+	}
+	return
+}
+
+func zc1498SystemTarget(args []string) string {
+	for _, a := range args {
+		if _, hit := zc1498Roots[a]; hit && !strings.HasPrefix(a, "-") {
+			return a
 		}
 	}
-	if hasRemount && hasRW && target != "" {
-		return []Violation{{
-			KataID: "ZC1498",
-			Message: "`mount -o remount,rw " + target + "` makes a read-only system path " +
-				"writable — use ostree / systemd-sysext or fix /etc/fstab.",
-			Line:   cmd.Token.Line,
-			Column: cmd.Token.Column,
-			Level:  SeverityWarning,
-		}}
-	}
-	return nil
+	return ""
 }

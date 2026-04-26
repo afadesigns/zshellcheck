@@ -22,40 +22,54 @@ func init() {
 	})
 }
 
+var (
+	zc1481UnsetVars  = map[string]struct{}{"HISTFILE": {}, "HISTSIZE": {}, "SAVEHIST": {}, "HISTCMD": {}}
+	zc1481EmptyHist  = map[string]struct{}{"": {}, "/dev/null": {}, "''": {}, `""`: {}}
+	zc1481ZeroAssign = map[string]struct{}{"HISTSIZE=0": {}, "SAVEHIST=0": {}}
+)
+
 func checkZC1481(node ast.Node) []Violation {
 	cmd, ok := node.(*ast.SimpleCommand)
 	if !ok {
 		return nil
 	}
-
-	ident, ok := cmd.Name.(*ast.Identifier)
-	if !ok {
-		return nil
-	}
-
-	switch ident.Value {
+	switch CommandIdentifier(cmd) {
 	case "unset":
-		for _, arg := range cmd.Arguments {
-			v := arg.String()
-			if v == "HISTFILE" || v == "HISTSIZE" || v == "SAVEHIST" || v == "HISTCMD" {
-				return zc1481Violation(cmd, "unset "+v)
-			}
+		if hit := zc1481UnsetHit(cmd); hit != "" {
+			return zc1481Violation(cmd, "unset "+hit)
 		}
 	case "export", "typeset":
-		for _, arg := range cmd.Arguments {
-			v := arg.String()
-			if strings.HasPrefix(v, "HISTFILE=") {
-				val := strings.TrimPrefix(v, "HISTFILE=")
-				if val == "" || val == "/dev/null" || val == "''" || val == `""` {
-					return zc1481Violation(cmd, v)
-				}
-			}
-			if v == "HISTSIZE=0" || v == "SAVEHIST=0" {
-				return zc1481Violation(cmd, v)
-			}
+		if hit := zc1481AssignHit(cmd); hit != "" {
+			return zc1481Violation(cmd, hit)
 		}
 	}
 	return nil
+}
+
+func zc1481UnsetHit(cmd *ast.SimpleCommand) string {
+	for _, arg := range cmd.Arguments {
+		v := arg.String()
+		if _, hit := zc1481UnsetVars[v]; hit {
+			return v
+		}
+	}
+	return ""
+}
+
+func zc1481AssignHit(cmd *ast.SimpleCommand) string {
+	for _, arg := range cmd.Arguments {
+		v := arg.String()
+		if strings.HasPrefix(v, "HISTFILE=") {
+			val := strings.TrimPrefix(v, "HISTFILE=")
+			if _, hit := zc1481EmptyHist[val]; hit {
+				return v
+			}
+		}
+		if _, hit := zc1481ZeroAssign[v]; hit {
+			return v
+		}
+	}
+	return ""
 }
 
 func zc1481Violation(cmd *ast.SimpleCommand, what string) []Violation {

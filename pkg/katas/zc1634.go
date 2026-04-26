@@ -23,36 +23,11 @@ func init() {
 
 func checkZC1634(node ast.Node) []Violation {
 	cmd, ok := node.(*ast.SimpleCommand)
-	if !ok {
+	if !ok || CommandIdentifier(cmd) != "umask" || len(cmd.Arguments) != 1 {
 		return nil
 	}
-
-	ident, ok := cmd.Name.(*ast.Identifier)
-	if !ok {
-		return nil
-	}
-	if ident.Value != "umask" {
-		return nil
-	}
-	if len(cmd.Arguments) != 1 {
-		return nil
-	}
-
 	v := cmd.Arguments[0].String()
-	// Exclude forms already flagged by ZC1195 / ZC1516.
-	if v == "0" || v == "00" || v == "000" || v == "0000" {
-		return nil
-	}
-	if len(v) < 3 || len(v) > 4 {
-		return nil
-	}
-	for _, c := range v {
-		if c < '0' || c > '7' {
-			return nil
-		}
-	}
-	last := v[len(v)-1]
-	if last != '0' && last != '1' && last != '4' && last != '5' {
+	if !zc1634UmaskMissesWorldWrite(v) {
 		return nil
 	}
 	return []Violation{{
@@ -64,4 +39,25 @@ func checkZC1634(node ast.Node) []Violation {
 		Column: cmd.Token.Column,
 		Level:  SeverityWarning,
 	}}
+}
+
+var zc1634AllZero = map[string]struct{}{"0": {}, "00": {}, "000": {}, "0000": {}}
+
+func zc1634UmaskMissesWorldWrite(v string) bool {
+	if _, hit := zc1634AllZero[v]; hit {
+		return false
+	}
+	if len(v) < 3 || len(v) > 4 {
+		return false
+	}
+	for _, c := range v {
+		if c < '0' || c > '7' {
+			return false
+		}
+	}
+	switch v[len(v)-1] {
+	case '0', '1', '4', '5':
+		return true
+	}
+	return false
 }
