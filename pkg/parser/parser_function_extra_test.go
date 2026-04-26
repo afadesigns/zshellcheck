@@ -72,3 +72,14 @@ func TestParseBraceFormIfElifElse(t *testing.T) {
 func TestParseBraceFormIfFollowedByPlusEq(t *testing.T) {
 	parseSourceClean(t, "if [[ 1 ]] {\n  echo a\n}\nx+=1\n")
 }
+
+// `((1)); (( y ))` — semicolon between top-level statements must not
+// over-advance. Previously ParseProgram consumed the `;` via parseStatement,
+// then advanced again, swallowing the second `((`.
+func TestParseTopLevelSemicolonChain(t *testing.T) {
+	parseSourceClean(t, "((1)); (( y += 1 ))\n")
+}
+
+func TestParseTopLevelSemicolonAfterIf(t *testing.T) {
+	parseSourceClean(t, "if [[ 1 ]] { :; }; (( x = 1 ))\n")
+}

@@ -252,6 +252,14 @@ func (p *Parser) ParseProgram() *ast.Program {
 	program.Statements = []ast.Statement{}
 
 	for !p.curTokenIs(token.EOF) {
+		// `;` between statements: parseStatement consumes the
+		// terminator itself and returns nil. Continue without an extra
+		// nextToken — otherwise we'd skip the next statement's head
+		// (e.g. `((1)); (( y ))` would lose the second `((`).
+		if p.curTokenIs(token.SEMICOLON) {
+			p.nextToken()
+			continue
+		}
 		stmt := p.parseStatement()
 		if stmt != nil {
 			program.Statements = append(program.Statements, stmt)
