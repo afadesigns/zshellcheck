@@ -807,32 +807,8 @@ func (l *Lexer) readIdentifier() string {
 
 func (l *Lexer) readNumber() string {
 	position := l.position
-	// Zsh accepts `0x…` (hex), `0b…` (binary), `0o…` (octal), and
-	// `BASE#…` (custom-base) integer literals inside arithmetic. Read
-	// the leading prefix, then drain digits + base alphas. The parser
-	// uses strconv.ParseInt with base 0 which only recognises 0x/0b/0o,
-	// so the BASE# form rounds back to a string in the AST — but
-	// keeping the bytes as a single INT token is what the arithmetic
-	// expression layer needs to avoid mis-parsing `0x${var}` as
-	// `INT 0` + `IDENT x` + `${…}`.
-	if l.ch == '0' {
-		peek := l.peekChar()
-		if peek == 'x' || peek == 'X' || peek == 'b' || peek == 'B' || peek == 'o' || peek == 'O' {
-			// Only consume the base prefix when at least one digit
-			// follows. `0x${var}` (Zsh string concat with parameter
-			// expansion) must lex as INT(0) + IDENT(x) + DollarLbrace
-			// for the parser to recover; eating `0x` alone produced
-			// "could not parse \"0x\" as integer" downstream.
-			third := l.peekAt(2)
-			if isDigit(third) || isHexDigit(third) {
-				l.readChar() // 0
-				l.readChar() // base prefix letter
-				for isDigit(l.ch) || isHexDigit(l.ch) {
-					l.readChar()
-				}
-				return l.input[position:l.position]
-			}
-		}
+	if l.tryReadBaseLiteral() {
+		return l.input[position:l.position]
 	}
 	for isDigit(l.ch) {
 		l.readChar()
@@ -845,6 +821,38 @@ func (l *Lexer) readNumber() string {
 		}
 	}
 	return l.input[position:l.position]
+}
+
+// tryReadBaseLiteral consumes a Zsh `0x…` / `0b…` / `0o…` integer
+// literal when the prefix is followed by at least one digit. Returns
+// true iff bytes were consumed. `0x${var}` (Zsh string concat with a
+// parameter expansion) must NOT consume the prefix — the parser
+// recovers via INT(0) + IDENT(x) + DollarLbrace concatenation.
+func (l *Lexer) tryReadBaseLiteral() bool {
+	if l.ch != '0' {
+		return false
+	}
+	if !isBasePrefix(l.peekChar()) {
+		return false
+	}
+	third := l.peekAt(2)
+	if !isDigit(third) && !isHexDigit(third) {
+		return false
+	}
+	l.readChar() // 0
+	l.readChar() // base prefix letter
+	for isDigit(l.ch) || isHexDigit(l.ch) {
+		l.readChar()
+	}
+	return true
+}
+
+func isBasePrefix(ch byte) bool {
+	switch ch {
+	case 'x', 'X', 'b', 'B', 'o', 'O':
+		return true
+	}
+	return false
 }
 
 func isHexDigit(ch byte) bool {
