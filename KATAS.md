@@ -11,7 +11,7 @@ Auto-generated list of all 1000 implemented checks. Do not edit by hand — rege
 | `info` | 64 |
 | `style` | 257 |
 | **total** | **1000** |
-| **with auto-fix** | **131** |
+| **with auto-fix** | **132** |
 
 Auto-fix availability is marked per-entry below as **Auto-fix:** `yes` or `no`. Run `zshellcheck -fix path/...` to apply every available rewrite, or `-diff` to preview without writing.
 
@@ -515,7 +515,7 @@ Auto-fix availability is marked per-entry below as **Auto-fix:** `yes` or `no`. 
 - [ZC1499: Style: `docker pull <image>` / `:latest` — unpinned image tag](#zc1499)
 - [ZC1500: Warn on `systemctl edit <unit>` in scripts — requires interactive editor](#zc1500)
 - [ZC1501: Style: `docker-compose` (hyphen) — use `docker compose` (space, built-in plugin)](#zc1501) · auto-fix
-- [ZC1502: Warn on `grep "$var" file` without `--` — flag injection when `$var` starts with `-`](#zc1502)
+- [ZC1502: Warn on `grep "$var" file` without `--` — flag injection when `$var` starts with `-`](#zc1502) · auto-fix
 - [ZC1503: Error on `groupadd -g 0` / `groupmod -g 0` — creates duplicate root group](#zc1503)
 - [ZC1504: Warn on `git push --mirror` — overwrites every remote ref](#zc1504)
 - [ZC1505: Warn on `dpkg --force-confnew` / `--force-confold` — silently overrides /etc changes](#zc1505)
@@ -7000,7 +7000,7 @@ Disable by adding `ZC1501` to `disabled_katas` in `.zshellcheckrc`.
 ### ZC1502 — Warn on `grep "$var" file` without `--` — flag injection when `$var` starts with `-`
 
 **Severity:** `warning`  
-**Auto-fix:** `no`
+**Auto-fix:** `yes`
 
 Without a `--` end-of-flags marker, `grep` (and most POSIX tools) treats any argument that starts with `-` as a flag. If `$var` comes from user input or a fuzzed filename, an attacker can pass `--include=*secret*` or `-f /etc/shadow` and get grep to read paths the script author never intended. Always write `grep -- "$var" file` or use a grep-compatible library with explicit pattern API.
 
