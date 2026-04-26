@@ -26,67 +26,63 @@ func init() {
 }
 
 func checkZC1077(node ast.Node) []Violation {
-	var command ast.Node
+	rightCmd, ok := zc1077TrPipeline(node)
+	if !ok || len(rightCmd.Arguments) < 2 {
+		return nil
+	}
+	arg1 := rightCmd.Arguments[0].String()
+	arg2 := rightCmd.Arguments[1].String()
 
+	if zc1077IsUpperPair(arg1, arg2) {
+		return zc1077Hit(node, "u", "uppercase")
+	}
+	if zc1077IsLowerPair(arg1, arg2) {
+		return zc1077Hit(node, "l", "lowercase")
+	}
+	return nil
+}
+
+// zc1077TrPipeline returns the right-hand `tr` command of a `cmd | tr`
+// pipeline embedded in either a backtick or `$()` substitution.
+func zc1077TrPipeline(node ast.Node) (*ast.SimpleCommand, bool) {
+	var command ast.Node
 	switch n := node.(type) {
 	case *ast.CommandSubstitution:
 		command = n.Command
 	case *ast.DollarParenExpression:
 		command = n.Command
 	default:
-		return nil
+		return nil, false
 	}
-
-	// Check for pipeline: echo $var | tr ...
 	infix, ok := command.(*ast.InfixExpression)
 	if !ok || infix.Operator != "|" {
-		return nil
+		return nil, false
 	}
-
-	// Right side must be `tr`
 	rightCmd, ok := infix.Right.(*ast.SimpleCommand)
 	if !ok || rightCmd.Name.String() != "tr" {
-		return nil
+		return nil, false
 	}
+	return rightCmd, true
+}
 
-	// Check arguments of tr
-	if len(rightCmd.Arguments) < 2 {
-		return nil
-	}
+func zc1077IsUpperPair(a, b string) bool {
+	return (checkTrPattern(a, "a-z") && checkTrPattern(b, "A-Z")) ||
+		(checkTrPattern(a, "[:lower:]") && checkTrPattern(b, "[:upper:]"))
+}
 
-	arg1 := rightCmd.Arguments[0].String()
-	arg2 := rightCmd.Arguments[1].String()
+func zc1077IsLowerPair(a, b string) bool {
+	return (checkTrPattern(a, "A-Z") && checkTrPattern(b, "a-z")) ||
+		(checkTrPattern(a, "[:upper:]") && checkTrPattern(b, "[:lower:]"))
+}
 
-	// Check for 'a-z' 'A-Z' or similar patterns
-	// We check both quoted and unquoted versions roughly
-	isUpper := checkTrPattern(arg1, "a-z") && checkTrPattern(arg2, "A-Z")
-	isLower := checkTrPattern(arg1, "A-Z") && checkTrPattern(arg2, "a-z")
-
-	// Also check POSIX classes
-	isUpperPosix := checkTrPattern(arg1, "[:lower:]") && checkTrPattern(arg2, "[:upper:]")
-	isLowerPosix := checkTrPattern(arg1, "[:upper:]") && checkTrPattern(arg2, "[:lower:]")
-
-	if isUpper || isUpperPosix {
-		return []Violation{{
-			KataID:  "ZC1077",
-			Message: "Use `${var:u}` instead of `tr` for uppercase conversion. It is faster and built-in.",
-			Line:    node.TokenLiteralNode().Line,
-			Column:  node.TokenLiteralNode().Column,
-			Level:   SeverityStyle,
-		}}
-	}
-
-	if isLower || isLowerPosix {
-		return []Violation{{
-			KataID:  "ZC1077",
-			Message: "Use `${var:l}` instead of `tr` for lowercase conversion. It is faster and built-in.",
-			Line:    node.TokenLiteralNode().Line,
-			Column:  node.TokenLiteralNode().Column,
-			Level:   SeverityStyle,
-		}}
-	}
-
-	return nil
+func zc1077Hit(node ast.Node, flag, label string) []Violation {
+	return []Violation{{
+		KataID:  "ZC1077",
+		Message: "Use `${var:" + flag + "}` instead of `tr` for " + label + " conversion. It is faster and built-in.",
+		Line:    node.TokenLiteralNode().Line,
+		Column:  node.TokenLiteralNode().Column,
+		Level:   SeverityStyle,
+	}}
 }
 
 func checkTrPattern(arg, pattern string) bool {

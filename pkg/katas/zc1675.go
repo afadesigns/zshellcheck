@@ -28,47 +28,26 @@ func init() {
 // equivalents `typeset -fx` and `typeset +x`. Single edit spans the
 // command name + flag together, mirroring fixZC1283's `set -o OPT`
 // → `setopt OPT` collapse.
+var zc1675FlagReplace = map[string]string{
+	"-f": "typeset -fx",
+	"-n": "typeset +x",
+}
+
 func fixZC1675(node ast.Node, v Violation, source []byte) []FixEdit {
 	cmd, ok := node.(*ast.SimpleCommand)
-	if !ok {
+	if !ok || CommandIdentifier(cmd) != "export" {
 		return nil
 	}
-	ident, ok := cmd.Name.(*ast.Identifier)
-	if !ok || ident.Value != "export" {
-		return nil
-	}
-	var flag ast.Expression
-	var replace string
-	for _, arg := range cmd.Arguments {
-		switch arg.String() {
-		case "-f":
-			flag = arg
-			replace = "typeset -fx"
-		case "-n":
-			flag = arg
-			replace = "typeset +x"
-		}
-		if flag != nil {
-			break
-		}
-	}
+	flag, replace := zc1675FindFlag(cmd)
 	if flag == nil {
 		return nil
 	}
-	nameOff := LineColToByteOffset(source, v.Line, v.Column)
-	if nameOff < 0 || nameOff+len("export") > len(source) {
+	nameOff, ok := zc1675ExportOffset(source, v)
+	if !ok {
 		return nil
 	}
-	if string(source[nameOff:nameOff+len("export")]) != "export" {
-		return nil
-	}
-	flagTok := flag.TokenLiteralNode()
-	flagOff := LineColToByteOffset(source, flagTok.Line, flagTok.Column)
-	if flagOff < 0 || flagOff+2 > len(source) {
-		return nil
-	}
-	flagLit := string(source[flagOff : flagOff+2])
-	if flagLit != "-f" && flagLit != "-n" {
+	flagOff, ok := zc1675FlagOffset(source, flag)
+	if !ok {
 		return nil
 	}
 	return []FixEdit{{
@@ -77,6 +56,39 @@ func fixZC1675(node ast.Node, v Violation, source []byte) []FixEdit {
 		Length:  flagOff + 2 - nameOff,
 		Replace: replace,
 	}}
+}
+
+func zc1675FindFlag(cmd *ast.SimpleCommand) (ast.Expression, string) {
+	for _, arg := range cmd.Arguments {
+		if r, hit := zc1675FlagReplace[arg.String()]; hit {
+			return arg, r
+		}
+	}
+	return nil, ""
+}
+
+func zc1675ExportOffset(source []byte, v Violation) (int, bool) {
+	off := LineColToByteOffset(source, v.Line, v.Column)
+	if off < 0 || off+len("export") > len(source) {
+		return 0, false
+	}
+	if string(source[off:off+len("export")]) != "export" {
+		return 0, false
+	}
+	return off, true
+}
+
+func zc1675FlagOffset(source []byte, flag ast.Expression) (int, bool) {
+	tok := flag.TokenLiteralNode()
+	off := LineColToByteOffset(source, tok.Line, tok.Column)
+	if off < 0 || off+2 > len(source) {
+		return 0, false
+	}
+	lit := string(source[off : off+2])
+	if lit != "-f" && lit != "-n" {
+		return 0, false
+	}
+	return off, true
 }
 
 func checkZC1675(node ast.Node) []Violation {

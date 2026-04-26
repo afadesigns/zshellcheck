@@ -28,34 +28,34 @@ func init() {
 	})
 }
 
+var zc1996ExactFlags = map[string]struct{}{
+	"-U": {}, "-r": {}, "-Ur": {}, "-rU": {},
+	"--user": {}, "--map-root-user": {},
+}
+
 func checkZC1996(node ast.Node) []Violation {
 	cmd, ok := node.(*ast.SimpleCommand)
-	if !ok {
-		return nil
-	}
-	ident, ok := cmd.Name.(*ast.Identifier)
-	if !ok {
-		return nil
-	}
-	if ident.Value != "unshare" {
+	if !ok || CommandIdentifier(cmd) != "unshare" {
 		return nil
 	}
 	for _, arg := range cmd.Arguments {
 		v := arg.String()
-		if v == "-U" || v == "-r" || v == "-Ur" || v == "-rU" ||
-			v == "--user" || v == "--map-root-user" {
+		if zc1996FlagHit(v) {
 			return zc1996Hit(cmd, "unshare "+v)
-		}
-		// Short-flag bundles like `-Urm`.
-		if strings.HasPrefix(v, "-") && !strings.HasPrefix(v, "--") &&
-			len(v) > 1 && !strings.Contains(v, "=") {
-			body := v[1:]
-			if strings.ContainsAny(body, "Ur") {
-				return zc1996Hit(cmd, "unshare "+v)
-			}
 		}
 	}
 	return nil
+}
+
+func zc1996FlagHit(v string) bool {
+	if _, hit := zc1996ExactFlags[v]; hit {
+		return true
+	}
+	// Short-flag bundles like `-Urm` carry user / root mapping via U or r.
+	if !strings.HasPrefix(v, "-") || strings.HasPrefix(v, "--") || len(v) <= 1 || strings.Contains(v, "=") {
+		return false
+	}
+	return strings.ContainsAny(v[1:], "Ur")
 }
 
 func zc1996Hit(cmd *ast.SimpleCommand, form string) []Violation {

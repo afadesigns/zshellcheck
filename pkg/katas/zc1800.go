@@ -26,33 +26,10 @@ func init() {
 
 func checkZC1800(node ast.Node) []Violation {
 	cmd, ok := node.(*ast.SimpleCommand)
-	if !ok {
+	if !ok || CommandIdentifier(cmd) != "pg_ctl" {
 		return nil
 	}
-	ident, ok := cmd.Name.(*ast.Identifier)
-	if !ok || ident.Value != "pg_ctl" {
-		return nil
-	}
-	hasStop := false
-	hasImmediate := false
-	for i, arg := range cmd.Arguments {
-		v := arg.String()
-		if v == "stop" || v == "restart" {
-			hasStop = true
-		}
-		if v == "-m" && i+1 < len(cmd.Arguments) {
-			if cmd.Arguments[i+1].String() == "immediate" {
-				hasImmediate = true
-			}
-		}
-		if strings.HasPrefix(v, "-m") && len(v) > 2 && v[2:] == "immediate" {
-			hasImmediate = true
-		}
-		if v == "--mode=immediate" {
-			hasImmediate = true
-		}
-	}
-	if !hasStop || !hasImmediate {
+	if !zc1800StopOrRestart(cmd) || !zc1800ImmediateMode(cmd) {
 		return nil
 	}
 	return []Violation{{
@@ -64,4 +41,30 @@ func checkZC1800(node ast.Node) []Violation {
 		Column: cmd.Token.Column,
 		Level:  SeverityWarning,
 	}}
+}
+
+func zc1800StopOrRestart(cmd *ast.SimpleCommand) bool {
+	for _, arg := range cmd.Arguments {
+		v := arg.String()
+		if v == "stop" || v == "restart" {
+			return true
+		}
+	}
+	return false
+}
+
+func zc1800ImmediateMode(cmd *ast.SimpleCommand) bool {
+	for i, arg := range cmd.Arguments {
+		v := arg.String()
+		if v == "--mode=immediate" {
+			return true
+		}
+		if v == "-m" && i+1 < len(cmd.Arguments) && cmd.Arguments[i+1].String() == "immediate" {
+			return true
+		}
+		if strings.HasPrefix(v, "-m") && len(v) > 2 && v[2:] == "immediate" {
+			return true
+		}
+	}
+	return false
 }

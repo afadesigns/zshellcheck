@@ -79,3 +79,40 @@ func FlagArgPosition(cmd *ast.SimpleCommand, needles map[string]bool) (int, int)
 	}
 	return cmd.Token.Line, cmd.Token.Column
 }
+
+// HasArgFlag reports whether any cmd argument stringifies to a key
+// present in flags. Replaces the recurring `for arg ... if v == "-x" ||
+// v == "-y" || ...` chains that drive kata cyclomatic complexity above
+// the gocyclo threshold.
+func HasArgFlag(cmd *ast.SimpleCommand, flags map[string]struct{}) bool {
+	for _, arg := range cmd.Arguments {
+		if _, hit := flags[arg.String()]; hit {
+			return true
+		}
+	}
+	return false
+}
+
+// ArgValueAfter returns the stringified argument that immediately
+// follows the first argument matching key, or the empty string when
+// the key is absent or sits at the tail. Used by katas that match
+// `--bind 0.0.0.0` style options.
+func ArgValueAfter(cmd *ast.SimpleCommand, key string) string {
+	for i, arg := range cmd.Arguments {
+		if arg.String() == key && i+1 < len(cmd.Arguments) {
+			return cmd.Arguments[i+1].String()
+		}
+	}
+	return ""
+}
+
+// CommandIdentifier returns the head identifier value of cmd, or "" if
+// the head is not an identifier. Wraps the common type-assertion guard
+// at the top of every Check function.
+func CommandIdentifier(cmd *ast.SimpleCommand) string {
+	ident, ok := cmd.Name.(*ast.Identifier)
+	if !ok {
+		return ""
+	}
+	return ident.Value
+}

@@ -24,28 +24,12 @@ func init() {
 
 func checkZC1806(node ast.Node) []Violation {
 	cmd, ok := node.(*ast.SimpleCommand)
-	if !ok {
-		return nil
-	}
-	ident, ok := cmd.Name.(*ast.Identifier)
-	if !ok || ident.Value != "zmv" {
-		return nil
-	}
-	if len(cmd.Arguments) < 2 {
+	if !ok || CommandIdentifier(cmd) != "zmv" || len(cmd.Arguments) < 2 {
 		return nil
 	}
 	for _, arg := range cmd.Arguments {
-		v := arg.String()
-		if v == "-n" || v == "--dry-run" || v == "-i" || v == "--interactive" {
+		if zc1806HasGuardFlag(arg.String()) {
 			return nil
-		}
-		// combined short flags like `-Mn` or `-wn`.
-		if len(v) > 1 && v[0] == '-' && v[1] != '-' {
-			for _, c := range v[1:] {
-				if c == 'n' || c == 'i' {
-					return nil
-				}
-			}
 		}
 	}
 	return []Violation{{
@@ -57,4 +41,20 @@ func checkZC1806(node ast.Node) []Violation {
 		Column: cmd.Token.Column,
 		Level:  SeverityWarning,
 	}}
+}
+
+func zc1806HasGuardFlag(v string) bool {
+	switch v {
+	case "-n", "--dry-run", "-i", "--interactive":
+		return true
+	}
+	if len(v) <= 1 || v[0] != '-' || v[1] == '-' {
+		return false
+	}
+	for _, c := range v[1:] {
+		if c == 'n' || c == 'i' {
+			return true
+		}
+	}
+	return false
 }

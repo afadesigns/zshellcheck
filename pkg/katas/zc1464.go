@@ -20,39 +20,61 @@ func init() {
 	})
 }
 
+var (
+	zc1464FirewallNames = map[string]struct{}{"iptables": {}, "ip6tables": {}, "nft": {}}
+	zc1464FlushFlags    = map[string]struct{}{"-F": {}, "--flush": {}}
+	zc1464PolicyFlags   = map[string]struct{}{"-P": {}, "--policy": {}}
+	zc1464OpenChains    = map[string]struct{}{"INPUT": {}, "FORWARD": {}}
+)
+
 func checkZC1464(node ast.Node) []Violation {
 	cmd, ok := node.(*ast.SimpleCommand)
 	if !ok {
 		return nil
 	}
-
-	ident, ok := cmd.Name.(*ast.Identifier)
-	if !ok {
+	if _, hit := zc1464FirewallNames[CommandIdentifier(cmd)]; !hit {
 		return nil
 	}
-	if ident.Value != "iptables" && ident.Value != "ip6tables" && ident.Value != "nft" {
-		return nil
+	args := zc1464StringArgs(cmd)
+	if zc1464FlushHit(args) {
+		return violateZC1464(cmd, "flushing all firewall rules")
 	}
-
-	args := make([]string, 0, len(cmd.Arguments))
-	for _, arg := range cmd.Arguments {
-		args = append(args, arg.String())
-	}
-
-	// Catch: `iptables -F` (no chain) — flushes everything
-	// Catch: `iptables -P INPUT ACCEPT` / `-P FORWARD ACCEPT`
-	for i, a := range args {
-		if a == "-F" || a == "--flush" {
-			return violateZC1464(cmd, "flushing all firewall rules")
-		}
-		if (a == "-P" || a == "--policy") && i+2 < len(args) && args[i+2] == "ACCEPT" {
-			chain := args[i+1]
-			if chain == "INPUT" || chain == "FORWARD" {
-				return violateZC1464(cmd, "default-ACCEPT policy on "+chain+" chain")
-			}
-		}
+	if chain := zc1464AcceptPolicy(args); chain != "" {
+		return violateZC1464(cmd, "default-ACCEPT policy on "+chain+" chain")
 	}
 	return nil
+}
+
+func zc1464StringArgs(cmd *ast.SimpleCommand) []string {
+	out := make([]string, 0, len(cmd.Arguments))
+	for _, arg := range cmd.Arguments {
+		out = append(out, arg.String())
+	}
+	return out
+}
+
+func zc1464FlushHit(args []string) bool {
+	for _, a := range args {
+		if _, hit := zc1464FlushFlags[a]; hit {
+			return true
+		}
+	}
+	return false
+}
+
+func zc1464AcceptPolicy(args []string) string {
+	for i, a := range args {
+		if _, hit := zc1464PolicyFlags[a]; !hit {
+			continue
+		}
+		if i+2 >= len(args) || args[i+2] != "ACCEPT" {
+			continue
+		}
+		if _, hit := zc1464OpenChains[args[i+1]]; hit {
+			return args[i+1]
+		}
+	}
+	return ""
 }
 
 func violateZC1464(cmd *ast.SimpleCommand, what string) []Violation {

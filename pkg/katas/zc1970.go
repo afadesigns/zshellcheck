@@ -24,30 +24,28 @@ func init() {
 	})
 }
 
+var (
+	zc1970LosetupFlags = map[string]struct{}{
+		"-P": {}, "--partscan": {}, "-Pf": {}, "-fP": {}, "-rP": {}, "-Pr": {},
+	}
+	zc1970KpartxFlags = map[string]struct{}{
+		"-a": {}, "-av": {}, "-va": {}, "-as": {}, "-sa": {},
+	}
+)
+
 func checkZC1970(node ast.Node) []Violation {
 	cmd, ok := node.(*ast.SimpleCommand)
 	if !ok {
 		return nil
 	}
-	ident, ok := cmd.Name.(*ast.Identifier)
-	if !ok {
-		return nil
-	}
-	switch ident.Value {
+	switch CommandIdentifier(cmd) {
 	case "losetup":
-		for _, arg := range cmd.Arguments {
-			v := arg.String()
-			if v == "-P" || v == "--partscan" ||
-				v == "-Pf" || v == "-fP" || v == "-rP" || v == "-Pr" {
-				return zc1970Hit(cmd, "losetup -P")
-			}
+		if HasArgFlag(cmd, zc1970LosetupFlags) {
+			return zc1970Hit(cmd, "losetup -P")
 		}
 	case "kpartx":
-		for _, arg := range cmd.Arguments {
-			v := arg.String()
-			if v == "-a" || v == "-av" || v == "-va" || v == "-as" || v == "-sa" {
-				return zc1970Hit(cmd, "kpartx -a")
-			}
+		if HasArgFlag(cmd, zc1970KpartxFlags) {
+			return zc1970Hit(cmd, "kpartx -a")
 		}
 	case "partprobe":
 		return zc1970Hit(cmd, "partprobe")

@@ -73,15 +73,24 @@ func zc1856IsIdentifier(s string) bool {
 		return false
 	}
 	for i, r := range s {
-		if i == 0 {
-			if !(r == '_' || (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z')) {
-				return false
-			}
-			continue
+		if i == 0 && !zc1856IsIdentStart(r) {
+			return false
 		}
-		if !(r == '_' || (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') || (r >= '0' && r <= '9')) {
+		if i > 0 && !zc1856IsIdentTail(r) {
 			return false
 		}
 	}
 	return true
+}
+
+func zc1856IsIdentStart(r rune) bool {
+	return r == '_' || isAsciiLetter(r)
+}
+
+func zc1856IsIdentTail(r rune) bool {
+	return r == '_' || isAsciiLetter(r) || (r >= '0' && r <= '9')
+}
+
+func isAsciiLetter(r rune) bool {
+	return (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z')
 }
