@@ -225,3 +225,15 @@ func TestLexerOctalLiteral(t *testing.T)       { drainTokens("(( x = 0o755 ))\n"
 func TestLexerCustomBaseLiteral(t *testing.T)  { drainTokens("(( x = 16#ff ))\n") }
 func TestLexerHexBareNoDigits(t *testing.T)    { drainTokens("(( x == 0x${var} ))\n") }
 func TestLexerBinaryBareNoDigits(t *testing.T) { drainTokens("(( x == 0b${var} ))\n") }
+
+// Escaped backtick appears in brace-expansion lists and pattern
+// strings. The lexer treats it as an IDENT word so the surrounding
+// command-word fold keeps working. Used heavily by zinit and
+// zsh-vi-mode.
+func TestLexerEscapedBacktickInBraceExpansion(t *testing.T) {
+	drainTokens("for s in {\\',\\\",\\`}; do echo $s; done\n")
+}
+
+func TestLexerEscapedBacktickAsArg(t *testing.T) {
+	drainTokens("echo \\`\n")
+}

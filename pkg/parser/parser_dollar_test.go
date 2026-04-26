@@ -146,3 +146,20 @@ func TestParseDollarHashWithSpace(t *testing.T) {
 	// Space after $# means it's not a length op — falls through.
 	parseSourceClean(t, "echo $# arg\n")
 }
+
+// `(( # ))` — `#` standalone is the count of positional args inside
+// arithmetic. zimfw uses `(( ! # ))` for "no args" and
+// `(( # > 0 ))` for "have args".
+func TestParseArithBareHashCount(t *testing.T) {
+	parseSourceClean(t, "(( ! # ))\n")
+}
+
+func TestParseArithBareHashCompare(t *testing.T) {
+	parseSourceClean(t, "(( # > 0 ))\n")
+}
+
+// Backtick comment-suppression inside arithmetic must not eat the
+// closing `))`. `#` outside arithmetic is still a comment opener.
+func TestParseHashIsCommentOutsideArith(t *testing.T) {
+	parseSourceClean(t, "echo before # this is a comment\n")
+}

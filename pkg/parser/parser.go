@@ -192,6 +192,11 @@ func New(l *lexer.Lexer) *Parser {
 	p.registerPrefix(token.LT_LPAREN, p.parseProcessSubstitution)
 	p.registerPrefix(token.GT_LPAREN, p.parseProcessSubstitution)
 	p.registerPrefix(token.EQ_LPAREN, p.parseProcessSubstitution)
+	// `#` standalone inside `((…))` is the special parameter holding
+	// the count of positional arguments (Zsh / POSIX `$#`). zimfw
+	// uses `(( ! # ))` and `(( # > 0 ))` heavily. Outside arithmetic
+	// HASH is a comment opener, handled separately.
+	p.registerPrefix(token.HASH, p.parseHashSpecial)
 
 	p.infixParseFns = make(map[token.Type]infixParseFn)
 	p.registerInfix(token.PLUS, p.parseInfixExpression)

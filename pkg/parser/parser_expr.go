@@ -168,6 +168,15 @@ func (p *Parser) parseIntegerLiteral() ast.Expression {
 	return lit
 }
 
+// parseHashSpecial returns `#` as a special-parameter identifier when
+// curToken is HASH. Used inside `((…))` arithmetic where HASH stands
+// for the count of positional arguments. Outside arithmetic HASH
+// opens a comment which the lexer skips before the parser sees it,
+// so this prefix only fires in arithmetic context.
+func (p *Parser) parseHashSpecial() ast.Expression {
+	return &ast.Identifier{Token: p.curToken, Value: "#"}
+}
+
 // parseZshIntLiteral converts a Zsh integer literal to int64. Handles
 // the standard 0x / 0b / 0o / decimal forms via strconv plus the
 // custom-base `BASE#NUM` form (e.g. `16#ff`).

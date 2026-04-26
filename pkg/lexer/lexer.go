@@ -140,11 +140,29 @@ func (l *Lexer) tryShebangOrComment(hasSpace bool) (token.Token, bool) {
 		}
 		return token.Token{Type: token.SHEBANG, Literal: l.input[start:l.position], Line: l.line, Column: l.column}, true
 	}
+	// Inside `((…))` / `$((…))` arithmetic, `#` is a special parameter
+	// (count of positional args), not a comment opener. Detect by an
+	// open `D` ('((') marker on the paren stack. zimfw uses
+	// `(( ! # ))` and `(( # > 0 ))` heavily.
+	if l.inArithmetic() {
+		return token.Token{}, false
+	}
 	if hasSpace || l.column == 1 {
 		l.skipComment()
 		return l.NextToken(), true
 	}
 	return token.Token{}, false
+}
+
+// inArithmetic reports whether the lexer is currently inside a `((`
+// arithmetic group. The parser's `((`-marker is 'D' on parenStack.
+func (l *Lexer) inArithmetic() bool {
+	for i := len(l.parenStack) - 1; i >= 0; i-- {
+		if l.parenStack[i] == 'D' {
+			return true
+		}
+	}
+	return false
 }
 
 // dispatchEarlyReturn covers the byte categories whose handler fully
@@ -637,6 +655,7 @@ var backslashEscapable = map[byte]struct{}{
 	'$': {}, '\\': {}, '/': {}, '.': {}, '!': {}, '~': {},
 	'^': {}, ' ': {}, '\t': {}, '#': {}, '"': {}, '\'': {},
 	'=': {}, '%': {}, ',': {}, ':': {}, '@': {}, '+': {}, '-': {},
+	'`': {},
 }
 
 func (l *Lexer) readBackslashEscape() token.Token {
