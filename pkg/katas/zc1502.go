@@ -17,7 +17,73 @@ func init() {
 			"and get grep to read paths the script author never intended. Always write " +
 			"`grep -- \"$var\" file` or use a grep-compatible library with explicit pattern API.",
 		Check: checkZC1502,
+		Fix:   fixZC1502,
 	})
+}
+
+// fixZC1502 inserts `-- ` before the first variable-shaped argument
+// of a grep / egrep / fgrep / rg / ag invocation that lacks the
+// `--` end-of-options marker. Idempotent — the detector gates on
+// the absence of `--`, so once `-- ` is present a re-run won't
+// re-insert.
+func fixZC1502(node ast.Node, _ Violation, source []byte) []FixEdit {
+	cmd, ok := node.(*ast.SimpleCommand)
+	if !ok {
+		return nil
+	}
+	ident, ok := cmd.Name.(*ast.Identifier)
+	if !ok {
+		return nil
+	}
+	if ident.Value != "grep" && ident.Value != "egrep" && ident.Value != "fgrep" &&
+		ident.Value != "rg" && ident.Value != "ag" {
+		return nil
+	}
+	var firstVar ast.Expression
+	for _, arg := range cmd.Arguments {
+		v := arg.String()
+		if v == "--" {
+			return nil
+		}
+		if firstVar == nil && (strings.HasPrefix(v, "\"$") || strings.HasPrefix(v, "$")) {
+			firstVar = arg
+		}
+	}
+	if firstVar == nil {
+		return nil
+	}
+	tok := firstVar.TokenLiteralNode()
+	off := LineColToByteOffset(source, tok.Line, tok.Column)
+	if off < 0 {
+		return nil
+	}
+	insLine, insCol := offsetLineColZC1502(source, off)
+	if insLine < 0 {
+		return nil
+	}
+	return []FixEdit{{
+		Line:    insLine,
+		Column:  insCol,
+		Length:  0,
+		Replace: "-- ",
+	}}
+}
+
+func offsetLineColZC1502(source []byte, offset int) (int, int) {
+	if offset < 0 || offset > len(source) {
+		return -1, -1
+	}
+	line := 1
+	col := 1
+	for i := 0; i < offset; i++ {
+		if source[i] == '\n' {
+			line++
+			col = 1
+			continue
+		}
+		col++
+	}
+	return line, col
 }
 
 func checkZC1502(node ast.Node) []Violation {

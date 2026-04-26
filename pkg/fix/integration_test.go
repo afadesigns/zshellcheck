@@ -1604,6 +1604,21 @@ func TestFixIntegration_ZC1293_AlreadyDoubleBracket(t *testing.T) {
 	}
 }
 
+func TestFixIntegration_ZC1502_GrepInsertsDashDash(t *testing.T) {
+	src := "grep \"$pat\" file\n"
+	want := "grep -- \"$pat\" file\n"
+	if got := runFix(t, src); got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}
+
+func TestFixIntegration_ZC1502_AlreadyDashDash(t *testing.T) {
+	src := "grep -- \"$pat\" file\n"
+	if got := runFix(t, src); got != src {
+		t.Errorf("already-fixed input should be idempotent, got %q", got)
+	}
+}
+
 func TestFixIntegration_ZC1252_PipedCatHandledByZC1146(t *testing.T) {
 	// `cat /etc/group | head` lets ZC1146 win the overlap and collapse
 	// the pipe into `head /etc/group`. ZC1252's two-edit rewrite would

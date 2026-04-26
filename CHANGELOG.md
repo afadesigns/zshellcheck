@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- **Auto-fix coverage now at 131/1000 katas.** New rewrites since 1.0.15, every one deterministic and idempotent on a re-run:
+- **Auto-fix coverage now at 132/1000 katas.** New rewrites since 1.0.15, every one deterministic and idempotent on a re-run:
   - `ZC1015` backticks → `$(...)`.
   - `ZC1016` inserts `-s` after `read` when the variable looks sensitive (`password`, `secret`, `token`, …).
   - `ZC1008` and `ZC1022` share ZC1013's `let NAME=EXPR` → `(( NAME = EXPR ))` rewrite.
@@ -61,6 +61,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `ZC1413` `hash -t cmd` → `whence -p cmd` (rename + flag swap).
   - `ZC1411` `enable -n NAME` → `disable NAME`.
   - `ZC1448` inserts `-y` after `apt install` / `apt upgrade` / `apt dist-upgrade` / `apt full-upgrade`.
+  - `ZC1502` inserts `-- ` before the first `$var` argument of `grep` / `egrep` / `fgrep` / `rg` / `ag` to block flag injection.
   - `ZC1501` `docker-compose` → `docker compose`.
   - `ZC1512` `service UNIT VERB` → `systemctl VERB UNIT` (rename + arg swap).
   - `ZC1565` `whereis` / `locate` / `mlocate` / `plocate` → `command -v`.
