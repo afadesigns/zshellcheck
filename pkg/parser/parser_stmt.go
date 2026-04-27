@@ -907,6 +907,22 @@ func (p *Parser) parseCaseClause() *ast.CaseClause {
 	if p.curTokenIs(token.LPAREN) && p.lookaheadCaseLabelOpener() {
 		p.nextToken()
 	}
+	// Zsh allows `((alt|alt))` glob patterns as a case label (e.g.
+	// `((add-|)fpath)`). The lexer fuses the leading `((` into
+	// DoubleLparen which the regular pattern parser would route into
+	// arithmetic. Re-enter the normal pattern path with curToken on
+	// the first `(` of the alternation by leaving the DoubleLparen
+	// in place and letting parseCommandWord drive — but first detect
+	// the case-label-opener form and drop the fused token.
+	if p.curTokenIs(token.DoubleLparen) {
+		// Treat the fused `((` as a leading `(` opener (case-label
+		// open paren) followed by an arithmetic-style `(...)` group
+		// for the pattern. The pattern parsing loop in parseCommandWord
+		// handles plain `(` via parseGroupedExpression; emit a
+		// synthetic LPAREN by overwriting the token type.
+		p.curToken.Type = token.LPAREN
+		p.curToken.Literal = "("
+	}
 	clause.Patterns = p.parseCaseClausePatterns()
 	if !p.alignToCaseClauseClose() {
 		return nil
