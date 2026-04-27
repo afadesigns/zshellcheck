@@ -74,8 +74,8 @@ func (p *Parser) expressionInfixShouldBreak() bool {
 
 // peekShouldBreakInfix groups the not-in-arithmetic infix breaks so
 // expressionInfixShouldBreak stays under the gocyclo threshold. The
-// SLASH/LBRACKET arms guard glob-context shapes; AMPERSAND/CARET arms
-// guard shell-control bytes that are only infix inside `((…))`.
+// SLASH/LBRACKET arms guard glob-context shapes; AMPERSAND/CARET/COMMA
+// arms guard shell-control bytes that are only infix inside `((…))`.
 func (p *Parser) peekShouldBreakInfix() bool {
 	if p.peekTokenIs(token.LBRACKET) && p.peekToken.HasPrecedingSpace {
 		return true
@@ -84,6 +84,9 @@ func (p *Parser) peekShouldBreakInfix() bool {
 		return true
 	}
 	if p.peekTokenIs(token.AMPERSAND) || p.peekTokenIs(token.CARET) {
+		return true
+	}
+	if p.peekTokenIs(token.COMMA) {
 		return true
 	}
 	return false
@@ -923,11 +926,14 @@ func (p *Parser) parseCallArguments() []ast.Expression {
 		return args
 	}
 	p.nextToken()
-	args = append(args, p.parseExpression(LOWEST))
+	// Parse each argument at LOGICAL so the comma-separator (precedence
+	// LOWEST+1) does not get absorbed as a binary operator inside the
+	// argument expression itself.
+	args = append(args, p.parseExpression(LOGICAL))
 	for p.peekTokenIs(token.COMMA) {
 		p.nextToken()
 		p.nextToken()
-		args = append(args, p.parseExpression(LOWEST))
+		args = append(args, p.parseExpression(LOGICAL))
 	}
 	if !p.expectPeek(token.RPAREN) {
 		return nil

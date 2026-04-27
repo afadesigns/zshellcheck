@@ -8,4 +8,4 @@ zephyr/plugins/compstyle/compstyle.plugin.zsh	1
 zimfw/zimfw.zsh	15
 zinit/zinit-autoload.zsh	3
 zinit/zinit-install.zsh	17
-zinit/zinit.zsh	15
+zinit/zinit.zsh	14

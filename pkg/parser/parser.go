@@ -59,6 +59,11 @@ var precedences = map[token.Type]int{
 	// from invoking them in non-arithmetic context.
 	token.AMPERSAND: LOGICAL,
 	token.CARET:     LOGICAL,
+	// Comma operator inside arithmetic (`(( a, b, c ))`). Precedence
+	// just above LOWEST so a parseExpression(LOWEST) call still
+	// consumes commas, but nested parseExpression(LOGICAL) (e.g.
+	// inside ternary) doesn't accidentally absorb them.
+	token.COMMA: LOWEST + 1,
 	// Zsh arithmetic ternary `cond ? a : b`. QUESTION uses LOGICAL
 	// precedence; COLON is consumed inside parseInfixExpression's
 	// right-hand parse so it doesn't need its own infix entry (and
@@ -236,6 +241,7 @@ func New(l *lexer.Lexer) *Parser {
 	p.registerInfix(token.LTAMP, p.parseRedirection)
 	p.registerInfix(token.AMPERSAND, p.parseInfixExpression)
 	p.registerInfix(token.CARET, p.parseInfixExpression)
+	p.registerInfix(token.COMMA, p.parseInfixExpression)
 
 	p.nextToken() // Initialize curToken
 	p.nextToken() // Initialize peekToken

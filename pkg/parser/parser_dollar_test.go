@@ -184,3 +184,17 @@ func TestParseArithBitwiseXor(t *testing.T) {
 func TestParseAmpersandStillBackgrounds(t *testing.T) {
 	parseSourceClean(t, "sleep 5 &\n")
 }
+
+// Comma operator inside arithmetic. zinit chains side effects via
+// `(( ++idx, count += val ))`.
+func TestParseArithCommaOperator(t *testing.T) {
+	parseSourceClean(t, "(( ++a, b += 1 ))\n")
+}
+
+func TestParseArithCommaInDollarParen(t *testing.T) {
+	parseSourceClean(t, "echo $(( ++a, b += 1 ))\n")
+}
+
+func TestParseFuncCallCommasUnaffected(t *testing.T) {
+	parseSourceClean(t, "let x = add(a, b, 1)\n")
+}
