@@ -5863,10 +5863,10 @@ func zc1083CheckConcat(concat *ast.ConcatenatedExpression) []Violation {
 	if scan.startIdx == -1 {
 		return nil
 	}
-	if !zc1083HasIndexAfter(scan.dotDotIndices, scan.startIdx) {
+	if !zc1083HasIndexBetween(scan.dotDotIndices, scan.startIdx, scan.closeIdx) {
 		return nil
 	}
-	if !zc1083HasIndexAfter(scan.varIndices, scan.startIdx) {
+	if !zc1083HasIndexBetween(scan.varIndices, scan.startIdx, scan.closeIdx) {
 		return nil
 	}
 	return zc1083Hit(concat)
@@ -5874,12 +5874,13 @@ func zc1083CheckConcat(concat *ast.ConcatenatedExpression) []Violation {
 
 type zc1083Scan struct {
 	startIdx      int
+	closeIdx      int // index of the closing `}`; -1 when unseen
 	dotDotIndices []int
 	varIndices    []int
 }
 
 func zc1083ScanParts(parts []ast.Expression) zc1083Scan {
-	scan := zc1083Scan{startIdx: -1}
+	scan := zc1083Scan{startIdx: -1, closeIdx: -1}
 	lastPartWasDot := false
 	for i, part := range parts {
 		if strNode, ok := part.(*ast.StringLiteral); ok {
@@ -5902,6 +5903,12 @@ func zc1083ScanString(scan *zc1083Scan, lastPartWasDot *bool, val string, i int)
 	if strings.Contains(val, "{") && scan.startIdx == -1 {
 		scan.startIdx = i
 	}
+	// Track the closing `}` of the brace expansion. Variables and `..`
+	// runs that appear AFTER the close (e.g. `{1..10}$var`) are not
+	// inside the brace range and should not trigger the kata.
+	if strings.Contains(val, "}") && scan.startIdx >= 0 && scan.closeIdx == -1 && i > scan.startIdx {
+		scan.closeIdx = i
+	}
 	switch {
 	case strings.Contains(val, ".."):
 		scan.dotDotIndices = append(scan.dotDotIndices, i)
@@ -5923,6 +5930,22 @@ func zc1083HasIndexAfter(indices []int, after int) bool {
 		if idx > after {
 			return true
 		}
+	}
+	return false
+}
+
+// zc1083HasIndexBetween reports whether any index sits strictly between
+// the brace-open and brace-close. A closeIdx of -1 means the brace
+// never closed in the parts run, so any index past startIdx counts.
+func zc1083HasIndexBetween(indices []int, openIdx, closeIdx int) bool {
+	for _, idx := range indices {
+		if idx <= openIdx {
+			continue
+		}
+		if closeIdx >= 0 && idx >= closeIdx {
+			continue
+		}
+		return true
 	}
 	return false
 }

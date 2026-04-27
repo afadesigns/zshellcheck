@@ -521,8 +521,13 @@ func (p *Parser) commandWordIsExpression(t token.Type) bool {
 
 func (p *Parser) parseCommandWord() ast.Expression {
 	firstToken := p.curToken
+	// Seed braceDepth with the first token so a word that opens with
+	// `{` (brace expansion or literal) keeps its closing `}` glued
+	// to the same word. Without this, `{a}` as a command arg ended
+	// at the first `}` (RBRACE is a command delimiter), splitting
+	// the word and confusing the surrounding parse.
+	braceDepth := updateCommandWordBraceDepth(0, p.curToken.Type)
 	parts := []ast.Expression{p.parseCommandWordPart()}
-	braceDepth := 0
 	for p.commandWordContinues(braceDepth) {
 		p.nextToken()
 		braceDepth = updateCommandWordBraceDepth(braceDepth, p.curToken.Type)

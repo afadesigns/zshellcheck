@@ -7,5 +7,5 @@ fzf-tab/test/ztst.zsh	1
 zimfw/zimfw.zsh	15
 zinit/share/git-process-output.zsh	2
 zinit/zinit-autoload.zsh	3
-zinit/zinit-install.zsh	7
-zinit/zinit.zsh	5
+zinit/zinit-install.zsh	5
+zinit/zinit.zsh	3
