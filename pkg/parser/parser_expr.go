@@ -35,6 +35,13 @@ func (p *Parser) parseExpression(precedence int) ast.Expression {
 		p.curToken.Type = token.LPAREN
 		p.curToken.Literal = "("
 	}
+	// Inside `${…[KEY]}` subscripts and `[[ … ]]` tests, Zsh keywords
+	// are literal pattern words, not statement-block openers. Return
+	// an Identifier so the surrounding parse keeps moving.
+	if (p.inDoubleBracket || p.inArithmetic) && isDoubleBracketLiteralKeyword(p.curToken.Type) {
+		tok := p.curToken
+		return &ast.Identifier{Token: tok, Value: tok.Literal}
+	}
 	prefix := p.prefixParseFns[p.curToken.Type]
 	if prefix == nil {
 		if p.inDoubleBracket {
@@ -57,6 +64,19 @@ func (p *Parser) parseExpression(precedence int) ast.Expression {
 		leftExp = infix(leftExp)
 	}
 	return leftExp
+}
+
+// isDoubleBracketLiteralKeyword reports whether a Zsh keyword token
+// should be treated as a literal pattern word inside `[[ … ]]` or a
+// `${var[KEY]}` subscript. Most reserved words (FUNCTION, IF, FOR, …)
+// only mean "statement head" in command position; in pattern context
+// they are simply pattern strings.
+func isDoubleBracketLiteralKeyword(t token.Type) bool {
+	switch t {
+	case token.FUNCTION:
+		return true
+	}
+	return false
 }
 
 // expressionInfixShouldBreak reports whether the infix chain in
