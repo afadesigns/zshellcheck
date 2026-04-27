@@ -28,6 +28,13 @@ func (p *Parser) parseExpression(precedence int) ast.Expression {
 	if _, hit := expressionTerminators[p.curToken.Type]; hit {
 		return nil
 	}
+	// Inside `[[ … ]]` a `((` is glob alternation grouping (not
+	// arithmetic). Decompose the fused DoubleLparen into a LPAREN so
+	// parseGroupedExpression's glob-alt path handles it.
+	if p.inDoubleBracket && p.curTokenIs(token.DoubleLparen) {
+		p.curToken.Type = token.LPAREN
+		p.curToken.Literal = "("
+	}
 	prefix := p.prefixParseFns[p.curToken.Type]
 	if prefix == nil {
 		if p.inDoubleBracket {
@@ -596,7 +603,8 @@ func (p *Parser) peekIsDollarTerminator() bool {
 func (p *Parser) peekIsDollarSpecialOp() bool {
 	return p.peekTokenIs(token.HASH) || p.peekTokenIs(token.INT) ||
 		p.peekTokenIs(token.ASTERISK) || p.peekTokenIs(token.BANG) ||
-		p.peekTokenIs(token.MINUS)
+		p.peekTokenIs(token.MINUS) || p.peekTokenIs(token.CARET) ||
+		p.peekTokenIs(token.EQ) || p.peekTokenIs(token.TILDE)
 }
 
 func (p *Parser) parseDollarArithExpansion(dollarToken token.Token) ast.Expression {
@@ -630,8 +638,33 @@ func (p *Parser) parseDollarSpecialOp(dollarToken token.Token) ast.Expression {
 			},
 		}
 	}
+	// Zsh `$<flag>name` forms: `$^name` (array-broadcast),
+	// `$=name` (split), `$~name` (glob), `$+name` already handled.
+	// Absorb the IDENT name when it directly follows the flag.
+	if isDollarFlagOp(opToken.Type) && p.peekTokenIs(token.IDENT) && !p.peekToken.HasPrecedingSpace {
+		flagToken := opToken
+		p.nextToken()
+		name := &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
+		return &ast.PrefixExpression{
+			Token:    dollarToken,
+			Operator: "$",
+			Right: &ast.PrefixExpression{
+				Token:    flagToken,
+				Operator: flagToken.Literal,
+				Right:    name,
+			},
+		}
+	}
 	ident := &ast.Identifier{Token: opToken, Value: opToken.Literal}
 	return &ast.PrefixExpression{Token: dollarToken, Operator: "$", Right: ident}
+}
+
+func isDollarFlagOp(t token.Type) bool {
+	switch t {
+	case token.CARET, token.EQ, token.TILDE:
+		return true
+	}
+	return false
 }
 
 // peekIsHashLengthOperand reports whether the upcoming token is a valid

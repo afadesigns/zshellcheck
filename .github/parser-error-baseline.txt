@@ -4,9 +4,8 @@ fast-syntax-highlighting/test/to-parse.zsh	4
 fzf/shell/completion.zsh	1
 fzf/shell/key-bindings.zsh	6
 fzf-tab/test/ztst.zsh	1
-zephyr/plugins/compstyle/compstyle.plugin.zsh	1
 zimfw/zimfw.zsh	15
 zinit/share/git-process-output.zsh	2
 zinit/zinit-autoload.zsh	3
 zinit/zinit-install.zsh	7
-zinit/zinit.zsh	12
+zinit/zinit.zsh	5
