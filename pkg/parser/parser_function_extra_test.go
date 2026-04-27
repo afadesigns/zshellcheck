@@ -121,3 +121,14 @@ func TestParseNestedExpansionBracketClassPattern(t *testing.T) {
 func TestParseNestedExpansionPatternSubst(t *testing.T) {
 	parseSourceClean(t, "echo ${${X}//pat/replacement}\n")
 }
+
+// Brace-form arithmetic for: `for ((..)) { body }`. zinit uses this
+// in load-counting helpers.
+func TestParseArithForBraceForm(t *testing.T) {
+	parseSourceClean(t, "for (( i = 1; i <= 5; ++i )) { echo $i }\n")
+}
+
+// Brace-form while: `while cond { body }`.
+func TestParseWhileBraceForm(t *testing.T) {
+	parseSourceClean(t, "while [[ -n $x ]] { echo $x; x= }\n")
+}

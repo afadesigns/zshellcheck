@@ -985,6 +985,18 @@ func (p *Parser) parseArithmeticForLoop(stmt *ast.ForLoopStatement) *ast.ForLoop
 	if p.peekTokenIs(token.SEMICOLON) {
 		p.nextToken()
 	}
+	// Zsh short-form arithmetic for: `for ((..)) { body }`. Detect a
+	// LBRACE peek and treat it as the body opener instead of `do`.
+	if p.peekTokenIs(token.LBRACE) {
+		p.nextToken() // onto {
+		p.nextToken() // into body
+		stmt.Body = p.parseBlockStatement(token.RBRACE)
+		if p.curTokenIs(token.RBRACE) {
+			p.nextToken()
+			p.consumedBraceTerminator = true
+		}
+		return stmt
+	}
 	if !p.expectPeek(token.DO) {
 		return nil
 	}
@@ -1093,7 +1105,17 @@ func wrapForLoopBody(tok token.Token, body ast.Statement) *ast.BlockStatement {
 func (p *Parser) parseWhileLoopStatement() *ast.WhileLoopStatement {
 	stmt := &ast.WhileLoopStatement{Token: p.curToken}
 	p.nextToken()
-	stmt.Condition = p.parseBlockStatement(token.DO)
+	stmt.Condition = p.parseBlockStatement(token.DO, token.LBRACE)
+	// Zsh short-form `while cond { body }`.
+	if p.curTokenIs(token.LBRACE) {
+		p.nextToken()
+		stmt.Body = p.parseBlockStatement(token.RBRACE)
+		if p.curTokenIs(token.RBRACE) {
+			p.nextToken()
+			p.consumedBraceTerminator = true
+		}
+		return stmt
+	}
 	if !p.curTokenIs(token.DO) {
 		return nil
 	}
