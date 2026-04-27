@@ -6,7 +6,6 @@ fzf/shell/key-bindings.zsh	6
 fzf-tab/test/ztst.zsh	1
 zephyr/plugins/compstyle/compstyle.plugin.zsh	1
 zimfw/zimfw.zsh	15
-zinit/zinit-autoload.zsh	7
-zinit/zinit-install.zsh	21
-zinit/zinit-side.zsh	2
+zinit/zinit-autoload.zsh	4
+zinit/zinit-install.zsh	17
 zinit/zinit.zsh	15

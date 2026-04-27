@@ -404,9 +404,14 @@ func (p *Parser) parseArrayAccess() ast.Expression {
 	hasLengthOp := p.consumeLengthOp()
 	p.consumePreflags()
 
+	subjectWasNested := false
 	if p.subjectIsEmpty() {
 		exp.Left = nil
 	} else {
+		// A nested `${INNER}` subject leaves curToken on the inner's
+		// RBRACE. Track that so the early-return below doesn't fire
+		// and skip the outer's modifier tail (`${${INNER}MOD}`).
+		subjectWasNested = p.peekTokenIs(token.DollarLbrace)
 		p.nextToken()
 		exp.Left, exp.Index = p.parseArrayAccessSubject()
 	}
@@ -436,7 +441,7 @@ func (p *Parser) parseArrayAccess() ast.Expression {
 	// inner ArrayAccess already left curToken on its close `}`
 	// while the outer's close is the next `}` (peek RBRACE), and
 	// we still need expectPeek(RBRACE) to advance.
-	if p.curTokenIs(token.RBRACE) && !p.peekTokenIs(token.RBRACE) {
+	if p.curTokenIs(token.RBRACE) && !p.peekTokenIs(token.RBRACE) && !subjectWasNested {
 		return exp
 	}
 	if !p.peekTokenIs(token.RBRACE) {
@@ -500,6 +505,12 @@ func (p *Parser) parseArrayAccessSubject() (ast.Expression, ast.Expression) {
 		return p.parseArrayAccessIdent()
 	case p.subjectIsSpecialName():
 		return &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}, nil
+	case p.curTokenIs(token.DollarLbrace):
+		// Nested `${INNER}` subject. Call parseArrayAccess directly
+		// rather than going through parseExpression so the infix loop
+		// in parseExpression doesn't eat the outer's modifier tail
+		// (`%%pat`, `//pat/repl`) as misinterpreted operators.
+		return p.parseArrayAccess(), nil
 	}
 	expr := p.parseExpression(LOWEST)
 	if idx, ok := expr.(*ast.IndexExpression); ok {

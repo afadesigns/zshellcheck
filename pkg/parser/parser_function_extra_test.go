@@ -105,3 +105,19 @@ func TestParseNestedCase(t *testing.T) {
 func TestParseCasePipelineTail(t *testing.T) {
 	parseSourceClean(t, "case $x in a) echo a;; esac | tr a-z A-Z\n")
 }
+
+// `${${INNER}MOD}` — outer modifier after a nested subject. Previously
+// parseExpression's infix loop ate `MOD` tokens before parseArrayAccess
+// could route them through consumeArrayAccessModifierTail. zinit's
+// `${${key##(zinit|z-annex) hook:}%% <->}` (and friends) need this.
+func TestParseNestedExpansionWithOuterModifier(t *testing.T) {
+	parseSourceClean(t, "echo ${${X}%%pat}\n")
+}
+
+func TestParseNestedExpansionBracketClassPattern(t *testing.T) {
+	parseSourceClean(t, "echo ${${X}%%[abc]*}\n")
+}
+
+func TestParseNestedExpansionPatternSubst(t *testing.T) {
+	parseSourceClean(t, "echo ${${X}//pat/replacement}\n")
+}
