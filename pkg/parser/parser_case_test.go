@@ -183,6 +183,18 @@ func TestParseBraceBlockInsideCommandSub(t *testing.T) {
 	parseSourceClean(t, "ERR=$({ cmd ${A} ${B} } 2>&1)\n")
 }
 
+// `$(( … ))` arithmetic command-sub used to skip setting
+// consumedParenTerminator on the `))` close, so an enclosing
+// subshell body that followed `assign=$(( … ))` with a second
+// statement crashed on the next statement's first token.
+func TestParseDollarArithmeticInSubshellFollowedByStmt(t *testing.T) {
+	src := "(\n" +
+		"  X=$(( a > 1 ? (2 - x) : 3 ))\n" +
+		"  Y=1\n" +
+		")\n"
+	parseSourceClean(t, src)
+}
+
 // Zsh shortcut: `if (( cond )) cmd` and `if [[ cond ]] cmd` omit the
 // `then`/`fi` pair. Inside `=( … )` proc-sub or `( … )` subshell,
 // parseBlockStatement(THEN, LBRACE) absorbed the trailing cmd into

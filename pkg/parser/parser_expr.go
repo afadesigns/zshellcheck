@@ -1013,6 +1013,7 @@ func (p *Parser) parseDollarParenExpression() ast.Expression {
 		if p.peekTokenIs(token.DoubleRparen) {
 			p.nextToken() // consume ))
 			exp.Command = cmd
+			p.consumedParenTerminator = true
 			return exp
 		}
 
@@ -1023,6 +1024,7 @@ func (p *Parser) parseDollarParenExpression() ast.Expression {
 			return nil
 		}
 		exp.Command = cmd
+		p.consumedParenTerminator = true
 		return exp
 	}
 
