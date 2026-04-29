@@ -660,9 +660,13 @@ func (p *Parser) parseIfStatement() *ast.IfStatement {
 	// RPAREN / RBRACE join the cond terminator set so the Zsh
 	// shortcut `if (( cond )) cmd` inside `=( … )` / `( … )` /
 	// function bodies hands control back to the enclosing
-	// construct once the `then`-less form ends.
+	// construct once the `then`-less form ends. Fi / DONE / ESAC /
+	// ELSE / ELIF cover the case where the shortcut sits inside an
+	// outer if/loop/case body — without them parseBlockStatement
+	// would absorb the outer construct's terminator into the cond.
 	stmt.Condition = p.parseBlockStatement(token.THEN, token.LBRACE,
-		token.RPAREN, token.RBRACE)
+		token.RPAREN, token.RBRACE,
+		token.Fi, token.DONE, token.ESAC, token.ELSE, token.ELIF)
 
 	// Zsh short form `if cond { body } [elif cond { body }]…
 	// [else { body }]` uses brace blocks instead of `then … fi`.
@@ -736,15 +740,18 @@ func (p *Parser) parseIfStatement() *ast.IfStatement {
 }
 
 // tryDegradeNoThenShortcut handles the Zsh `if (( cond )) cmd` /
-// `if [[ cond ]] cmd` shortcut. parseBlockStatement(THEN, LBRACE,
-// RPAREN, RBRACE) absorbs the trailing cmd into the cond block;
-// once cur lands on the enclosing `)` / `}` / EOF terminator we
-// hand control back so the surrounding construct closes cleanly.
-// Promotes the absorbed last cond statement to Consequence so the
-// AST still records the body. Returns true when the shortcut shape
-// applies.
+// `if [[ cond ]] cmd` shortcut. parseBlockStatement absorbs the
+// trailing cmd into the cond block; once cur lands on the enclosing
+// terminator (`)`, `}`, EOF, or an outer keyword like `fi`/`done`/
+// `esac`/`else`/`elif`) we hand control back so the surrounding
+// construct closes cleanly. Promotes the absorbed last cond statement
+// to Consequence so the AST still records the body. Returns true
+// when the shortcut shape applies.
 func (p *Parser) tryDegradeNoThenShortcut(stmt *ast.IfStatement) bool {
-	if !p.curTokenIs(token.RPAREN) && !p.curTokenIs(token.RBRACE) && !p.curTokenIs(token.EOF) {
+	switch p.curToken.Type {
+	case token.RPAREN, token.RBRACE, token.EOF,
+		token.Fi, token.DONE, token.ESAC, token.ELSE, token.ELIF:
+	default:
 		return false
 	}
 	if cond, ok := stmt.Condition.(*ast.BlockStatement); ok && len(cond.Statements) >= 2 {
@@ -857,6 +864,13 @@ func (p *Parser) parseBlockStatement(terminators ...token.Type) *ast.BlockStatem
 		curIsTerm := false
 		for _, t := range terminators {
 			if p.curTokenIs(t) {
+				// An RBRACE that closed a `${…}` is not the block's
+				// terminator — `cmd ${X} }` leaves curToken on the
+				// `${X}`'s `}` while the brace-block close is the
+				// next RBRACE. The lexer flags the inner one.
+				if t == token.RBRACE && p.curToken.ClosesDollarBrace {
+					break
+				}
 				curIsTerm = true
 				break
 			}

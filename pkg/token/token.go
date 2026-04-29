@@ -24,6 +24,12 @@ type Token struct {
 	// it were on the previous line — matching how Zsh collapses
 	// line-continuations into one logical command.
 	HasPrecedingContinuation bool
+	// ClosesDollarBrace is set on an RBRACE token that closes a
+	// `${ … }` parameter expansion (rather than a regular brace
+	// block). The parser uses it to distinguish `${X} }` — two
+	// RBRACE tokens whose semantics differ — when deciding whether
+	// a `}` is a block terminator.
+	ClosesDollarBrace bool
 }
 
 const (
