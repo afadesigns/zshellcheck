@@ -65,6 +65,12 @@ type Lexer struct {
 	// their `}`. Inside a `${ … }` expansion `#` is the length /
 	// pattern operator, never a comment opener.
 	dollarBraceDepth int
+
+	// precedingNewline is set by skipWhitespace when at least one
+	// physical newline was consumed before the current token. Used
+	// by atArithCommandPos so `((` after `cmd<NL>` fuses into
+	// DoubleLparen as a fresh statement head.
+	precedingNewline bool
 }
 
 func New(input string) *Lexer {
@@ -200,6 +206,13 @@ func (l *Lexer) atArithCommandPos() bool {
 		token.LDBRACKET, token.If, token.THEN, token.ELSE, token.ELIF,
 		token.DO, token.WHILE, token.FOR, token.CASE,
 		token.LET, token.RETURN:
+		return true
+	}
+	// A newline-separated `((` always opens a fresh statement, even
+	// after an IDENT / value token (e.g. `cmd<NL>(( expr ))`). The
+	// physical newline is the statement separator that the case list
+	// above covers for `;` / `&&` / `||`.
+	if l.precedingNewline {
 		return true
 	}
 	// A space-separated `((` after a value-like token is also a
@@ -1040,10 +1053,16 @@ func (l *Lexer) sliceClosedString(position int) string {
 
 func (l *Lexer) skipWhitespace() bool {
 	skipped := false
+	l.precedingNewline = false
 	for {
 		switch l.ch {
-		case ' ', '\t', '\n', '\r':
+		case ' ', '\t', '\r':
 			skipped = true
+			l.readChar()
+			continue
+		case '\n':
+			skipped = true
+			l.precedingNewline = true
 			l.readChar()
 			continue
 		case '\\':

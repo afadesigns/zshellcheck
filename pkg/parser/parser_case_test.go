@@ -195,6 +195,23 @@ func TestParseDollarArithmeticInSubshellFollowedByStmt(t *testing.T) {
 	parseSourceClean(t, src)
 }
 
+// `((` after a newline-separated previous statement must fuse into
+// DoubleLparen as a fresh arithmetic command head, even when the
+// last emitted token was an IDENT (or other non-separator). Without
+// the precedingNewline check, `cmd<NL>(( … ))` lexed as
+// `cmd<NL>( ( … ) )` and the `(((` chain inside lost a `))` pairing.
+func TestParseArithmeticCommandAfterNewline(t *testing.T) {
+	parseSourceClean(t, "echo a\n(( x = 1 ))\n")
+}
+
+func TestParseArithmeticCommandWithTripleParenAfterNewline(t *testing.T) {
+	src := "foo() {\n" +
+		"  integer pr\n" +
+		"  (( pr = a ? b : ((( g - 1 )/14 ) % 10) + 1 ))\n" +
+		"}\n"
+	parseSourceClean(t, src)
+}
+
 // Zsh shortcut: `if (( cond )) cmd` and `if [[ cond ]] cmd` omit the
 // `then`/`fi` pair. Inside `=( … )` proc-sub or `( … )` subshell,
 // parseBlockStatement(THEN, LBRACE) absorbed the trailing cmd into
