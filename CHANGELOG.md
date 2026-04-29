@@ -7,13 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.17] - 2026-04-30
+
 ### Added
-- OpenSSF Best Practices badge promoted from silver to **gold**. Project ID 12657. Self-attestation reflects 90.0% project-wide statement coverage and an unassociated significant-contributor count above the gold floor.
+- OpenSSF Best Practices badge promoted from silver to **gold**. Project ID 12657. Self-attestation reflects 95.0% project-wide statement coverage (Codecov 3-OS union) and an unassociated significant-contributor count above the gold floor.
 - `pkg/katas/` and `pkg/katas/katatests/` source layout consolidated into hundred-bucket files (`zc1000s.go`, `zc1000s_test.go`, …) so GitHub's 1,000-entry directory cap stops truncating the source view. Helpers live in `scripts/consolidate-katas-source.py` and `scripts/consolidate-katatests.py`.
-- CI gold-tier companion gates: gocyclo regression baseline (`.github/gocyclo-baseline`), SPDX + copyright header check on every tracked `.go` file, project-wide coverage floor at 90.0%, `pkg/katas/` directory-cap check, libraries.io stale-dependency surfacing.
+- CI gold-tier companion gates: gocyclo regression baseline (`.github/gocyclo-baseline`), SPDX + copyright header check on every tracked `.go` file, project-wide coverage floor at 95.0% (raised from 90.0%), `pkg/katas/` directory-cap check, libraries.io stale-dependency surfacing.
+- Coverage drive: 80+ targeted unit tests across `pkg/parser/`, `pkg/lexer/`, and `pkg/katas/` raising the Codecov 3-OS union from 94.40% to 95.05%. New sweep tests cover every `offsetLineColZCxxxx` and `byteOffsetToLineColZCxxxx` duplicate, every `Check` and `Fix` type-guard branch, and the `parseCommandPipeline` redirection loop reachable only via the `&&`/`||` chain. (#1320, #1322, #1323, #1324, #1325, #1326)
 
 ### Changed
 - `golang.org/x/sys` bumped from 0.26.0 to 0.43.0; `go` directive raised to 1.25.0; release pipeline pin updated to match.
+- `goreleaser/goreleaser-action` 7.1.0 → 7.2.1, `release-drafter/release-drafter` weekly tracking pin, `crate-ci/typos` 1.45.1 → 1.45.2. (#1318)
+- Codecov gate raised 90.0% → 95.0%; the local Linux single-OS sanity floor stays at 90.0% because the union-merge across Linux + macOS + Windows runs ~3-4 points above the single-OS measurement. (#1320)
+- `codecov.yml` badge gradient flipped: `range: 80..95` so 95% renders as the GREEN end of the gradient. The previous `range: 95..100` placed the badge at red even when the status check passed. (#1327)
+- Codecov upload step in `ci.yml` skips on dependabot PRs; the action's `fail_ci_if_error: true` was failing every dep-bump build because dependabot runs lack `secrets.CODECOV_TOKEN`. Human PRs still upload and enforce the threshold. (#1319)
 
 ### Fixed
 - Lexer: comment-skip in `tryShebangOrComment` recursed via `return l.NextToken()`, causing the named-return defer to run twice on the same token. Each `${` after a skipped comment double-incremented `dollarBraceDepth`, leaving it stuck at 1; subsequent `#` bytes were classified as `${…}` length operators rather than comment openers, so inline comments after `;;` (or any other comment mid-statement) leaked into the parser as `# IDENT` tokens. Replaced with a loop in `NextToken`; `tryShebangOrComment` now returns `(zero token, true)` when a comment was skipped. Drains 12 latent errors in `fzf-tab/lib/zsh-ls-colors/ls-colors.zsh`. (#1316)
