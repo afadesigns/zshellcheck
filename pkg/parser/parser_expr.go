@@ -463,6 +463,14 @@ func (p *Parser) parseGroupedExpression() ast.Expression {
 		p.nextToken()
 	}
 
+	// Advance past the array literal's `)` and signal the enclosing
+	// block to treat it as already-consumed. Without this, a `( arr=(
+	// "x" ); list=( "y" ) )` subshell broke at the array's `)` —
+	// parseBlockStatement saw curToken=RPAREN and ended the subshell
+	// body prematurely. Mirrors parseDollarParenExpression's flag.
+	if p.curTokenIs(token.RPAREN) {
+		p.consumedParenTerminator = true
+	}
 	return &ast.ArrayLiteral{Token: tok, Elements: elements}
 }
 

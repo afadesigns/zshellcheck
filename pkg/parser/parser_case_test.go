@@ -83,6 +83,18 @@ func TestParseCaseClauseFallThroughExecuteNext(t *testing.T) {
 	parseSourceClean(t, "case x in a) echo a;& b) echo b;; esac\n")
 }
 
+// Two array assignments inside a subshell. The first `arr=( "x" )`
+// closes its array literal on `)`; without setting
+// consumedParenTerminator, parseBlockStatement misread that `)` as
+// the subshell's terminator and the second assignment never parsed.
+func TestParseArrayAssignmentsInsideSubshell(t *testing.T) {
+	parseSourceClean(t, "( arr=( \"x\" ); list=( \"y\" ) )\n")
+}
+
+func TestParseArrayAssignmentsInsideSubshellNewlineSeparated(t *testing.T) {
+	parseSourceClean(t, "(\narr=( \"x\" )\nlist=( \"y\" )\n)\n")
+}
+
 func TestParseProcessSubstitution(t *testing.T) {
 	parseSourceClean(t, "diff <(sort a) <(sort b)\n")
 }
