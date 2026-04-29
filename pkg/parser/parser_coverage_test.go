@@ -427,3 +427,80 @@ func TestParseCaseFallThroughSemiAmp(t *testing.T) {
 func TestParseCaseFallThroughSemiPipe(t *testing.T) {
 	parseClean(t, "case $x in a) echo a;| b) echo b;; esac\n")
 }
+
+// parseCommandPipeline redirection loop after pipeline head — fires
+// when a parens / brace-group / arith head is followed by redir.
+func TestParsePipelineRedirAfterSubshell(t *testing.T) {
+	parseClean(t, "( echo hi ) > /tmp/out\n")
+}
+
+func TestParsePipelineRedirAfterArith(t *testing.T) {
+	parseClean(t, "(( x++ )) > /dev/null\n")
+}
+
+func TestParsePipelineRedirAfterBraceGroup(t *testing.T) {
+	parseClean(t, "{ echo a; } 2> /dev/null\n")
+}
+
+func TestParsePipelineRedirChain(t *testing.T) {
+	parseClean(t, "( cmd ) >> log 2>&1\n")
+}
+
+// parseSingleCommand function-definition body variants.
+func TestParseFuncDefSimpleBody(t *testing.T) {
+	parseClean(t, "myfn() echo body\n")
+}
+
+func TestParseFuncDefBraceBody(t *testing.T) {
+	parseClean(t, "myfn() { echo body; }\n")
+}
+
+func TestParseFuncDefSubshellBody(t *testing.T) {
+	parseClean(t, "myfn() ( echo body )\n")
+}
+
+// parseDollarIdent: bare DOLLAR followed by IDENT.
+func TestParseDollarSpaceIdent(t *testing.T) {
+	parseClean(t, "echo $ name\n")
+}
+
+// parsePipelineStartingWithExpression pipeline tail variants.
+func TestParsePipelineExprPipeChain(t *testing.T) {
+	parseClean(t, "$(date) | grep -v warn | head -1\n")
+}
+
+func TestParsePipelineExprAndChain(t *testing.T) {
+	parseClean(t, "$cmd && echo done\n")
+}
+
+// parseExpression bit operations in arith.
+func TestParseArithBitOr(t *testing.T) {
+	parseClean(t, "(( x = a | b ))\n")
+}
+
+func TestParseArithBitAnd(t *testing.T) {
+	parseClean(t, "(( x = a & b ))\n")
+}
+
+// parseStatement COPROC bodies.
+func TestParseCoprocPipeline(t *testing.T) {
+	parseClean(t, "coproc cat | sort\n")
+}
+
+func TestParseCoprocBlock(t *testing.T) {
+	parseClean(t, "coproc { echo a; echo b; }\n")
+}
+
+// parseDeclarationStatement flag combinations.
+func TestParseDeclTypesetExportArray(t *testing.T) {
+	parseClean(t, "typeset -gx -a items=(a b c)\n")
+}
+
+// parseGroupedExpression with select keyword body.
+func TestParseGroupedSelect(t *testing.T) {
+	parseClean(t, "( select x in a b c; do echo $x; break; done )\n")
+}
+
+func TestParseGroupedTypesetDeclaration(t *testing.T) {
+	parseClean(t, "( typeset -A m=([k]=v); echo done )\n")
+}
