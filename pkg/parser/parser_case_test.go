@@ -115,6 +115,14 @@ func TestParseDollarBraceFlagsKeywordSubject(t *testing.T) {
 	parseSourceClean(t, "echo ${(j: :)in}\n")
 }
 
+// `#` inside a `${…}` expansion is the length / pattern operator,
+// never a comment opener. The lexer's hasSpace heuristic for
+// comment-skip used to gobble the trailing `##}` of patterns like
+// `${${X## ##}%%y##}` once a space appeared inside the modifier.
+func TestParseDollarBraceHashAfterSpaceNotComment(t *testing.T) {
+	parseSourceClean(t, "H=${${X## ##}%%y##}\n")
+}
+
 // Zsh shortcut: `if (( cond )) cmd` and `if [[ cond ]] cmd` omit the
 // `then`/`fi` pair. Inside `=( … )` proc-sub or `( … )` subshell,
 // parseBlockStatement(THEN, LBRACE) absorbed the trailing cmd into

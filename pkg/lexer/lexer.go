@@ -60,6 +60,11 @@ type Lexer struct {
 	// (e.g. `_os=$_sys*~*((alt|alt))` is a glob, not arith).
 	lastEmittedType     token.Type
 	lastEmittedHadSpace bool
+
+	// dollarBraceDepth tracks how many `${` openers are still awaiting
+	// their `}`. Inside a `${ … }` expansion `#` is the length /
+	// pattern operator, never a comment opener.
+	dollarBraceDepth int
 }
 
 func New(input string) *Lexer {
@@ -118,6 +123,14 @@ func (l *Lexer) NextToken() (tok token.Token) {
 		if prevSuppress && tok.Type != token.DOLLAR_LPAREN {
 			l.suppressLparenFusion = false
 		}
+		switch tok.Type {
+		case token.DollarLbrace:
+			l.dollarBraceDepth++
+		case token.RBRACE:
+			if l.dollarBraceDepth > 0 {
+				l.dollarBraceDepth--
+			}
+		}
 		l.lastEmittedType = tok.Type
 		l.lastEmittedHadSpace = tok.HasPrecedingSpace
 	}()
@@ -154,6 +167,12 @@ func (l *Lexer) tryShebangOrComment(hasSpace bool) (token.Token, bool) {
 	// open `D` ('((') marker on the paren stack. zimfw uses
 	// `(( ! # ))` and `(( # > 0 ))` heavily.
 	if l.inArithmetic() {
+		return token.Token{}, false
+	}
+	// Inside `${…}` parameter expansion, `#` is the length / pattern
+	// operator, never a comment opener. Without this guard
+	// `${${X## ##}%%y##}` lost its trailing `##}` to skipComment.
+	if l.dollarBraceDepth > 0 {
 		return token.Token{}, false
 	}
 	if hasSpace || l.column == 1 {
