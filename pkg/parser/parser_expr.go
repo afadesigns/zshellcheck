@@ -72,11 +72,7 @@ func (p *Parser) parseExpression(precedence int) ast.Expression {
 // only mean "statement head" in command position; in pattern context
 // they are simply pattern strings.
 func isDoubleBracketLiteralKeyword(t token.Type) bool {
-	switch t {
-	case token.FUNCTION:
-		return true
-	}
-	return false
+	return t == token.FUNCTION
 }
 
 // expressionInfixShouldBreak reports whether the infix chain in
