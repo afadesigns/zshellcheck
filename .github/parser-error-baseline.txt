@@ -1,5 +1,4 @@
 # Parser-error baseline. Regenerate with scripts/parser-corpus-sweep.sh --update-baseline
 # Format: <relpath>\t<count>
-fzf/shell/key-bindings.zsh	6
 zinit/zinit-install.zsh	5
 zinit/zinit.zsh	1

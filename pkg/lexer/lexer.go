@@ -404,6 +404,16 @@ func (l *Lexer) readSemicolonLead() token.Token {
 func (l *Lexer) readOpenParen() token.Token {
 	defer func() { l.suppressLparenFusion = false }()
 	if l.peekChar() == '(' && !l.suppressLparenFusion && !l.inArithmetic() && l.atArithCommandPos() {
+		// `(((` at command position is ambiguous: `( ((` (subshell
+		// open + arith) when a space separates the inner `((` from
+		// the operand (`if ((( cond ))`), or `(( (` (arith with
+		// grouping) when no space appears (`(((x * y) + z))`).
+		// Disambiguate by peeking past the third `(`.
+		if l.peekAt(2) == '(' && l.peekAt(3) == ' ' {
+			tok := newToken(token.LPAREN, l.ch, l.line, l.column)
+			l.parenStack = append(l.parenStack, 'P')
+			return tok
+		}
 		tok := l.readFusedToken(token.DoubleLparen)
 		l.parenStack = append(l.parenStack, 'D')
 		return tok

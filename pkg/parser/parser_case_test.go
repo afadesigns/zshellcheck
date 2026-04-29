@@ -212,6 +212,19 @@ func TestParseArithmeticCommandWithTripleParenAfterNewline(t *testing.T) {
 	parseSourceClean(t, src)
 }
 
+// `(((` at command position is ambiguous. Subshell+arith form has a
+// space after the third `(`: `if ((( cond ))` = `( ((`. Arith+group
+// form glues the operand directly: `(((x + y) * z))` = `(( (`.
+// readOpenParen disambiguates by peeking past the third `(` for a
+// space.
+func TestParseTripleParenSubshellArithIfHead(t *testing.T) {
+	parseSourceClean(t, "if ((( a )) && [[ x ]]); then echo y; fi\n")
+}
+
+func TestParseTripleParenArithGrouping(t *testing.T) {
+	parseSourceClean(t, "(((x * 1000 + y) * 1000 + z >= 1003004)) && echo y\n")
+}
+
 // Zsh shortcut: `if (( cond )) cmd` and `if [[ cond ]] cmd` omit the
 // `then`/`fi` pair. Inside `=( … )` proc-sub or `( … )` subshell,
 // parseBlockStatement(THEN, LBRACE) absorbed the trailing cmd into
