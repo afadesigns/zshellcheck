@@ -71,6 +71,18 @@ func TestParseCaseClauseGlobBracketPattern(t *testing.T) {
 	parseSourceClean(t, "case x in [*?]*|*[^\\\\][*?]*) echo y;; esac\n")
 }
 
+// Zsh case-clause fall-through markers `;|` (test next) and `;&`
+// (execute next) terminate a clause body the same way `;;` does. The
+// lexer fuses them into DSEMI so the parser's case loop honours the
+// boundary.
+func TestParseCaseClauseFallThroughTestNext(t *testing.T) {
+	parseSourceClean(t, "case x in a) echo a;| b) echo b;; esac\n")
+}
+
+func TestParseCaseClauseFallThroughExecuteNext(t *testing.T) {
+	parseSourceClean(t, "case x in a) echo a;& b) echo b;; esac\n")
+}
+
 func TestParseProcessSubstitution(t *testing.T) {
 	parseSourceClean(t, "diff <(sort a) <(sort b)\n")
 }
