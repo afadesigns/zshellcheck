@@ -4,6 +4,28 @@ package katas
 
 import "testing"
 
+// TestByteOffsetToLineColHelpers exercises every byteOffsetToLineColZCxxxx
+// duplicate. Same shape as the offsetLineColZCxxxx family; covers
+// the out-of-range guard plus the newline-step branch.
+func TestByteOffsetToLineColHelpers(t *testing.T) {
+	src := []byte("a\nb\nc")
+	for _, fn := range []func([]byte, int) (int, int){
+		byteOffsetToLineColZC1012,
+		byteOffsetToLineColZC1017,
+		byteOffsetToLineColZC1055,
+	} {
+		if l, c := fn(nil, -1); l != -1 || c != -1 {
+			t.Errorf("expected (-1,-1) for negative offset, got (%d,%d)", l, c)
+		}
+		if l, c := fn(src, len(src)+1); l != -1 || c != -1 {
+			t.Errorf("expected (-1,-1) for over-range, got (%d,%d)", l, c)
+		}
+		if l, c := fn(src, 4); l != 3 || c != 1 {
+			t.Errorf("expected (3,1) at offset 4, got (%d,%d)", l, c)
+		}
+	}
+}
+
 // TestOffsetLineColHelpers exercises every offsetLineColZCxxxx duplicate
 // over the multi-line newline branch. The helpers are unexported and
 // shaped identically; this test ensures coverage reports record both
