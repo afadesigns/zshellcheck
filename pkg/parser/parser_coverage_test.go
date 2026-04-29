@@ -504,3 +504,90 @@ func TestParseGroupedSelect(t *testing.T) {
 func TestParseGroupedTypesetDeclaration(t *testing.T) {
 	parseClean(t, "( typeset -A m=([k]=v); echo done )\n")
 }
+
+// parseCommandPipeline redirection loop fires only when reached via
+// the && / || chain in parseCommandList — parseSimpleStatement
+// short-circuits the LPAREN dispatch before parsePipelineHead runs.
+// `true && ( body ) > file` routes through chainLogical → recursive
+// parseCommandPipeline → parsePipelineHead → parseGroupedExpression
+// → redir loop. This is the only path that hits lines 452-468.
+func TestParseChainRedirAfterSubshell(t *testing.T) {
+	parseClean(t, "true && ( echo hi ) > /tmp/out\n")
+}
+
+func TestParseChainRedirAfterArith(t *testing.T) {
+	parseClean(t, "true && (( x++ )) > /dev/null\n")
+}
+
+func TestParseChainRedirAfterBraceGroup(t *testing.T) {
+	parseClean(t, "true && { echo a; } 2> /dev/null\n")
+}
+
+func TestParseChainRedirAfterDoubleBracket(t *testing.T) {
+	parseClean(t, "true && [[ -f file ]] > log\n")
+}
+
+// parsePipelineStartingWithExpression chain (pipe + semicolon).
+func TestParsePipelineExprChainSemi(t *testing.T) {
+	parseClean(t, "$cmd | sort; echo done\n")
+}
+
+// parsePipelineStartingWithExpression with backtick head + and-chain.
+func TestParsePipelineBacktickAndChain(t *testing.T) {
+	parseClean(t, "`which cmd` && echo found\n")
+}
+
+// parseSingleCommand `name (` non-RPAREN-immediate path: arg between.
+func TestParseCommandNameParenArg(t *testing.T) {
+	parseClean(t, "myfn ( arg1 arg2 )\n")
+}
+
+// parseDollarIdent invalid-array-access drainer: bracket mismatch.
+func TestParseDollarIdentBracketMismatch(t *testing.T) {
+	parseClean(t, "echo $name[outer[inner]]\n")
+}
+
+// parseFunctionLiteral with redirections after fn-def `}`.
+func TestParseFunctionWithRedirAfter(t *testing.T) {
+	parseClean(t, "myfn() { echo hi; } > log\n")
+}
+
+// parseDoubleBracketExpression with nested arith inside `[[ ]]`.
+func TestParseDoubleBracketNestedArith(t *testing.T) {
+	parseClean(t, "[[ $((a+1)) -eq 2 ]]\n")
+}
+
+// parseCaseStatement with newline-separated clauses (no `;;`).
+func TestParseCaseNewlineSeparated(t *testing.T) {
+	parseClean(t, "case $x in\n  a)\n    echo a\n  ;;\n  b)\n    echo b\n  ;;\nesac\n")
+}
+
+// parseExpressionOrFunctionDefinition fn-without-body short form.
+func TestParseFunctionShortNoBody(t *testing.T) {
+	parseClean(t, "fn1() :\n")
+}
+
+// parseStatement empty-line dispatch.
+func TestParseStatementEmptyLines(t *testing.T) {
+	parseClean(t, "\n\n\n")
+}
+
+// parseDoubleBracketExpression concatenated string operand.
+func TestParseDoubleBracketConcatOperand(t *testing.T) {
+	parseClean(t, "[[ \"prefix-$var-suffix\" = pat ]]\n")
+}
+
+// parseGroupedExpression keyword `case` body inside subshell.
+func TestParseGroupedCase(t *testing.T) {
+	parseClean(t, "( case $x in a) echo a;; esac )\n")
+}
+
+// parseGroupedExpression keyword `if` body inside subshell.
+func TestParseGroupedIf(t *testing.T) {
+	parseClean(t, "( if [[ -f f ]]; then echo y; fi )\n")
+}
+
+// parseFunctionLiteral typeset declaration as function name suffix.
+func TestParseFunctionTypesetCallSite(t *testing.T) {
+	parseClean(t, "typeset -f myfn 2>/dev/null && echo defined\n")
+}
