@@ -1,7 +1,6 @@
 # Parser-error baseline. Regenerate with scripts/parser-corpus-sweep.sh --update-baseline
 # Format: <relpath>\t<count>
 fzf/shell/key-bindings.zsh	6
-fzf-tab/test/ztst.zsh	1
 zimfw/zimfw.zsh	2
 zinit/share/git-process-output.zsh	2
 zinit/zinit-install.zsh	5
