@@ -175,6 +175,11 @@ jobs:
           chmod +x tests/integration_test.zsh
           ./tests/integration_test.zsh
       - name: Upload coverage to Codecov
+        # Dependabot PRs run with restricted secrets, so CODECOV_TOKEN is
+        # not exposed and the upload fails the build. Skip the upload for
+        # those runs; the gate still fires on every human-authored PR
+        # because secrets are available there.
+        if: github.actor != 'dependabot[bot]'
         uses: codecov/codecov-action@57e3a136b779b570ffcdbf80b3bdc90e7fab3de2 # v6.0.0
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
