@@ -564,10 +564,13 @@ func (p *Parser) consumePreflags() {
 }
 
 // subjectIsEmpty reports whether the upcoming token starts a modifier
-// tail directly (no parameter name).
+// tail directly (no parameter name) or closes the `${ … }` immediately.
+// RBRACE covers `${#}` — the `#` is the special parameter (count of
+// positional args), not a length operator over a missing subject.
 func (p *Parser) subjectIsEmpty() bool {
 	return p.peekTokenIs(token.COLON) || p.peekTokenIs(token.HASH) ||
-		p.peekTokenIs(token.PERCENT) || p.peekTokenIs(token.SLASH)
+		p.peekTokenIs(token.PERCENT) || p.peekTokenIs(token.SLASH) ||
+		p.peekTokenIs(token.RBRACE)
 }
 
 // parseArrayAccessSubject parses the parameter-name subject and

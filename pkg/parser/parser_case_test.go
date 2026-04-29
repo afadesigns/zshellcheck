@@ -95,6 +95,14 @@ func TestParseArrayAssignmentsInsideSubshellNewlineSeparated(t *testing.T) {
 	parseSourceClean(t, "(\narr=( \"x\" )\nlist=( \"y\" )\n)\n")
 }
 
+// `${#}` is the special parameter "count of positional args", not a
+// length operator over a missing subject. Without RBRACE in the
+// subjectIsEmpty set, parseArrayAccess advanced past `#` looking for
+// a subject and erroring on the closing `}`.
+func TestParseDollarBraceHashSpecialParameter(t *testing.T) {
+	parseSourceClean(t, "[[ ${#} = 1 ]]\n")
+}
+
 func TestParseProcessSubstitution(t *testing.T) {
 	parseSourceClean(t, "diff <(sort a) <(sort b)\n")
 }
