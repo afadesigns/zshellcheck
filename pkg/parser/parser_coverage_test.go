@@ -185,3 +185,119 @@ func TestParseSubshellPipe(t *testing.T) {
 func TestParseSubshellAnonymousFn(t *testing.T) {
 	parseClean(t, "() { echo anon; }\n")
 }
+
+// parseDoubleParenExpression prefix path: `((…))` in expression slot.
+func TestParseDoubleParenExpressionInLet(t *testing.T) {
+	parseClean(t, "let x=(( 1 + 2 ))\n")
+}
+
+func TestParseDoubleParenExpressionRadix(t *testing.T) {
+	parseClean(t, "(([#16] 0xff))\n")
+}
+
+func TestParseDoubleParenExpressionInChain(t *testing.T) {
+	parseClean(t, "true && (( x++ ))\n")
+}
+
+// parseRedirection infix paths (`>>`, `<<<`, `>&`, `<&`).
+func TestParseRedirectionAppendArg(t *testing.T)     { parseClean(t, "echo a >> file\n") }
+func TestParseRedirectionHerestringArg(t *testing.T) { parseClean(t, "cat <<< 'inline'\n") }
+func TestParseRedirectionFdMerge(t *testing.T)       { parseClean(t, "cmd 2>&1\n") }
+func TestParseRedirectionFdInputDup(t *testing.T)    { parseClean(t, "exec 3<&0\n") }
+func TestParseRedirectionChain(t *testing.T) {
+	parseClean(t, "cmd >> out.log 2>&1\n")
+}
+
+// parseKeywordAsCommand: `return` as expression in a logical chain.
+func TestParseReturnAsExprInChain(t *testing.T) {
+	parseClean(t, "cond || return 1\n")
+}
+
+func TestParseReturnAsExprBare(t *testing.T) {
+	parseClean(t, "func() { check || return; }\n")
+}
+
+func TestParseReturnAsExprMultiArg(t *testing.T) {
+	parseClean(t, "guard && return 0\n")
+}
+
+// parseDollarIdent invalid-array-access path: `$name[idx]`.
+func TestParseDollarIdentSubscript(t *testing.T) {
+	parseClean(t, "echo $arr[1]\n")
+}
+
+func TestParseDollarIdentNestedSubscript(t *testing.T) {
+	parseClean(t, "echo $arr[$idx]\n")
+}
+
+// finalizeInvalidArrayAccess drain path: subscript with a deeper
+// bracket mismatch that the drainer must walk past.
+func TestParseDollarIdentSubscriptDeep(t *testing.T) {
+	parseClean(t, "echo $arr[$nested[2]]\n")
+}
+
+// drainSubscriptBody used by `${var[idx]}` modifier-tail walk.
+func TestParseDollarBraceSubscriptModifier(t *testing.T) {
+	parseClean(t, "echo ${arr[1]:-default}\n")
+}
+
+func TestParseDollarBraceSubscriptComplex(t *testing.T) {
+	parseClean(t, "echo ${arr[$i+1]##prefix}\n")
+}
+
+// parseSingleCommand: trailing-redirection + arg-prefix variants.
+func TestParseSingleCommandRedirToFD(t *testing.T) {
+	parseClean(t, "cmd 1>&2\n")
+}
+
+func TestParseSingleCommandWithEnvPrefix(t *testing.T) {
+	parseClean(t, "FOO=bar BAR=baz cmd arg\n")
+}
+
+func TestParseSingleCommandLeadingNewlines(t *testing.T) {
+	parseClean(t, "\n\n\necho a\n")
+}
+
+// parsePipelineStartingWithExpression: head is `${…}` / `$(…)` /
+// VARIABLE / BACKTICK.
+func TestParsePipelineHeadFromBacktick(t *testing.T) {
+	parseClean(t, "`echo cmd` arg | wc\n")
+}
+
+func TestParsePipelineHeadFromVariable(t *testing.T) {
+	parseClean(t, "$prog arg1 arg2\n")
+}
+
+// peekStartsCommand variants (used by `! cmd`).
+func TestParseBangBeforeBracket(t *testing.T) {
+	parseClean(t, "! [[ -f file ]]\n")
+}
+
+func TestParseBangBeforeArith(t *testing.T) {
+	parseClean(t, "! (( x > 0 ))\n")
+}
+
+// parseArithmeticSubscript: `arr[expr]` with non-trivial expr.
+func TestParseArithmeticSubscriptArith(t *testing.T) {
+	parseClean(t, "echo ${arr[i+1]}\n")
+}
+
+// parseProcessSubstitution: `>(…)` write side and nested forms.
+func TestParseProcessSubstWrite(t *testing.T) {
+	parseClean(t, "tee >(grep err) >(gzip > out.gz)\n")
+}
+
+// parseFlaggedSubscript: `${(flag)arr[idx]}`.
+func TestParseFlaggedSubscriptKeyArr(t *testing.T) {
+	parseClean(t, "echo ${(k)assoc}\n")
+}
+
+// parseGroupedExpression keyword-headed bodies (for/while/if inside
+// subshell).
+func TestParseGroupedKeywordFor(t *testing.T) {
+	parseClean(t, "( for f in *.txt; do echo $f; done )\n")
+}
+
+func TestParseGroupedKeywordWhile(t *testing.T) {
+	parseClean(t, "( while read l; do echo $l; done )\n")
+}

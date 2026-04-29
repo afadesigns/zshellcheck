@@ -146,16 +146,23 @@ jobs:
         run: |
           COVERPKGS=$(go list ./... | grep -v -E '(cmd/zshellcheck|pkg/version|pkg/testutil|/tests$|katatests)' | tr '\n' ',' | sed 's/,$//')
           go test -v -coverprofile=coverage.txt -covermode=atomic -coverpkg="$COVERPKGS" ./...
-      - name: Project-wide coverage gate (≥ 90.0% gold-tier floor)
+      - name: Project-wide coverage gate (Linux single-OS sanity floor)
+        # The canonical floor is Codecov's union-merge across Linux +
+        # macOS + Windows at ≥ 95.0% (see codecov.yml). This local gate
+        # is a single-OS sanity check that runs ~3-4 points below the
+        # union; it catches regressions before the public Codecov check
+        # fires. Local floor: 90.0% — drop below means the union will
+        # almost certainly miss the 95.0% label-green threshold.
         if: runner.os == 'Linux'
         shell: bash
         run: |
           go clean -testcache
           go test -count=1 -coverpkg=./... -coverprofile=cov-total.out ./... > /dev/null 2>&1
           total=$(go tool cover -func=cov-total.out | tail -1 | awk '{print $NF}' | tr -d '%')
-          echo "project-wide statement coverage: ${total}%"
+          echo "project-wide statement coverage (Linux single-OS): ${total}%"
+          echo "canonical floor (Codecov 3-OS union): 95.0%"
           awk -v t="$total" 'BEGIN { exit (t >= 90.0) ? 0 : 1 }' || {
-            echo "::error::Project-wide coverage ${total}% dropped below the gold-tier floor (90.0%)"; exit 1;
+            echo "::error::Linux single-OS coverage ${total}% dropped below sanity floor (90.0%); Codecov 3-OS union will likely miss the 95.0% label-green threshold"; exit 1;
           }
       - name: Verify go.mod is tidy
         run: |
