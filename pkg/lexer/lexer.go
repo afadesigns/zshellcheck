@@ -358,6 +358,13 @@ func (l *Lexer) readSemicolonLead() token.Token {
 	if l.peekChar() == ';' {
 		return l.readFusedToken(token.DSEMI)
 	}
+	// Zsh case-clause fall-through markers `;|` and `;&` terminate
+	// the clause body just like `;;`. Fuse them into DSEMI so the
+	// parser's case loop honours the boundary; the literal preserves
+	// the source spelling for katas that walk it.
+	if l.peekChar() == '|' || l.peekChar() == '&' {
+		return l.readFusedToken(token.DSEMI)
+	}
 	return newToken(token.SEMICOLON, l.ch, l.line, l.column)
 }
 
