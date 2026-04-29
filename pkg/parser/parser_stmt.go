@@ -1482,6 +1482,11 @@ func (p *Parser) parseDeclarationValue() ast.Expression {
 		}
 	arrDone:
 		val += " )"
+		// Signal the enclosing block that the `)` we ended on closed
+		// the declaration's own array literal, not the surrounding
+		// subshell — matches the consumedParenTerminator path used by
+		// parseGroupedExpression's array branch.
+		p.consumedParenTerminator = true
 		// Leave curToken on the closing `)` rather than advancing
 		// past it. The caller's declaration loop checks
 		// `curToken.Line == startLine`; if we step past `)` onto
