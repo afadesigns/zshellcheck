@@ -500,7 +500,7 @@ var commandWordLiteralTokens = map[token.Type]struct{}{
 	token.ASTERISK: {}, token.QUESTION: {}, token.PLUS: {},
 	token.MINUS: {}, token.CARET: {}, token.TILDE: {}, token.DOT: {},
 	token.GT: {}, token.LT: {}, token.AMPERSAND: {},
-	token.LBRACKET: {}, token.RBRACKET: {},
+	token.LBRACKET: {}, token.RBRACKET: {}, token.HASH: {},
 	token.COMMA: {}, token.COLON: {}, token.GTGT: {}, token.LTLT: {},
 	token.GTAMP: {}, token.LTAMP: {},
 	token.DEC: {}, token.INC: {},
@@ -556,6 +556,14 @@ func (p *Parser) commandWordContinues(braceDepth int) bool {
 	if p.peekToken.HasPrecedingSpace || !p.peekOnSameLogicalLine() {
 		return false
 	}
+	// Zsh glob qualifiers `#` / `##` attach to the preceding pattern
+	// character (`]`, `*`, `?`, `+`, `)`, an IDENT) without a space,
+	// e.g. `[[:space:]]##` or `(a|b)#`. Without this exception
+	// isCommandDelimiter would split the word at the HASH because
+	// HASH starts a comment in command position.
+	if p.peekTokenIs(token.HASH) && p.curIsGlobQualifierLeft() {
+		return true
+	}
 	if braceDepth == 0 && p.isCommandDelimiter(p.peekToken) {
 		return false
 	}
@@ -563,6 +571,19 @@ func (p *Parser) commandWordContinues(braceDepth int) bool {
 		return false
 	}
 	return true
+}
+
+// curIsGlobQualifierLeft reports whether curToken is a token type that
+// can carry a trailing `#` / `##` glob-qualifier without a space.
+// HASH itself is included so the second `#` of a `##` doubled
+// qualifier glues onto the first.
+func (p *Parser) curIsGlobQualifierLeft() bool {
+	switch p.curToken.Type {
+	case token.RBRACKET, token.RPAREN, token.ASTERISK, token.QUESTION,
+		token.PLUS, token.IDENT, token.STRING, token.HASH:
+		return true
+	}
+	return false
 }
 
 func updateCommandWordBraceDepth(depth int, t token.Type) int {

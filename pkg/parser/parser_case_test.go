@@ -123,6 +123,22 @@ func TestParseDollarBraceHashAfterSpaceNotComment(t *testing.T) {
 	parseSourceClean(t, "H=${${X## ##}%%y##}\n")
 }
 
+// Zsh glob qualifiers `#` / `##` attach to the preceding pattern
+// character without a space. Inside a case label, `[[:space:]]##`
+// and friends used to split at the HASH because parseCommandWord
+// treated it as a command delimiter.
+func TestParseCaseClauseGlobHashQualifier(t *testing.T) {
+	parseSourceClean(t, "case x in a##) echo y;; esac\n")
+}
+
+func TestParseCaseClauseGlobHashOnPosixClass(t *testing.T) {
+	parseSourceClean(t, "case x in [[:space:]]##[^[:space:]]*) echo y;; esac\n")
+}
+
+func TestParseCaseClauseGlobHashChainPosixClass(t *testing.T) {
+	parseSourceClean(t, "case x in a##[[:alpha:]]) echo y;; esac\n")
+}
+
 // Zsh shortcut: `if (( cond )) cmd` and `if [[ cond ]] cmd` omit the
 // `then`/`fi` pair. Inside `=( … )` proc-sub or `( … )` subshell,
 // parseBlockStatement(THEN, LBRACE) absorbed the trailing cmd into
