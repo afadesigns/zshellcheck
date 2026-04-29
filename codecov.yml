@@ -19,7 +19,13 @@ codecov:
 coverage:
   precision: 2
   round: down
-  range: 95..100                 # gold-tier label-green floor — anything below renders yellow/red
+  # range = badge-colour gradient. RED at the bottom, GREEN at the top.
+  # 80 = below the project-wide floor by a wide margin (red).
+  # 95 = at the floor, badge renders solid GREEN.
+  # The floor itself is enforced by `status.project.target` below; the
+  # range value is purely cosmetic but MUST keep the floor at the GREEN
+  # end so the badge does not render red while the status check passes.
+  range: 80..95
 
   status:
     project:
