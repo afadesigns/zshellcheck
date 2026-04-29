@@ -517,6 +517,13 @@ func (l *Lexer) readPipeLead() token.Token {
 	if l.peekChar() == '|' {
 		return l.readFusedToken(token.OR)
 	}
+	// Zsh `|&` is the stderr-pipe shorthand (`2>&1 |`). Fuse to a
+	// PIPE token so the parser routes through the pipeline path; the
+	// literal preserves the source spelling for katas that need it.
+	if l.peekChar() == '&' {
+		tok := l.readFusedToken(token.PIPE)
+		return tok
+	}
 	return newToken(token.PIPE, l.ch, l.line, l.column)
 }
 
@@ -1025,9 +1032,46 @@ func (l *Lexer) readStringFlavour(quote byte, honourEscapes bool) string {
 		if l.absorbDollarBraceOpen(honourEscapes, &braceDepth) {
 			continue
 		}
+		if honourEscapes && l.absorbEmbeddedDollarParen() {
+			continue
+		}
 		l.trackBraceDepth(&braceDepth)
 	}
 	return l.sliceClosedString(position)
+}
+
+// absorbEmbeddedDollarParen handles `$(…)` command substitution
+// inside a double-quoted string body. Walks past the matching `)`
+// while honouring nested `'…'` single-quoted runs so a `"` inside a
+// single-quoted regex (`'[^"]+' `) doesn't close the outer
+// double-quoted string.
+func (l *Lexer) absorbEmbeddedDollarParen() bool {
+	if l.ch != '$' || l.peekChar() != '(' {
+		return false
+	}
+	l.readChar() // onto `(`
+	depth := 1
+	for depth > 0 {
+		l.readChar()
+		switch l.ch {
+		case 0:
+			return true
+		case '\\':
+			l.readChar()
+		case '\'':
+			for l.ch != 0 {
+				l.readChar()
+				if l.ch == '\'' {
+					break
+				}
+			}
+		case '(':
+			depth++
+		case ')':
+			depth--
+		}
+	}
+	return true
 }
 
 func (l *Lexer) absorbStringEscape(honourEscapes bool) bool {
