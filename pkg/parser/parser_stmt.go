@@ -701,6 +701,13 @@ func (p *Parser) parseIfStatement() *ast.IfStatement {
 	if p.curTokenIs(token.LBRACE) {
 		p.nextToken() // into body
 		stmt.Consequence = p.parseBlockStatement(token.RBRACE)
+		// Clear the consumedBraceTerminator flag potentially left set
+		// by an inner brace-form `if`/`for`/`while` that closed its
+		// own `}`. Without this, parseBraceFormElifChain's inner
+		// parseBlockStatement(LBRACE) inherits the flag and skips
+		// nextToken on the elif's `(( cond ))` close, dropping into
+		// an expression-position parse on `))`.
+		p.consumedBraceTerminator = false
 		if alt := p.parseBraceFormElifChain(); alt != nil {
 			stmt.Alternative = alt
 		}

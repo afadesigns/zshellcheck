@@ -242,6 +242,42 @@ func TestParseProcessSubstitutionOutsideDoubleBracket(t *testing.T) {
 	parseSourceClean(t, "diff <(echo a) <(echo b)\n")
 }
 
+// `"$(... '...[^"]+...')"` — single-quoted regex containing `"`
+// inside `$(…)` inside `"…"`. Lexer's string scanner used to stop
+// at the inner `"` and orphan the trailing tokens. The embedded
+// `$(…)` walker honours nested `'…'` runs.
+func TestParseEmbeddedDollarParenWithQuotedRegex(t *testing.T) {
+	parseSourceClean(t, "X=\"$(grep 'a'$U'b/c[^\"]\\+')\"\n")
+}
+
+// Brace-form `if (( a )) { if (( b )) { … } } elif (( c )) { … }`.
+// The inner brace-form `if`'s consumedBraceTerminator flag used to
+// leak into parseBraceFormElifChain's cond-block parse and dropped
+// the elif's `(( cond ))` close into expression position.
+func TestParseBraceFormIfElifWithNestedBraceFormIf(t *testing.T) {
+	src := "if (( a )) {\n" +
+		"  if (( b )) {\n" +
+		"    cmd\n" +
+		"  }\n" +
+		"} elif (( c )) {\n" +
+		"  cmd2\n" +
+		"}\n"
+	parseSourceClean(t, src)
+}
+
+// `(( move | move2 ))` — `|` is bitwise OR inside arithmetic, not a
+// pipeline. peekPrecedence/curPrecedence promote PIPE to LOGICAL
+// when inArithmetic; PIPE infix routes through parseInfixExpression.
+func TestParseArithmeticBitwiseOr(t *testing.T) {
+	parseSourceClean(t, "(( move | move2 ))\n")
+}
+
+// Zsh `|&` is the stderr-pipe shorthand. Lexer fuses `|&` into a
+// single PIPE token so the parser routes through pipeline parsing.
+func TestParsePipeAmpStderrPipe(t *testing.T) {
+	parseSourceClean(t, "cmd1 |& cmd2\n")
+}
+
 // Zsh shortcut: `if (( cond )) cmd` and `if [[ cond ]] cmd` omit the
 // `then`/`fi` pair. Inside `=( … )` proc-sub or `( … )` subshell,
 // parseBlockStatement(THEN, LBRACE) absorbed the trailing cmd into
