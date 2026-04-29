@@ -103,6 +103,18 @@ func TestParseDollarBraceHashSpecialParameter(t *testing.T) {
 	parseSourceClean(t, "[[ ${#} = 1 ]]\n")
 }
 
+// Zsh keywords double as variable names in `${…}` subject position.
+// `${(flags)in}` and `${for}` previously errored on the keyword token
+// because parseArrayAccessSubject's fallthrough hit
+// noPrefixParseFnError on IN / FOR.
+func TestParseDollarBraceKeywordSubject(t *testing.T) {
+	parseSourceClean(t, "echo ${in} ${for} ${while}\n")
+}
+
+func TestParseDollarBraceFlagsKeywordSubject(t *testing.T) {
+	parseSourceClean(t, "echo ${(j: :)in}\n")
+}
+
 func TestParseProcessSubstitution(t *testing.T) {
 	parseSourceClean(t, "diff <(sort a) <(sort b)\n")
 }

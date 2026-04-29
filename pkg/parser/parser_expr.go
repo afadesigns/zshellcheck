@@ -584,6 +584,13 @@ func (p *Parser) parseArrayAccessSubject() (ast.Expression, ast.Expression) {
 		return p.parseArrayAccessIdent()
 	case p.subjectIsSpecialName():
 		return &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}, nil
+	case isSubjectKeyword(p.curToken.Type):
+		// Zsh keywords (`in`, `for`, `while`, …) double as ordinary
+		// variable names when they appear as the subject of a `${…}`
+		// expansion. The lexer always emits them as keyword tokens;
+		// degrade to a literal identifier here so `${(flags)in}` and
+		// kin parse as a parameter name.
+		return &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}, nil
 	case p.curTokenIs(token.DollarLbrace):
 		// Nested `${INNER}` subject. Call parseArrayAccess directly
 		// rather than going through parseExpression so the infix loop
@@ -609,6 +616,21 @@ func (p *Parser) parseArrayAccessIdent() (ast.Expression, ast.Expression) {
 		return id, nil
 	}
 	return idx.Left, idx.Index
+}
+
+// isSubjectKeyword reports whether a Zsh keyword token is being used
+// as a parameter name in a `${…}` subject slot. Reserved words live
+// in the same namespace as ordinary variables when they appear in
+// expansion subjects (`${(flags)in}`, `${for}`, `${while}`).
+func isSubjectKeyword(t token.Type) bool {
+	switch t {
+	case token.IN, token.FOR, token.WHILE, token.If, token.CASE,
+		token.SELECT, token.COPROC, token.FUNCTION, token.LET, token.RETURN,
+		token.DO, token.DONE, token.ESAC, token.THEN, token.ELSE,
+		token.ELIF, token.Fi, token.TYPESET, token.DECLARE:
+		return true
+	}
+	return false
 }
 
 func (p *Parser) subjectIsSpecialName() bool {
