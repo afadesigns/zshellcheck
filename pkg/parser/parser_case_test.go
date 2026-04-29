@@ -44,6 +44,33 @@ func TestParseDoubleBracketRegex(t *testing.T) {
 	parseSourceClean(t, "[[ $x =~ ^[a-z]+$ ]]\n")
 }
 
+// Inside `[[ … ]]`, a leading `[` opens a glob bracket-class
+// fragment, not the `[` test-builtin or an array subscript. The
+// default LBRACKET prefix used to gobble through the closing `]]`.
+func TestParseDoubleBracketGlobBracketClass(t *testing.T) {
+	parseSourceClean(t, "[[ $x = [abc]* ]]\n")
+}
+
+func TestParseDoubleBracketPosixClass(t *testing.T) {
+	parseSourceClean(t, "[[ $x = [[:alnum:]]## ]]\n")
+}
+
+func TestParseDoubleBracketNegatedPosixClass(t *testing.T) {
+	parseSourceClean(t, "[[ $x = [[:blank:]]##[^[:blank:]]* ]]\n")
+}
+
+func TestParseDoubleBracketPosixClassWithCharLiteral(t *testing.T) {
+	parseSourceClean(t, "[[ $x = ([[:alpha:]_][[:alnum:]_]#) ]]\n")
+}
+
+// Case-clause patterns can carry `[…]` glob bracket-class fragments.
+// The default RBRACKET prefix used to invite an INDEX infix, so the
+// inner `]` of `[*?]` recursed into a phantom array subscript and
+// the outer `)` of the case label became orphaned.
+func TestParseCaseClauseGlobBracketPattern(t *testing.T) {
+	parseSourceClean(t, "case x in [*?]*|*[^\\\\][*?]*) echo y;; esac\n")
+}
+
 func TestParseProcessSubstitution(t *testing.T) {
 	parseSourceClean(t, "diff <(sort a) <(sort b)\n")
 }

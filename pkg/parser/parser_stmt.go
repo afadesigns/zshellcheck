@@ -499,7 +499,8 @@ func (p *Parser) parseSingleCommand() ast.Expression {
 var commandWordLiteralTokens = map[token.Type]struct{}{
 	token.ASTERISK: {}, token.QUESTION: {}, token.PLUS: {},
 	token.MINUS: {}, token.CARET: {}, token.TILDE: {}, token.DOT: {},
-	token.GT: {}, token.LT: {}, token.AMPERSAND: {}, token.LBRACKET: {},
+	token.GT: {}, token.LT: {}, token.AMPERSAND: {},
+	token.LBRACKET: {}, token.RBRACKET: {},
 	token.COMMA: {}, token.COLON: {}, token.GTGT: {}, token.LTLT: {},
 	token.GTAMP: {}, token.LTAMP: {},
 	token.DEC: {}, token.INC: {},

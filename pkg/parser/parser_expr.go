@@ -42,6 +42,15 @@ func (p *Parser) parseExpression(precedence int) ast.Expression {
 		tok := p.curToken
 		return &ast.Identifier{Token: tok, Value: tok.Literal}
 	}
+	// Inside `[[ … ]]`, a leading `[` opens a glob bracket-class
+	// fragment (`[abc]`, `[[:alnum:]]`, `[^[:blank:]]`), not the `[`
+	// test-builtin or an array subscript. The default LBRACKET prefix
+	// (parseSingleCommand) gobbles every glued token until a command
+	// delimiter and walks past the closing `]]`. Consume the bracket
+	// body as a literal pattern fragment instead.
+	if p.inDoubleBracket && p.curTokenIs(token.LBRACKET) {
+		return p.parseDoubleBracketGlobBracket()
+	}
 	prefix := p.prefixParseFns[p.curToken.Type]
 	if prefix == nil {
 		if p.inDoubleBracket {
@@ -271,6 +280,39 @@ func (p *Parser) parsePrefixExpression() ast.Expression {
 
 func (p *Parser) parsePostfixExpression(left ast.Expression) ast.Expression {
 	return &ast.PostfixExpression{Token: p.curToken, Left: left, Operator: p.curToken.Literal}
+}
+
+// parseDoubleBracketGlobBracket consumes a balanced `[ … ]` glob
+// bracket-class while inside `[[ … ]]`. POSIX classes (`[:alnum:]`)
+// nest a leading `[` that does NOT increment depth; their closing
+// `]` does NOT decrement the outer depth. Returns an Identifier
+// carrying the literal text and leaves curToken on the matching
+// outer `]`.
+func (p *Parser) parseDoubleBracketGlobBracket() ast.Expression {
+	startTok := p.curToken
+	literal := p.curToken.Literal
+	depth := 1
+	for depth > 0 && !p.peekTokenIs(token.EOF) && !p.peekTokenIs(token.RDBRACKET) {
+		p.nextToken()
+		literal += p.curToken.Literal
+		switch {
+		case p.curTokenIs(token.LBRACKET) && p.peekTokenIs(token.COLON):
+			// POSIX class `[:name:]`: drain `:`, IDENT, `]` without
+			// touching outer depth.
+			for !p.peekTokenIs(token.EOF) && !p.peekTokenIs(token.RDBRACKET) {
+				p.nextToken()
+				literal += p.curToken.Literal
+				if p.curTokenIs(token.RBRACKET) {
+					break
+				}
+			}
+		case p.curTokenIs(token.LBRACKET):
+			depth++
+		case p.curTokenIs(token.RBRACKET):
+			depth--
+		}
+	}
+	return &ast.Identifier{Token: startTok, Value: literal}
 }
 
 func (p *Parser) parseDoubleBracketExpression() ast.Expression {
