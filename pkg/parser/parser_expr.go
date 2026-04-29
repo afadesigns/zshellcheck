@@ -769,7 +769,34 @@ func (p *Parser) finalizeInvalidArrayAccess(exp *ast.InvalidArrayAccess) ast.Exp
 	return exp
 }
 
+// peekIsFunctionDefinitionContinuation reports whether the token
+// after `function` shapes a Zsh function definition: a name token, a
+// `${…}`-spliced name, a leading `-` for dashed names, an opening
+// `(` for `function name()` form, or `{` for `function { body }`.
+// Used to guard parseFunctionLiteral so a stray `function` keyword
+// in expression position (assignment RHS, case label) degrades to a
+// literal identifier instead of erroring on the missing brace body.
+func (p *Parser) peekIsFunctionDefinitionContinuation() bool {
+	switch p.peekToken.Type {
+	case token.IDENT, token.STRING, token.VARIABLE,
+		token.DollarLbrace, token.MINUS, token.LPAREN, token.LBRACE:
+		return true
+	}
+	return false
+}
+
 func (p *Parser) parseFunctionLiteral() ast.Expression {
+	// `function` only opens a Zsh function definition when followed
+	// by a name token, a `${…}`-spliced name, a leading `-` (dashed
+	// name), or directly by `(` or `{`. Anywhere else — e.g. as the
+	// RHS of an assignment (`REPLY=function`) or as a case-label
+	// pattern — it is a literal identifier. Without this guard the
+	// expectPeek(LBRACE) below errored on the next statement's
+	// keyword (`expected next token to be {, got ELIF instead`).
+	if !p.peekIsFunctionDefinitionContinuation() {
+		tok := p.curToken
+		return &ast.Identifier{Token: tok, Value: tok.Literal}
+	}
 	lit := &ast.FunctionLiteral{Token: p.curToken}
 	if p.peekTokenIs(token.DollarLbrace) {
 		nameTok := p.peekToken
