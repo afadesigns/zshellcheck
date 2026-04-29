@@ -328,7 +328,7 @@ func (p *Parser) parseExpressionOrFunctionDefinition() ast.Statement {
 // Detection katas that walk the statement type still see the original
 // node when traversing the wrapper.
 func keywordStmtToExpression(stmt ast.Statement) ast.Expression {
-	if stmt == nil {
+	if stmt == nil || isTypedNilStatement(stmt) {
 		return nil
 	}
 	if es, ok := stmt.(*ast.ExpressionStatement); ok {
@@ -338,6 +338,29 @@ func keywordStmtToExpression(stmt ast.Statement) ast.Expression {
 	// The Token preserves the head keyword for kata-side walks of
 	// containing CallExpression / DollarParenExpression bodies.
 	return &ast.Identifier{Token: stmt.TokenLiteralNode(), Value: stmt.TokenLiteral()}
+}
+
+// isTypedNilStatement reports whether stmt is an interface holding a
+// typed-nil concrete pointer. Recovery-path returns from sub-parsers
+// (`return (*ast.ForLoopStatement)(nil)` style) wrap a nil receiver in
+// a non-nil interface; calling a method on that receiver dereferences
+// nil. Catch the case here so pipeline-head wrapping degrades to nil.
+func isTypedNilStatement(stmt ast.Statement) bool {
+	switch s := stmt.(type) {
+	case *ast.ExpressionStatement:
+		return s == nil
+	case *ast.IfStatement:
+		return s == nil
+	case *ast.ForLoopStatement:
+		return s == nil
+	case *ast.CaseStatement:
+		return s == nil
+	case *ast.SelectStatement:
+		return s == nil
+	case *ast.BlockStatement:
+		return s == nil
+	}
+	return false
 }
 
 // consumePipelineTail drains trailing `| cmd` / `&& cmd` / `|| cmd`
