@@ -28,28 +28,8 @@ func (p *Parser) parseExpression(precedence int) ast.Expression {
 	if _, hit := expressionTerminators[p.curToken.Type]; hit {
 		return nil
 	}
-	// Inside `[[ … ]]` a `((` is glob alternation grouping (not
-	// arithmetic). Decompose the fused DoubleLparen into a LPAREN so
-	// parseGroupedExpression's glob-alt path handles it.
-	if p.inDoubleBracket && p.curTokenIs(token.DoubleLparen) {
-		p.curToken.Type = token.LPAREN
-		p.curToken.Literal = "("
-	}
-	// Inside `${…[KEY]}` subscripts and `[[ … ]]` tests, Zsh keywords
-	// are literal pattern words, not statement-block openers. Return
-	// an Identifier so the surrounding parse keeps moving.
-	if (p.inDoubleBracket || p.inArithmetic) && isDoubleBracketLiteralKeyword(p.curToken.Type) {
-		tok := p.curToken
-		return &ast.Identifier{Token: tok, Value: tok.Literal}
-	}
-	// Inside `[[ … ]]`, a leading `[` opens a glob bracket-class
-	// fragment (`[abc]`, `[[:alnum:]]`, `[^[:blank:]]`), not the `[`
-	// test-builtin or an array subscript. The default LBRACKET prefix
-	// (parseSingleCommand) gobbles every glued token until a command
-	// delimiter and walks past the closing `]]`. Consume the bracket
-	// body as a literal pattern fragment instead.
-	if p.inDoubleBracket && p.curTokenIs(token.LBRACKET) {
-		return p.parseDoubleBracketGlobBracket()
+	if early, ok := p.tryEarlyContextualReturn(); ok {
+		return early
 	}
 	prefix := p.prefixParseFns[p.curToken.Type]
 	if prefix == nil {
@@ -75,6 +55,30 @@ func (p *Parser) parseExpression(precedence int) ast.Expression {
 	return leftExp
 }
 
+// tryEarlyContextualReturn handles the context-specific token
+// reinterpretations that fire before the regular prefix dispatch:
+// DoubleLparen→LPAREN inside `[[…]]`, keywords-as-literal-pattern,
+// `[…]` glob bracket-class walker, and `?` as `$?` in arithmetic.
+func (p *Parser) tryEarlyContextualReturn() (ast.Expression, bool) {
+	// Inside `[[ … ]]` a `((` is glob alternation grouping; rewrite
+	// to LPAREN so parseGroupedExpression's glob-alt path handles it.
+	if p.inDoubleBracket && p.curTokenIs(token.DoubleLparen) {
+		p.curToken.Type = token.LPAREN
+		p.curToken.Literal = "("
+	}
+	if (p.inDoubleBracket || p.inArithmetic) && isDoubleBracketLiteralKeyword(p.curToken.Type) {
+		tok := p.curToken
+		return &ast.Identifier{Token: tok, Value: tok.Literal}, true
+	}
+	if p.inDoubleBracket && p.curTokenIs(token.LBRACKET) {
+		return p.parseDoubleBracketGlobBracket(), true
+	}
+	if id, ok := p.tryArithSpecialParameter(); ok {
+		return id, true
+	}
+	return nil, false
+}
+
 // isDoubleBracketLiteralKeyword reports whether a Zsh keyword token
 // should be treated as a literal pattern word inside `[[ … ]]` or a
 // `${var[KEY]}` subscript. Most reserved words (FUNCTION, IF, FOR, …)
@@ -82,6 +86,22 @@ func (p *Parser) parseExpression(precedence int) ast.Expression {
 // they are simply pattern strings.
 func isDoubleBracketLiteralKeyword(t token.Type) bool {
 	return t == token.FUNCTION
+}
+
+// tryArithSpecialParameter degrades a `?` token in arithmetic context
+// to the literal `$?` special parameter when peek is a closer
+// (`))`, `)`, `;`, `,`). Without this, parsePrefixExpression dragged
+// the closer into a bogus right-operand parse.
+func (p *Parser) tryArithSpecialParameter() (ast.Expression, bool) {
+	if !p.inArithmetic || !p.curTokenIs(token.QUESTION) {
+		return nil, false
+	}
+	switch p.peekToken.Type {
+	case token.DoubleRparen, token.RPAREN, token.SEMICOLON, token.COMMA:
+		tok := p.curToken
+		return &ast.Identifier{Token: tok, Value: tok.Literal}, true
+	}
+	return nil, false
 }
 
 // expressionInfixShouldBreak reports whether the infix chain in
@@ -110,6 +130,15 @@ func (p *Parser) expressionInfixShouldBreak() bool {
 // arms guard shell-control bytes that are only infix inside `((…))`.
 func (p *Parser) peekShouldBreakInfix() bool {
 	if p.peekTokenIs(token.LBRACKET) && p.peekToken.HasPrecedingSpace {
+		return true
+	}
+	// Inside `[[ … ]]`, a `[` after a closing `)` (glob-alt group)
+	// or `]` (prior bracket-class) is the next glob fragment, not
+	// an array subscript. Without this break the INDEX infix walks
+	// past the closing `]]` and the outer test fails to terminate.
+	if p.inDoubleBracket && p.peekTokenIs(token.LBRACKET) &&
+		(p.curTokenIs(token.RPAREN) || p.curTokenIs(token.RBRACKET) ||
+			p.curTokenIs(token.STRING)) {
 		return true
 	}
 	if p.peekTokenIs(token.SLASH) && !p.peekToken.HasPrecedingSpace {

@@ -161,6 +161,28 @@ func TestParseIfShortcutInsideStandardIfThenFi(t *testing.T) {
 	parseSourceClean(t, src)
 }
 
+// Inside `[[ … ]]`, a closing `)` of a glob-alternation group is
+// followed by `[…]` which is the next glob fragment — never an
+// array subscript on the parenthesised expression. The INDEX infix
+// used to walk past `]]`.
+func TestParseDoubleBracketGroupThenBracketClass(t *testing.T) {
+	parseSourceClean(t, "[[ x =~ (a)[:/] ]] && echo y\n")
+}
+
+// `?` is the last-exit-status special parameter `$?` when used as a
+// value inside `(( … ))`. parsePrefixExpression used to drag the
+// closing `))` into a bogus right-operand parse.
+func TestParseArithmeticQuestionAsExitStatus(t *testing.T) {
+	parseSourceClean(t, "(( X = ? ))\n")
+}
+
+// `$({ cmd } 2>&1)` — brace block as command-sub body with FD-prefix
+// redirection. parseCommandPipeline now routes LBRACE to
+// parseBraceGroupStatement and drains INT-prefixed redirections.
+func TestParseBraceBlockInsideCommandSub(t *testing.T) {
+	parseSourceClean(t, "ERR=$({ cmd ${A} ${B} } 2>&1)\n")
+}
+
 // Zsh shortcut: `if (( cond )) cmd` and `if [[ cond ]] cmd` omit the
 // `then`/`fi` pair. Inside `=( … )` proc-sub or `( … )` subshell,
 // parseBlockStatement(THEN, LBRACE) absorbed the trailing cmd into

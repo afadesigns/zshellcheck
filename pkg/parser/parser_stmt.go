@@ -94,6 +94,58 @@ func (p *Parser) parseStatementBranch() ast.Statement {
 	}
 }
 
+// parsePipelineHead dispatches the head expression of a pipeline.
+// Returns (expr, true) when the head is a keyword-compound command
+// whose parser already chained logical / redirection tails; in that
+// case parseCommandPipeline returns immediately. Otherwise returns
+// (expr, false) for the standard redirection / pipe-tail follow-up.
+func (p *Parser) parsePipelineHead() (ast.Expression, bool) {
+	switch p.curToken.Type {
+	case token.WHILE:
+		return p.parseWhileLoopStatement(), false
+	case token.LPAREN:
+		return p.parseGroupedExpression(), false
+	case token.LBRACE:
+		// Brace-group: `{ cmd1; cmd2 } 2>&1` appears inside `$(…)`
+		// and as a pipeline head. Parse as a brace block so the
+		// generic parseSingleCommand path doesn't read `{` as a
+		// command name and crash on the closing `}`.
+		left := keywordStmtToExpression(p.parseBraceGroupStatement())
+		p.drainFDPrefixedRedirections()
+		return left, false
+	case token.LDBRACKET:
+		return p.parseDoubleBracketExpression(), false
+	case token.DoubleLparen:
+		return p.parseArithmeticCommand(), false
+	case token.If, token.FOR, token.CASE, token.SELECT:
+		// Keyword-headed compound commands have their own parsers
+		// that already chain redirection / logical tails. Return
+		// (expr, true) so parseCommandPipeline exits early.
+		stmt := p.parseStatement()
+		return keywordStmtToExpression(stmt), true
+	}
+	return p.parseSingleCommand(), false
+}
+
+// drainFDPrefixedRedirections consumes trailing `N>...` / `N<...`
+// redirections after a brace-group / subshell body. The default
+// redirection loop in parseCommandPipeline only matches bare
+// GT/GTAMP openers so an explicit FD number prefix would orphan
+// without this drain.
+func (p *Parser) drainFDPrefixedRedirections() {
+	for p.peekTokenIs(token.INT) {
+		p.nextToken() // FD number
+		if !p.peekTokenIs(token.GT) && !p.peekTokenIs(token.GTGT) &&
+			!p.peekTokenIs(token.GTAMP) && !p.peekTokenIs(token.LT) &&
+			!p.peekTokenIs(token.LTAMP) {
+			return
+		}
+		p.nextToken() // operator
+		p.nextToken() // target
+		_ = p.parseCommandWord()
+	}
+}
+
 func (p *Parser) parseBraceGroupStatement() ast.Statement {
 	tok := p.curToken
 	p.nextToken()
@@ -368,34 +420,9 @@ func (p *Parser) parseCommandPipeline() ast.Expression {
 		return &ast.PrefixExpression{Token: tok, Operator: "!", Right: right}
 	}
 
-	var left ast.Expression
-	switch p.curToken.Type {
-	case token.WHILE:
-		left = p.parseWhileLoopStatement()
-	case token.LPAREN:
-		// Subshell group: `( cmd1; cmd2 )` appears as the RHS of
-		// logical chains like `[[ … ]] && ( … )`. Parse the group
-		// as a grouped expression so parseSingleCommand doesn't
-		// treat `(` as a command name.
-		left = p.parseGroupedExpression()
-	case token.LDBRACKET:
-		// `[[ … ]]` condition as a pipeline term (RHS of `&&`/`||`
-		// or head of a pipe). Call the prefix directly so the
-		// caller doesn't try to use it as a simple-command name.
-		left = p.parseDoubleBracketExpression()
-	case token.DoubleLparen:
-		left = p.parseArithmeticCommand()
-	case token.If, token.FOR, token.CASE, token.SELECT:
-		// Keyword-headed compound commands inside `$(…)` /
-		// pipelines need their dedicated parser. Without this the
-		// generic parseSingleCommand path treated the keyword as
-		// the command name and exploded on the body's structural
-		// tokens. Returns the statement-as-expression via
-		// keywordStatementAsExpression.
-		stmt := p.parseStatement()
-		return keywordStmtToExpression(stmt)
-	default:
-		left = p.parseSingleCommand()
+	left, returned := p.parsePipelineHead()
+	if returned {
+		return left
 	}
 
 	// Parse redirections
