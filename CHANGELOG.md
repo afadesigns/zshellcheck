@@ -15,6 +15,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - `golang.org/x/sys` bumped from 0.26.0 to 0.43.0; `go` directive raised to 1.25.0; release pipeline pin updated to match.
 
+### Fixed
+- Lexer: comment-skip in `tryShebangOrComment` recursed via `return l.NextToken()`, causing the named-return defer to run twice on the same token. Each `${` after a skipped comment double-incremented `dollarBraceDepth`, leaving it stuck at 1; subsequent `#` bytes were classified as `${…}` length operators rather than comment openers, so inline comments after `;;` (or any other comment mid-statement) leaked into the parser as `# IDENT` tokens. Replaced with a loop in `NextToken`; `tryShebangOrComment` now returns `(zero token, true)` when a comment was skipped. Drains 12 latent errors in `fzf-tab/lib/zsh-ls-colors/ls-colors.zsh`. (#1316)
+- Parser: typed-nil concrete pointer wrapped in an `ast.Statement` interface (e.g. `(*ast.ForLoopStatement)(nil)` returned from a sub-parser recovery path) panicked inside `keywordStmtToExpression` when `TokenLiteralNode` dispatched on a nil receiver. Added `isTypedNilStatement` to detect each variant and degrade to a stub Identifier so pipeline chaining continues. Surfaced by a 50-byte fuzz-minimised input. (#1314)
+- Parser: `${1:-default}` / `${1:=default}` / `${1:+alt}` / `${1:?err}` and the rest of the modifier-tail forms over a positional-parameter subject parse cleanly. The tokenizer emits the digit subject as `INT` followed by `:`, so the modifier-tail walker now drives instead of bailing on `expected next token to be }`. Fixes #129.
+- Parser: 38 → 0 errors across the pinned-corpus baseline (170 → 0 over the full drainage cycle, 37 PRs). All 78 corpus files parse without error. Notable individual fixes: `${pos:mod}` (#129), `${#}` special parameter, zsh `if cond cmd` shortcut, glob `#`/`##` qualifier in command words, `;|`/`;&` case fall-through, glob bracket-class in `[[ … ]]`, `function` keyword as assignment rhs, array literal `)` not subshell terminator, `(((` subshell+arith vs arith+group disambiguation, `((` after newline fuses to `DoubleLparen`, `<(`/`>(` not process-sub inside `[[ … ]]`, `$(( … ))` flags `consumedParenTerminator`, embedded `$(…)` walker in `"…"` strings, `|&` stderr-pipe fusion, PIPE as bitwise-OR in arithmetic, `typeset` array literal terminator handling.
+
+### Closed
+- #129 (`[BUG] incomplete support for variable substitution`) — resolved by the modifier-tail walker for positional subjects.
+- #1232 (`Panic in ZC1122: typed-nil *ast.Identifier dereferenced`) — `checkZC1122` carries the `ident == nil` guard; the matching pattern in pipeline-head wrap is covered by #1314.
+
 ## [1.0.16] - 2026-04-26
 
 ### Added
