@@ -636,7 +636,12 @@ func (p *Parser) parseExpressionStatement() *ast.ExpressionStatement {
 func (p *Parser) parseIfStatement() *ast.IfStatement {
 	stmt := &ast.IfStatement{Token: p.curToken}
 	p.nextToken()
-	stmt.Condition = p.parseBlockStatement(token.THEN, token.LBRACE)
+	// RPAREN / RBRACE join the cond terminator set so the Zsh
+	// shortcut `if (( cond )) cmd` inside `=( … )` / `( … )` /
+	// function bodies hands control back to the enclosing
+	// construct once the `then`-less form ends.
+	stmt.Condition = p.parseBlockStatement(token.THEN, token.LBRACE,
+		token.RPAREN, token.RBRACE)
 
 	// Zsh short form `if cond { body } [elif cond { body }]…
 	// [else { body }]` uses brace blocks instead of `then … fi`.
@@ -661,6 +666,9 @@ func (p *Parser) parseIfStatement() *ast.IfStatement {
 	}
 
 	if !p.curTokenIs(token.THEN) {
+		if p.tryDegradeNoThenShortcut(stmt) {
+			return stmt
+		}
 		return nil
 	}
 
@@ -704,6 +712,26 @@ func (p *Parser) parseIfStatement() *ast.IfStatement {
 		return nil
 	}
 	return stmt
+}
+
+// tryDegradeNoThenShortcut handles the Zsh `if (( cond )) cmd` /
+// `if [[ cond ]] cmd` shortcut. parseBlockStatement(THEN, LBRACE,
+// RPAREN, RBRACE) absorbs the trailing cmd into the cond block;
+// once cur lands on the enclosing `)` / `}` / EOF terminator we
+// hand control back so the surrounding construct closes cleanly.
+// Promotes the absorbed last cond statement to Consequence so the
+// AST still records the body. Returns true when the shortcut shape
+// applies.
+func (p *Parser) tryDegradeNoThenShortcut(stmt *ast.IfStatement) bool {
+	if !p.curTokenIs(token.RPAREN) && !p.curTokenIs(token.RBRACE) && !p.curTokenIs(token.EOF) {
+		return false
+	}
+	if cond, ok := stmt.Condition.(*ast.BlockStatement); ok && len(cond.Statements) >= 2 {
+		last := cond.Statements[len(cond.Statements)-1]
+		cond.Statements = cond.Statements[:len(cond.Statements)-1]
+		stmt.Consequence = &ast.BlockStatement{Statements: []ast.Statement{last}}
+	}
+	return true
 }
 
 // parseBraceFormElifChain walks any `} elif COND { BODY }` chain plus

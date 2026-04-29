@@ -115,6 +115,22 @@ func TestParseDollarBraceFlagsKeywordSubject(t *testing.T) {
 	parseSourceClean(t, "echo ${(j: :)in}\n")
 }
 
+// Zsh shortcut: `if (( cond )) cmd` and `if [[ cond ]] cmd` omit the
+// `then`/`fi` pair. Inside `=( … )` proc-sub or `( … )` subshell,
+// parseBlockStatement(THEN, LBRACE) absorbed the trailing cmd into
+// the cond block and walked past the enclosing terminator.
+func TestParseIfShortcutInProcSub(t *testing.T) {
+	parseSourceClean(t, "foo =(\n  if (( x )) print y\n)\n")
+}
+
+func TestParseIfShortcutDoubleBracketInProcSub(t *testing.T) {
+	parseSourceClean(t, "foo =(\n  if [[ z == w ]] echo hi\n)\n")
+}
+
+func TestParseIfShortcutInsideFunctionBody(t *testing.T) {
+	parseSourceClean(t, "foo() {\n  if (( x )) print y\n}\n")
+}
+
 func TestParseProcessSubstitution(t *testing.T) {
 	parseSourceClean(t, "diff <(sort a) <(sort b)\n")
 }

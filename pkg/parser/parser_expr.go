@@ -1233,6 +1233,7 @@ func (p *Parser) parseProcessSubstitution() ast.Expression {
 			p.nextToken()
 			continue
 		}
+		p.consumedParenTerminator = false
 		stmt := p.parseStatement()
 		if stmt != nil {
 			statements = append(statements, stmt)
@@ -1243,6 +1244,22 @@ func (p *Parser) parseProcessSubstitution() ast.Expression {
 		if p.consumedBraceTerminator {
 			p.consumedBraceTerminator = false
 			continue
+		}
+		// An inner array literal / `$(…)` consumed its own RPAREN —
+		// honour the flag so the proc-sub body keeps walking past
+		// the false terminator instead of ending early.
+		if p.consumedParenTerminator {
+			p.consumedParenTerminator = false
+			if p.curTokenIs(token.RPAREN) {
+				p.nextToken()
+				continue
+			}
+		}
+		// `if (( cond )) cmd` Zsh shortcut hands control back with
+		// curToken on the proc-sub's `)`. Don't advance past it —
+		// the loop guard will see RPAREN and exit cleanly.
+		if p.curTokenIs(token.RPAREN) {
+			break
 		}
 		p.nextToken()
 	}
