@@ -1,2 +1,3 @@
 # Parser-error baseline. Regenerate with scripts/parser-corpus-sweep.sh --update-baseline
 # Format: <relpath>\t<count>
+fzf-tab/lib/zsh-ls-colors/ls-colors.zsh	12
