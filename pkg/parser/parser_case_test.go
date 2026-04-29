@@ -278,6 +278,19 @@ func TestParsePipeAmpStderrPipe(t *testing.T) {
 	parseSourceClean(t, "cmd1 |& cmd2\n")
 }
 
+// `typeset -aU x=( … )` inside a `( … )` subshell. The declaration
+// value walker ends on the array's `)`; without flagging
+// consumedParenTerminator, parseBlockStatement misread that `)` as
+// the subshell's terminator and the next statement's first token
+// was advanced past.
+func TestParseDeclarationArrayInsideSubshell(t *testing.T) {
+	src := "(\n" +
+		"  typeset -aU x=(${(@s; ;)y})\n" +
+		"  x+=(\"--prefix=z\")\n" +
+		")\n"
+	parseSourceClean(t, src)
+}
+
 // Zsh shortcut: `if (( cond )) cmd` and `if [[ cond ]] cmd` omit the
 // `then`/`fi` pair. Inside `=( … )` proc-sub or `( … )` subshell,
 // parseBlockStatement(THEN, LBRACE) absorbed the trailing cmd into
