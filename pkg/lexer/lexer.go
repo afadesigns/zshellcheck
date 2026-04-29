@@ -120,6 +120,11 @@ func (l *Lexer) NextToken() (tok token.Token) {
 	// skipWhitespace sets pendingContinuation when a `\<NL>` pair
 	// was absorbed; stamp the flag onto the returned token via this
 	// named-return defer so every early return path inherits it.
+	// The defer also tracks dollarBraceDepth — increment on `${`,
+	// decrement on `}`. The defer must run exactly once per emitted
+	// token, so the comment-skip path uses a loop rather than a
+	// recursive NextToken call (recursion would run the inner and
+	// outer defers on the same token, double-counting depth).
 	prevSuppress := l.suppressLparenFusion
 	defer func() {
 		if l.pendingContinuation {
@@ -142,8 +147,18 @@ func (l *Lexer) NextToken() (tok token.Token) {
 		l.lastEmittedHadSpace = tok.HasPrecedingSpace
 	}()
 	hasSpace := l.skipWhitespace()
-	if shebang, ok := l.tryShebangOrComment(hasSpace); ok {
-		return shebang
+	for {
+		shebang, sb := l.tryShebangOrComment(hasSpace)
+		if !sb {
+			break
+		}
+		if shebang.Type == token.SHEBANG {
+			return shebang
+		}
+		// tryShebangOrComment returned (zero, true) to signal the
+		// comment was skipped; loop to absorb the next token, refreshing
+		// hasSpace from the post-comment whitespace state.
+		hasSpace = l.skipWhitespace() || hasSpace
 	}
 	if early, ok := l.dispatchEarlyReturn(hasSpace); ok {
 		return early
@@ -158,6 +173,11 @@ func (l *Lexer) NextToken() (tok token.Token) {
 // on `#!` and reports the result; for a regular comment it consumes
 // the comment and recurses into NextToken. ok=false leaves state
 // unchanged for callers to continue the dispatch.
+// tryShebangOrComment classifies the current `#` byte. Returns
+// (SHEBANG-token, true) when the cursor sits on `#!` at top of file,
+// (zero token, true) when a `#`-introduced comment was skipped (the
+// caller loops to fetch the next non-comment token), and
+// (zero token, false) when `#` should be emitted as a token.
 func (l *Lexer) tryShebangOrComment(hasSpace bool) (token.Token, bool) {
 	if l.ch != '#' {
 		return token.Token{}, false
@@ -184,7 +204,7 @@ func (l *Lexer) tryShebangOrComment(hasSpace bool) (token.Token, bool) {
 	}
 	if hasSpace || l.column == 1 {
 		l.skipComment()
-		return l.NextToken(), true
+		return token.Token{}, true
 	}
 	return token.Token{}, false
 }
