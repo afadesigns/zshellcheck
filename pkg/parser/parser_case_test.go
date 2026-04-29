@@ -225,6 +225,23 @@ func TestParseTripleParenArithGrouping(t *testing.T) {
 	parseSourceClean(t, "(((x * 1000 + y) * 1000 + z >= 1003004)) && echo y\n")
 }
 
+// Inside `[[ … ]]`, `<(` and `>(` are NOT process substitution —
+// they are the glob `<->` numeric range followed by `(…)` alternation
+// (`<->(a|)` etc.). The lexer fused `>(` into GT_LPAREN and the
+// trailing alternation tokens orphaned the closing `]]`.
+func TestParseDoubleBracketGlobNumericRangeWithAlternation(t *testing.T) {
+	parseSourceClean(t, "[[ x = <->(a|) ]] && echo y\n")
+}
+
+func TestParseDoubleBracketGlobNumericRangeNested(t *testing.T) {
+	parseSourceClean(t, "[[ x = (\\!|)(<->(a|b|c|)|) ]] && echo y\n")
+}
+
+// Process substitution outside `[[ ]]` still parses.
+func TestParseProcessSubstitutionOutsideDoubleBracket(t *testing.T) {
+	parseSourceClean(t, "diff <(echo a) <(echo b)\n")
+}
+
 // Zsh shortcut: `if (( cond )) cmd` and `if [[ cond ]] cmd` omit the
 // `then`/`fi` pair. Inside `=( … )` proc-sub or `( … )` subshell,
 // parseBlockStatement(THEN, LBRACE) absorbed the trailing cmd into

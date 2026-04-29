@@ -595,6 +595,13 @@ func (l *Lexer) readAngleBracket(isLeft bool) token.Token {
 		case '&':
 			return two(token.LTAMP)
 		case '(':
+			// Inside `[[ … ]]`, `<(` is not process substitution
+			// — `<->` numeric-range glob followed by `(...)` glob
+			// alternation. Emit a plain LT so the parser sees the
+			// `(` as the alternation opener.
+			if l.dbracketDepth > 0 {
+				return newToken(token.LT, l.ch, l.line, l.column)
+			}
 			t := two(token.LT_LPAREN)
 			l.parenStack = append(l.parenStack, 'P')
 			return t
@@ -611,6 +618,12 @@ func (l *Lexer) readAngleBracket(isLeft bool) token.Token {
 	case '=':
 		return two(token.GE_NUM)
 	case '(':
+		// Inside `[[ … ]]`, `>(` is not process substitution —
+		// `<->(...)` numeric-range glob followed by alternation.
+		// Emit a plain GT so the parser sees `(` as the opener.
+		if l.dbracketDepth > 0 {
+			return newToken(token.GT, l.ch, l.line, l.column)
+		}
 		t := two(token.GT_LPAREN)
 		l.parenStack = append(l.parenStack, 'P')
 		return t
