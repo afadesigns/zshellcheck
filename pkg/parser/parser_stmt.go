@@ -94,6 +94,58 @@ func (p *Parser) parseStatementBranch() ast.Statement {
 	}
 }
 
+// parsePipelineHead dispatches the head expression of a pipeline.
+// Returns (expr, true) when the head is a keyword-compound command
+// whose parser already chained logical / redirection tails; in that
+// case parseCommandPipeline returns immediately. Otherwise returns
+// (expr, false) for the standard redirection / pipe-tail follow-up.
+func (p *Parser) parsePipelineHead() (ast.Expression, bool) {
+	switch p.curToken.Type {
+	case token.WHILE:
+		return p.parseWhileLoopStatement(), false
+	case token.LPAREN:
+		return p.parseGroupedExpression(), false
+	case token.LBRACE:
+		// Brace-group: `{ cmd1; cmd2 } 2>&1` appears inside `$(…)`
+		// and as a pipeline head. Parse as a brace block so the
+		// generic parseSingleCommand path doesn't read `{` as a
+		// command name and crash on the closing `}`.
+		left := keywordStmtToExpression(p.parseBraceGroupStatement())
+		p.drainFDPrefixedRedirections()
+		return left, false
+	case token.LDBRACKET:
+		return p.parseDoubleBracketExpression(), false
+	case token.DoubleLparen:
+		return p.parseArithmeticCommand(), false
+	case token.If, token.FOR, token.CASE, token.SELECT:
+		// Keyword-headed compound commands have their own parsers
+		// that already chain redirection / logical tails. Return
+		// (expr, true) so parseCommandPipeline exits early.
+		stmt := p.parseStatement()
+		return keywordStmtToExpression(stmt), true
+	}
+	return p.parseSingleCommand(), false
+}
+
+// drainFDPrefixedRedirections consumes trailing `N>...` / `N<...`
+// redirections after a brace-group / subshell body. The default
+// redirection loop in parseCommandPipeline only matches bare
+// GT/GTAMP openers so an explicit FD number prefix would orphan
+// without this drain.
+func (p *Parser) drainFDPrefixedRedirections() {
+	for p.peekTokenIs(token.INT) {
+		p.nextToken() // FD number
+		if !p.peekTokenIs(token.GT) && !p.peekTokenIs(token.GTGT) &&
+			!p.peekTokenIs(token.GTAMP) && !p.peekTokenIs(token.LT) &&
+			!p.peekTokenIs(token.LTAMP) {
+			return
+		}
+		p.nextToken() // operator
+		p.nextToken() // target
+		_ = p.parseCommandWord()
+	}
+}
+
 func (p *Parser) parseBraceGroupStatement() ast.Statement {
 	tok := p.curToken
 	p.nextToken()
@@ -276,7 +328,7 @@ func (p *Parser) parseExpressionOrFunctionDefinition() ast.Statement {
 // Detection katas that walk the statement type still see the original
 // node when traversing the wrapper.
 func keywordStmtToExpression(stmt ast.Statement) ast.Expression {
-	if stmt == nil {
+	if stmt == nil || isTypedNilStatement(stmt) {
 		return nil
 	}
 	if es, ok := stmt.(*ast.ExpressionStatement); ok {
@@ -286,6 +338,29 @@ func keywordStmtToExpression(stmt ast.Statement) ast.Expression {
 	// The Token preserves the head keyword for kata-side walks of
 	// containing CallExpression / DollarParenExpression bodies.
 	return &ast.Identifier{Token: stmt.TokenLiteralNode(), Value: stmt.TokenLiteral()}
+}
+
+// isTypedNilStatement reports whether stmt is an interface holding a
+// typed-nil concrete pointer. Recovery-path returns from sub-parsers
+// (`return (*ast.ForLoopStatement)(nil)` style) wrap a nil receiver in
+// a non-nil interface; calling a method on that receiver dereferences
+// nil. Catch the case here so pipeline-head wrapping degrades to nil.
+func isTypedNilStatement(stmt ast.Statement) bool {
+	switch s := stmt.(type) {
+	case *ast.ExpressionStatement:
+		return s == nil
+	case *ast.IfStatement:
+		return s == nil
+	case *ast.ForLoopStatement:
+		return s == nil
+	case *ast.CaseStatement:
+		return s == nil
+	case *ast.SelectStatement:
+		return s == nil
+	case *ast.BlockStatement:
+		return s == nil
+	}
+	return false
 }
 
 // consumePipelineTail drains trailing `| cmd` / `&& cmd` / `|| cmd`
@@ -368,34 +443,9 @@ func (p *Parser) parseCommandPipeline() ast.Expression {
 		return &ast.PrefixExpression{Token: tok, Operator: "!", Right: right}
 	}
 
-	var left ast.Expression
-	switch p.curToken.Type {
-	case token.WHILE:
-		left = p.parseWhileLoopStatement()
-	case token.LPAREN:
-		// Subshell group: `( cmd1; cmd2 )` appears as the RHS of
-		// logical chains like `[[ … ]] && ( … )`. Parse the group
-		// as a grouped expression so parseSingleCommand doesn't
-		// treat `(` as a command name.
-		left = p.parseGroupedExpression()
-	case token.LDBRACKET:
-		// `[[ … ]]` condition as a pipeline term (RHS of `&&`/`||`
-		// or head of a pipe). Call the prefix directly so the
-		// caller doesn't try to use it as a simple-command name.
-		left = p.parseDoubleBracketExpression()
-	case token.DoubleLparen:
-		left = p.parseArithmeticCommand()
-	case token.If, token.FOR, token.CASE, token.SELECT:
-		// Keyword-headed compound commands inside `$(…)` /
-		// pipelines need their dedicated parser. Without this the
-		// generic parseSingleCommand path treated the keyword as
-		// the command name and exploded on the body's structural
-		// tokens. Returns the statement-as-expression via
-		// keywordStatementAsExpression.
-		stmt := p.parseStatement()
-		return keywordStmtToExpression(stmt)
-	default:
-		left = p.parseSingleCommand()
+	left, returned := p.parsePipelineHead()
+	if returned {
+		return left
 	}
 
 	// Parse redirections
@@ -499,7 +549,8 @@ func (p *Parser) parseSingleCommand() ast.Expression {
 var commandWordLiteralTokens = map[token.Type]struct{}{
 	token.ASTERISK: {}, token.QUESTION: {}, token.PLUS: {},
 	token.MINUS: {}, token.CARET: {}, token.TILDE: {}, token.DOT: {},
-	token.GT: {}, token.LT: {}, token.AMPERSAND: {}, token.LBRACKET: {},
+	token.GT: {}, token.LT: {}, token.AMPERSAND: {},
+	token.LBRACKET: {}, token.RBRACKET: {}, token.HASH: {},
 	token.COMMA: {}, token.COLON: {}, token.GTGT: {}, token.LTLT: {},
 	token.GTAMP: {}, token.LTAMP: {},
 	token.DEC: {}, token.INC: {},
@@ -555,6 +606,14 @@ func (p *Parser) commandWordContinues(braceDepth int) bool {
 	if p.peekToken.HasPrecedingSpace || !p.peekOnSameLogicalLine() {
 		return false
 	}
+	// Zsh glob qualifiers `#` / `##` attach to the preceding pattern
+	// character (`]`, `*`, `?`, `+`, `)`, an IDENT) without a space,
+	// e.g. `[[:space:]]##` or `(a|b)#`. Without this exception
+	// isCommandDelimiter would split the word at the HASH because
+	// HASH starts a comment in command position.
+	if p.peekTokenIs(token.HASH) && p.curIsGlobQualifierLeft() {
+		return true
+	}
 	if braceDepth == 0 && p.isCommandDelimiter(p.peekToken) {
 		return false
 	}
@@ -562,6 +621,19 @@ func (p *Parser) commandWordContinues(braceDepth int) bool {
 		return false
 	}
 	return true
+}
+
+// curIsGlobQualifierLeft reports whether curToken is a token type that
+// can carry a trailing `#` / `##` glob-qualifier without a space.
+// HASH itself is included so the second `#` of a `##` doubled
+// qualifier glues onto the first.
+func (p *Parser) curIsGlobQualifierLeft() bool {
+	switch p.curToken.Type {
+	case token.RBRACKET, token.RPAREN, token.ASTERISK, token.QUESTION,
+		token.PLUS, token.IDENT, token.STRING, token.HASH:
+		return true
+	}
+	return false
 }
 
 func updateCommandWordBraceDepth(depth int, t token.Type) int {
@@ -635,7 +707,16 @@ func (p *Parser) parseExpressionStatement() *ast.ExpressionStatement {
 func (p *Parser) parseIfStatement() *ast.IfStatement {
 	stmt := &ast.IfStatement{Token: p.curToken}
 	p.nextToken()
-	stmt.Condition = p.parseBlockStatement(token.THEN, token.LBRACE)
+	// RPAREN / RBRACE join the cond terminator set so the Zsh
+	// shortcut `if (( cond )) cmd` inside `=( … )` / `( … )` /
+	// function bodies hands control back to the enclosing
+	// construct once the `then`-less form ends. Fi / DONE / ESAC /
+	// ELSE / ELIF cover the case where the shortcut sits inside an
+	// outer if/loop/case body — without them parseBlockStatement
+	// would absorb the outer construct's terminator into the cond.
+	stmt.Condition = p.parseBlockStatement(token.THEN, token.LBRACE,
+		token.RPAREN, token.RBRACE,
+		token.Fi, token.DONE, token.ESAC, token.ELSE, token.ELIF)
 
 	// Zsh short form `if cond { body } [elif cond { body }]…
 	// [else { body }]` uses brace blocks instead of `then … fi`.
@@ -643,6 +724,13 @@ func (p *Parser) parseIfStatement() *ast.IfStatement {
 	if p.curTokenIs(token.LBRACE) {
 		p.nextToken() // into body
 		stmt.Consequence = p.parseBlockStatement(token.RBRACE)
+		// Clear the consumedBraceTerminator flag potentially left set
+		// by an inner brace-form `if`/`for`/`while` that closed its
+		// own `}`. Without this, parseBraceFormElifChain's inner
+		// parseBlockStatement(LBRACE) inherits the flag and skips
+		// nextToken on the elif's `(( cond ))` close, dropping into
+		// an expression-position parse on `))`.
+		p.consumedBraceTerminator = false
 		if alt := p.parseBraceFormElifChain(); alt != nil {
 			stmt.Alternative = alt
 		}
@@ -660,6 +748,9 @@ func (p *Parser) parseIfStatement() *ast.IfStatement {
 	}
 
 	if !p.curTokenIs(token.THEN) {
+		if p.tryDegradeNoThenShortcut(stmt) {
+			return stmt
+		}
 		return nil
 	}
 
@@ -703,6 +794,29 @@ func (p *Parser) parseIfStatement() *ast.IfStatement {
 		return nil
 	}
 	return stmt
+}
+
+// tryDegradeNoThenShortcut handles the Zsh `if (( cond )) cmd` /
+// `if [[ cond ]] cmd` shortcut. parseBlockStatement absorbs the
+// trailing cmd into the cond block; once cur lands on the enclosing
+// terminator (`)`, `}`, EOF, or an outer keyword like `fi`/`done`/
+// `esac`/`else`/`elif`) we hand control back so the surrounding
+// construct closes cleanly. Promotes the absorbed last cond statement
+// to Consequence so the AST still records the body. Returns true
+// when the shortcut shape applies.
+func (p *Parser) tryDegradeNoThenShortcut(stmt *ast.IfStatement) bool {
+	switch p.curToken.Type {
+	case token.RPAREN, token.RBRACE, token.EOF,
+		token.Fi, token.DONE, token.ESAC, token.ELSE, token.ELIF:
+	default:
+		return false
+	}
+	if cond, ok := stmt.Condition.(*ast.BlockStatement); ok && len(cond.Statements) >= 2 {
+		last := cond.Statements[len(cond.Statements)-1]
+		cond.Statements = cond.Statements[:len(cond.Statements)-1]
+		stmt.Consequence = &ast.BlockStatement{Statements: []ast.Statement{last}}
+	}
+	return true
 }
 
 // parseBraceFormElifChain walks any `} elif COND { BODY }` chain plus
@@ -807,6 +921,13 @@ func (p *Parser) parseBlockStatement(terminators ...token.Type) *ast.BlockStatem
 		curIsTerm := false
 		for _, t := range terminators {
 			if p.curTokenIs(t) {
+				// An RBRACE that closed a `${…}` is not the block's
+				// terminator — `cmd ${X} }` leaves curToken on the
+				// `${X}`'s `}` while the brace-block close is the
+				// next RBRACE. The lexer flags the inner one.
+				if t == token.RBRACE && p.curToken.ClosesDollarBrace {
+					break
+				}
 				curIsTerm = true
 				break
 			}
@@ -1384,6 +1505,11 @@ func (p *Parser) parseDeclarationValue() ast.Expression {
 		}
 	arrDone:
 		val += " )"
+		// Signal the enclosing block that the `)` we ended on closed
+		// the declaration's own array literal, not the surrounding
+		// subshell — matches the consumedParenTerminator path used by
+		// parseGroupedExpression's array branch.
+		p.consumedParenTerminator = true
 		// Leave curToken on the closing `)` rather than advancing
 		// past it. The caller's declaration loop checks
 		// `curToken.Line == startLine`; if we step past `)` onto

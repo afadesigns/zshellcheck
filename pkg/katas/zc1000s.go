@@ -5925,15 +5925,6 @@ func zc1083ScanString(scan *zc1083Scan, lastPartWasDot *bool, val string, i int)
 	}
 }
 
-func zc1083HasIndexAfter(indices []int, after int) bool {
-	for _, idx := range indices {
-		if idx > after {
-			return true
-		}
-	}
-	return false
-}
-
 // zc1083HasIndexBetween reports whether any index sits strictly between
 // the brace-open and brace-close. A closeIdx of -1 means the brace
 // never closed in the parts run, so any index past startIdx counts.

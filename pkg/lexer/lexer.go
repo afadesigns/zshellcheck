@@ -60,6 +60,17 @@ type Lexer struct {
 	// (e.g. `_os=$_sys*~*((alt|alt))` is a glob, not arith).
 	lastEmittedType     token.Type
 	lastEmittedHadSpace bool
+
+	// dollarBraceDepth tracks how many `${` openers are still awaiting
+	// their `}`. Inside a `${ … }` expansion `#` is the length /
+	// pattern operator, never a comment opener.
+	dollarBraceDepth int
+
+	// precedingNewline is set by skipWhitespace when at least one
+	// physical newline was consumed before the current token. Used
+	// by atArithCommandPos so `((` after `cmd<NL>` fuses into
+	// DoubleLparen as a fresh statement head.
+	precedingNewline bool
 }
 
 func New(input string) *Lexer {
@@ -109,6 +120,11 @@ func (l *Lexer) NextToken() (tok token.Token) {
 	// skipWhitespace sets pendingContinuation when a `\<NL>` pair
 	// was absorbed; stamp the flag onto the returned token via this
 	// named-return defer so every early return path inherits it.
+	// The defer also tracks dollarBraceDepth — increment on `${`,
+	// decrement on `}`. The defer must run exactly once per emitted
+	// token, so the comment-skip path uses a loop rather than a
+	// recursive NextToken call (recursion would run the inner and
+	// outer defers on the same token, double-counting depth).
 	prevSuppress := l.suppressLparenFusion
 	defer func() {
 		if l.pendingContinuation {
@@ -118,12 +134,31 @@ func (l *Lexer) NextToken() (tok token.Token) {
 		if prevSuppress && tok.Type != token.DOLLAR_LPAREN {
 			l.suppressLparenFusion = false
 		}
+		switch tok.Type {
+		case token.DollarLbrace:
+			l.dollarBraceDepth++
+		case token.RBRACE:
+			if l.dollarBraceDepth > 0 {
+				l.dollarBraceDepth--
+				tok.ClosesDollarBrace = true
+			}
+		}
 		l.lastEmittedType = tok.Type
 		l.lastEmittedHadSpace = tok.HasPrecedingSpace
 	}()
 	hasSpace := l.skipWhitespace()
-	if shebang, ok := l.tryShebangOrComment(hasSpace); ok {
-		return shebang
+	for {
+		shebang, sb := l.tryShebangOrComment(hasSpace)
+		if !sb {
+			break
+		}
+		if shebang.Type == token.SHEBANG {
+			return shebang
+		}
+		// tryShebangOrComment returned (zero, true) to signal the
+		// comment was skipped; loop to absorb the next token, refreshing
+		// hasSpace from the post-comment whitespace state.
+		hasSpace = l.skipWhitespace() || hasSpace
 	}
 	if early, ok := l.dispatchEarlyReturn(hasSpace); ok {
 		return early
@@ -138,6 +173,11 @@ func (l *Lexer) NextToken() (tok token.Token) {
 // on `#!` and reports the result; for a regular comment it consumes
 // the comment and recurses into NextToken. ok=false leaves state
 // unchanged for callers to continue the dispatch.
+// tryShebangOrComment classifies the current `#` byte. Returns
+// (SHEBANG-token, true) when the cursor sits on `#!` at top of file,
+// (zero token, true) when a `#`-introduced comment was skipped (the
+// caller loops to fetch the next non-comment token), and
+// (zero token, false) when `#` should be emitted as a token.
 func (l *Lexer) tryShebangOrComment(hasSpace bool) (token.Token, bool) {
 	if l.ch != '#' {
 		return token.Token{}, false
@@ -156,9 +196,15 @@ func (l *Lexer) tryShebangOrComment(hasSpace bool) (token.Token, bool) {
 	if l.inArithmetic() {
 		return token.Token{}, false
 	}
+	// Inside `${…}` parameter expansion, `#` is the length / pattern
+	// operator, never a comment opener. Without this guard
+	// `${${X## ##}%%y##}` lost its trailing `##}` to skipComment.
+	if l.dollarBraceDepth > 0 {
+		return token.Token{}, false
+	}
 	if hasSpace || l.column == 1 {
 		l.skipComment()
-		return l.NextToken(), true
+		return token.Token{}, true
 	}
 	return token.Token{}, false
 }
@@ -180,6 +226,13 @@ func (l *Lexer) atArithCommandPos() bool {
 		token.LDBRACKET, token.If, token.THEN, token.ELSE, token.ELIF,
 		token.DO, token.WHILE, token.FOR, token.CASE,
 		token.LET, token.RETURN:
+		return true
+	}
+	// A newline-separated `((` always opens a fresh statement, even
+	// after an IDENT / value token (e.g. `cmd<NL>(( expr ))`). The
+	// physical newline is the statement separator that the case list
+	// above covers for `;` / `&&` / `||`.
+	if l.precedingNewline {
 		return true
 	}
 	// A space-separated `((` after a value-like token is also a
@@ -358,12 +411,29 @@ func (l *Lexer) readSemicolonLead() token.Token {
 	if l.peekChar() == ';' {
 		return l.readFusedToken(token.DSEMI)
 	}
+	// Zsh case-clause fall-through markers `;|` and `;&` terminate
+	// the clause body just like `;;`. Fuse them into DSEMI so the
+	// parser's case loop honours the boundary; the literal preserves
+	// the source spelling for katas that walk it.
+	if l.peekChar() == '|' || l.peekChar() == '&' {
+		return l.readFusedToken(token.DSEMI)
+	}
 	return newToken(token.SEMICOLON, l.ch, l.line, l.column)
 }
 
 func (l *Lexer) readOpenParen() token.Token {
 	defer func() { l.suppressLparenFusion = false }()
 	if l.peekChar() == '(' && !l.suppressLparenFusion && !l.inArithmetic() && l.atArithCommandPos() {
+		// `(((` at command position is ambiguous: `( ((` (subshell
+		// open + arith) when a space separates the inner `((` from
+		// the operand (`if ((( cond ))`), or `(( (` (arith with
+		// grouping) when no space appears (`(((x * y) + z))`).
+		// Disambiguate by peeking past the third `(`.
+		if l.peekAt(2) == '(' && l.peekAt(3) == ' ' {
+			tok := newToken(token.LPAREN, l.ch, l.line, l.column)
+			l.parenStack = append(l.parenStack, 'P')
+			return tok
+		}
 		tok := l.readFusedToken(token.DoubleLparen)
 		l.parenStack = append(l.parenStack, 'D')
 		return tok
@@ -467,6 +537,13 @@ func (l *Lexer) readPipeLead() token.Token {
 	if l.peekChar() == '|' {
 		return l.readFusedToken(token.OR)
 	}
+	// Zsh `|&` is the stderr-pipe shorthand (`2>&1 |`). Fuse to a
+	// PIPE token so the parser routes through the pipeline path; the
+	// literal preserves the source spelling for katas that need it.
+	if l.peekChar() == '&' {
+		tok := l.readFusedToken(token.PIPE)
+		return tok
+	}
 	return newToken(token.PIPE, l.ch, l.line, l.column)
 }
 
@@ -545,6 +622,13 @@ func (l *Lexer) readAngleBracket(isLeft bool) token.Token {
 		case '&':
 			return two(token.LTAMP)
 		case '(':
+			// Inside `[[ … ]]`, `<(` is not process substitution
+			// — `<->` numeric-range glob followed by `(...)` glob
+			// alternation. Emit a plain LT so the parser sees the
+			// `(` as the alternation opener.
+			if l.dbracketDepth > 0 {
+				return newToken(token.LT, l.ch, l.line, l.column)
+			}
 			t := two(token.LT_LPAREN)
 			l.parenStack = append(l.parenStack, 'P')
 			return t
@@ -561,6 +645,12 @@ func (l *Lexer) readAngleBracket(isLeft bool) token.Token {
 	case '=':
 		return two(token.GE_NUM)
 	case '(':
+		// Inside `[[ … ]]`, `>(` is not process substitution —
+		// `<->(...)` numeric-range glob followed by alternation.
+		// Emit a plain GT so the parser sees `(` as the opener.
+		if l.dbracketDepth > 0 {
+			return newToken(token.GT, l.ch, l.line, l.column)
+		}
 		t := two(token.GT_LPAREN)
 		l.parenStack = append(l.parenStack, 'P')
 		return t
@@ -962,9 +1052,46 @@ func (l *Lexer) readStringFlavour(quote byte, honourEscapes bool) string {
 		if l.absorbDollarBraceOpen(honourEscapes, &braceDepth) {
 			continue
 		}
+		if honourEscapes && l.absorbEmbeddedDollarParen() {
+			continue
+		}
 		l.trackBraceDepth(&braceDepth)
 	}
 	return l.sliceClosedString(position)
+}
+
+// absorbEmbeddedDollarParen handles `$(…)` command substitution
+// inside a double-quoted string body. Walks past the matching `)`
+// while honouring nested `'…'` single-quoted runs so a `"` inside a
+// single-quoted regex (`'[^"]+' `) doesn't close the outer
+// double-quoted string.
+func (l *Lexer) absorbEmbeddedDollarParen() bool {
+	if l.ch != '$' || l.peekChar() != '(' {
+		return false
+	}
+	l.readChar() // onto `(`
+	depth := 1
+	for depth > 0 {
+		l.readChar()
+		switch l.ch {
+		case 0:
+			return true
+		case '\\':
+			l.readChar()
+		case '\'':
+			for l.ch != 0 {
+				l.readChar()
+				if l.ch == '\'' {
+					break
+				}
+			}
+		case '(':
+			depth++
+		case ')':
+			depth--
+		}
+	}
+	return true
 }
 
 func (l *Lexer) absorbStringEscape(honourEscapes bool) bool {
@@ -1013,10 +1140,16 @@ func (l *Lexer) sliceClosedString(position int) string {
 
 func (l *Lexer) skipWhitespace() bool {
 	skipped := false
+	l.precedingNewline = false
 	for {
 		switch l.ch {
-		case ' ', '\t', '\n', '\r':
+		case ' ', '\t', '\r':
 			skipped = true
+			l.readChar()
+			continue
+		case '\n':
+			skipped = true
+			l.precedingNewline = true
 			l.readChar()
 			continue
 		case '\\':

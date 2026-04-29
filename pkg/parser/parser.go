@@ -242,6 +242,11 @@ func New(l *lexer.Lexer) *Parser {
 	p.registerInfix(token.AMPERSAND, p.parseInfixExpression)
 	p.registerInfix(token.CARET, p.parseInfixExpression)
 	p.registerInfix(token.COMMA, p.parseInfixExpression)
+	// PIPE is bitwise-OR inside `(( … ))`. The dynamic precedence
+	// override in peekPrecedence/curPrecedence promotes it to LOGICAL
+	// only when inArithmetic; the global precedences map keeps it at
+	// LOWEST+1 so non-arith pipelines still chain correctly.
+	p.registerInfix(token.PIPE, p.parseInfixExpression)
 
 	p.nextToken() // Initialize curToken
 	p.nextToken() // Initialize peekToken
@@ -375,15 +380,21 @@ func (p *Parser) peekOnSameLogicalLine() bool {
 }
 
 func (p *Parser) peekPrecedence() int {
-	if p, ok := precedences[p.peekToken.Type]; ok {
-		return p
+	if p.inArithmetic && p.peekToken.Type == token.PIPE {
+		return LOGICAL
+	}
+	if pr, ok := precedences[p.peekToken.Type]; ok {
+		return pr
 	}
 	return LOWEST
 }
 
 func (p *Parser) curPrecedence() int {
-	if p, ok := precedences[p.curToken.Type]; ok {
-		return p
+	if p.inArithmetic && p.curToken.Type == token.PIPE {
+		return LOGICAL
+	}
+	if pr, ok := precedences[p.curToken.Type]; ok {
+		return pr
 	}
 	return LOWEST
 }

@@ -28,19 +28,8 @@ func (p *Parser) parseExpression(precedence int) ast.Expression {
 	if _, hit := expressionTerminators[p.curToken.Type]; hit {
 		return nil
 	}
-	// Inside `[[ … ]]` a `((` is glob alternation grouping (not
-	// arithmetic). Decompose the fused DoubleLparen into a LPAREN so
-	// parseGroupedExpression's glob-alt path handles it.
-	if p.inDoubleBracket && p.curTokenIs(token.DoubleLparen) {
-		p.curToken.Type = token.LPAREN
-		p.curToken.Literal = "("
-	}
-	// Inside `${…[KEY]}` subscripts and `[[ … ]]` tests, Zsh keywords
-	// are literal pattern words, not statement-block openers. Return
-	// an Identifier so the surrounding parse keeps moving.
-	if (p.inDoubleBracket || p.inArithmetic) && isDoubleBracketLiteralKeyword(p.curToken.Type) {
-		tok := p.curToken
-		return &ast.Identifier{Token: tok, Value: tok.Literal}
+	if early, ok := p.tryEarlyContextualReturn(); ok {
+		return early
 	}
 	prefix := p.prefixParseFns[p.curToken.Type]
 	if prefix == nil {
@@ -66,17 +55,53 @@ func (p *Parser) parseExpression(precedence int) ast.Expression {
 	return leftExp
 }
 
+// tryEarlyContextualReturn handles the context-specific token
+// reinterpretations that fire before the regular prefix dispatch:
+// DoubleLparen→LPAREN inside `[[…]]`, keywords-as-literal-pattern,
+// `[…]` glob bracket-class walker, and `?` as `$?` in arithmetic.
+func (p *Parser) tryEarlyContextualReturn() (ast.Expression, bool) {
+	// Inside `[[ … ]]` a `((` is glob alternation grouping; rewrite
+	// to LPAREN so parseGroupedExpression's glob-alt path handles it.
+	if p.inDoubleBracket && p.curTokenIs(token.DoubleLparen) {
+		p.curToken.Type = token.LPAREN
+		p.curToken.Literal = "("
+	}
+	if (p.inDoubleBracket || p.inArithmetic) && isDoubleBracketLiteralKeyword(p.curToken.Type) {
+		tok := p.curToken
+		return &ast.Identifier{Token: tok, Value: tok.Literal}, true
+	}
+	if p.inDoubleBracket && p.curTokenIs(token.LBRACKET) {
+		return p.parseDoubleBracketGlobBracket(), true
+	}
+	if id, ok := p.tryArithSpecialParameter(); ok {
+		return id, true
+	}
+	return nil, false
+}
+
 // isDoubleBracketLiteralKeyword reports whether a Zsh keyword token
 // should be treated as a literal pattern word inside `[[ … ]]` or a
 // `${var[KEY]}` subscript. Most reserved words (FUNCTION, IF, FOR, …)
 // only mean "statement head" in command position; in pattern context
 // they are simply pattern strings.
 func isDoubleBracketLiteralKeyword(t token.Type) bool {
-	switch t {
-	case token.FUNCTION:
-		return true
+	return t == token.FUNCTION
+}
+
+// tryArithSpecialParameter degrades a `?` token in arithmetic context
+// to the literal `$?` special parameter when peek is a closer
+// (`))`, `)`, `;`, `,`). Without this, parsePrefixExpression dragged
+// the closer into a bogus right-operand parse.
+func (p *Parser) tryArithSpecialParameter() (ast.Expression, bool) {
+	if !p.inArithmetic || !p.curTokenIs(token.QUESTION) {
+		return nil, false
 	}
-	return false
+	switch p.peekToken.Type {
+	case token.DoubleRparen, token.RPAREN, token.SEMICOLON, token.COMMA:
+		tok := p.curToken
+		return &ast.Identifier{Token: tok, Value: tok.Literal}, true
+	}
+	return nil, false
 }
 
 // expressionInfixShouldBreak reports whether the infix chain in
@@ -105,6 +130,15 @@ func (p *Parser) expressionInfixShouldBreak() bool {
 // arms guard shell-control bytes that are only infix inside `((…))`.
 func (p *Parser) peekShouldBreakInfix() bool {
 	if p.peekTokenIs(token.LBRACKET) && p.peekToken.HasPrecedingSpace {
+		return true
+	}
+	// Inside `[[ … ]]`, a `[` after a closing `)` (glob-alt group)
+	// or `]` (prior bracket-class) is the next glob fragment, not
+	// an array subscript. Without this break the INDEX infix walks
+	// past the closing `]]` and the outer test fails to terminate.
+	if p.inDoubleBracket && p.peekTokenIs(token.LBRACKET) &&
+		(p.curTokenIs(token.RPAREN) || p.curTokenIs(token.RBRACKET) ||
+			p.curTokenIs(token.STRING)) {
 		return true
 	}
 	if p.peekTokenIs(token.SLASH) && !p.peekToken.HasPrecedingSpace {
@@ -277,6 +311,39 @@ func (p *Parser) parsePostfixExpression(left ast.Expression) ast.Expression {
 	return &ast.PostfixExpression{Token: p.curToken, Left: left, Operator: p.curToken.Literal}
 }
 
+// parseDoubleBracketGlobBracket consumes a balanced `[ … ]` glob
+// bracket-class while inside `[[ … ]]`. POSIX classes (`[:alnum:]`)
+// nest a leading `[` that does NOT increment depth; their closing
+// `]` does NOT decrement the outer depth. Returns an Identifier
+// carrying the literal text and leaves curToken on the matching
+// outer `]`.
+func (p *Parser) parseDoubleBracketGlobBracket() ast.Expression {
+	startTok := p.curToken
+	literal := p.curToken.Literal
+	depth := 1
+	for depth > 0 && !p.peekTokenIs(token.EOF) && !p.peekTokenIs(token.RDBRACKET) {
+		p.nextToken()
+		literal += p.curToken.Literal
+		switch {
+		case p.curTokenIs(token.LBRACKET) && p.peekTokenIs(token.COLON):
+			// POSIX class `[:name:]`: drain `:`, IDENT, `]` without
+			// touching outer depth.
+			for !p.peekTokenIs(token.EOF) && !p.peekTokenIs(token.RDBRACKET) {
+				p.nextToken()
+				literal += p.curToken.Literal
+				if p.curTokenIs(token.RBRACKET) {
+					break
+				}
+			}
+		case p.curTokenIs(token.LBRACKET):
+			depth++
+		case p.curTokenIs(token.RBRACKET):
+			depth--
+		}
+	}
+	return &ast.Identifier{Token: startTok, Value: literal}
+}
+
 func (p *Parser) parseDoubleBracketExpression() ast.Expression {
 	bracketToken := p.curToken
 	p.nextToken()
@@ -425,6 +492,14 @@ func (p *Parser) parseGroupedExpression() ast.Expression {
 		p.nextToken()
 	}
 
+	// Advance past the array literal's `)` and signal the enclosing
+	// block to treat it as already-consumed. Without this, a `( arr=(
+	// "x" ); list=( "y" ) )` subshell broke at the array's `)` —
+	// parseBlockStatement saw curToken=RPAREN and ended the subshell
+	// body prematurely. Mirrors parseDollarParenExpression's flag.
+	if p.curTokenIs(token.RPAREN) {
+		p.consumedParenTerminator = true
+	}
 	return &ast.ArrayLiteral{Token: tok, Elements: elements}
 }
 
@@ -518,10 +593,13 @@ func (p *Parser) consumePreflags() {
 }
 
 // subjectIsEmpty reports whether the upcoming token starts a modifier
-// tail directly (no parameter name).
+// tail directly (no parameter name) or closes the `${ … }` immediately.
+// RBRACE covers `${#}` — the `#` is the special parameter (count of
+// positional args), not a length operator over a missing subject.
 func (p *Parser) subjectIsEmpty() bool {
 	return p.peekTokenIs(token.COLON) || p.peekTokenIs(token.HASH) ||
-		p.peekTokenIs(token.PERCENT) || p.peekTokenIs(token.SLASH)
+		p.peekTokenIs(token.PERCENT) || p.peekTokenIs(token.SLASH) ||
+		p.peekTokenIs(token.RBRACE)
 }
 
 // parseArrayAccessSubject parses the parameter-name subject and
@@ -534,6 +612,13 @@ func (p *Parser) parseArrayAccessSubject() (ast.Expression, ast.Expression) {
 	case p.curTokenIs(token.IDENT):
 		return p.parseArrayAccessIdent()
 	case p.subjectIsSpecialName():
+		return &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}, nil
+	case isSubjectKeyword(p.curToken.Type):
+		// Zsh keywords (`in`, `for`, `while`, …) double as ordinary
+		// variable names when they appear as the subject of a `${…}`
+		// expansion. The lexer always emits them as keyword tokens;
+		// degrade to a literal identifier here so `${(flags)in}` and
+		// kin parse as a parameter name.
 		return &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}, nil
 	case p.curTokenIs(token.DollarLbrace):
 		// Nested `${INNER}` subject. Call parseArrayAccess directly
@@ -560,6 +645,21 @@ func (p *Parser) parseArrayAccessIdent() (ast.Expression, ast.Expression) {
 		return id, nil
 	}
 	return idx.Left, idx.Index
+}
+
+// isSubjectKeyword reports whether a Zsh keyword token is being used
+// as a parameter name in a `${…}` subject slot. Reserved words live
+// in the same namespace as ordinary variables when they appear in
+// expansion subjects (`${(flags)in}`, `${for}`, `${while}`).
+func isSubjectKeyword(t token.Type) bool {
+	switch t {
+	case token.IN, token.FOR, token.WHILE, token.If, token.CASE,
+		token.SELECT, token.COPROC, token.FUNCTION, token.LET, token.RETURN,
+		token.DO, token.DONE, token.ESAC, token.THEN, token.ELSE,
+		token.ELIF, token.Fi, token.TYPESET, token.DECLARE:
+		return true
+	}
+	return false
 }
 
 func (p *Parser) subjectIsSpecialName() bool {
@@ -769,7 +869,34 @@ func (p *Parser) finalizeInvalidArrayAccess(exp *ast.InvalidArrayAccess) ast.Exp
 	return exp
 }
 
+// peekIsFunctionDefinitionContinuation reports whether the token
+// after `function` shapes a Zsh function definition: a name token, a
+// `${…}`-spliced name, a leading `-` for dashed names, an opening
+// `(` for `function name()` form, or `{` for `function { body }`.
+// Used to guard parseFunctionLiteral so a stray `function` keyword
+// in expression position (assignment RHS, case label) degrades to a
+// literal identifier instead of erroring on the missing brace body.
+func (p *Parser) peekIsFunctionDefinitionContinuation() bool {
+	switch p.peekToken.Type {
+	case token.IDENT, token.STRING, token.VARIABLE,
+		token.DollarLbrace, token.MINUS, token.LPAREN, token.LBRACE:
+		return true
+	}
+	return false
+}
+
 func (p *Parser) parseFunctionLiteral() ast.Expression {
+	// `function` only opens a Zsh function definition when followed
+	// by a name token, a `${…}`-spliced name, a leading `-` (dashed
+	// name), or directly by `(` or `{`. Anywhere else — e.g. as the
+	// RHS of an assignment (`REPLY=function`) or as a case-label
+	// pattern — it is a literal identifier. Without this guard the
+	// expectPeek(LBRACE) below errored on the next statement's
+	// keyword (`expected next token to be {, got ELIF instead`).
+	if !p.peekIsFunctionDefinitionContinuation() {
+		tok := p.curToken
+		return &ast.Identifier{Token: tok, Value: tok.Literal}
+	}
 	lit := &ast.FunctionLiteral{Token: p.curToken}
 	if p.peekTokenIs(token.DollarLbrace) {
 		nameTok := p.peekToken
@@ -886,6 +1013,7 @@ func (p *Parser) parseDollarParenExpression() ast.Expression {
 		if p.peekTokenIs(token.DoubleRparen) {
 			p.nextToken() // consume ))
 			exp.Command = cmd
+			p.consumedParenTerminator = true
 			return exp
 		}
 
@@ -896,6 +1024,7 @@ func (p *Parser) parseDollarParenExpression() ast.Expression {
 			return nil
 		}
 		exp.Command = cmd
+		p.consumedParenTerminator = true
 		return exp
 	}
 
@@ -1135,6 +1264,7 @@ func (p *Parser) parseProcessSubstitution() ast.Expression {
 			p.nextToken()
 			continue
 		}
+		p.consumedParenTerminator = false
 		stmt := p.parseStatement()
 		if stmt != nil {
 			statements = append(statements, stmt)
@@ -1145,6 +1275,22 @@ func (p *Parser) parseProcessSubstitution() ast.Expression {
 		if p.consumedBraceTerminator {
 			p.consumedBraceTerminator = false
 			continue
+		}
+		// An inner array literal / `$(…)` consumed its own RPAREN —
+		// honour the flag so the proc-sub body keeps walking past
+		// the false terminator instead of ending early.
+		if p.consumedParenTerminator {
+			p.consumedParenTerminator = false
+			if p.curTokenIs(token.RPAREN) {
+				p.nextToken()
+				continue
+			}
+		}
+		// `if (( cond )) cmd` Zsh shortcut hands control back with
+		// curToken on the proc-sub's `)`. Don't advance past it —
+		// the loop guard will see RPAREN and exit cleanly.
+		if p.curTokenIs(token.RPAREN) {
+			break
 		}
 		p.nextToken()
 	}
