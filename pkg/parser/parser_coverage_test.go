@@ -301,3 +301,129 @@ func TestParseGroupedKeywordFor(t *testing.T) {
 func TestParseGroupedKeywordWhile(t *testing.T) {
 	parseClean(t, "( while read l; do echo $l; done )\n")
 }
+
+// parseSingleCommand head-prefix coverage targeting the
+// DOLLAR_LPAREN / BACKTICK / VARIABLE / ${} branch pre-arg-loop.
+func TestParseSingleCommandDollarParenHead(t *testing.T) {
+	parseClean(t, "$(which cmd) -n\n")
+}
+
+func TestParseSingleCommandBacktickHead(t *testing.T) {
+	parseClean(t, "`which cmd` -n\n")
+}
+
+func TestParseSingleCommandVariableHead(t *testing.T) {
+	parseClean(t, "$cmd -h --foo bar\n")
+}
+
+func TestParseSingleCommandDollarBraceHead(t *testing.T) {
+	parseClean(t, "${cmd} arg1 arg2\n")
+}
+
+// parseSingleCommand `name (arg)` non-fn-def path: parens after a
+// command name with content inside, NOT followed immediately by `)`.
+func TestParseSingleCommandNameParenArg(t *testing.T) {
+	parseClean(t, "ls (file)\n")
+}
+
+// parseDollarSpecialOp: `$?`, `$$`, `$@`, positional.
+func TestParseDollarQuestionBare(t *testing.T) { parseClean(t, "echo $?\n") }
+func TestParseDollarDollarBare(t *testing.T)   { parseClean(t, "echo $$\n") }
+func TestParseDollarAtBare(t *testing.T)       { parseClean(t, "echo $@\n") }
+func TestParseDollarPositionalChain(t *testing.T) {
+	parseClean(t, "echo $0 $1 $2\n")
+}
+
+// parseDollarSpecialOp `$+` (zsh: subscript flag): `$+commands`.
+func TestParseDollarPlusInArith(t *testing.T) {
+	parseClean(t, "(( $+commands[ls] ))\n")
+}
+
+// parseArrayAccessSubject keyword-as-subject path.
+func TestParseDollarBraceKeywordAsSubject(t *testing.T) {
+	parseClean(t, "echo ${for}\n")
+}
+
+// drainSubscriptBody depth-tracking branches.
+func TestParseDollarBraceNestedBracket(t *testing.T) {
+	parseClean(t, "echo ${arr[$nested[1]]}\n")
+}
+
+// parseDollarParenExpression keyword-headed body forms.
+func TestParseDollarParenForLoop(t *testing.T) {
+	parseClean(t, "echo $(for f in *; do print $f; done)\n")
+}
+
+func TestParseDollarParenIfStatement(t *testing.T) {
+	parseClean(t, "echo $(if [[ -f $1 ]]; then echo yes; fi)\n")
+}
+
+// parseArithmeticSubscript with operator chain.
+func TestParseArithSubscriptChain(t *testing.T) {
+	parseClean(t, "echo ${arr[i*2+1]}\n")
+}
+
+// parseFlaggedSubscript Zsh subscript-flag tuples.
+func TestParseFlaggedSubscriptKey(t *testing.T) {
+	parseClean(t, "echo ${(k)assoc}\n")
+}
+
+func TestParseFlaggedSubscriptValue(t *testing.T) {
+	parseClean(t, "echo ${(v)assoc}\n")
+}
+
+func TestParseFlaggedSubscriptKeyValue(t *testing.T) {
+	parseClean(t, "echo ${(kv)assoc}\n")
+}
+
+// parseProcessSubstitution write+read mix and bare path.
+func TestParseProcessSubstReadAndWrite(t *testing.T) {
+	parseClean(t, "diff <(sort a) >(sort b)\n")
+}
+
+// parseCommandWord with mixed quoting + concat.
+func TestParseCommandWordConcatMix(t *testing.T) {
+	parseClean(t, "echo prefix${var}suffix\n")
+}
+
+func TestParseCommandWordDoubleQuoteWithSub(t *testing.T) {
+	parseClean(t, "echo \"value=$(cmd) end\"\n")
+}
+
+// parseExpression / parseEqualsForm: env-prefix assignment chain.
+func TestParseEnvPrefixChain(t *testing.T) {
+	parseClean(t, "X=1 Y=2 Z=3 cmd arg\n")
+}
+
+// parseStatement coverage for HASH (top-level comment).
+func TestParseStatementHashCommentOnly(t *testing.T) {
+	parseClean(t, "# top-level comment line\n")
+}
+
+// parsePipelineHeadStatement select / coproc.
+func TestParseSelectStatementBranches(t *testing.T) {
+	parseClean(t, "select x in a b c; do echo $x; break; done\n")
+}
+
+// parseFunctionLiteral with composite name + body shapes.
+func TestParseFunctionCompositeNameKeyword(t *testing.T) {
+	parseClean(t, "function ::my-fn { echo hi; }\n")
+}
+
+// parseDeclarationStatement assoc-array assignment edge cases.
+func TestParseDeclAssocArrayMulti(t *testing.T) {
+	parseClean(t, "typeset -A m=([k1]=v1 [k2]=v2)\n")
+}
+
+// parseCaseStatement with empty / fall-through clause body.
+func TestParseCaseEmptyBody(t *testing.T) {
+	parseClean(t, "case $x in a) ;; b) ;; *) ;; esac\n")
+}
+
+func TestParseCaseFallThroughSemiAmp(t *testing.T) {
+	parseClean(t, "case $x in a) echo a;& b) echo b;; esac\n")
+}
+
+func TestParseCaseFallThroughSemiPipe(t *testing.T) {
+	parseClean(t, "case $x in a) echo a;| b) echo b;; esac\n")
+}
