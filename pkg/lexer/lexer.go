@@ -129,6 +129,7 @@ func (l *Lexer) NextToken() (tok token.Token) {
 		case token.RBRACE:
 			if l.dollarBraceDepth > 0 {
 				l.dollarBraceDepth--
+				tok.ClosesDollarBrace = true
 			}
 		}
 		l.lastEmittedType = tok.Type

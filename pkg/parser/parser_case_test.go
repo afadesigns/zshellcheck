@@ -139,6 +139,28 @@ func TestParseCaseClauseGlobHashChainPosixClass(t *testing.T) {
 	parseSourceClean(t, "case x in a##[[:alpha:]]) echo y;; esac\n")
 }
 
+// `${X}`'s closing `}` is a parameter-expansion close, not a brace
+// block terminator. parseBlockStatement now distinguishes the two
+// via the lexer's ClosesDollarBrace flag, so a `cmd ${X}` arg
+// followed by the function body's `}` parses cleanly.
+func TestParseCommandArgEndingInDollarBraceInsideFunction(t *testing.T) {
+	parseSourceClean(t, "foo() {\n  cmd ${X}\n}\n")
+}
+
+// `if cond cmd` shortcut nested inside a regular `if … then … fi`
+// block. parseBlockStatement(cond) used to absorb the outer `fi`
+// into the inner cond; outer keywords (Fi/DONE/ESAC/ELSE/ELIF) now
+// terminate the cond so the shortcut yields control back.
+func TestParseIfShortcutInsideStandardIfThenFi(t *testing.T) {
+	src := "foo() {\n" +
+		"  if (( a )); then\n" +
+		"    if (( d )) print -R '${e}'\n" +
+		"    print fi\n" +
+		"  fi\n" +
+		"}\n"
+	parseSourceClean(t, src)
+}
+
 // Zsh shortcut: `if (( cond )) cmd` and `if [[ cond ]] cmd` omit the
 // `then`/`fi` pair. Inside `=( … )` proc-sub or `( … )` subshell,
 // parseBlockStatement(THEN, LBRACE) absorbed the trailing cmd into
