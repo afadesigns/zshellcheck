@@ -206,6 +206,56 @@ func TestZC1071SelfReferences(t *testing.T) {
 	}
 }
 
+// TestFindSubscriptClose exercises every quote-state and depth branch
+// of the subscript-end finder used by ZC1001 and friends.
+func TestFindSubscriptClose(t *testing.T) {
+	cases := []struct {
+		name string
+		src  string
+		open int
+		want int
+	}{
+		{"plain close", "[ab]", 0, 3},
+		{"nested", "[a[b]c]", 0, 6},
+		{"single-quoted body", "[a 'b]c' d]", 0, 10},
+		{"double-quoted body", "[a \"b]c\" d]", 0, 10},
+		{"escape inside double quote", "[a \"\\\"]\" b]", 0, 10},
+		{"newline aborts", "[abc\nx]", 0, -1},
+		{"no close at all", "[abc", 0, -1},
+	}
+	for _, tc := range cases {
+		if got := findSubscriptClose([]byte(tc.src), tc.open); got != tc.want {
+			t.Errorf("%s: got %d want %d", tc.name, got, tc.want)
+		}
+	}
+}
+
+// TestIsUnquotedGlob exercises every node-type branch of the predicate
+// used by ZC1085 and friends.
+func TestIsUnquotedGlob(t *testing.T) {
+	if !isUnquotedGlob(&ast.SimpleCommand{Name: &ast.Identifier{Value: "["}}) {
+		t.Errorf("SimpleCommand[`[`]: expected true")
+	}
+	if isUnquotedGlob(&ast.SimpleCommand{Name: &ast.Identifier{Value: "echo"}}) {
+		t.Errorf("SimpleCommand[`echo`]: expected false")
+	}
+	if !isUnquotedGlob(&ast.IndexExpression{}) {
+		t.Errorf("IndexExpression: expected true")
+	}
+	if !isUnquotedGlob(&ast.PrefixExpression{Operator: "*"}) {
+		t.Errorf("PrefixExpression(*): expected true")
+	}
+	if !isUnquotedGlob(&ast.PrefixExpression{Operator: "?"}) {
+		t.Errorf("PrefixExpression(?): expected true")
+	}
+	if isUnquotedGlob(&ast.PrefixExpression{Operator: "$"}) {
+		t.Errorf("PrefixExpression($): expected false")
+	}
+	if isUnquotedGlob(&ast.IntegerLiteral{Value: 0}) {
+		t.Errorf("IntegerLiteral: expected false")
+	}
+}
+
 // TestCommandIdentifier covers the head-identifier helper used by
 // every Check entry point.
 func TestCommandIdentifier(t *testing.T) {
