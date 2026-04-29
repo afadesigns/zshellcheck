@@ -1,4 +1,4 @@
-# Codecov configuration — OpenSSF gold-tier coverage floor (90.0%).
+# Codecov configuration — OpenSSF gold-tier label-green floor (95.0%).
 #
 # Public truth: https://app.codecov.io/gh/afadesigns/zshellcheck
 # Spec sync:    .claude/rules/quality-gates.md (gate definition)
@@ -19,12 +19,12 @@ codecov:
 coverage:
   precision: 2
   round: down
-  range: 90..100                 # gold-tier floor at the green edge — anything below is yellow/red
+  range: 95..100                 # gold-tier label-green floor — anything below renders yellow/red
 
   status:
     project:
       default:
-        target: 90%              # OpenSSF gold-tier test_statement_coverage90 hardline
+        target: 95%              # gold-tier label-green hardline
         threshold: 0%            # zero slack — a 0.01% drop fails the gate
         base: auto
         if_ci_failed: error
@@ -34,7 +34,7 @@ coverage:
         removed_code_behavior: adjust_base   # subtract removed-code coverage from the base before comparing — file deletions never inflate the delta
     patch:
       default:
-        target: 90%              # new code held to the same gold-tier floor
+        target: 95%              # new code held to the same gold-tier floor
         threshold: 0%
         base: auto
         if_ci_failed: error

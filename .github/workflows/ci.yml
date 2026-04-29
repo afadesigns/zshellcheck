@@ -146,16 +146,16 @@ jobs:
         run: |
           COVERPKGS=$(go list ./... | grep -v -E '(cmd/zshellcheck|pkg/version|pkg/testutil|/tests$|katatests)' | tr '\n' ',' | sed 's/,$//')
           go test -v -coverprofile=coverage.txt -covermode=atomic -coverpkg="$COVERPKGS" ./...
-      - name: Project-wide coverage gate (≥ 90.0% gold-tier floor)
+      - name: Project-wide coverage gate (≥ 95.0% gold-tier label-green floor)
         if: runner.os == 'Linux'
         shell: bash
         run: |
           go clean -testcache
           go test -count=1 -coverpkg=./... -coverprofile=cov-total.out ./... > /dev/null 2>&1
           total=$(go tool cover -func=cov-total.out | tail -1 | awk '{print $NF}' | tr -d '%')
-          echo "project-wide statement coverage: ${total}%"
-          awk -v t="$total" 'BEGIN { exit (t >= 90.0) ? 0 : 1 }' || {
-            echo "::error::Project-wide coverage ${total}% dropped below the gold-tier floor (90.0%)"; exit 1;
+          echo "project-wide statement coverage (Linux single-OS): ${total}%"
+          awk -v t="$total" 'BEGIN { exit (t >= 95.0) ? 0 : 1 }' || {
+            echo "::error::Project-wide coverage ${total}% dropped below the gold-tier label-green floor (95.0%)"; exit 1;
           }
       - name: Verify go.mod is tidy
         run: |
