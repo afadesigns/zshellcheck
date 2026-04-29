@@ -1,6 +1,6 @@
 # Parser-error baseline. Regenerate with scripts/parser-corpus-sweep.sh --update-baseline
 # Format: <relpath>\t<count>
-fast-syntax-highlighting/test/to-parse.zsh	3
+fast-syntax-highlighting/test/to-parse.zsh	2
 fzf/shell/key-bindings.zsh	6
 fzf-tab/test/ztst.zsh	1
 zimfw/zimfw.zsh	15
