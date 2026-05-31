@@ -23,6 +23,7 @@ The integrations the project tests most heavily and links from the docs.
 | :--- | ---: |
 | [oh-my-zsh](https://github.com/ohmyzsh/ohmyzsh) | 497 |
 | [prezto](https://github.com/sorin-ionescu/prezto) | 41 |
+| [prezto-contrib](https://github.com/belak/prezto-contrib) | 20 |
 | [zimfw](https://github.com/zimfw/zimfw) | 1 |
 | [zephyr](https://github.com/mattmc3/zephyr) | 21 |
 | [zsh-utils](https://github.com/belak/zsh-utils) | 5 |
@@ -52,6 +53,7 @@ The integrations the project tests most heavily and links from the docs.
 | [zsh-vi-mode](https://github.com/jeffreytse/zsh-vi-mode) | 2 |
 | [zsh-autocomplete](https://github.com/marlonrichert/zsh-autocomplete) | 3 |
 | [zsh-completions](https://github.com/zsh-users/zsh-completions) | 1 |
+| [zsh-help](https://github.com/Freed-Wu/zsh-help) | 1 |
 
 ## Prompts
 
@@ -60,15 +62,21 @@ The integrations the project tests most heavily and links from the docs.
 | [powerlevel10k](https://github.com/romkatv/powerlevel10k) | 16 |
 | [spaceship-prompt](https://github.com/spaceship-prompt/spaceship-prompt) | 119 |
 | [starship](https://github.com/starship/starship) | 1 |
+| [gitstatus](https://github.com/romkatv/gitstatus) | 2 |
 
 ## Roadmap — targeted next
 
-- [zsh-users/zsh](https://github.com/zsh-users/zsh) — `Functions/` and `Completion/` directories full of canonical Zsh.
-- [romkatv/zsh-bench](https://github.com/romkatv/zsh-bench)
-- [romkatv/gitstatus](https://github.com/romkatv/gitstatus)
-- [sorin-ionescu/prezto-contrib](https://github.com/sorin-ionescu/prezto-contrib)
-- [ohmyzsh-incubator](https://github.com/ohmyzsh-incubator)
-- [Freed-Wu/zsh-help](https://github.com/Freed-Wu/zsh-help)
+[gitstatus](https://github.com/romkatv/gitstatus),
+[prezto-contrib](https://github.com/belak/prezto-contrib), and
+[zsh-help](https://github.com/Freed-Wu/zsh-help) joined the pinned sweep matrix.
+
+Targeted next:
+
+- [zsh](https://github.com/zsh-users/zsh) — the reference shell. Its `Completion/`
+  tree leans on glob-pattern alternation (`(foo|bar)`), pending parser support.
+- [zsh-bench](https://github.com/romkatv/zsh-bench)
+
+To propose another corpus, follow [Adding an integration](#adding-an-integration).
 
 ## How the sweep runs
 

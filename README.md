@@ -100,10 +100,10 @@ The full catalog with file counts lives in [INTEGRATIONS.md](INTEGRATIONS.md).
 
 | Category | Examples |
 | :--- | :--- |
-| Frameworks | [oh-my-zsh](https://github.com/ohmyzsh/ohmyzsh), [prezto](https://github.com/sorin-ionescu/prezto), [zephyr](https://github.com/mattmc3/zephyr), [zimfw](https://github.com/zimfw/zimfw) |
+| Frameworks | [oh-my-zsh](https://github.com/ohmyzsh/ohmyzsh), [prezto](https://github.com/sorin-ionescu/prezto), [prezto-contrib](https://github.com/belak/prezto-contrib), [zephyr](https://github.com/mattmc3/zephyr), [zimfw](https://github.com/zimfw/zimfw) |
 | Plugin managers | [antidote](https://github.com/mattmc3/antidote), [zinit](https://github.com/zdharma-continuum/zinit) |
-| Plugins | [zsh-syntax-highlighting](https://github.com/zsh-users/zsh-syntax-highlighting), [zsh-autosuggestions](https://github.com/zsh-users/zsh-autosuggestions), [zsh-autocomplete](https://github.com/marlonrichert/zsh-autocomplete) |
-| Prompts | [powerlevel10k](https://github.com/romkatv/powerlevel10k), [spaceship-prompt](https://github.com/spaceship-prompt/spaceship-prompt), [starship](https://github.com/starship/starship) |
+| Plugins | [zsh-syntax-highlighting](https://github.com/zsh-users/zsh-syntax-highlighting), [zsh-autosuggestions](https://github.com/zsh-users/zsh-autosuggestions), [zsh-autocomplete](https://github.com/marlonrichert/zsh-autocomplete), [zsh-help](https://github.com/Freed-Wu/zsh-help) |
+| Prompts | [powerlevel10k](https://github.com/romkatv/powerlevel10k), [spaceship-prompt](https://github.com/spaceship-prompt/spaceship-prompt), [starship](https://github.com/starship/starship), [gitstatus](https://github.com/romkatv/gitstatus) |
 | Tooling | [fzf](https://github.com/junegunn/fzf), [fzf-tab](https://github.com/Aloxaf/fzf-tab), [fast-syntax-highlighting](https://github.com/zdharma-continuum/fast-syntax-highlighting) |
 
 ## Documentation

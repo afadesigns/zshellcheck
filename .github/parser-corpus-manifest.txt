@@ -15,3 +15,10 @@ zsh-autocomplete	20f6c34f2027	https://github.com/marlonrichert/zsh-autocomplete.
 zsh-history-substring-search	14c8d2e0ffae	https://github.com/zsh-users/zsh-history-substring-search.git	*.zsh *.plugin.zsh
 zsh-utils	be71275c5050	https://github.com/belak/zsh-utils.git	*.zsh *.plugin.zsh
 zsh-vi-mode	08bd1c045204	https://github.com/jeffreytse/zsh-vi-mode.git	*.zsh *.plugin.zsh
+gitstatus	075baf6ecb19f58b09c9562f33c20b842e870961	https://github.com/romkatv/gitstatus.git	*.zsh *.plugin.zsh
+prezto-contrib	a05508a716cad6e45e90cb8b0f73c811cbd4438a	https://github.com/belak/prezto-contrib.git	*.zsh
+zsh-help	95cbc114078d8209730e38c72a6fa5859ca0773d	https://github.com/Freed-Wu/zsh-help.git	*.zsh *.plugin.zsh
+prezto	73ae7f11280adcc061c15ebb2f494954c2cc8a38	https://github.com/sorin-ionescu/prezto.git	*.zsh *.zsh-theme
+spaceship	19cf56d7bf8ca65b160c540dff35e8691da53ebf	https://github.com/spaceship-prompt/spaceship-prompt.git	*.zsh *.zsh-theme
+autosuggestions	85919cd1ffa7d2d5412f6d3fe437ebdbeeec4fc5	https://github.com/zsh-users/zsh-autosuggestions.git	*.zsh
+completions	dbaeafd96c3fd9d84c8540f6d87c6b37c4c9173d	https://github.com/zsh-users/zsh-completions.git	*.zsh

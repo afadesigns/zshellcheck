@@ -975,7 +975,13 @@ func (p *Parser) parseSubshellStatement() ast.Statement {
 func (p *Parser) parseCaseStatement() *ast.CaseStatement {
 	stmt := &ast.CaseStatement{Token: p.curToken}
 	p.nextToken()
-	stmt.Value = p.parseExpression(LOWEST)
+	// The case subject is a shell word, not a single expression: it can
+	// concatenate expansions and literals with no separating space
+	// (`case $state/$line[1] in`, `case ${a}:${b} in`). parseCommandWord
+	// glues those adjacent parts and stops at the space before `in`;
+	// parseExpression stopped at the first `/` or `:` and mis-reported
+	// the trailing parts as an unexpected token before `in`.
+	stmt.Value = p.parseCommandWord()
 	if !p.expectPeek(token.IN) {
 		return nil
 	}
@@ -1106,22 +1112,7 @@ func (p *Parser) parseForLoopStatement() *ast.ForLoopStatement {
 
 func (p *Parser) parseArithmeticForLoop(stmt *ast.ForLoopStatement) *ast.ForLoopStatement {
 	p.nextToken() // consume ((
-	if !p.parseArithSlot(&stmt.Init, token.SEMICOLON) {
-		return nil
-	}
-	if !p.expectPeek(token.SEMICOLON) {
-		return nil
-	}
-	if !p.parseArithSlot(&stmt.Condition, token.SEMICOLON) {
-		return nil
-	}
-	if !p.expectPeek(token.SEMICOLON) {
-		return nil
-	}
-	if !p.parseArithSlot(&stmt.Post, token.DoubleRparen) {
-		return nil
-	}
-	if !p.expectPeek(token.DoubleRparen) {
+	if !p.parseArithForHeader(stmt) {
 		return nil
 	}
 	if p.peekTokenIs(token.SEMICOLON) {
@@ -1145,6 +1136,33 @@ func (p *Parser) parseArithmeticForLoop(stmt *ast.ForLoopStatement) *ast.ForLoop
 	p.nextToken()
 	stmt.Body = p.parseBlockStatement(token.DONE)
 	return stmt
+}
+
+// parseArithForHeader parses the `init; cond; post ))` header of a
+// C-style arithmetic for loop. The slots run in arithmetic context so
+// the comma operator (`for ((i=0, j=1; i<j; i++, j--))`) chains as an
+// infix instead of breaking the expression loop. The flag is restored
+// on every exit path, including parse failures.
+func (p *Parser) parseArithForHeader(stmt *ast.ForLoopStatement) bool {
+	prevInArithmetic := p.inArithmetic
+	p.inArithmetic = true
+	defer func() { p.inArithmetic = prevInArithmetic }()
+	if !p.parseArithSlot(&stmt.Init, token.SEMICOLON) {
+		return false
+	}
+	if !p.expectPeek(token.SEMICOLON) {
+		return false
+	}
+	if !p.parseArithSlot(&stmt.Condition, token.SEMICOLON) {
+		return false
+	}
+	if !p.expectPeek(token.SEMICOLON) {
+		return false
+	}
+	if !p.parseArithSlot(&stmt.Post, token.DoubleRparen) {
+		return false
+	}
+	return p.expectPeek(token.DoubleRparen)
 }
 
 // parseArithSlot fills the optional init / cond / post slot of an

@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Seven upstream corpora pinned into the parser sweep matrix (12 → 19), each zero-parse-error and panic-free: gitstatus, prezto-contrib, prezto, spaceship-prompt, zsh-autosuggestions, zsh-completions, zsh-help.
+- Parser-corpus sweep now detects a linter crash per file (exit ≥ 2 or a Go stack trace) and fails the gate; a crash is never tolerated, even under `--update-baseline`.
+
+### Fixed
+- Parser: four Zsh word forms surfaced by the corpus sweep now parse cleanly — the arithmetic for-loop comma operator (`for ((i=0, j=1; i<j; i++, j--))`), concatenated `case` subjects (`case $a/$b in`, `case ${a}:${b} in`), the character-code prefix operator in arithmetic (`(( #name ))`, `(( ##c ))`), and function names that glue in a positional parameter (`function _$0_fmt()`).
+- Parser-corpus sweep: the glob list splits without pathname expansion, so a pattern such as `_*` reaches `find` literally instead of matching files in the repository root.
+
 ## [1.0.17] - 2026-04-30
 
 ### Added

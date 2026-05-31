@@ -270,8 +270,34 @@ func (p *Parser) parseIntegerLiteral() ast.Expression {
 // for the count of positional arguments. Outside arithmetic HASH
 // opens a comment which the lexer skips before the parser sees it,
 // so this prefix only fires in arithmetic context.
+//
+// A `#` glued to an operand (`#name`, `##c`, `#$var`) is instead the
+// Zsh character-code prefix operator — the numeric code of the first
+// character of the operand. A bare `#` (space or operator follows, as
+// in `(( # > 0 ))` or `(( ! # ))`) keeps the positional-count meaning.
 func (p *Parser) parseHashSpecial() ast.Expression {
-	return &ast.Identifier{Token: p.curToken, Value: "#"}
+	hashTok := p.curToken
+	if p.inArithmetic && !p.peekToken.HasPrecedingSpace && p.hashOperandFollows() {
+		p.nextToken()
+		return &ast.PrefixExpression{
+			Token:    hashTok,
+			Operator: "#",
+			Right:    p.parseExpression(PREFIX),
+		}
+	}
+	return &ast.Identifier{Token: hashTok, Value: "#"}
+}
+
+// hashOperandFollows reports whether the token after a `#` can start an
+// arithmetic operand, marking `#` as the character-code prefix operator
+// rather than the bare positional-count parameter.
+func (p *Parser) hashOperandFollows() bool {
+	switch p.peekToken.Type {
+	case token.IDENT, token.VARIABLE, token.INT, token.HASH,
+		token.DollarLbrace, token.STRING:
+		return true
+	}
+	return false
 }
 
 // parseZshIntLiteral converts a Zsh integer literal to int64. Handles
@@ -986,6 +1012,14 @@ func (p *Parser) consumeCompositeFunctionName() {
 		case p.peekTokenIs(token.DollarLbrace):
 			p.nextToken()
 			p.skipDollarBraceBody()
+		case p.peekTokenIs(token.DOLLAR):
+			// Positional / special parameter glued into the name, e.g.
+			// `function _$0_fmt() { … }`. The lexer emits `$0` as DOLLAR
+			// + INT, so absorb the DOLLAR and its trailing digit operand.
+			p.nextToken()
+			if p.peekTokenIs(token.INT) && !p.peekToken.HasPrecedingSpace {
+				p.nextToken()
+			}
 		default:
 			return
 		}

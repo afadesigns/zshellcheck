@@ -82,12 +82,6 @@ list_files() {
     find "${dir}" -type f \( "${find_args[@]}" \) -print 2>/dev/null | sort
 }
 
-# Run zshellcheck on one file, return parser-error count.
-parser_errors_for() {
-    local f="$1"
-    "${BIN}" "$f" 2>&1 | grep -c "^Parser Error" || true
-}
-
 declare -A CURRENT
 declare -A BASELINE_MAP
 
@@ -102,17 +96,34 @@ total_files=0
 total_errors=0
 regressions=()
 improvements=()
+PANICS=()
 
 while IFS=$'\t' read -r name sha url glob_list; do
     [[ -z "${name}" || "${name}" == \#* ]] && continue
     fetch_corpus "${name}" "${sha}" "${url}" || exit 2
 
-    # shellcheck disable=SC2206
-    globs=( ${glob_list} )
+    # Split the glob list on spaces without pathname expansion. A
+    # bare `globs=( ${glob_list} )` would let a pattern such as `_*`
+    # match files in the repo root (e.g. `_typos.toml`) before it
+    # ever reaches find; read -a word-splits on IFS but never globs.
+    read -r -a globs <<< "${glob_list}"
     while IFS= read -r f; do
         [[ -z "${f}" ]] && continue
         rel="${name}/${f#${WORK_DIR}/${name}/}"
-        n=$(parser_errors_for "${f}")
+        # Run the binary once in the main shell (not a command-
+        # substitution subshell) so a detected panic can be recorded in
+        # the PANICS global. A panic exits >= 2 with a Go stack trace; it
+        # kills the whole run, so a corpus file that triggers one is a
+        # release-blocking regression. Parser errors are baselined and
+        # tolerated; panics never are.
+        set +e
+        out=$("${BIN}" "${f}" 2>&1)
+        rc=$?
+        set -e
+        if (( rc >= 2 )) || grep -qiE 'panic:|^goroutine [0-9]+ ' <<< "${out}"; then
+            PANICS+=("${rel} (exit ${rc})")
+        fi
+        n=$(grep -c "^Parser Error" <<< "${out}" || true)
         CURRENT["${rel}"]="${n}"
         total_files=$((total_files+1))
         total_errors=$((total_errors+n))
@@ -126,6 +137,16 @@ while IFS=$'\t' read -r name sha url glob_list; do
 done < "${MANIFEST}"
 
 echo "parser-corpus sweep: files=${total_files} parser_errors=${total_errors}"
+
+# A panic is always fatal — even in --update-baseline mode, so a crash
+# can never be silently baked into the baseline.
+if (( ${#PANICS[@]} > 0 )); then
+    echo "::error::parser-corpus gate: ${#PANICS[@]} file(s) panicked the linter — integrations must be panic-free"
+    for p in "${PANICS[@]}"; do
+        echo "  ! ${p}"
+    done
+    exit 2
+fi
 
 if (( UPDATE_BASELINE )); then
     {
