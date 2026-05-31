@@ -157,15 +157,34 @@ func (p *Parser) parseIdentifier() ast.Expression {
 	tok := p.curToken
 	value := tok.Literal
 	// Inside arithmetic, Zsh concatenates an IDENT with a glued
-	// VARIABLE / INT to form a dynamic variable name:
-	// `(( X_$y == 2 ))` reads as the value of `X_<expanded y>`.
+	// VARIABLE / INT / DollarLbrace to form a dynamic variable name:
+	// `(( X_$y == 2 ))` reads as the value of `X_<expanded y>`, and
+	// `(( x >= PFX_${state}_SFX ))` uses a param-expansion mid-name.
 	// Absorb the glued tokens so the closing `))` lines up.
 	if p.inArithmetic {
-		for !p.peekToken.HasPrecedingSpace &&
-			(p.peekTokenIs(token.VARIABLE) || p.peekTokenIs(token.INT)) {
-			p.nextToken()
-			value += p.curToken.Literal
+		for !p.peekToken.HasPrecedingSpace {
+			switch {
+			case p.peekTokenIs(token.VARIABLE), p.peekTokenIs(token.INT):
+				p.nextToken()
+				value += p.curToken.Literal
+			case p.peekTokenIs(token.DollarLbrace):
+				// Absorb `${…}` expansion opaquely: skip past the
+				// matching `}` so the arithmetic closer `))` aligns.
+				p.nextToken()
+				value += p.curToken.Literal
+				p.skipDollarBraceBody()
+				value += p.curToken.Literal // closing }
+				// Absorb any trailing IDENT glued to the `}` (e.g.
+				// the `_SFX` in `PFX_${state}_SFX`).
+				if !p.peekToken.HasPrecedingSpace && p.peekTokenIs(token.IDENT) {
+					p.nextToken()
+					value += p.curToken.Literal
+				}
+			default:
+				goto arithIdentDone
+			}
 		}
+	arithIdentDone:
 	}
 	return &ast.Identifier{Token: tok, Value: value}
 }
