@@ -658,7 +658,7 @@ func Walk(node Node, f WalkFn) {
 	// value hands every kata switch arm a nil receiver, so fields
 	// like Identifier.Value or SimpleCommand.Name panic immediately.
 	// Reflect is the cheapest reliable check for this case.
-	if v := reflect.ValueOf(node); v.Kind() == reflect.Ptr && v.IsNil() {
+	if v := reflect.ValueOf(node); v.Kind() == reflect.Pointer && v.IsNil() {
 		return
 	}
 	if !f(node) {

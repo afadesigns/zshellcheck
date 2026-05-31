@@ -2539,7 +2539,7 @@ func walkZC1044(node ast.Node, isChecked bool, violations *[]Violation) {
 	if node == nil {
 		return
 	}
-	if v := reflect.ValueOf(node); v.Kind() == reflect.Ptr && v.IsNil() {
+	if v := reflect.ValueOf(node); v.Kind() == reflect.Pointer && v.IsNil() {
 		return
 	}
 	if walkZC1044Compound(node, isChecked, violations) {
