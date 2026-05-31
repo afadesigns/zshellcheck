@@ -15,3 +15,10 @@ zsh-autocomplete	20f6c34f2027	https://github.com/marlonrichert/zsh-autocomplete.
 zsh-history-substring-search	14c8d2e0ffae	https://github.com/zsh-users/zsh-history-substring-search.git	*.zsh *.plugin.zsh
 zsh-utils	be71275c5050	https://github.com/belak/zsh-utils.git	*.zsh *.plugin.zsh
 zsh-vi-mode	08bd1c045204	https://github.com/jeffreytse/zsh-vi-mode.git	*.zsh *.plugin.zsh
+oh-my-zsh	c86ba78e1cba	https://github.com/ohmyzsh/ohmyzsh.git	*.zsh *.zsh-theme
+powerlevel10k	604f19a4426c	https://github.com/romkatv/powerlevel10k.git	*.zsh *.zsh-theme
+prezto	cff2d010f96f	https://github.com/sorin-ionescu/prezto.git	*.zsh
+spaceship-prompt	4ef1964fcebb	https://github.com/spaceship-prompt/spaceship-prompt.git	*.zsh *.zsh-theme
+zsh-autosuggestions	85919cd1ffa7	https://github.com/zsh-users/zsh-autosuggestions.git	*.zsh
+zsh-completions	6d21c2a70156	https://github.com/zsh-users/zsh-completions.git	*.zsh _*
+zsh-syntax-highlighting	1d85c69538dd	https://github.com/zsh-users/zsh-syntax-highlighting.git	*.zsh

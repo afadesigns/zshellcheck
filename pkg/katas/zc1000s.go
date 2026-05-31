@@ -3322,6 +3322,11 @@ func walkZC1053(node ast.Node, isSilenced bool, violations *[]Violation) {
 	if node == nil {
 		return
 	}
+	// Guard typed-nil interface values: a switch arm would otherwise
+	// receive a nil receiver and panic on the first field access.
+	if v := reflect.ValueOf(node); v.Kind() == reflect.Pointer && v.IsNil() {
+		return
+	}
 	switch n := node.(type) {
 	case *ast.BlockStatement:
 		for _, stmt := range n.Statements {
@@ -4632,6 +4637,12 @@ type zc1069Walker struct {
 
 func (w *zc1069Walker) walk(n ast.Node, inFunction bool) {
 	if n == nil {
+		return
+	}
+	// A Node interface can hold a concrete pointer type with a nil value
+	// underneath (typed nil); it does not compare equal to nil. Descending
+	// hands a switch arm a nil receiver and dereferencing a field panics.
+	if v := reflect.ValueOf(n); v.Kind() == reflect.Pointer && v.IsNil() {
 		return
 	}
 	w.recordIfBareLocal(n, inFunction)
