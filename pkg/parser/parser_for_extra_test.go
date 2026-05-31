@@ -2,10 +2,41 @@
 // Copyright the ZShellCheck contributors.
 package parser
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/afadesigns/zshellcheck/pkg/ast"
+	"github.com/afadesigns/zshellcheck/pkg/lexer"
+)
 
 func TestParseForLoopArithmeticConditionOnly(t *testing.T) {
 	parseSourceClean(t, "for ((i=0; i<3; )) do echo $i; done\n")
+}
+
+func TestParseForLoopArithmeticCommaInit(t *testing.T) {
+	parseSourceClean(t, "for ((i=0, j=10; i<j; i++)) do echo $i; done\n")
+}
+
+func TestParseForLoopArithmeticCommaPost(t *testing.T) {
+	parseSourceClean(t, "for ((i=0; i<10; i++, j--)) do echo $i; done\n")
+}
+
+func TestParseForLoopArithmeticCommaBoth(t *testing.T) {
+	parseSourceClean(t, "for ((i=0, j=10; i<j; i++, j--)) do echo $i $j; done\n")
+}
+
+// The comma operator must chain into the slot expression, not be
+// dropped: stmt.Init has to carry both `i=0` and `j=10`.
+func TestParseForLoopArithmeticCommaChains(t *testing.T) {
+	prog := New(lexer.New("for ((i=0, j=10; i<j; )) do echo $i; done\n")).ParseProgram()
+	stmt, ok := prog.Statements[0].(*ast.ForLoopStatement)
+	if !ok {
+		t.Fatalf("Statements[0] is not *ast.ForLoopStatement; got %T", prog.Statements[0])
+	}
+	infix, ok := stmt.Init.(*ast.InfixExpression)
+	if !ok || infix.Operator != "," {
+		t.Fatalf("Init is not a comma-chained InfixExpression; got %T", stmt.Init)
+	}
 }
 
 func TestParseForLoopArithmeticInitOnly(t *testing.T) {
