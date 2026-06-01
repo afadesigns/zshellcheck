@@ -7,11 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.18] - 2026-06-01
+
 ### Added
 - Seven upstream corpora pinned into the parser sweep matrix (12 → 19), each zero-parse-error and panic-free: gitstatus, prezto-contrib, prezto, spaceship-prompt, zsh-autosuggestions, zsh-completions, zsh-help.
 - Parser-corpus sweep now detects a linter crash per file (exit ≥ 2 or a Go stack trace) and fails the gate; a crash is never tolerated, even under `--update-baseline`.
 
+### Changed
+- `reflect.Ptr` replaced with the canonical `reflect.Pointer`. The `govet` inline check added in golangci-lint v2.12.2 flags the deprecated alias; the value is identical. (#1336)
+- GitHub Actions pins refreshed across the `github-actions` group: harden-runner 2.19.0 → 2.19.4, dependency-review-action 4.9.0 → 5.0.0, osv-scanner-action 2.3.5 → 2.3.8, cosign-installer 4.1.1 → 4.1.2, golangci-lint-action 9.2.0 → 9.2.1, goreleaser-action 7.2.1 → 7.2.2, setup-qemu 4.0.0 → 4.1.0, crate-ci/typos 1.45.2 → 1.47.0, and four others. Every pin is a 40-character SHA with the version in a trailing comment. (#1335, #1339)
+
 ### Fixed
+- Parser: the ZC1069 and ZC1053 kata walkers guarded only a plain nil node, not a typed-nil interface, and crashed the linter with SIGSEGV on valid Zsh such as `if [[ x == y ]] && ( ! [[ -n $A ]] ); then : ; fi` — a form present in prezto, zsh-syntax-highlighting, and canonical Zsh. Both walkers now carry the reflect-based typed-nil guard that `ast.Walk` and the ZC1044 walker already use. (#1340)
+- Lexer: arithmetic compound-assignment operators `/=`, `&=`, `|=`, `^=`, `<<=`, `>>=`, and `**=` now fuse inside `((…))` / `$((…))`. Only `+=`, `-=`, `*=`, and `%=` fused before, so `(( n /= 2 ))` parsed as a division with no right-hand side and errored. Embedded `${…}` operands in arithmetic words also scan correctly. Behaviour outside arithmetic is unchanged. (#1341)
 - Parser: four Zsh word forms surfaced by the corpus sweep now parse cleanly — the arithmetic for-loop comma operator (`for ((i=0, j=1; i<j; i++, j--))`), concatenated `case` subjects (`case $a/$b in`, `case ${a}:${b} in`), the character-code prefix operator in arithmetic (`(( #name ))`, `(( ##c ))`), and function names that glue in a positional parameter (`function _$0_fmt()`).
 - Parser-corpus sweep: the glob list splits without pathname expansion, so a pattern such as `_*` reaches `find` literally instead of matching files in the repository root.
 - ZC1043 no longer flags an inline env-var prefix (`DEBUG=true echo foo`) as a missing-`local` global — the assignment is scoped to the following command, not a persistent global. A standalone `DEBUG=true` (or one ended by `;`) is still flagged. Reported by @eeweegh. (#1332)
