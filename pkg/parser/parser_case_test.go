@@ -32,6 +32,14 @@ func TestParseAnonymousFunction(t *testing.T) {
 	parseSourceClean(t, "() { echo anon; }\n")
 }
 
+// A leading-zero word with an 8 or 9 digit (`008`) is a string in a
+// scalar assignment, not a C-style octal literal; it must parse, not
+// error with "could not parse 008 as integer".
+func TestParseLeadingZeroNonOctalLiteral(t *testing.T) {
+	parseSourceClean(t, "c=008\n")
+	parseSourceClean(t, "a=(008 009 010)\n")
+}
+
 func TestParseShebang(t *testing.T) {
 	parseSourceClean(t, "#!/usr/bin/env zsh\necho ok\n")
 }

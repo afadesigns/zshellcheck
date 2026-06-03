@@ -311,7 +311,16 @@ func parseZshIntLiteral(s string) (int64, error) {
 		}
 		return strconv.ParseInt(s[hash+1:], base, 64)
 	}
-	return strconv.ParseInt(s, 0, 64)
+	n, err := strconv.ParseInt(s, 0, 64)
+	if err != nil {
+		// A leading-zero word containing an 8 or 9 (e.g. `008`) is not
+		// a valid C-style octal literal, so base-0 parsing fails. Zsh
+		// treats such a bare word as decimal by default (octal applies
+		// only under OCTAL_ZEROES), so fall back to base 10 rather than
+		// rejecting valid input.
+		return strconv.ParseInt(s, 10, 64)
+	}
+	return n, nil
 }
 
 // absorbArithmeticNumberTail walks the no-preceding-space tail after
