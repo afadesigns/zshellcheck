@@ -21,13 +21,13 @@ func TestZC1001(t *testing.T) {
 			expected: []katas.Violation{},
 		},
 		{
-			name:  "invalid array access",
+			name:  "braced form preferred for array access",
 			input: `echo $my_array[1]`,
 			expected: []katas.Violation{
 				{
 					KataID: "ZC1001",
-					Message: "Use ${} for array element access. " +
-						"Accessing array elements with `$my_array[...]` is not the correct syntax in Zsh.",
+					Message: "Prefer `${...}` for array element access. " +
+						"`$my_array[...]` is valid Zsh, but the braced form is unambiguous and robust under `KSH_ARRAYS`.",
 					Line:   1,
 					Column: 6,
 				},

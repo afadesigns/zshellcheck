@@ -15,9 +15,9 @@ func init() {
 	RegisterKata(ast.IndexExpressionNode, Kata{
 		ID:    "ZC1001",
 		Title: "Use ${} for array element access",
-		Description: "In Zsh, accessing array elements with `$my_array[1]` doesn't work as expected. " +
-			"It tries to access an element from an array named `my_array[1]`. " +
-			"The correct way to access an array element is to use `${my_array[1]}`.",
+		Description: "In native Zsh, `$my_array[1]` accesses array element 1 and is valid. " +
+			"The braced form `${my_array[1]}` is preferred: it is unambiguous, reads " +
+			"clearly inside double quotes, and behaves the same under `KSH_ARRAYS`.",
 		Severity: SeverityStyle,
 		Check:    checkZC1001,
 		Fix:      fixZC1001,
@@ -25,9 +25,9 @@ func init() {
 	RegisterKata(ast.InvalidArrayAccessNode, Kata{
 		ID:    "ZC1001",
 		Title: "Use ${} for array element access",
-		Description: "In Zsh, accessing array elements with `$my_array[1]` doesn't work as expected. " +
-			"It tries to access an element from an array named `my_array[1]`. " +
-			"The correct way to access an array element is to use `${my_array[1]}`.",
+		Description: "In native Zsh, `$my_array[1]` accesses array element 1 and is valid. " +
+			"The braced form `${my_array[1]}` is preferred: it is unambiguous, reads " +
+			"clearly inside double quotes, and behaves the same under `KSH_ARRAYS`.",
 		Severity: SeverityStyle,
 		Check:    checkZC1001,
 		Fix:      fixZC1001,
@@ -118,8 +118,8 @@ func checkZC1001(node ast.Node) []Violation {
 			if len(ident.Value) > 0 && ident.Value[0] == '$' {
 				violations = append(violations, Violation{
 					KataID: "ZC1001",
-					Message: "Use ${} for array element access. " +
-						"Accessing array elements with `" + ident.Value + "[...]` is not the correct syntax in Zsh.",
+					Message: "Prefer `${...}` for array element access. " +
+						"`" + ident.Value + "[...]` is valid Zsh, but the braced form is unambiguous and robust under `KSH_ARRAYS`.",
 					Line:   ident.Token.Line,
 					Column: ident.Token.Column,
 					Level:  SeverityStyle,
@@ -129,8 +129,8 @@ func checkZC1001(node ast.Node) []Violation {
 	} else if arrayAccess, ok := node.(*ast.InvalidArrayAccess); ok {
 		violations = append(violations, Violation{
 			KataID: "ZC1001",
-			Message: "Use ${} for array element access. " +
-				"Accessing array elements with `$my_array[1]` is not the correct syntax in Zsh.",
+			Message: "Prefer `${...}` for array element access. " +
+				"`$my_array[1]` is valid Zsh, but the braced form is unambiguous and robust under `KSH_ARRAYS`.",
 			Line:   arrayAccess.Token.Line,
 			Column: arrayAccess.Token.Column,
 			Level:  SeverityStyle,
