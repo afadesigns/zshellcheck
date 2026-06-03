@@ -651,6 +651,25 @@ func updateCommandWordBraceDepth(depth int, t token.Type) int {
 func (p *Parser) parseLetStatement() *ast.LetStatement {
 	stmt := &ast.LetStatement{Token: p.curToken}
 
+	// Zsh `let` accepts one or more quoted arithmetic expressions
+	// (`let "x = y"`, documented as equivalent to `(( … ))`). There is
+	// no bare NAME=value to split, so parse the string as the value and
+	// leave Name nil — the ZC1013 auto-fix bails on a nil Name.
+	if p.peekTokenIs(token.STRING) {
+		p.nextToken()
+		prevInArithmetic := p.inArithmetic
+		p.inArithmetic = true
+		stmt.Value = p.parseExpression(LOWEST)
+		p.inArithmetic = prevInArithmetic
+		for !p.peekTokenIs(token.SEMICOLON) && !p.peekTokenIs(token.EOF) && p.peekOnSameLogicalLine() {
+			p.nextToken() // consume any further args, e.g. `let "a" "b"`
+		}
+		if p.peekTokenIs(token.SEMICOLON) {
+			p.nextToken()
+		}
+		return stmt
+	}
+
 	if !p.expectPeek(token.IDENT) {
 		return nil
 	}

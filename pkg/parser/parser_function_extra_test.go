@@ -16,6 +16,13 @@ func TestParseFunctionLiteralMultiNames(t *testing.T) {
 	parseSourceClean(t, "function a b c { echo hi; }\n")
 }
 
+// Zsh `let` with a quoted whole arithmetic expression, the form
+// documented as equivalent to `(( … ))`. zsh-auto-notify uses it.
+func TestParseLetQuotedExpression(t *testing.T) {
+	parseSourceClean(t, "let \"elapsed = current - START\"\n")
+	parseSourceClean(t, "let \"x = 1\" \"y = 2\"\n")
+}
+
 func TestParseFunctionLiteralNoParens(t *testing.T) {
 	parseSourceClean(t, "function name { echo hi; }\n")
 }
