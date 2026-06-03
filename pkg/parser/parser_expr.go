@@ -537,6 +537,14 @@ func (p *Parser) parseGroupedExpression() ast.Expression {
 	// swallowing the token there is safe.
 	elements := []ast.Expression{}
 	for !p.curTokenIs(token.RPAREN) && !p.curTokenIs(token.EOF) {
+		if p.inDoubleBracket && p.curTokenIs(token.DoubleRparen) {
+			// `[[ (( 1 )) ]]` — the leading `((` was rewritten to a
+			// single `(` (see tryEarlyContextualReturn); collapse the
+			// matching `))` to a single `)` so the grouping balances.
+			p.curToken.Type = token.RPAREN
+			p.curToken.Literal = ")"
+			break
+		}
 		if p.curTokenIs(token.PIPE) {
 			p.nextToken()
 			continue

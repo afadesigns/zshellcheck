@@ -65,6 +65,13 @@ func TestParseDoubleBracketTest(t *testing.T) {
 	parseSourceClean(t, "[[ -f file && -r file ]]\n")
 }
 
+// `(( … ))` inside `[[ … ]]` is two grouping parens, not arithmetic.
+// The fused `((` rewrites to `(`; the matching `))` collapses to `)`.
+func TestParseDoubleBracketDoubleParenGrouping(t *testing.T) {
+	parseSourceClean(t, "[[ (( 1 )) ]]\n")
+	parseSourceClean(t, "[[ (( 1 )) && -f x ]]\n")
+}
+
 func TestParseDoubleBracketRegex(t *testing.T) {
 	parseSourceClean(t, "[[ $x =~ ^[a-z]+$ ]]\n")
 }
