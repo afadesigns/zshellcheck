@@ -2953,6 +2953,13 @@ func checkZC1049(node ast.Node) []Violation {
 
 	// Check if command is alias
 	if name, ok := cmd.Name.(*ast.Identifier); ok && name.Value == "alias" {
+		// Global (`alias -g`) and suffix (`alias -s`) aliases have no
+		// function equivalent — a global alias expands outside command
+		// position, a suffix alias triggers on a file extension — so
+		// "prefer a function" is impossible advice. Skip them.
+		if zc1049HasGlobalOrSuffixFlag(cmd) {
+			return nil
+		}
 		return []Violation{{
 			KataID: "ZC1049",
 			Message: "Prefer functions over aliases. " +
@@ -2964,6 +2971,44 @@ func checkZC1049(node ast.Node) []Violation {
 	}
 
 	return nil
+}
+
+// zc1049HasGlobalOrSuffixFlag reports whether an alias command carries
+// the `-g` (global) or `-s` (suffix) flag.
+func zc1049HasGlobalOrSuffixFlag(cmd *ast.SimpleCommand) bool {
+	for _, arg := range cmd.Arguments {
+		// A flag such as `-g` lexes as `-` + `g`, so it arrives as a
+		// ConcatenatedExpression rather than a single Identifier;
+		// reassemble the word before inspecting it.
+		v := zc1049ArgText(arg)
+		// A short-flag word (`-g`, `-s`, `-gs`, ...): leading `-`, not
+		// `--`, not a `name=value` assignment word.
+		if len(v) >= 2 && v[0] == '-' && v[1] != '-' && strings.ContainsAny(v, "gs") {
+			return true
+		}
+	}
+	return false
+}
+
+// zc1049ArgText reassembles the literal text of a command argument from
+// its Identifier and StringLiteral parts.
+func zc1049ArgText(arg ast.Expression) string {
+	switch a := arg.(type) {
+	case *ast.Identifier:
+		return a.Value
+	case *ast.ConcatenatedExpression:
+		var b strings.Builder
+		for _, part := range a.Parts {
+			switch p := part.(type) {
+			case *ast.Identifier:
+				b.WriteString(p.Value)
+			case *ast.StringLiteral:
+				b.WriteString(p.Value)
+			}
+		}
+		return b.String()
+	}
+	return ""
 }
 
 func init() {

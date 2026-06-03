@@ -937,7 +937,7 @@ zephyr/plugins/compstyle/compstyle.plugin.zsh	ZC1863	1
 zephyr/plugins/confd/confd.plugin.zsh	ZC1001	1
 zephyr/plugins/confd/confd.plugin.zsh	ZC1085	1
 zephyr/plugins/confd/confd.plugin.zsh	ZC1086	1
-zephyr/plugins/directory/directory.plugin.zsh	ZC1049	4
+zephyr/plugins/directory/directory.plugin.zsh	ZC1049	3
 zephyr/plugins/directory/directory.plugin.zsh	ZC1083	1
 zephyr/plugins/directory/directory.plugin.zsh	ZC1086	1
 zephyr/plugins/directory/directory.plugin.zsh	ZC1091	1
@@ -1077,7 +1077,7 @@ zinit/zinit-autoload.zsh	ZC1040	3
 zinit/zinit-autoload.zsh	ZC1043	2
 zinit/zinit-autoload.zsh	ZC1045	7
 zinit/zinit-autoload.zsh	ZC1046	5
-zinit/zinit-autoload.zsh	ZC1049	9
+zinit/zinit-autoload.zsh	ZC1049	7
 zinit/zinit-autoload.zsh	ZC1053	1
 zinit/zinit-autoload.zsh	ZC1064	1
 zinit/zinit-autoload.zsh	ZC1065	1
@@ -1329,7 +1329,6 @@ zsh-fzf-history-search/zsh-fzf-history-search.zsh	ZC1043	9
 zsh-fzf-history-search/zsh-fzf-history-search.zsh	ZC1075	1
 zsh-fzf-history-search/zsh-fzf-history-search.zsh	ZC1076	1
 zsh-help/zsh-help.plugin.zsh	ZC1001	1
-zsh-help/zsh-help.plugin.zsh	ZC1049	1
 zsh-help/zsh-help.plugin.zsh	ZC1085	1
 zsh-help/zsh-help.plugin.zsh	ZC1086	2
 zsh-help/zsh-help.plugin.zsh	ZC1302	1

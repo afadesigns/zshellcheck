@@ -1802,6 +1802,18 @@ func TestZC1049(t *testing.T) {
 			input:    `echo hello`,
 			expected: []katas.Violation{},
 		},
+		{
+			// Global aliases have no function equivalent.
+			name:     "global alias is not flagged",
+			input:    `alias -g GP='| grep'`,
+			expected: []katas.Violation{},
+		},
+		{
+			// Suffix aliases have no function equivalent.
+			name:     "suffix alias is not flagged",
+			input:    `alias -s md=less`,
+			expected: []katas.Violation{},
+		},
 	}
 
 	for _, tt := range tests {
