@@ -1025,18 +1025,27 @@ func (p *Parser) parseCaseStatement() *ast.CaseStatement {
 	// parseExpression stopped at the first `/` or `:` and mis-reported
 	// the trailing parts as an unexpected token before `in`.
 	stmt.Value = p.parseCommandWord()
-	if !p.expectPeek(token.IN) {
+	// Zsh opens a case body with `in` or `{` (zshmisc, ALTERNATE FORMS
+	// FOR COMPLEX COMMANDS). A brace-opened body may close with `}` or
+	// `esac`. An `in`-opened body closes only with `esac`: it must NOT
+	// also accept `}`, or a `}` from an enclosing function or brace
+	// block would close the case early.
+	braceOpened := false
+	if p.peekTokenIs(token.LBRACE) {
+		braceOpened = true
+		p.nextToken() // step onto `{`
+	} else if !p.expectPeek(token.IN) {
 		return nil
 	}
 	p.nextToken()
-	for !p.curTokenIs(token.ESAC) && !p.curTokenIs(token.EOF) {
+	for !p.curTokenIsCaseCloser(braceOpened) && !p.curTokenIs(token.EOF) {
 		for p.curTokenIs(token.SEMICOLON) {
 			p.nextToken()
 		}
-		if p.curTokenIs(token.ESAC) {
+		if p.curTokenIsCaseCloser(braceOpened) {
 			break
 		}
-		clause := p.parseCaseClause()
+		clause := p.parseCaseClause(braceOpened)
 		if clause == nil {
 			return nil
 		}
@@ -1054,11 +1063,20 @@ func (p *Parser) parseCaseStatement() *ast.CaseStatement {
 	// Skip the advance when the successor is a pipeline / logical
 	// continuation — consumePipelineTail expects peek=PIPE/AND/OR
 	// — or EOF, where there is nothing to advance onto.
-	if p.curTokenIs(token.ESAC) && p.shouldAdvancePastEsac() {
+	if p.curTokenIsCaseCloser(braceOpened) && p.shouldAdvancePastEsac() {
 		p.nextToken()
 		p.consumedBraceTerminator = true
 	}
 	return stmt
+}
+
+// curTokenIsCaseCloser reports whether the current token closes a case
+// body. `esac` always closes; `}` closes only a brace-opened body.
+func (p *Parser) curTokenIsCaseCloser(braceOpened bool) bool {
+	if p.curTokenIs(token.ESAC) {
+		return true
+	}
+	return braceOpened && p.curTokenIs(token.RBRACE)
 }
 
 // shouldAdvancePastEsac reports whether parseCaseStatement should step
@@ -1077,7 +1095,7 @@ func (p *Parser) parseShebangStatement() *ast.Shebang {
 	return &ast.Shebang{Token: p.curToken, Path: p.curToken.Literal}
 }
 
-func (p *Parser) parseCaseClause() *ast.CaseClause {
+func (p *Parser) parseCaseClause(braceOpened bool) *ast.CaseClause {
 	clause := &ast.CaseClause{Token: p.curToken}
 	if p.curTokenIs(token.LPAREN) && p.lookaheadCaseLabelOpener() {
 		p.nextToken()
@@ -1103,7 +1121,14 @@ func (p *Parser) parseCaseClause() *ast.CaseClause {
 		return nil
 	}
 	p.nextToken()
-	clause.Body = p.parseBlockStatement(token.DSEMI, token.ESAC)
+	// A clause body ends at `;;`, or at the case closer when the final
+	// clause omits the `;;`. `}` is a valid closer only for a
+	// brace-opened case, so it joins the terminator set only then.
+	terminators := []token.Type{token.DSEMI, token.ESAC}
+	if braceOpened {
+		terminators = append(terminators, token.RBRACE)
+	}
+	clause.Body = p.parseBlockStatement(terminators...)
 	return clause
 }
 

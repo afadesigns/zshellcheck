@@ -28,6 +28,23 @@ func TestParseCaseStatementEmptyClauses(t *testing.T) {
 	parseSourceClean(t, "case $x in a) ;; b) ;; esac\n")
 }
 
+func TestParseCaseStatementBraceForm(t *testing.T) {
+	parseSourceClean(t, "case $x { a) echo a ;; b) echo b ;; }\n")
+}
+
+func TestParseCaseStatementBraceFormEsacClose(t *testing.T) {
+	// A brace-opened case may close with `esac`; zsh accepts the mix.
+	parseSourceClean(t, "case $x { a) echo a ;; esac\n")
+}
+
+func TestParseCaseStatementBraceFormFinalClauseNoSemis(t *testing.T) {
+	parseSourceClean(t, "case $x { a) echo a }\n")
+}
+
+func TestParseCaseStatementBraceFormNested(t *testing.T) {
+	parseSourceClean(t, "case x { a) case y in 1) echo n ;; esac ;; }\n")
+}
+
 func TestParseAnonymousFunction(t *testing.T) {
 	parseSourceClean(t, "() { echo anon; }\n")
 }
