@@ -40,6 +40,15 @@ func TestParseForLoopArithmeticConditionOnly(t *testing.T) {
 	parseSourceClean(t, "for ((i=0; i<3; )) do echo $i; done\n")
 }
 
+// A POSIX bracket class in a for-in word (`a[[:alpha:]]`) is a glob, not
+// an array subscript. parseIndexExpression used to drain forward looking
+// for a `]` the mis-parse had already consumed, swallowing `; do … done`
+// and the rest of the input. Issue #1376 (blocks Powerlevel10k).
+func TestParseForInBracketClass(t *testing.T) {
+	parseSourceClean(t, "for x in a[[:alpha:]]; do echo \"$x\"; done\n")
+	parseSourceClean(t, "for f in /etc/*[[:digit:]]; do :; done\n")
+}
+
 func TestParseForLoopArithmeticCommaInit(t *testing.T) {
 	parseSourceClean(t, "for ((i=0, j=10; i<j; i++)) do echo $i; done\n")
 }

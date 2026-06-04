@@ -1252,7 +1252,15 @@ func (p *Parser) parseIndexExpression(left ast.Expression) ast.Expression {
 		return p.parseFlaggedSubscript(exp)
 	}
 	p.parseArithmeticSubscript(exp)
-	if p.curTokenIs(token.RBRACKET) && p.peekTokenIs(token.RBRACE) {
+	// parseArithmeticSubscript already advanced onto the closing `]` when
+	// the subscript body consumed it — either a `${arr[1]}` whose `]` is
+	// followed by `}`, or a glob bracket class `a[[:alpha:]]` whose inner
+	// `[` was mis-dispatched to the command parser, which ate both `]`.
+	// In both cases curToken is on that `]`; return rather than draining
+	// forward to a `]` that does not exist (which swallowed the rest of
+	// the input). A nested subscript `arr[foo[1]]` leaves curToken on the
+	// inner `]` with the outer `]` still ahead, so guard on peek != `]`.
+	if p.curTokenIs(token.RBRACKET) && !p.peekTokenIs(token.RBRACKET) {
 		return exp
 	}
 	if !p.peekTokenIs(token.RBRACKET) {
