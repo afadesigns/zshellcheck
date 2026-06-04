@@ -1429,6 +1429,18 @@ func TestZC1043(t *testing.T) {
 			expected: []katas.Violation{},
 		},
 		{
+			// REPLY/reply/MATCH/... are Zsh's value-return parameters;
+			// they are intentionally global and must not be flagged.
+			name:     "REPLY return parameter not flagged",
+			input:    "myfunc() { REPLY=42 }",
+			expected: []katas.Violation{},
+		},
+		{
+			name:     "reply array return parameter not flagged",
+			input:    "myfunc() { reply=(a b c) }",
+			expected: []katas.Violation{},
+		},
+		{
 			// Regression for #1229 — empty-RHS assignment must not
 			// panic during message build. Hint still emitted with an
 			// empty RHS rendered in the template.

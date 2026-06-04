@@ -2503,6 +2503,17 @@ func zc1043HarvestLocals(n ast.Node, locals map[string]bool) {
 	}
 }
 
+// zc1043ReturnParams are the Zsh special parameters used by convention
+// to return values from a function to its caller (`man zshparam`,
+// `man zshmisc` =~). Assigning them inside a function is intentionally
+// global, so `local` would break the return; ZC1043 must not flag them.
+var zc1043ReturnParams = map[string]bool{
+	"REPLY": true, "reply": true,
+	"MATCH": true, "MBEGIN": true, "MEND": true,
+	"match": true, "mbegin": true, "mend": true,
+	"psvar": true,
+}
+
 func zc1043UnscopedAssign(n ast.Node, locals map[string]bool) (Violation, bool) {
 	exprStmt, ok := n.(*ast.ExpressionStatement)
 	if !ok {
@@ -2519,7 +2530,7 @@ func zc1043UnscopedAssign(n ast.Node, locals map[string]bool) (Violation, bool) 
 		return Violation{}, false
 	}
 	ident, ok := assign.Left.(*ast.Identifier)
-	if !ok || locals[ident.Value] {
+	if !ok || locals[ident.Value] || zc1043ReturnParams[ident.Value] {
 		return Violation{}, false
 	}
 	rhs := ""

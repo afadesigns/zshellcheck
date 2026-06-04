@@ -1,7 +1,7 @@
 # Violation baseline. Regenerate with scripts/violation-corpus-sweep.sh --update-baseline
 # Snapshot of kata findings on the pinned, zero-parser-error corpora. Any drift is reviewed.
 # Format: <relpath>\t<ZCID>\t<count>
-agkozak-prompt/agkozak-zsh-prompt.plugin.zsh	ZC1043	6
+agkozak-prompt/agkozak-zsh-prompt.plugin.zsh	ZC1043	5
 agkozak-prompt/agkozak-zsh-prompt.plugin.zsh	ZC1075	21
 agkozak-prompt/lib/async.zsh	ZC1001	1
 agkozak-prompt/lib/async.zsh	ZC1010	1
@@ -18,7 +18,7 @@ agkozak-prompt/lib/async.zsh	ZC1909	1
 alias-tips/alias-tips.plugin.zsh	ZC1075	1
 antidote/antidote.zsh	ZC1004	1
 antidote/antidote.zsh	ZC1010	2
-antidote/antidote.zsh	ZC1043	46
+antidote/antidote.zsh	ZC1043	12
 antidote/antidote.zsh	ZC1046	1
 antidote/antidote.zsh	ZC1075	2
 antidote/antidote.zsh	ZC1085	1
@@ -895,7 +895,7 @@ zaw/zaw.zsh	ZC1098	2
 zaw/zaw.zsh	ZC1107	2
 zaw/zaw.zsh	ZC1176	1
 zcolors/zcolors.plugin.zsh	ZC1031	1
-zcomet/zcomet.zsh	ZC1043	20
+zcomet/zcomet.zsh	ZC1043	18
 zcomet/zcomet.zsh	ZC1068	1
 zcomet/zcomet.zsh	ZC1069	1
 zcomet/zcomet.zsh	ZC1075	1
@@ -1220,7 +1220,7 @@ zsh-abbr/tests/index.ztr.zsh	ZC1078	1
 zsh-abbr/tests/index.ztr.zsh	ZC1097	1
 zsh-abbr/zsh-abbr.zsh	ZC1001	14
 zsh-abbr/zsh-abbr.zsh	ZC1017	1
-zsh-abbr/zsh-abbr.zsh	ZC1043	36
+zsh-abbr/zsh-abbr.zsh	ZC1043	34
 zsh-abbr/zsh-abbr.zsh	ZC1069	9
 zsh-abbr/zsh-abbr.zsh	ZC1073	1
 zsh-abbr/zsh-abbr.zsh	ZC1075	20
@@ -1336,7 +1336,7 @@ zsh-help/zsh-help.plugin.zsh	ZC1771	1
 zsh-histdb/histdb-interactive.zsh	ZC1043	25
 zsh-histdb/histdb-interactive.zsh	ZC1044	1
 zsh-histdb/sqlite-history.zsh	ZC1005	1
-zsh-histdb/sqlite-history.zsh	ZC1043	4
+zsh-histdb/sqlite-history.zsh	ZC1043	3
 zsh-histdb/sqlite-history.zsh	ZC1076	1
 zsh-histdb/sqlite-history.zsh	ZC1271	1
 zsh-histdb/sqlite-history.zsh	ZC1288	2
@@ -1432,7 +1432,7 @@ zsh-vi-mode/zsh-vi-mode.zsh	ZC1477	2
 zsh-z/zsh-z.plugin.zsh	ZC1001	5
 zsh-z/zsh-z.plugin.zsh	ZC1004	2
 zsh-z/zsh-z.plugin.zsh	ZC1017	3
-zsh-z/zsh-z.plugin.zsh	ZC1043	7
+zsh-z/zsh-z.plugin.zsh	ZC1043	5
 zsh-z/zsh-z.plugin.zsh	ZC1044	1
 zsh-z/zsh-z.plugin.zsh	ZC1045	2
 zsh-z/zsh-z.plugin.zsh	ZC1049	1
