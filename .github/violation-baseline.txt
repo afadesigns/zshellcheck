@@ -947,7 +947,7 @@ zinit/zinit-autoload.zsh	ZC1856	3
 zinit/zinit-autoload.zsh	ZC1875	3
 zinit/zinit-autoload.zsh	ZC1877	10
 zinit/zinit-autoload.zsh	ZC1916	3
-zinit/zinit-install.zsh	ZC1001	25
+zinit/zinit-install.zsh	ZC1001	24
 zinit/zinit-install.zsh	ZC1030	3
 zinit/zinit-install.zsh	ZC1037	2
 zinit/zinit-install.zsh	ZC1043	1
