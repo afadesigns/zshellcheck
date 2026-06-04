@@ -171,17 +171,8 @@ func (p *Parser) expressionInfixShouldBreak() bool {
 // SLASH/LBRACKET arms guard glob-context shapes; AMPERSAND/CARET/COMMA
 // arms guard shell-control bytes that are only infix inside `((…))`.
 func (p *Parser) peekShouldBreakInfix() bool {
-	if p.peekTokenIs(token.LBRACKET) && p.peekToken.HasPrecedingSpace {
-		return true
-	}
-	// Inside `[[ … ]]`, a `[` after a closing `)` (glob-alt group)
-	// or `]` (prior bracket-class) is the next glob fragment, not
-	// an array subscript. Without this break the INDEX infix walks
-	// past the closing `]]` and the outer test fails to terminate.
-	if p.inDoubleBracket && p.peekTokenIs(token.LBRACKET) &&
-		(p.curTokenIs(token.RPAREN) || p.curTokenIs(token.RBRACKET) ||
-			p.curTokenIs(token.STRING)) {
-		return true
+	if p.peekTokenIs(token.LBRACKET) {
+		return p.peekLBracketBreaksInfix()
 	}
 	if p.peekTokenIs(token.SLASH) && !p.peekToken.HasPrecedingSpace {
 		return true
@@ -193,6 +184,32 @@ func (p *Parser) peekShouldBreakInfix() bool {
 		return true
 	}
 	return false
+}
+
+// peekLBracketBreaksInfix reports whether a peeked `[` opens a glob
+// bracket class rather than an array-subscript infix. The caller has
+// confirmed peek == LBRACKET.
+func (p *Parser) peekLBracketBreaksInfix() bool {
+	// A spaced `[` is a separate word, not a subscript.
+	if p.peekToken.HasPrecedingSpace {
+		return true
+	}
+	// A `[` glued to a path-glob word — a `/` already in curToken's
+	// literal (a SLASH token, or an IDENT/VARIABLE like `$root/plugins/`)
+	// — opens a glob bracket class: `/` can never appear in an array
+	// name. Without this the INDEX infix treats the path as the array
+	// name and the subscript parser swallows the rest of the input
+	// (p10k `for plugin in $root/plugins/[^[:space:]]##(/N)` ate the
+	// loop's `; do … done`). `$path[1]` (no `/`) stays a real subscript.
+	if strings.Contains(p.curToken.Literal, "/") {
+		return true
+	}
+	// Inside `[[ … ]]`, a `[` after a closing `)` (glob-alt group), `]`
+	// (prior bracket-class), or a STRING is the next glob fragment, not
+	// a subscript. Without this the INDEX infix walks past `]]`.
+	return p.inDoubleBracket &&
+		(p.curTokenIs(token.RPAREN) || p.curTokenIs(token.RBRACKET) ||
+			p.curTokenIs(token.STRING))
 }
 
 func (p *Parser) parseIdentifier() ast.Expression {
@@ -832,7 +849,7 @@ func (p *Parser) peekIsDollarSpecialOp() bool {
 	return p.peekTokenIs(token.HASH) || p.peekTokenIs(token.INT) ||
 		p.peekTokenIs(token.ASTERISK) || p.peekTokenIs(token.BANG) ||
 		p.peekTokenIs(token.MINUS) || p.peekTokenIs(token.CARET) ||
-		p.peekTokenIs(token.EQ) || p.peekTokenIs(token.TILDE)
+		p.peekTokenIs(token.ASSIGN) || p.peekTokenIs(token.TILDE)
 }
 
 func (p *Parser) parseDollarArithExpansion(dollarToken token.Token) ast.Expression {
@@ -887,9 +904,13 @@ func (p *Parser) parseDollarSpecialOp(dollarToken token.Token) ast.Expression {
 	return &ast.PrefixExpression{Token: dollarToken, Operator: "$", Right: ident}
 }
 
+// isDollarFlagOp reports whether a token following a bare `$` is one of
+// Zsh's expansion-flag operators: `$^name` (RC_EXPAND_PARAM broadcast),
+// `$=name` (forced word-split — a single `=`, token.ASSIGN), `$~name`
+// (forced glob). The split flag is one `=`, not `==`.
 func isDollarFlagOp(t token.Type) bool {
 	switch t {
-	case token.CARET, token.EQ, token.TILDE:
+	case token.CARET, token.ASSIGN, token.TILDE:
 		return true
 	}
 	return false

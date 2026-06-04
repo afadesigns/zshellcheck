@@ -66,6 +66,44 @@ func TestParseUntilLoop(t *testing.T) {
 	}
 }
 
+// A `[` glued to a path-glob word (a `/` before it) is a glob bracket
+// class, not an array subscript. Inside a `for … in` list the INDEX
+// infix used to treat the path as the array name and swallow the rest
+// of the loop, leaving its `do`/`done` orphaned. The zsh-z and
+// powerlevel10k plugins use `$dir/[^[:space:]]##(/N)`. A `$var[idx]`
+// with no `/` stays a real subscript.
+func TestParseGlobBracketAfterPath(t *testing.T) {
+	clean := []string{
+		"for x in a/[[:space:]]##; do :; done\n",
+		"for x in /[^[:space:]]##; do :; done\n",
+		"for plugin in $root/plugins/[^[:space:]]##(/N); do :; done\n",
+		"echo $path[1]\n",
+		"echo ${arr[1]}\n",
+		"echo $arr[$i/2]\n",
+	}
+	for _, src := range clean {
+		parseSourceClean(t, src)
+	}
+}
+
+// Zsh's `$=name` forces word-splitting on the expansion (the bare-`$`
+// counterpart of `${=name}`). The split flag is a single `=`
+// (token.ASSIGN), not `==`; the dollar-flag dispatch checked the wrong
+// token, so `$=line` errored with "expected IDENT". Sibling forms
+// `$^name` and `$~name` already worked. p10k uses `local w=($=line)`.
+func TestParseDollarForcedSplitFlag(t *testing.T) {
+	clean := []string{
+		"echo $=var\n",
+		"local words=($=line)\n",
+		"local header=($=lines[1])\n",
+		"for a b in $=x[1]; do :; done\n",
+		"x=( $=foo )\n",
+	}
+	for _, src := range clean {
+		parseSourceClean(t, src)
+	}
+}
+
 // Exercise every operand form the character-code prefix operator accepts,
 // plus the bare-`#` fallback when no operand is glued on.
 func TestParseArithmeticCharCodeOperandForms(t *testing.T) {

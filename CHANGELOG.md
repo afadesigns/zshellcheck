@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.2] - 2026-06-04
+
+### Fixed
+- Parser: two command-word gaps that left Powerlevel10k's `p10k.zsh` unparseable, each confirmed valid by `zsh -n`, parsing with zero errors across the corpus sweep, and producing no false-positive drift.
+  - A glob bracket class glued to a path word in a `for … in` list (`for plugin in $dir/[^[:space:]]##(/N)`) was mistaken for an array subscript; the subscript parser then swallowed the loop's `do … done`. A `[` after a word that carries a `/` now opens a glob, not a subscript; `$var[1]` still indexes.
+  - The `$=name` forced-word-split expansion (the bare-`$` form of `${=name}`) failed to parse. The split flag is a single `=`; the expansion-flag dispatch matched `==` instead. The sibling `$^name` and `$~name` forms were unaffected.
+
 ## [1.2.1] - 2026-06-04
 
 ### Fixed
