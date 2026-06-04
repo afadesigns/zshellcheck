@@ -5181,10 +5181,13 @@ func checkZC1074(node ast.Node) []Violation {
 func init() {
 	RegisterKata(ast.SimpleCommandNode, Kata{
 		ID:    "ZC1075",
-		Title: "Quote variable expansions to prevent globbing",
-		Description: "Unquoted variable expansions in Zsh are subject to globbing (filename generation). " +
-			"If the variable contains characters like `*` or `?`, it might match files unexpectedly. " +
-			"Use quotes `\"$var\"` to prevent this.",
+		Title: "Quote variable expansions to prevent empty-word elision",
+		Description: "An unquoted expansion whose value is empty or unset is elided " +
+			"entirely, so the word vanishes from the command (`rm $file` becomes bare " +
+			"`rm` when `$file` is empty). Quote scalars as `\"$var\"` and arrays as " +
+			"`\"${arr[@]}\"`. In default Zsh, unlike Bash, an unquoted `$var` does not " +
+			"word-split or glob unless `SH_WORD_SPLIT` or `GLOB_SUBST` is set, for " +
+			"example under `emulate sh`.",
 		Severity: SeverityWarning,
 		Check:    checkZC1075,
 	})
@@ -5228,6 +5231,33 @@ func zc1075IsAssignmentWord(arg ast.Expression) bool {
 	return false
 }
 
+// zc1075IsNameByte reports whether c may appear in a parameter name.
+func zc1075IsNameByte(c byte) bool {
+	return c == '_' ||
+		(c >= 'a' && c <= 'z') ||
+		(c >= 'A' && c <= 'Z') ||
+		(c >= '0' && c <= '9')
+}
+
+// zc1075IsBareExpansion reports whether v is a bare parameter expansion
+// (`$name` or `$name[sub]`) with no literal tail. Only a bare expansion can
+// elide to a zero-length word when its value is empty; a suffixed form like
+// `$dir/foo` keeps a literal part and never elides, so quoting it changes
+// nothing in default Zsh.
+func zc1075IsBareExpansion(v string) bool {
+	if len(v) < 2 || v[0] != '$' || !zc1075IsNameByte(v[1]) {
+		return false
+	}
+	i := 1
+	for i < len(v) && zc1075IsNameByte(v[i]) {
+		i++
+	}
+	if i < len(v) && v[i] == '[' {
+		return v[len(v)-1] == ']'
+	}
+	return i == len(v)
+}
+
 func checkZC1075(node ast.Node) []Violation {
 	cmd, ok := node.(*ast.SimpleCommand)
 	if !ok {
@@ -5255,21 +5285,22 @@ func checkZC1075(node ast.Node) []Violation {
 
 		// If it's a bare IdentifierNode (variable expansion), it's unquoted.
 		if ident, ok := arg.(*ast.Identifier); ok {
-			// Identifiers that start with $ are variable expansions
-			if len(ident.Value) > 0 && ident.Value[0] == '$' {
+			// Only a bare `$name` expansion can elide to nothing; a suffixed
+			// form like `$dir/foo` keeps a literal tail and never elides.
+			if zc1075IsBareExpansion(ident.Value) {
 				violations = append(violations, Violation{
 					KataID:  "ZC1075",
-					Message: "Unquoted variable expansion '" + ident.Value + "' is subject to globbing. Quote it: \"" + ident.Value + "\".",
+					Message: "Quote `" + ident.Value + "`. An unquoted empty or unset value is elided entirely, dropping the word.",
 					Line:    ident.Token.Line,
 					Column:  ident.Token.Column,
 					Level:   SeverityWarning,
 				})
 			}
 		} else if _, ok := arg.(*ast.ArrayAccess); ok {
-			// Array access ${arr[idx]} is also subject to globbing if unquoted
+			// An empty array element is elided when the access is unquoted.
 			violations = append(violations, Violation{
 				KataID:  "ZC1075",
-				Message: "Unquoted array access is subject to globbing. Quote it.",
+				Message: "Quote this array element. An unquoted empty value is elided, dropping the word.",
 				Line:    arg.TokenLiteralNode().Line,
 				Column:  arg.TokenLiteralNode().Column,
 				Level:   SeverityWarning,
@@ -5281,24 +5312,9 @@ func checkZC1075(node ast.Node) []Violation {
 			// We'll skip to reduce noise.
 		}
 
-		// Note: StringLiteral arguments are quoted, so we don't check them.
-		// But ConcatenatedExpression might contain unquoted parts.
-		// e.g. $var/foo
-		if concat, ok := arg.(*ast.ConcatenatedExpression); ok {
-			for _, part := range concat.Parts {
-				if ident, ok := part.(*ast.Identifier); ok {
-					if len(ident.Value) > 0 && ident.Value[0] == '$' {
-						violations = append(violations, Violation{
-							KataID:  "ZC1075",
-							Message: "Unquoted variable expansion '" + ident.Value + "' in concatenated string is subject to globbing.",
-							Line:    ident.Token.Line,
-							Column:  ident.Token.Column,
-							Level:   SeverityWarning,
-						})
-					}
-				}
-			}
-		}
+		// A concatenated expression such as `$var/foo` cannot elide: a
+		// literal part keeps the word non-empty, and Zsh does not split or
+		// glob the expansion by default. Nothing to flag here.
 	}
 
 	return violations

@@ -3123,7 +3123,7 @@ func TestZC1075(t *testing.T) {
 			expected: []katas.Violation{
 				{
 					KataID:  "ZC1075",
-					Message: "Unquoted variable expansion '$var' is subject to globbing. Quote it: \"$var\".",
+					Message: "Quote `$var`. An unquoted empty or unset value is elided entirely, dropping the word.",
 					Line:    1,
 					Column:  4,
 				},
@@ -3135,7 +3135,7 @@ func TestZC1075(t *testing.T) {
 			expected: []katas.Violation{
 				{
 					KataID:  "ZC1075",
-					Message: "Unquoted array access is subject to globbing. Quote it.",
+					Message: "Quote this array element. An unquoted empty value is elided, dropping the word.",
 					Line:    1,
 					Column:  4,
 				},
@@ -3147,16 +3147,11 @@ func TestZC1075(t *testing.T) {
 			expected: []katas.Violation{},
 		},
 		{
-			name:  "unquoted concatenated",
-			input: `cp $src/file dest`,
-			expected: []katas.Violation{
-				{
-					KataID:  "ZC1075",
-					Message: "Unquoted variable expansion '$src/file' is subject to globbing. Quote it: \"$src/file\".",
-					Line:    1,
-					Column:  4,
-				},
-			},
+			// A suffixed expansion keeps a literal tail (`/file`), so it
+			// cannot elide and must not be flagged.
+			name:     "suffixed expansion does not elide",
+			input:    `cp $src/file dest`,
+			expected: []katas.Violation{},
 		},
 		{
 			// The RHS of an assignment word given to an assignment
@@ -3183,7 +3178,7 @@ func TestZC1075(t *testing.T) {
 			expected: []katas.Violation{
 				{
 					KataID:  "ZC1075",
-					Message: "Unquoted variable expansion '$dynamic' is subject to globbing. Quote it: \"$dynamic\".",
+					Message: "Quote `$dynamic`. An unquoted empty or unset value is elided entirely, dropping the word.",
 					Line:    1,
 					Column:  8,
 				},
