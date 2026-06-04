@@ -201,6 +201,19 @@ func TestParseIfShortcutInsideStandardIfThenFi(t *testing.T) {
 	parseSourceClean(t, src)
 }
 
+// `elif (( … ))` after a `case … esac` in the preceding then-body. The
+// `case` left consumedBraceTerminator set; it leaked into the elif
+// condition's parseBlockStatement, which skipped its post-statement
+// advance and dropped onto `))` with no prefix handler. Issue #1358.
+func TestParseElifArithAfterCaseInThenBody(t *testing.T) {
+	src := "if (( 1 )); then\n" +
+		"  case x in p) ;; esac\n" +
+		"elif (( 1 )); then\n" +
+		"  :\n" +
+		"fi\n"
+	parseSourceClean(t, src)
+}
+
 // Inside `[[ … ]]`, a closing `)` of a glob-alternation group is
 // followed by `[…]` which is the next glob fragment — never an
 // array subscript on the parenthesised expression. The INDEX infix

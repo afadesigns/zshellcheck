@@ -807,6 +807,13 @@ func (p *Parser) parseIfStatement() *ast.IfStatement {
 	for p.curTokenIs(token.ELIF) {
 		elifToken := p.curToken
 		p.nextToken() // consume "elif"
+		// Clear consumedBraceTerminator possibly left set by a brace-
+		// closing statement at the tail of the preceding then-body
+		// (e.g. a `case … esac` or an inner `if … fi`). Without this the
+		// elif condition's parseBlockStatement(THEN) inherits the flag,
+		// skips its post-statement nextToken, and drops onto `))` with no
+		// prefix handler. Mirrors the clear in the brace-form `if` above.
+		p.consumedBraceTerminator = false
 		elif := &ast.IfStatement{Token: elifToken}
 		elif.Condition = p.parseBlockStatement(token.THEN)
 		if !p.curTokenIs(token.THEN) {
