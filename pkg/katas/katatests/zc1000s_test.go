@@ -4659,6 +4659,25 @@ func TestZC1098(t *testing.T) {
 			input:    `eval "ls ${(q)dir}"`,
 			expected: []katas.Violation{},
 		},
+		{
+			// `(q)` cannot quote a command substitution, so the
+			// shell-init idiom must not flag.
+			name:     "eval with command substitution only",
+			input:    `eval "$(pyenv init - zsh)"`,
+			expected: []katas.Violation{},
+		},
+		{
+			name:  "eval mixing command substitution and parameter",
+			input: `eval "$(cmd) ${userdata}"`,
+			expected: []katas.Violation{
+				{
+					KataID:  "ZC1098",
+					Message: "Use the `(q)` flag (or `(qq)`, `(q-)`) when using variables in `eval` to prevent injection.",
+					Line:    1,
+					Column:  1,
+				},
+			},
+		},
 	}
 
 	for _, tt := range tests {

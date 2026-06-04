@@ -7251,13 +7251,22 @@ func checkZC1098(node ast.Node) []Violation {
 
 			// If we find `$` but no `(q`, warn.
 
-			// Check for variable usage
+			// Check for a parameter expansion. A `$` that introduces a
+			// command (or arithmetic) substitution `$(` cannot be quoted
+			// with the `(q)` flag — that flag applies only to parameter
+			// expansions `${...}` / `$name` — so skip it. This keeps the
+			// shell-init idiom `eval "$(tool init zsh)"` quiet while still
+			// flagging `eval "$var"` and `eval "$(cmd) ${userdata}"`.
 			hasVar := false
 			for i := 0; i < len(argStr); i++ {
-				if argStr[i] == '$' {
-					hasVar = true
-					break
+				if argStr[i] != '$' {
+					continue
 				}
+				if i+1 < len(argStr) && argStr[i+1] == '(' {
+					continue
+				}
+				hasVar = true
+				break
 			}
 
 			if hasVar {
