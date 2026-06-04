@@ -383,6 +383,18 @@ func TestParseCommandSubOfSubshell(t *testing.T) {
 	parseSourceClean(t, "y=$( ( echo x ) | cat )\n")
 }
 
+// A `case … esac` or a `{ } always { }` try block inside a command
+// substitution `$( … )` must parse. The body drain now honours
+// consumedBraceTerminator (a `case` advances past its own `esac`) and
+// the `always` continuation, with `;` and newline separators. Issue #1359.
+func TestParseCaseAndAlwaysInCommandSub(t *testing.T) {
+	parseSourceClean(t, "v=$( case x in a) : ;; esac )\n")
+	parseSourceClean(t, "echo $( case x in a) : ;; esac )\n")
+	parseSourceClean(t, "v=$( { : } always { : } )\n")
+	parseSourceClean(t, "n=$( case x in a) : ;; esac; echo two )\n")
+	parseSourceClean(t, "p=$( case x in a) : ;; esac\n  echo two )\n")
+}
+
 func TestParseSelectStatement(t *testing.T) {
 	parseSourceClean(t, "select opt in a b c; do echo $opt; break; done\n")
 }

@@ -1178,35 +1178,67 @@ func (p *Parser) parseDollarParenExpression() ast.Expression {
 	// closing `)` cleanly. The AST keeps the first command; katas
 	// that care about the full body can walk source.
 	exp.Command = p.parseCommandList()
-	// Drain any further statements inside the `$( … )` body.
-	// Zsh separates statements with `;` or a newline, so advance
-	// past either and re-enter parseStatement. Stops at RPAREN or
-	// EOF; callers handle unexpected EOF as a parse error.
-	for !p.peekTokenIs(token.RPAREN) && !p.peekTokenIs(token.EOF) {
-		switch {
-		case p.peekTokenIs(token.SEMICOLON):
-			p.nextToken() // onto ;
-		case p.peekToken.Line > p.curToken.Line:
-			// implicit newline separator: fall through to nextToken
-		default:
-			// Unknown continuation — bail so the RPAREN expectPeek
-			// below reports a meaningful error.
-			goto drainDone
-		}
-		p.nextToken() // onto next stmt head
-		_ = p.parseStatement()
-	}
-drainDone:
-	if !p.expectPeek(token.RPAREN) {
+	if !p.drainDollarParenBody() {
 		return nil
 	}
 	// Signal that an inner expression consumed its own closing `)`.
 	// parseBlockStatement uses the flag to skip RPAREN as its own
-	// terminator and advance past it instead, so an enclosing
-	// `( … )` subshell body doesn't end at the inner `)` of
-	// `HOST=$(cmd)`.
+	// terminator and advance past it instead, so an enclosing `( … )`
+	// subshell body doesn't end at the inner `)` of `HOST=$(cmd)`.
 	p.consumedParenTerminator = true
 	return exp
+}
+
+// drainDollarParenBody consumes the statements of a `$( … )` body after
+// the first command and stops on the closing `)`, which it leaves on
+// curToken. Returns false when the close is missing (error recorded). A
+// `case … esac` / brace-form body advances past its own terminator and
+// sets consumedBraceTerminator, landing curToken on the next token; an
+// `always` block continues a preceding brace/try block. Issue #1359.
+func (p *Parser) drainDollarParenBody() bool {
+	for {
+		if p.consumedBraceTerminator {
+			p.consumedBraceTerminator = false
+			for p.curTokenIs(token.SEMICOLON) {
+				p.nextToken()
+			}
+			if p.curTokenIs(token.RPAREN) {
+				return true
+			}
+			if p.curTokenIs(token.EOF) {
+				break
+			}
+			_ = p.parseStatement()
+			continue
+		}
+		if p.peekTokenIs(token.RPAREN) || p.peekTokenIs(token.EOF) {
+			break
+		}
+		if !p.advanceDollarParenSeparator() {
+			break
+		}
+		p.nextToken() // onto next stmt head
+		_ = p.parseStatement()
+	}
+	return p.expectPeek(token.RPAREN)
+}
+
+// advanceDollarParenSeparator steps past a `;` or newline statement
+// separator inside a `$( … )` body, or an `always` keyword that continues
+// a preceding brace/try block. Returns false for an unknown continuation
+// so the caller reports the missing `)`.
+func (p *Parser) advanceDollarParenSeparator() bool {
+	switch {
+	case p.peekTokenIs(token.SEMICOLON):
+		p.nextToken() // onto ;
+		return true
+	case p.peekToken.Line > p.curToken.Line:
+		return true // implicit newline separator
+	case p.peekTokenIs(token.IDENT) && p.peekToken.Literal == "always":
+		p.nextToken() // onto always; caller advances onto the always-block
+		return true
+	}
+	return false
 }
 
 func (p *Parser) parseFunctionParameters() []*ast.Identifier {
