@@ -1385,5 +1385,10 @@ func (p *Parser) parseProcessSubstitution() ast.Expression {
 		p.peekError(token.RPAREN)
 		return nil
 	}
+	// Leave curToken on the process substitution's own `)` and signal it,
+	// mirroring parseDollarParenExpression: an enclosing block such as a
+	// subshell body must not mistake this `)` for its own terminator and
+	// end early (which dropped the statements after `cmd 2> >(tee log)`).
+	p.consumedParenTerminator = true
 	return exp
 }

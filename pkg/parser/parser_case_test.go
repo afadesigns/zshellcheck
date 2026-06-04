@@ -351,6 +351,15 @@ func TestParseProcessSubstitution(t *testing.T) {
 	parseSourceClean(t, "diff <(sort a) <(sort b)\n")
 }
 
+// A process substitution inside a subshell body must leave the body's
+// own `)` for the block to consume. parseProcessSubstitution used to
+// return on its own `)` without signalling consumedParenTerminator, so
+// the subshell ended early and the statements after `cmd 2> >(tee log)`
+// were dropped (then the real `)` errored). Issue #1356.
+func TestParseProcessSubInSubshellBody(t *testing.T) {
+	parseSourceClean(t, "(\n  cmd 2> >(tee log)\n  echo done\n)\n")
+}
+
 func TestParseSelectStatement(t *testing.T) {
 	parseSourceClean(t, "select opt in a b c; do echo $opt; break; done\n")
 }
