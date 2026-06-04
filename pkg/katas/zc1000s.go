@@ -3088,9 +3088,13 @@ func getCommandFromSubstitution(node ast.Node) ast.Node {
 func init() {
 	RegisterKata(ast.SimpleCommandNode, Kata{
 		ID:    "ZC1051",
-		Title: "Quote variables in `rm` to avoid globbing",
-		Description: "`rm $VAR` is dangerous if `$VAR` contains spaces or glob characters. " +
-			"Quote the variable (`rm \"$VAR\"`) to ensure safe deletion.",
+		Title: "Guard variables in `rm` against empty values",
+		Description: "An unquoted expansion in `rm` is dangerous when its value is empty " +
+			"or unset: `rm $file` becomes bare `rm`, and `rm -rf $dir/` becomes " +
+			"`rm -rf /`. Quoting alone does not fix the trailing-slash case — guard " +
+			"with `${dir:?}` or `[[ -n $dir ]]`. In default Zsh an unquoted `$var` " +
+			"does not word-split or glob (those are Bash / `emulate sh` behaviors), " +
+			"but unquoted command substitution `$(...)` does split.",
 		Severity: SeverityWarning,
 		Check:    checkZC1051,
 		Fix:      fixZC1051,
@@ -3225,13 +3229,9 @@ func checkZC1051(node ast.Node) []Violation {
 				isUnquoted = true
 			}
 		case *ast.ArrayAccess:
-			// ${var[...]} unquoted
-			// Zsh DOES NOT split unquoted variable expansions by default!
-			// BUT it DOES glob them.
-			// `rm $var`. If var="a b", it deletes "a b" (one file).
-			// If var="*", it expands to all files.
-			// So checking for globbing safety is key.
-			// `rm \"$var\"` prevents globbing.
+			// ${var[...]} unquoted: an empty element is elided, changing
+			// what rm targets. Default Zsh does not split or glob the
+			// expansion; the hazard is the empty/unset value, not globbing.
 			isUnquoted = true
 		case *ast.DollarParenExpression:
 			// $(...)
@@ -3241,7 +3241,7 @@ func checkZC1051(node ast.Node) []Violation {
 		if isUnquoted {
 			violations = append(violations, Violation{
 				KataID:  "ZC1051",
-				Message: "Unquoted variable in `rm`. Quote it to prevent globbing (e.g. `rm \"$VAR\"`).",
+				Message: "Unquoted expansion in `rm`. An empty value changes the target — `rm -rf $dir/` becomes `rm -rf /`. Guard with `${dir:?}`.",
 				Line:    arg.TokenLiteralNode().Line,
 				Column:  arg.TokenLiteralNode().Column,
 				Level:   SeverityWarning,

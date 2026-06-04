@@ -1901,7 +1901,7 @@ func TestZC1051(t *testing.T) {
 			expected: []katas.Violation{
 				{
 					KataID:  "ZC1051",
-					Message: "Unquoted variable in `rm`. Quote it to prevent globbing (e.g. `rm \"$VAR\"`).",
+					Message: "Unquoted expansion in `rm`. An empty value changes the target — `rm -rf $dir/` becomes `rm -rf /`. Guard with `${dir:?}`.",
 					Line:    1,
 					Column:  4,
 				},
