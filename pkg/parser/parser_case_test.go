@@ -373,6 +373,16 @@ func TestParseProcessSubInSubshellBody(t *testing.T) {
 	parseSourceClean(t, "(\n  cmd 2> >(tee log)\n  echo done\n)\n")
 }
 
+// A command substitution whose body is a subshell — `$( (cmd) )` — must
+// parse: the inner subshell's `)` is consumed via consumedParenTerminator
+// and is not mistaken for the command-substitution's close. The space
+// after `$(` makes it a subshell, not arithmetic. Issue #1375.
+func TestParseCommandSubOfSubshell(t *testing.T) {
+	parseSourceClean(t, "s=$( (echo hi) )\n")
+	parseSourceClean(t, "x=$( (a; b) )\n")
+	parseSourceClean(t, "y=$( ( echo x ) | cat )\n")
+}
+
 func TestParseSelectStatement(t *testing.T) {
 	parseSourceClean(t, "select opt in a b c; do echo $opt; break; done\n")
 }
