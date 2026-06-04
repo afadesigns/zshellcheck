@@ -174,7 +174,7 @@ func New(l *lexer.Lexer) *Parser {
 	p.registerPrefix(token.PLUS, p.parsePrefixExpression)
 	p.registerPrefix(token.CARET, p.parsePrefixExpression)
 	p.registerPrefix(token.ASTERISK, p.parsePrefixExpression)
-	p.registerPrefix(token.QUESTION, p.parsePrefixExpression)
+	p.registerPrefix(token.QUESTION, p.parseQuestionPrefix)
 	p.registerPrefix(token.TILDE, p.parsePrefixExpression)
 	// `++x` / `--x` are pre-increment / pre-decrement in Zsh
 	// arithmetic (`(( ++x ))`, `(( --x ))`). Register both as

@@ -91,7 +91,9 @@ func isDoubleBracketLiteralKeyword(t token.Type) bool {
 // tryArithSpecialParameter degrades a `?` token in arithmetic context
 // to the literal `$?` special parameter when peek is a closer
 // (`))`, `)`, `;`, `,`). Without this, parsePrefixExpression dragged
-// the closer into a bogus right-operand parse.
+// the closer into a bogus right-operand parse. The operator-followed
+// case (`(( ? == 0 ))`) goes through parseQuestionPrefix instead, so the
+// infix loop can run — the early-return here would skip it.
 func (p *Parser) tryArithSpecialParameter() (ast.Expression, bool) {
 	if !p.inArithmetic || !p.curTokenIs(token.QUESTION) {
 		return nil, false
@@ -102,6 +104,19 @@ func (p *Parser) tryArithSpecialParameter() (ast.Expression, bool) {
 		return &ast.Identifier{Token: tok, Value: tok.Literal}, true
 	}
 	return nil, false
+}
+
+// parseQuestionPrefix handles a `?` dispatched as a prefix. In arithmetic
+// a leading `?` is the `$?` special parameter (the ternary `?` is infix
+// and never reaches a prefix slot), so return it as an identifier and let
+// the infix loop continue — `(( ? == 0 ))` reads as `$? == 0`. Outside
+// arithmetic, fall back to the generic prefix-operator parse.
+func (p *Parser) parseQuestionPrefix() ast.Expression {
+	if p.inArithmetic {
+		tok := p.curToken
+		return &ast.Identifier{Token: tok, Value: tok.Literal}
+	}
+	return p.parsePrefixExpression()
 }
 
 // expressionInfixShouldBreak reports whether the infix chain in

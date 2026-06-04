@@ -71,6 +71,18 @@ func TestParseArithDollarParenHashNotComment(t *testing.T) {
 	parseSourceClean(t, "y=$(( # > 0 ))\n")
 }
 
+// A bare `?` in arithmetic prefix position is the `$?` special parameter,
+// not the ternary operator. `(( ? == 0 ))` must read as `$? == 0`; the
+// operator-followed form used to error "no prefix for ==". The ternary
+// `?` (infix) is unaffected. Issue #1378 (used by the Pure prompt).
+func TestParseArithBareQuestionBeforeOperator(t *testing.T) {
+	parseSourceClean(t, "x=$((? == 0))\n")
+	parseSourceClean(t, "y=$(( ? != 0 ))\n")
+	parseSourceClean(t, "z=$(( ? + 1 ))\n")
+	parseSourceClean(t, "t=$(( cond ? 2 : 3 ))\n")
+	parseSourceClean(t, "n=$(( a ? b : c ? d : e ))\n")
+}
+
 // TestParseArithAllCompoundOpsRegression is a stress test exercising all
 // compound-assign operators in a single arithmetic block.
 func TestParseArithAllCompoundOpsRegression(t *testing.T) {
