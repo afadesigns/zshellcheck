@@ -38,7 +38,12 @@ func (p *Parser) parseSimpleStatement() (ast.Statement, bool) {
 	case token.TYPESET, token.DECLARE:
 		return p.parseDeclarationStatement(), true
 	case token.LPAREN:
-		return p.parseSubshellStatement(), true
+		stmt := p.parseSubshellStatement()
+		// A subshell may head a pipeline / logical chain
+		// (`(a) | cat`, `(a) && b`). The subshell now leaves curToken
+		// on its `)` so the tail's operator sits at peek.
+		p.consumePipelineTail()
+		return stmt, true
 	}
 	return nil, false
 }
@@ -1032,7 +1037,21 @@ func (p *Parser) parseSubshellStatement() ast.Statement {
 		p.peekError(token.RPAREN)
 		return nil
 	}
-	p.nextToken()
+	// Leave curToken on the closing `)` and signal that the subshell
+	// consumed its own terminator, mirroring the `$(…)` convention. A
+	// trailing `p.nextToken()` here double-advanced when no separator
+	// token followed: `(a); (b)` was saved by the throwaway `;`, but
+	// `(a)\n(b)` (newline emits no token) lost the second `(`. The
+	// caller's terminator handling now performs the single advance.
+	//
+	// A final inner statement that advanced past its own brace-style
+	// terminator onto this `)` (e.g. `( case x in a) :;; esac )`, where
+	// the case steps past `esac`) leaks consumedBraceTerminator through
+	// parseBlockStatement's curIsTerm break. The subshell owns its `)`
+	// terminator unconditionally, so clear that stale signal — otherwise
+	// the caller skips the advance the subshell now relies on.
+	p.consumedBraceTerminator = false
+	p.consumedParenTerminator = true
 	// Return a Subshell node instead of BlockStatement
 	return &ast.Subshell{Token: subshellToken, Command: block}
 }
