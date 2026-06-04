@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-06-04
+
+### Fixed
+- Parser: a batch of real-world Zsh constructs that previously failed to parse, found by sweeping oh-my-zsh, the Pure prompt, and the zsh distribution's own function library read-only. Each is confirmed valid by `zsh -n`, parses with zero errors across the 69-corpus sweep, and produces no false-positive drift.
+  - A POSIX bracket class in a `for`-in word (`for x in a[[:alpha:]]`) was mis-parsed as an array subscript and consumed the rest of the input; this blocked Powerlevel10k.
+  - A bare `?` before an operator in arithmetic (`$(( ? == 0 ))`), used by the Pure prompt.
+  - A reserved word used as an arithmetic variable (`(( done = 1 ))`), used by the zsh distribution.
+  - `let name++` post-increment with no assignment.
+  - A function defined with a parameter-spliced name (`function $w-by-keymap { … }`).
+  - `#` as an arithmetic operator inside `$(( … ))`; `elif (( … ))` after a `case` in the preceding then-body; a process substitution inside a subshell body; a single quote inside `"$(...)"` inside `${…}`; `(( … ))` grouping inside `[[ … ]]`; the `function` keyword with a braceless body; the short `for`-loop form; `let` compound-assignment and quoted forms; and leading-zero integer literals.
+
+### Changed
+- The quote-variable kata family is reworked to Zsh semantics. In default Zsh, `SH_WORD_SPLIT` and `GLOB_SUBST` are off, so an unquoted `$var` neither word-splits nor globs; the prior rationale was Bash-only. ZC1075 now warns on empty/unset word elision (the genuine Zsh risk) and fires only on bare expansions; ZC1051 is reworded to the `rm` empty-value danger; ZC1079 is retired because a `[[ == ]]` right-hand variable is already literal in Zsh.
+- Rules that imported a Bash-only restriction are retired, keeping their IDs inert: ZC1069 (`local` outside a function), ZC1085 (quoting a `for`-loop array, which collapses it in Zsh), ZC1090 (quoted `=~`), and ZC1186 (bare `unset`).
+- False-positive corrections: ZC1105 (grouped arithmetic), ZC1098 (`eval "$(tool init zsh)"` shell init), ZC1049 (global and suffix aliases), ZC1043 (`REPLY` and return-value globals), and ZC1001 (message accuracy).
+
 ## [1.1.0] - 2026-06-03
 
 ### Added
