@@ -1441,6 +1441,25 @@ func TestZC1043(t *testing.T) {
 			expected: []katas.Violation{},
 		},
 		{
+			// ZLE widgets write editor state; `local BUFFER` would sever
+			// the editor binding. The buffer specials are global by design.
+			name:     "ZLE buffer specials not flagged",
+			input:    "my-widget() { LBUFFER=\"$LBUFFER foo\"; CURSOR=3; BUFFER=bar }",
+			expected: []katas.Violation{},
+		},
+		{
+			name:     "region_highlight ZLE array not flagged",
+			input:    "my-widget() { region_highlight=(\"0 5 bold\") }",
+			expected: []katas.Violation{},
+		},
+		{
+			// Prompt-setup functions set the prompt globally; `local PROMPT`
+			// discards it on return.
+			name:     "prompt strings not flagged",
+			input:    "prompt_foo_setup() { PROMPT='%n'; RPROMPT='%t'; prompt_opts=(cr subst) }",
+			expected: []katas.Violation{},
+		},
+		{
 			// Regression for #1229 — empty-RHS assignment must not
 			// panic during message build. Hint still emitted with an
 			// empty RHS rendered in the template.
@@ -1634,6 +1653,21 @@ func TestZC1045(t *testing.T) {
 		{
 			name:     "echo is not local or readonly",
 			input:    `echo $(date)`,
+			expected: []katas.Violation{},
+		},
+		{
+			name:     "arithmetic expansion masks no command",
+			input:    `local var=$(( 1 + 1 ))`,
+			expected: []katas.Violation{},
+		},
+		{
+			name:     "arithmetic with name operand",
+			input:    `local elapsed=$(( EPOCHSECONDS - start ))`,
+			expected: []katas.Violation{},
+		},
+		{
+			name:     "arithmetic modulo masks no command",
+			input:    `readonly slot=$(( RANDOM % 1000 ))`,
 			expected: []katas.Violation{},
 		},
 	}

@@ -1346,6 +1346,8 @@ func TestFixIntegration_ZC1016_ReadSensitive(t *testing.T) {
 }
 
 func TestFixIntegration_ZC1043_LocalForFunctionVar(t *testing.T) {
+	// `name()` function bodies are linted and fixed: ZC1043 adds `local`
+	// and the echo->print kata rewrites `echo $bar`. Both apply.
 	src := `foo() {
   bar=42
   echo $bar
@@ -1353,7 +1355,7 @@ func TestFixIntegration_ZC1043_LocalForFunctionVar(t *testing.T) {
 `
 	want := `foo() {
   local bar=42
-  echo $bar
+  print -r -- $bar
 }
 `
 	if got := runFix(t, src); got != want {
@@ -1362,9 +1364,10 @@ func TestFixIntegration_ZC1043_LocalForFunctionVar(t *testing.T) {
 }
 
 func TestFixIntegration_ZC1043_AlreadyLocal(t *testing.T) {
+	// Already `local` and already `print` — ZC1043 must not re-apply.
 	src := `foo() {
   local bar=42
-  echo $bar
+  print -r -- $bar
 }
 `
 	if got := runFix(t, src); got != src {

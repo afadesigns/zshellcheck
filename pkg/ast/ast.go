@@ -706,6 +706,13 @@ func walkOtherChildren(node Node, f WalkFn) {
 	switch n := node.(type) {
 	case *FunctionLiteral:
 		walkFunctionLiteral(n, f)
+	case *FunctionDefinition:
+		// The `name() { … }` function form. Without this case Walk
+		// visited the FunctionDefinition node but never descended into
+		// its body, so every body-level kata (unquoted vars, `echo -e`,
+		// …) silently skipped the most common function syntax.
+		Walk(n.Name, f)
+		Walk(n.Body, f)
 	case *CallExpression:
 		Walk(n.Function, f)
 		walkSlice(n.Arguments, f)
