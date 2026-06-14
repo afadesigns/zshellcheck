@@ -1157,8 +1157,14 @@ func init() {
 	})
 }
 
+// zc1818MangledNames lists the rsync delete-flag tails that the parser
+// can surface as a command name when `rsync` itself is dropped from the
+// token stream. The bare `delete` and `del` tails were removed: `del`
+// is a common user function (`del() { rm -rf -- "$@"; }`) and `delete`
+// is a generic verb, so matching them on the command name flagged
+// non-rsync commands. The remaining multi-segment tails are
+// rsync-specific and do not collide with ordinary command names.
 var zc1818MangledNames = map[string]struct{}{
-	"delete": {}, "del": {},
 	"delete-before": {}, "delete-during": {}, "delete-delay": {},
 	"delete-after": {}, "delete-excluded": {}, "delete-missing-args": {},
 }
@@ -3663,16 +3669,18 @@ func zc1855RefersToGROUPS(v string) bool {
 func init() {
 	RegisterKata(ast.SimpleCommandNode, Kata{
 		ID:       "ZC1856",
-		Title:    "Warn on `unset arr[N]` — Zsh does not delete the array element, the array keeps its length",
+		Title:    "Warn on `unset arr[N]` — Zsh blanks the element instead of removing it, the array keeps its length",
 		Severity: SeverityWarning,
 		Description: "In Bash, `unset arr[N]` removes the N-th element of the array (leaving a " +
-			"sparse hole). In Zsh the same invocation passes the literal string `arr[N]` " +
-			"to the `unset` builtin, which looks for a parameter with that name — finds " +
-			"nothing — and returns success. The array is left untouched, `${#arr[@]}` " +
-			"does not budge, and every downstream `for x in \"${arr[@]}\"` keeps iterating " +
-			"the element the script thought it had removed. Use Zsh's native assignment " +
-			"form `arr[N]=()` to delete an index, or `arr=(\"${(@)arr:#pattern}\")` to " +
-			"filter by value.",
+			"sparse hole). In Zsh the quoted form `unset 'arr[N]'` blanks element N — it " +
+			"becomes the empty string — but the array keeps its length, so `${#arr}` does " +
+			"not budge and every downstream `for x in \"${arr[@]}\"` still iterates the slot " +
+			"the script thought it had removed. The unquoted form `unset arr[N]` is worse: " +
+			"`arr[N]` is glob-expanded first and errors with `no matches found`. Use Zsh's " +
+			"native assignment form `arr[N]=()` to delete an index, or " +
+			"`arr=(\"${(@)arr:#pattern}\")` to filter by value. This applies only to integer " +
+			"subscripts on a normal array; `unset 'assoc[key]'` correctly removes an " +
+			"associative-array key.",
 		Check: checkZC1856,
 	})
 }
@@ -3691,9 +3699,9 @@ func checkZC1856(node ast.Node) []Violation {
 		if zc1856IsArraySubscript(v) {
 			return []Violation{{
 				KataID: "ZC1856",
-				Message: "`unset " + v + "` is a Bash idiom — in Zsh it tries to " +
-					"unset a parameter literally named `" + v + "` and leaves the " +
-					"array untouched. Use `arr[N]=()` or rebuild with " +
+				Message: "`unset " + v + "` is a Bash idiom — in Zsh the quoted form " +
+					"blanks the element but keeps the array length, and the unquoted " +
+					"form errors on glob expansion. Use `arr[N]=()` or rebuild with " +
 					"`arr=(\"${(@)arr:#pattern}\")`.",
 				Line:   cmd.Token.Line,
 				Column: cmd.Token.Column,
@@ -3717,7 +3725,37 @@ func zc1856IsArraySubscript(v string) bool {
 		return false
 	}
 	// The name portion must look like a shell identifier.
-	return zc1856IsIdentifier(trimmed[:open])
+	if !zc1856IsIdentifier(trimmed[:open]) {
+		return false
+	}
+	// Only an integer-literal subscript on a normal array is the real
+	// gotcha. `unset 'arr[2]'` blanks element 2 but leaves the array
+	// length unchanged. Associative keys (`unset 'h[key]'`), parameter
+	// subscripts (`unset "h[$k]"`), and other string subscripts work
+	// correctly in Zsh, so they are not flagged.
+	return zc1856IsIntegerSubscript(trimmed[open+1 : close])
+}
+
+// zc1856IsIntegerSubscript reports whether the subscript text is a plain
+// (optionally signed) integer literal, the only form that triggers the
+// Bash-versus-Zsh `unset arr[N]` divergence on a normal array.
+func zc1856IsIntegerSubscript(s string) bool {
+	s = strings.TrimSpace(s)
+	if s == "" {
+		return false
+	}
+	if s[0] == '-' || s[0] == '+' {
+		s = s[1:]
+	}
+	if s == "" {
+		return false
+	}
+	for _, r := range s {
+		if r < '0' || r > '9' {
+			return false
+		}
+	}
+	return true
 }
 
 func zc1856IsIdentifier(s string) bool {

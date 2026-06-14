@@ -942,7 +942,7 @@ func checkZC1715(node ast.Node) []Violation {
 		return nil
 	}
 
-	for _, arg := range cmd.Arguments {
+	for i, arg := range cmd.Arguments {
 		v := arg.String()
 		if len(v) < 2 || v[0] != '-' {
 			continue
@@ -952,6 +952,15 @@ func checkZC1715(node ast.Node) []Violation {
 			continue
 		}
 		if !strings.ContainsRune(v[1:], 'p') {
+			continue
+		}
+		// Zsh's `-p` reads a word from the coprocess into the following
+		// variable — `read -k 1 -p tok` is valid. The Bash misuse is
+		// `read -p "Prompt: " var`, where `-p` is immediately followed by
+		// a quoted prompt string. Only the quoted-string form is flagged;
+		// a bare variable-name word after `-p` is a legitimate coprocess
+		// read, not the prompt mistake.
+		if !zc1715NextArgIsQuotedPrompt(cmd.Arguments, i) {
 			continue
 		}
 		return []Violation{{
@@ -965,6 +974,21 @@ func checkZC1715(node ast.Node) []Violation {
 		}}
 	}
 	return nil
+}
+
+// zc1715NextArgIsQuotedPrompt reports whether the argument after index i
+// is a quoted string literal — the Bash `read -p "prompt"` shape. A bare
+// identifier word (`tok`) is a coprocess-read target, not a prompt.
+func zc1715NextArgIsQuotedPrompt(args []ast.Expression, i int) bool {
+	if i+1 >= len(args) {
+		return false
+	}
+	str, ok := args[i+1].(*ast.StringLiteral)
+	if !ok {
+		return false
+	}
+	v := str.Value
+	return len(v) >= 2 && (v[0] == '"' || v[0] == '\'')
 }
 
 func init() {

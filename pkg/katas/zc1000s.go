@@ -47,7 +47,7 @@ func fixZC1001(node ast.Node, v Violation, source []byte) []FixEdit {
 	// Find the `[` that opens the subscript starting from after `$name`.
 	// Walk identifier chars then expect `[`.
 	i := dollarOff + 1
-	for i < len(source) && (isIdentByte(source[i])) {
+	for i < len(source) && isIdentByte(source[i]) {
 		i++
 	}
 	if i >= len(source) || source[i] != '[' {
@@ -127,6 +127,9 @@ func checkZC1001(node ast.Node) []Violation {
 			}
 		}
 	} else if arrayAccess, ok := node.(*ast.InvalidArrayAccess); ok {
+		if zc1001IsExistenceTest(arrayAccess.Left) {
+			return nil
+		}
 		violations = append(violations, Violation{
 			KataID: "ZC1001",
 			Message: "Prefer `${...}` for array element access. " +
@@ -138,6 +141,17 @@ func checkZC1001(node ast.Node) []Violation {
 	}
 
 	return violations
+}
+
+// zc1001IsExistenceTest reports whether the subscripted name is preceded
+// by the `$+` existence sigil, as in `$+commands[ls]` or
+// `$+functions[foo]`. Those are the parameter-existence operator (it
+// returns 0 or 1 inside `(( … ))`), not array element access, so the
+// braced-form advice does not apply. The `+` parses as a `$`-prefix
+// expression sitting in the access's `Left` position.
+func zc1001IsExistenceTest(left ast.Expression) bool {
+	prefix, ok := left.(*ast.PrefixExpression)
+	return ok && prefix.Operator == "+"
 }
 
 func init() {
@@ -4857,47 +4871,44 @@ func checkZC1071(node ast.Node) []Violation {
 		return nil
 	}
 	arrayLit, ok := infix.Right.(*ast.ArrayLiteral)
-	if !ok {
+	if !ok || len(arrayLit.Elements) == 0 {
 		return nil
 	}
-	found := false
-	checkNode := func(n ast.Node) bool {
-		if found {
-			return false
-		}
-		if zc1071SelfReferences(n, ident.Value) {
-			found = true
-			return false
-		}
-		return true
-	}
-	for _, elem := range arrayLit.Elements {
-		if found {
-			break
-		}
-		ast.Walk(elem, checkNode)
+	// Only a true append rewrites to `+=`. That means the unmodified
+	// whole array sits in the FIRST element position, so every other
+	// element is concatenated after it: `arr=($arr a b)` ≡ `arr+=(a b)`.
+	// Receipt: `arr=(1 2); arr=($arr 9)` and `arr=(1 2); arr+=(9)` both
+	// yield `1 2 9`.
+	//
+	// A self-reference that is NOT first is a prepend (`path=($new $path)`),
+	// where `+=` would append to the wrong end. A modified reference is a
+	// transform or truncate (`files=(${files##*/})`, `tokens=(${tokens[0,-2]})`),
+	// where `+=` is meaningless. Both are rejected.
+	if !zc1071IsWholeArrayRef(arrayLit.Elements[0], ident.Value) {
+		return nil
 	}
 
-	if found {
-		leftToken := infix.Left.TokenLiteralNode()
-		return []Violation{{
-			KataID: "ZC1071",
-			Message: "Appending to an array using `arr=($arr ...)` is verbose and slower. " +
-				"Use `arr+=(...)` instead.",
-			Line:   leftToken.Line,
-			Column: leftToken.Column,
-			Level:  SeverityWarning,
-		}}
-	}
-
-	return nil
+	leftToken := infix.Left.TokenLiteralNode()
+	return []Violation{{
+		KataID: "ZC1071",
+		Message: "Appending to an array using `arr=($arr ...)` is verbose and slower. " +
+			"Use `arr+=(...)` instead.",
+		Line:   leftToken.Line,
+		Column: leftToken.Column,
+		Level:  SeverityWarning,
+	}}
 }
 
-func zc1071SelfReferences(n ast.Node, varName string) bool {
+// zc1071IsWholeArrayRef reports whether n is an unmodified reference to
+// the whole array varName: the bare `$arr` / `${arr}` identifier form,
+// or the `${arr[@]}` subscript form. Modifier-bearing forms such as
+// `${arr##*/}`, `${arr:u}`, or `${arr[0,-2]}` are deliberately excluded.
+// The parser collapses `${arr##*/}` and a plain `${arr}` to the same
+// indexless *ast.ArrayAccess, so the indexless subscript form is treated
+// as potentially modified and does not match — only the literal `$arr`
+// identifier and an explicit `[@]` subscript are accepted as whole-array.
+func zc1071IsWholeArrayRef(n ast.Node, varName string) bool {
 	switch v := n.(type) {
-	case *ast.ArrayAccess:
-		id, ok := v.Left.(*ast.Identifier)
-		return ok && id.Value == varName
 	case *ast.Identifier:
 		return v.Value == "$"+varName || v.Value == "${"+varName+"}"
 	case *ast.PrefixExpression:
@@ -4906,6 +4917,13 @@ func zc1071SelfReferences(n ast.Node, varName string) bool {
 		}
 		id, ok := v.Right.(*ast.Identifier)
 		return ok && id.Value == varName
+	case *ast.ArrayAccess:
+		id, ok := v.Left.(*ast.Identifier)
+		if !ok || id.Value != varName {
+			return false
+		}
+		idx, ok := v.Index.(*ast.Identifier)
+		return ok && idx.Value == "@"
 	}
 	return false
 }
@@ -5788,17 +5806,21 @@ func checkZC1082(node ast.Node) []Violation {
 func init() {
 	RegisterKata(ast.ConcatenatedExpressionNode, Kata{
 		ID:    "ZC1083",
-		Title: "Brace expansion limits cannot be variables",
-		Description: "Brace expansion `{x..y}` happens before variable expansion. " +
-			"`{1..$n}` will not work. Use `seq` or `for ((...))`.",
+		Title: "Quoted brace range does not expand",
+		Description: "In Zsh a brace range with a parameter bound — `{1..$n}` — expands, " +
+			"unlike Bash, which keeps it literal unless the bounds are literal integers. " +
+			"Quoting the range suppresses brace expansion, so `\"{1..$n}\"` stays the " +
+			"literal string `{1..$n}`. Drop the quotes if you intended the range to expand.",
 		Severity: SeverityError,
 		Check:    checkZC1083,
 	})
 	RegisterKata(ast.StringLiteralNode, Kata{
 		ID:    "ZC1083",
-		Title: "Brace expansion limits cannot be variables",
-		Description: "Brace expansion `{x..y}` happens before variable expansion. " +
-			"`{1..$n}` will not work. Use `seq` or `for ((...))`.",
+		Title: "Quoted brace range does not expand",
+		Description: "In Zsh a brace range with a parameter bound — `{1..$n}` — expands, " +
+			"unlike Bash, which keeps it literal unless the bounds are literal integers. " +
+			"Quoting the range suppresses brace expansion, so `\"{1..$n}\"` stays the " +
+			"literal string `{1..$n}`. Drop the quotes if you intended the range to expand.",
 		Severity: SeverityError,
 		Check:    checkZC1083,
 	})
@@ -5817,100 +5839,55 @@ func checkZC1083(node ast.Node) []Violation {
 
 func zc1083CheckStringLiteral(s *ast.StringLiteral) []Violation {
 	v := s.Value
-	if !strings.Contains(v, "{") || !strings.Contains(v, "..") || !strings.Contains(v, "$") {
+	if !strings.Contains(v, "..") || !strings.Contains(v, "$") {
+		return nil
+	}
+	// Only a real brace range `{…..…}` counts. A `{` preceded by `$`
+	// opens a parameter expansion (`${name/foo../bar}`, `"${x/../}"`),
+	// not a brace range — those contain `{`, `..`, and `$` yet are
+	// valid Zsh, so they must not trigger the kata.
+	if !zc1083HasBareBraceOpen(v) {
 		return nil
 	}
 	return zc1083Hit(s)
 }
 
-func zc1083CheckConcat(concat *ast.ConcatenatedExpression) []Violation {
-	scan := zc1083ScanParts(concat.Parts)
-	if scan.startIdx == -1 {
-		return nil
-	}
-	if !zc1083HasIndexBetween(scan.dotDotIndices, scan.startIdx, scan.closeIdx) {
-		return nil
-	}
-	if !zc1083HasIndexBetween(scan.varIndices, scan.startIdx, scan.closeIdx) {
-		return nil
-	}
-	return zc1083Hit(concat)
-}
-
-type zc1083Scan struct {
-	startIdx      int
-	closeIdx      int // index of the closing `}`; -1 when unseen
-	dotDotIndices []int
-	varIndices    []int
-}
-
-func zc1083ScanParts(parts []ast.Expression) zc1083Scan {
-	scan := zc1083Scan{startIdx: -1, closeIdx: -1}
-	lastPartWasDot := false
-	for i, part := range parts {
-		if strNode, ok := part.(*ast.StringLiteral); ok {
-			zc1083ScanString(&scan, &lastPartWasDot, strNode.Value, i)
+// zc1083HasBareBraceOpen reports whether v contains a `{` that is not
+// immediately preceded by `$` (which would make it a `${…}` parameter
+// expansion rather than a brace range).
+func zc1083HasBareBraceOpen(v string) bool {
+	for i := 0; i < len(v); i++ {
+		if v[i] != '{' {
 			continue
 		}
-		lastPartWasDot = false
-		if _, isInt := part.(*ast.IntegerLiteral); isInt {
-			continue
+		if i == 0 || v[i-1] != '$' {
+			return true
 		}
-		if idNode, isIdent := part.(*ast.Identifier); isIdent && strings.Contains(idNode.Value, "..") {
-			scan.dotDotIndices = append(scan.dotDotIndices, i)
-		}
-		scan.varIndices = append(scan.varIndices, i)
-	}
-	return scan
-}
-
-func zc1083ScanString(scan *zc1083Scan, lastPartWasDot *bool, val string, i int) {
-	if strings.Contains(val, "{") && scan.startIdx == -1 {
-		scan.startIdx = i
-	}
-	// Track the closing `}` of the brace expansion. Variables and `..`
-	// runs that appear AFTER the close (e.g. `{1..10}$var`) are not
-	// inside the brace range and should not trigger the kata.
-	if strings.Contains(val, "}") && scan.startIdx >= 0 && scan.closeIdx == -1 && i > scan.startIdx {
-		scan.closeIdx = i
-	}
-	switch {
-	case strings.Contains(val, ".."):
-		scan.dotDotIndices = append(scan.dotDotIndices, i)
-		*lastPartWasDot = false
-	case val == ".":
-		if *lastPartWasDot {
-			scan.dotDotIndices = append(scan.dotDotIndices, i-1)
-			*lastPartWasDot = false
-		} else {
-			*lastPartWasDot = true
-		}
-	default:
-		*lastPartWasDot = false
-	}
-}
-
-// zc1083HasIndexBetween reports whether any index sits strictly between
-// the brace-open and brace-close. A closeIdx of -1 means the brace
-// never closed in the parts run, so any index past startIdx counts.
-func zc1083HasIndexBetween(indices []int, openIdx, closeIdx int) bool {
-	for _, idx := range indices {
-		if idx <= openIdx {
-			continue
-		}
-		if closeIdx >= 0 && idx >= closeIdx {
-			continue
-		}
-		return true
 	}
 	return false
+}
+
+// zc1083CheckConcat is intentionally inert.
+//
+// A `{x..y}` concatenated expression with a variable bound — `{1..$n}`,
+// `{$a..$b}`, `{1..$#arr}` — is the only shape this branch ever matched.
+// Unlike Bash, Zsh resolves the parameter to an integer before brace
+// expansion runs, so the range expands correctly. From `man zshexpn`,
+// brace expansion: "An expression of the form `{n1..n2}', where n1 and
+// n2 are integers, is expanded to every number between n1 and n2
+// inclusive." A parameter that holds an integer is a valid bound.
+// Receipt: `h=(a b c); for i in {1..$#h}; do print $i; done` prints
+// `1`, `2`, `3`. The bound-cannot-be-a-variable rule is Bash-only and
+// false for Zsh, so this branch has no valid trigger and never fires.
+func zc1083CheckConcat(_ *ast.ConcatenatedExpression) []Violation {
+	return nil
 }
 
 func zc1083Hit(node ast.Node) []Violation {
 	tok := node.TokenLiteralNode()
 	return []Violation{{
 		KataID:  "ZC1083",
-		Message: "Brace expansion limits cannot be variables. `{...$var...}` is treated as a literal string. Use `seq` or `for ((...))`.",
+		Message: "A quoted brace range stays literal. `\"{1..$n}\"` does not expand; in Zsh the unquoted `{1..$n}` does. Drop the quotes to expand the range.",
 		Line:    tok.Line,
 		Column:  tok.Column,
 		Level:   SeverityError,

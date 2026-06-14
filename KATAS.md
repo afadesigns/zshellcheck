@@ -99,7 +99,7 @@ Auto-fix availability is marked per-entry below as **Auto-fix:** `yes` or `no`. 
 - [ZC1080: Use `(N)` nullglob qualifier for globs in loops](#zc1080)
 - [ZC1081: Use `${#var}` to get string length instead of `wc -c`](#zc1081)
 - [ZC1082: Prefer `${var//old/new}` over `sed` for simple replacements](#zc1082)
-- [ZC1083: Brace expansion limits cannot be variables](#zc1083)
+- [ZC1083: Quoted brace range does not expand](#zc1083)
 - [ZC1084: Quote globs in `find` commands](#zc1084) · auto-fix
 - [ZC1085: Quote variable expansions in `for` loops](#zc1085)
 - [ZC1086: Prefer `func() { ... }` over `function func { ... }`](#zc1086) · auto-fix
@@ -869,7 +869,7 @@ Auto-fix availability is marked per-entry below as **Auto-fix:** `yes` or `no`. 
 - [ZC1853: Warn on `setopt MARK_DIRS` — glob-matched directories gain a silent trailing `/`](#zc1853)
 - [ZC1854: Error on `yum-config-manager --add-repo http://…` / `zypper addrepo http://…` — plaintext repo allows MITM](#zc1854)
 - [ZC1855: Avoid `$GROUPS` — Bash-only array; Zsh exposes supplementary groups as `$groups`](#zc1855)
-- [ZC1856: Warn on `unset arr\[N\]` — Zsh does not delete the array element, the array keeps its length](#zc1856)
+- [ZC1856: Warn on `unset arr\[N\]` — Zsh blanks the element instead of removing it, the array keeps its length](#zc1856)
 - [ZC1857: Error on `cloud-init clean` — wipes boot state, next reboot re-provisions the host](#zc1857)
 - [ZC1858: Error on `ssh -c 3des-cbc\|arcfour\|blowfish-cbc` — weak cipher forced on the tunnel](#zc1858)
 - [ZC1859: Warn on `unsetopt MULTIOS` — `cmd >a >b` silently keeps only the last redirection](#zc1859)
@@ -2005,12 +2005,12 @@ Disable by adding `ZC1082` to `disabled_katas` in `.zshellcheckrc`.
 ---
 
 <a id="zc1083"></a>
-### ZC1083 — Brace expansion limits cannot be variables
+### ZC1083 — Quoted brace range does not expand
 
 **Severity:** `error`  
 **Auto-fix:** `no`
 
-Brace expansion `{x..y}` happens before variable expansion. `{1..$n}` will not work. Use `seq` or `for ((...))`.
+In Zsh a brace range with a parameter bound — `{1..$n}` — expands, unlike Bash, which keeps it literal unless the bounds are literal integers. Quoting the range suppresses brace expansion, so `"{1..$n}"` stays the literal string `{1..$n}`. Drop the quotes if you intended the range to expand.
 
 Disable by adding `ZC1083` to `disabled_katas` in `.zshellcheckrc`.
 
@@ -11245,12 +11245,12 @@ Disable by adding `ZC1855` to `disabled_katas` in `.zshellcheckrc`.
 ---
 
 <a id="zc1856"></a>
-### ZC1856 — Warn on `unset arr[N]` — Zsh does not delete the array element, the array keeps its length
+### ZC1856 — Warn on `unset arr[N]` — Zsh blanks the element instead of removing it, the array keeps its length
 
 **Severity:** `warning`  
 **Auto-fix:** `no`
 
-In Bash, `unset arr[N]` removes the N-th element of the array (leaving a sparse hole). In Zsh the same invocation passes the literal string `arr[N]` to the `unset` builtin, which looks for a parameter with that name — finds nothing — and returns success. The array is left untouched, `${#arr[@]}` does not budge, and every downstream `for x in "${arr[@]}"` keeps iterating the element the script thought it had removed. Use Zsh's native assignment form `arr[N]=()` to delete an index, or `arr=("${(@)arr:#pattern}")` to filter by value.
+In Bash, `unset arr[N]` removes the N-th element of the array (leaving a sparse hole). In Zsh the quoted form `unset 'arr[N]'` blanks element N — it becomes the empty string — but the array keeps its length, so `${#arr}` does not budge and every downstream `for x in "${arr[@]}"` still iterates the slot the script thought it had removed. The unquoted form `unset arr[N]` is worse: `arr[N]` is glob-expanded first and errors with `no matches found`. Use Zsh's native assignment form `arr[N]=()` to delete an index, or `arr=("${(@)arr:#pattern}")` to filter by value. This applies only to integer subscripts on a normal array; `unset 'assoc[key]'` correctly removes an associative-array key.
 
 Disable by adding `ZC1856` to `disabled_katas` in `.zshellcheckrc`.
 

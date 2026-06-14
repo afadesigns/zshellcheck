@@ -772,6 +772,19 @@ func TestZC1715(t *testing.T) {
 			expected: []katas.Violation{},
 		},
 		{
+			// Zsh `-p` reads a word from the coprocess into the following
+			// variable. `read -k 1 -p tok` is a valid coprocess read, not
+			// the Bash prompt mistake — `-p` is followed by a bare name.
+			name:     "valid — `read -k 1 -p tok` (coprocess read)",
+			input:    `read -k 1 -p tok`,
+			expected: []katas.Violation{},
+		},
+		{
+			name:     "valid — `read -r -k 1 -p tok` (coprocess read)",
+			input:    `read -r -k 1 -p tok`,
+			expected: []katas.Violation{},
+		},
+		{
 			name:  "invalid — `read -p \"Prompt: \" name`",
 			input: `read -p "Prompt: " name`,
 			expected: []katas.Violation{

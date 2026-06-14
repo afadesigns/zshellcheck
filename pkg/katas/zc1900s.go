@@ -686,15 +686,7 @@ func checkZC1909(node ast.Node) []Violation {
 		return nil
 	}
 	ident, ok := cmd.Name.(*ast.Identifier)
-	if !ok {
-		return nil
-	}
-
-	if ident.Value == "load" || ident.Value == "exec" || ident.Value == "unload" {
-		// Parser caveat: `kexec --load X` mangles to name=`load`.
-		return zc1909Hit(cmd, "kexec --"+ident.Value)
-	}
-	if ident.Value != "kexec" {
+	if !ok || ident.Value != "kexec" {
 		return nil
 	}
 

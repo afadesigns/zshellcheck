@@ -929,6 +929,19 @@ func TestZC1818(t *testing.T) {
 			expected: []katas.Violation{},
 		},
 		{
+			// `del` is a common user function, not rsync. The command
+			// name must actually be `rsync` (or a multi-segment delete
+			// tail) to fire.
+			name:     "valid — user `del` function call is not rsync",
+			input:    `del "$dir"`,
+			expected: []katas.Violation{},
+		},
+		{
+			name:     "valid — bare `delete` command is not rsync",
+			input:    `delete /var/cache/foo`,
+			expected: []katas.Violation{},
+		},
+		{
 			name:  "invalid — `rsync -av --delete src/ dst/`",
 			input: `rsync -av --delete src/ dst/`,
 			expected: []katas.Violation{
@@ -2791,12 +2804,25 @@ func TestZC1856(t *testing.T) {
 			expected: []katas.Violation{},
 		},
 		{
+			// Associative-array key removal works correctly in Zsh:
+			// `unset 'h[b]'` removes key b. Not the integer-subscript
+			// gotcha, so it is not flagged.
+			name:     "valid — `unset 'h[b]'` associative key",
+			input:    `unset 'h[b]'`,
+			expected: []katas.Violation{},
+		},
+		{
+			name:     "valid — `unset \"h[$k]\"` parameter subscript",
+			input:    `unset "h[$k]"`,
+			expected: []katas.Violation{},
+		},
+		{
 			name:  "invalid — `unset arr[0]`",
 			input: `unset arr[0]`,
 			expected: []katas.Violation{
 				{
 					KataID:  "ZC1856",
-					Message: "`unset (arr[0])` is a Bash idiom — in Zsh it tries to unset a parameter literally named `(arr[0])` and leaves the array untouched. Use `arr[N]=()` or rebuild with `arr=(\"${(@)arr:#pattern}\")`.",
+					Message: "`unset (arr[0])` is a Bash idiom — in Zsh the quoted form blanks the element but keeps the array length, and the unquoted form errors on glob expansion. Use `arr[N]=()` or rebuild with `arr=(\"${(@)arr:#pattern}\")`.",
 					Line:    1,
 					Column:  1,
 				},
@@ -2808,7 +2834,19 @@ func TestZC1856(t *testing.T) {
 			expected: []katas.Violation{
 				{
 					KataID:  "ZC1856",
-					Message: "`unset (myarray[3])` is a Bash idiom — in Zsh it tries to unset a parameter literally named `(myarray[3])` and leaves the array untouched. Use `arr[N]=()` or rebuild with `arr=(\"${(@)arr:#pattern}\")`.",
+					Message: "`unset (myarray[3])` is a Bash idiom — in Zsh the quoted form blanks the element but keeps the array length, and the unquoted form errors on glob expansion. Use `arr[N]=()` or rebuild with `arr=(\"${(@)arr:#pattern}\")`.",
+					Line:    1,
+					Column:  1,
+				},
+			},
+		},
+		{
+			name:  "invalid — `unset 'arr[2]'` quoted integer subscript",
+			input: `unset 'arr[2]'`,
+			expected: []katas.Violation{
+				{
+					KataID:  "ZC1856",
+					Message: "`unset 'arr[2]'` is a Bash idiom — in Zsh the quoted form blanks the element but keeps the array length, and the unquoted form errors on glob expansion. Use `arr[N]=()` or rebuild with `arr=(\"${(@)arr:#pattern}\")`.",
 					Line:    1,
 					Column:  1,
 				},

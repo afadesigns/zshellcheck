@@ -33,6 +33,18 @@ func TestZC1001(t *testing.T) {
 				},
 			},
 		},
+		{
+			// `$+commands[ls]` is the parameter-existence operator, not
+			// array element access — it returns 0 or 1 inside `(( … ))`.
+			name:     "existence test on commands is not element access",
+			input:    `(( $+commands[ls] ))`,
+			expected: []katas.Violation{},
+		},
+		{
+			name:     "existence test on functions is not element access",
+			input:    `(( $+functions[foo] ))`,
+			expected: []katas.Violation{},
+		},
 	}
 
 	for _, tt := range tests {
@@ -2916,6 +2928,51 @@ func TestZC1071(t *testing.T) {
 			},
 		},
 		{
+			name:  "valid append whole array first then new elements",
+			input: `arr=($arr a b)`,
+			expected: []katas.Violation{
+				{
+					KataID:  "ZC1071",
+					Message: "Appending to an array using `arr=($arr ...)` is verbose and slower. Use `arr+=(...)` instead.",
+					Line:    1,
+					Column:  1,
+				},
+			},
+		},
+		{
+			name:  "valid append whole array via bracket-at form",
+			input: `arr=(${arr[@]} x)`,
+			expected: []katas.Violation{
+				{
+					KataID:  "ZC1071",
+					Message: "Appending to an array using `arr=($arr ...)` is verbose and slower. Use `arr+=(...)` instead.",
+					Line:    1,
+					Column:  1,
+				},
+			},
+		},
+		{
+			// Prepend: the new element comes first, so `+=` would append
+			// to the wrong end. `path=($new $path)` is not a true append.
+			name:     "prepend is not an append",
+			input:    `path=($new $path)`,
+			expected: []katas.Violation{},
+		},
+		{
+			// Transform: `${files##*/}` rewrites every element; `+=` is
+			// meaningless here.
+			name:     "transform is not an append",
+			input:    `files=(${files##*/})`,
+			expected: []katas.Violation{},
+		},
+		{
+			// Truncate: `${tokens[0,-2]}` drops the last element; `+=`
+			// cannot express that.
+			name:     "truncate is not an append",
+			input:    `tokens=(${tokens[0,-2]})`,
+			expected: []katas.Violation{},
+		},
+		{
 			name:     "no self reference in array",
 			input:    `arr=(a b c)`,
 			expected: []katas.Violation{},
@@ -3669,60 +3726,51 @@ func TestZC1083(t *testing.T) {
 			expected: []katas.Violation{},
 		},
 		{
-			name:  "invalid variable as range end",
-			input: `echo {1..$n}`,
-			expected: []katas.Violation{
-				{
-					KataID:  "ZC1083",
-					Message: "Brace expansion limits cannot be variables. `{...$var...}` is treated as a literal string. Use `seq` or `for ((...))`.",
-					Line:    1,
-					Column:  6,
-				},
-			},
+			// Zsh resolves `$n` to an integer before brace expansion, so
+			// `{1..$n}` expands correctly. This is the Bash-only failure
+			// the kata used to flag; under Zsh it is valid.
+			name:     "valid variable as range end in Zsh",
+			input:    `echo {1..$n}`,
+			expected: []katas.Violation{},
 		},
 		{
-			name:  "invalid variable as range start",
-			input: `echo {$n..10}`,
-			expected: []katas.Violation{
-				{
-					KataID:  "ZC1083",
-					Message: "Brace expansion limits cannot be variables. `{...$var...}` is treated as a literal string. Use `seq` or `for ((...))`.",
-					Line:    1,
-					Column:  6,
-				},
-			},
+			name:     "valid variable as range start in Zsh",
+			input:    `echo {$n..10}`,
+			expected: []katas.Violation{},
 		},
 		{
-			name:  "invalid variable as range start and end",
-			input: `echo {$min..$max}`,
-			expected: []katas.Violation{
-				{
-					KataID:  "ZC1083",
-					Message: "Brace expansion limits cannot be variables. `{...$var...}` is treated as a literal string. Use `seq` or `for ((...))`.",
-					Line:    1,
-					Column:  6,
-				},
-			},
+			name:     "valid variable as range start and end in Zsh",
+			input:    `echo {$min..$max}`,
+			expected: []katas.Violation{},
 		},
 		{
-			name:  "invalid command substitution in range",
-			input: `echo {1..$(echo 10)}`,
-			expected: []katas.Violation{
-				{
-					KataID:  "ZC1083",
-					Message: "Brace expansion limits cannot be variables. `{...$var...}` is treated as a literal string. Use `seq` or `for ((...))`.",
-					Line:    1,
-					Column:  6,
-				},
-			},
+			name:     "valid command substitution in range in Zsh",
+			input:    `echo {1..$(echo 10)}`,
+			expected: []katas.Violation{},
 		},
 		{
-			name:  "invalid quoted brace expansion with variable",
+			// A param substitution that merely contains `{`, `..`, and `$`
+			// is not a brace range — the `{` is preceded by `$`.
+			name:     "valid param substitution that looks like a range",
+			input:    `echo "${branch/foo../bar}"`,
+			expected: []katas.Violation{},
+		},
+		{
+			name:     "valid param substitution replace empty",
+			input:    `echo "${x/../}"`,
+			expected: []katas.Violation{},
+		},
+		{
+			// A quoted brace range with a parameter bound: the quotes
+			// suppress the expansion that the unquoted form gets in Zsh,
+			// so the value stays the literal string. A `{` preceded by `$`
+			// (a `${…}` expansion) is excluded by zc1083HasBareBraceOpen.
+			name:  "invalid quoted brace range stays literal",
 			input: `echo "{1..$n}"`,
 			expected: []katas.Violation{
 				{
 					KataID:  "ZC1083",
-					Message: "Brace expansion limits cannot be variables. `{...$var...}` is treated as a literal string. Use `seq` or `for ((...))`.",
+					Message: "A quoted brace range stays literal. `\"{1..$n}\"` does not expand; in Zsh the unquoted `{1..$n}` does. Drop the quotes to expand the range.",
 					Line:    1,
 					Column:  6,
 				},
