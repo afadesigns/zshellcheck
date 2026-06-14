@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.3] - 2026-06-14
+
+### Fixed
+- Linter: `name() { … }` function bodies are now analysed.
+  The AST walker descended into the `function name { … }` form but not the `name()` form, so every body-level kata silently skipped the most common function syntax.
+  Scripts that define functions with `name()` now receive the same checks as the rest of the file.
+  This surfaced two pre-existing false positives, both fixed in the same change:
+  - ZC1045 no longer flags `local x=$(( … ))`. Arithmetic expansion runs no command, so it masks no exit code; only `local x=$(cmd)` does.
+  - ZC1043 no longer flags Zsh special parameters that are global by design (`BUFFER`, `LBUFFER`, `CURSOR`, `region_highlight`, `PROMPT`, `PS1`, and the other ZLE editor-state and prompt parameters). Assigning them inside a function without `local` is the intended idiom; `local` would break a ZLE widget or discard the prompt.
+- Parser: an `if`/`while` condition whose final operand is a subshell on its own line (`if [[ a ]] && ( [[ b ]] )⏎then`) no longer orphans the following `then`/`do`.
+  The bare `)` was mistaken for the condition's own terminator.
+  Confirmed valid by `zsh -n`, parsing with zero errors across the corpus sweep, and producing no false-positive drift.
+
 ## [1.2.2] - 2026-06-04
 
 ### Fixed

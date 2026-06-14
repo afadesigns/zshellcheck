@@ -141,3 +141,30 @@ func TestParseArithmeticForLoopMalformed(t *testing.T) {
 		}
 	}
 }
+
+// A `( … )` subshell as the final operand of an `if`/`while` condition
+// (`if [[ a ]] && ( [[ b ]] )`) followed by `then`/`do` on a NEW line
+// must parse as a single compound statement. The subshell leaves
+// curToken on its `)`; the condition block's RPAREN terminator (for the
+// `if ( cond ) cmd` shortcut) used to break there, orphaning the
+// `then`/body/`fi` into separate top-level statements (no error, but a
+// wrong AST). The prezto terminal module uses this form. Issue:
+// multi-line-condition leak.
+func TestParseMultilineCondTrailingSubshell(t *testing.T) {
+	cases := []string{
+		"if [[ a ]] && ( [[ b ]] )\nthen\n  :\nfi\n",
+		"if [[ a ]] && ( ! [[ b ]] )\nthen\n  :\nfi\n",
+		"if [[ $T == X ]] \\\n  && ( ! [[ -n \"$S\" || -n \"$M\" ]] )\nthen\n  echo hi\nfi\n",
+		"while [[ a ]] && ( [[ b ]] )\ndo\n  :\ndone\n",
+	}
+	for _, src := range cases {
+		p := New(lexer.New(src))
+		prog := p.ParseProgram()
+		if len(p.Errors()) != 0 {
+			t.Errorf("unexpected errors for %q: %v", src, p.Errors())
+		}
+		if len(prog.Statements) != 1 {
+			t.Errorf("want 1 compound statement for %q, got %d (the condition's subshell orphaned the body)", src, len(prog.Statements))
+		}
+	}
+}

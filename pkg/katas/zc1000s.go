@@ -2514,6 +2514,30 @@ var zc1043ReturnParams = map[string]bool{
 	"psvar": true,
 }
 
+// zc1043SpecialGlobals are Zsh special parameters that are global by
+// design: assigning them inside a function without `local` is the
+// intended idiom, and `local` would break it. ZLE widget functions write
+// editor state (`man zshzle` Special Parameters) — `local -h BUFFER`
+// severs the editor binding and the edit is lost. Prompt-setup functions
+// write the prompt strings (`man zshparam`, `man zshcontrib` promptinit)
+// — `local PROMPT` discards the prompt on return. ZC1043 must not flag
+// these; suggesting `local` for them is wrong advice.
+var zc1043SpecialGlobals = map[string]bool{
+	// ZLE editor state (writable inside widgets).
+	"BUFFER": true, "LBUFFER": true, "RBUFFER": true,
+	"CURSOR": true, "MARK": true, "CUTBUFFER": true,
+	"HISTNO": true, "LASTABORTEDSEARCH": true, "NUMERIC": true,
+	"PREDISPLAY": true, "POSTDISPLAY": true, "REGION_ACTIVE": true,
+	"region_highlight": true, "killring": true, "registers": true,
+	"UNDO_LIMIT_NO": true, "YANK_START": true, "YANK_END": true,
+	"ZLE_STATE": true,
+	// Prompt strings (set globally in precmd / prompt_<theme>_setup).
+	"PROMPT": true, "PROMPT2": true, "PROMPT3": true, "PROMPT4": true,
+	"RPROMPT": true, "RPROMPT2": true, "SPROMPT": true,
+	"PS1": true, "PS2": true, "PS3": true, "PS4": true,
+	"RPS1": true, "RPS2": true, "prompt_opts": true,
+}
+
 func zc1043UnscopedAssign(n ast.Node, locals map[string]bool) (Violation, bool) {
 	exprStmt, ok := n.(*ast.ExpressionStatement)
 	if !ok {
@@ -2530,7 +2554,8 @@ func zc1043UnscopedAssign(n ast.Node, locals map[string]bool) (Violation, bool) 
 		return Violation{}, false
 	}
 	ident, ok := assign.Left.(*ast.Identifier)
-	if !ok || locals[ident.Value] || zc1043ReturnParams[ident.Value] {
+	if !ok || locals[ident.Value] ||
+		zc1043ReturnParams[ident.Value] || zc1043SpecialGlobals[ident.Value] {
 		return Violation{}, false
 	}
 	rhs := ""
@@ -2773,12 +2798,40 @@ func hasCommandSubstitutionAssignment(arg ast.Expression) bool {
 
 func isCommandSubstitution(node ast.Node) bool {
 	switch n := node.(type) {
-	case *ast.CommandSubstitution, *ast.DollarParenExpression:
+	case *ast.CommandSubstitution:
 		return true
+	case *ast.DollarParenExpression:
+		// `$(( … ))` arithmetic expansion runs no command, so it masks
+		// no exit code — only `$(cmd)` does. Both parse to a
+		// DollarParenExpression; the arithmetic form is excluded.
+		return !isArithmeticExpansion(n)
 	case *ast.ConcatenatedExpression:
 		return zc1045ConcatHasSub(n)
 	case *ast.StringLiteral:
 		return zc1045StringHasSub(n.Value)
+	}
+	return false
+}
+
+// isArithmeticExpansion reports whether a DollarParenExpression is a
+// `$(( … ))` arithmetic expansion rather than a `$(cmd)` command
+// substitution. An arithmetic operand is a bare number / name, or an
+// InfixExpression joined by an arithmetic operator; a command
+// substitution wraps a command (a SimpleCommand, a pipeline `|`, or a
+// logical chain `&&` / `||`).
+func isArithmeticExpansion(dp *ast.DollarParenExpression) bool {
+	switch c := dp.Command.(type) {
+	case *ast.Identifier, *ast.IntegerLiteral:
+		return true
+	case *ast.InfixExpression:
+		// A pipeline `|` or logical chain `&&` / `||` is a command;
+		// `$(sleep 1 &)` parses its `&` as a SimpleCommand, so a bare
+		// infix `&` here is only ever bitwise-AND arithmetic.
+		switch c.Operator {
+		case "|", "||", "&&":
+			return false
+		}
+		return true
 	}
 	return false
 }

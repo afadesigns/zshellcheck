@@ -278,6 +278,17 @@ func (p *Parser) chainLogical(left ast.Expression, startTok token.Token) ast.Sta
 		}
 	}
 	stmt := &ast.ExpressionStatement{Token: startTok, Expression: left}
+	// A `( … )` subshell as the final logical operand (`[[ a ]] && ( b )`)
+	// is parsed as a grouped expression that leaves curToken on its `)`.
+	// In an `if`/`while` condition block — whose terminator set includes
+	// RPAREN for the `if ( cond ) cmd` shortcut — that bare `)` is
+	// otherwise mistaken for the condition's own terminator, so the
+	// following `then`/`do` on a new line is orphaned. Signalling
+	// consumedParenTerminator makes the block skip the inner `)` and
+	// reach the real terminator. A trailing `;` already advances past it.
+	if p.curTokenIs(token.RPAREN) {
+		p.consumedParenTerminator = true
+	}
 	if p.peekTokenIs(token.SEMICOLON) {
 		p.nextToken()
 	}
