@@ -194,6 +194,31 @@ func TestParseBraceGroupTrailingRedirection(t *testing.T) {
 	}
 }
 
+// A reserved closer word (`done`, `fi`, `esac`, `then`, `do`, `else`,
+// `elif`) is a literal argument in Zsh when it is not in command
+// position. `echo done` used to stop argument gathering at `done` and
+// orphan it into a second bogus statement; it now parses as one command
+// with the closer captured as an argument.
+func TestParseReservedWordAsArgument(t *testing.T) {
+	cases := []string{
+		"echo done\n",
+		"echo fi esac then\n",
+		"print -l function do done\n",
+		"local x=done\n",
+		"args=(do done fi)\n",
+	}
+	for _, src := range cases {
+		p := New(lexer.New(src))
+		prog := p.ParseProgram()
+		if len(p.Errors()) != 0 {
+			t.Errorf("unexpected errors for %q: %v", src, p.Errors())
+		}
+		if len(prog.Statements) != 1 {
+			t.Errorf("want 1 statement for %q, got %d (the reserved word orphaned)", src, len(prog.Statements))
+		}
+	}
+}
+
 // A process substitution as the first argument (`diff <(a) <(b)`) fell
 // to the expression path, which parsed only the bare command name and
 // orphaned each `<(…)` into its own bogus top-level statement. Every

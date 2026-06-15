@@ -305,9 +305,7 @@ var commandDelimiterTokens = map[token.Type]struct{}{
 	token.EOF: {}, token.SEMICOLON: {}, token.PIPE: {},
 	token.AND: {}, token.OR: {},
 	token.RPAREN: {}, token.RBRACE: {}, token.HASH: {},
-	token.THEN: {}, token.ELSE: {}, token.ELIF: {}, token.Fi: {},
-	token.DO: {}, token.DONE: {},
-	token.ESAC: {}, token.DSEMI: {},
+	token.DSEMI: {},
 }
 
 func (p *Parser) isCommandDelimiter(t token.Token) bool {

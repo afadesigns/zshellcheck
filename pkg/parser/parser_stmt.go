@@ -309,6 +309,15 @@ func (p *Parser) peekStartsArgPrefix() bool {
 		// the expression path, parsing only the bare name and orphaning
 		// each substitution into its own bogus top-level statement.
 		return true
+	case p.peekTokenIs(token.DONE), p.peekTokenIs(token.Fi), p.peekTokenIs(token.ESAC),
+		p.peekTokenIs(token.THEN), p.peekTokenIs(token.DO),
+		p.peekTokenIs(token.ELSE), p.peekTokenIs(token.ELIF):
+		// A reserved closer word is a literal command argument in Zsh
+		// when it is not in command position (`echo done`, `print fi`).
+		// Route to the command path so the argument loop captures it;
+		// otherwise the command falls to the expression path and the
+		// closer orphans into its own statement.
+		return true
 	}
 	return false
 }
