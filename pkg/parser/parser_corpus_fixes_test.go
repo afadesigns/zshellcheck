@@ -406,3 +406,30 @@ func TestParseShortFormForBraceTerminator(t *testing.T) {
 		}
 	}
 }
+
+// A concatenated assignment right-hand side (`x=${a}/${b}`,
+// `arr[k]=$H/$z`) glues path segments with no separating space. The
+// expression parse stopped at the `/`, orphaning the tail into a bogus
+// `/${b}` command — which mis-flagged the trailing expansion (ZC1075).
+// The whole RHS now stays one statement.
+func TestParseConcatenatedAssignmentRHS(t *testing.T) {
+	cases := map[string]int{
+		"x=${a}/${b}\n":             1,
+		"_zpaths[${z}]=${H}/${z}\n": 1,
+		"t=${A}/${B}/${C}\n":        1,
+		"x=${a}/${b}\necho after\n": 2,
+		"x=$a\n":                    1,
+		"x=$(date)\n":               1,
+		"x=(a b c)\n":               1,
+	}
+	for src, want := range cases {
+		p := New(lexer.New(src))
+		prog := p.ParseProgram()
+		if len(p.Errors()) != 0 {
+			t.Errorf("unexpected errors for %q: %v", src, p.Errors())
+		}
+		if len(prog.Statements) != want {
+			t.Errorf("want %d statements for %q, got %d (the assignment RHS split at `/`)", want, src, len(prog.Statements))
+		}
+	}
+}

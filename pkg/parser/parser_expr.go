@@ -555,7 +555,40 @@ func (p *Parser) parseInfixExpression(left ast.Expression) ast.Expression {
 	}
 	p.nextToken()
 	expression.Right = p.parseExpression(precedence)
+	// A concatenated assignment RHS word (`x=${a}/${b}`, `x=$a-$b`,
+	// `x=$PATH:/usr/bin`) glues the first expansion to following segments
+	// with no separating space. parseExpression stops at the first glued
+	// operator (`/`, `-`, `:`), leaving the tail to be mis-parsed as a
+	// separate command (`/${b}`) — which then mis-flagged the trailing
+	// expansion. Absorb the rest of the glued word so it stays part of
+	// the assignment. Command context only; arithmetic has real operators.
+	if isAssign && !p.inArithmetic {
+		p.absorbGluedRhsTail()
+	}
 	return expression
+}
+
+// absorbGluedRhsTail consumes the path-style `/segment` continuations of
+// a concatenated assignment right-hand side that parseExpression stopped
+// short of (`x=${a}/${b}`, `arr[k]=$H/$z`, `t=${DIR}/init`). It is led by
+// a glued `/` only — never a bare identifier or array index — so it does
+// not disturb how other katas read array or arithmetic segments. After
+// each slash it consumes one glued segment (an identifier, integer, or
+// expansion, whose closer parseExpression resolves).
+func (p *Parser) absorbGluedRhsTail() {
+	for !p.peekToken.HasPrecedingSpace && p.peekTokenIs(token.SLASH) {
+		p.nextToken() // onto '/'
+		if p.peekToken.HasPrecedingSpace {
+			return
+		}
+		switch p.peekToken.Type {
+		case token.DollarLbrace, token.VARIABLE, token.DOLLAR_LPAREN, token.BACKTICK:
+			p.nextToken()
+			_ = p.parseExpression(LOWEST)
+		case token.IDENT, token.INT, token.MINUS, token.DOT:
+			p.nextToken()
+		}
+	}
 }
 
 func (p *Parser) parseGroupedExpression() ast.Expression {

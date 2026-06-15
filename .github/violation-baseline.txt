@@ -36,7 +36,7 @@ antidote/antidote.zsh	ZC1059	1
 antidote/antidote.zsh	ZC1065	1
 antidote/antidote.zsh	ZC1071	1
 antidote/antidote.zsh	ZC1073	2
-antidote/antidote.zsh	ZC1075	46
+antidote/antidote.zsh	ZC1075	45
 antidote/antidote.zsh	ZC1091	14
 antidote/antidote.zsh	ZC1092	1
 antidote/antidote.zsh	ZC1097	1
@@ -1285,7 +1285,7 @@ zephyr/tests/__init__.zsh	ZC1031	1
 zephyr/tests/__init__.zsh	ZC1037	4
 zephyr/tests/__init__.zsh	ZC1051	1
 zephyr/tests/__init__.zsh	ZC1073	3
-zephyr/tests/__init__.zsh	ZC1075	12
+zephyr/tests/__init__.zsh	ZC1075	11
 zephyr/tests/__init__.zsh	ZC1086	8
 zephyr/tests/__init__.zsh	ZC1092	4
 zephyr/tests/__init__.zsh	ZC1136	1
@@ -1314,7 +1314,7 @@ zimfw/zimfw.zsh	ZC1043	23
 zimfw/zimfw.zsh	ZC1045	3
 zimfw/zimfw.zsh	ZC1046	1
 zimfw/zimfw.zsh	ZC1065	1
-zimfw/zimfw.zsh	ZC1075	120
+zimfw/zimfw.zsh	ZC1075	117
 zimfw/zimfw.zsh	ZC1080	1
 zimfw/zimfw.zsh	ZC1091	10
 zimfw/zimfw.zsh	ZC1637	19
@@ -1386,7 +1386,7 @@ zinit/zinit-install.zsh	ZC1053	1
 zinit/zinit-install.zsh	ZC1064	5
 zinit/zinit-install.zsh	ZC1071	2
 zinit/zinit-install.zsh	ZC1073	1
-zinit/zinit-install.zsh	ZC1075	82
+zinit/zinit-install.zsh	ZC1075	81
 zinit/zinit-install.zsh	ZC1083	2
 zinit/zinit-install.zsh	ZC1091	22
 zinit/zinit-install.zsh	ZC1092	3
