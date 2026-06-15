@@ -4,6 +4,7 @@ package katas
 
 import (
 	"fmt"
+	"sort"
 
 	"github.com/afadesigns/zshellcheck/pkg/ast"
 )
@@ -85,6 +86,18 @@ func (kr *KatasRegistry) GetKata(id string) (Kata, bool) {
 // KatasByNodeType returns all registered Katas grouped by node type.
 func (kr *KatasRegistry) KatasByNodeType() map[string][]Kata {
 	return kr.KatasByType
+}
+
+// AllKatas returns every registered kata sorted by ID. It backs the
+// `--list-rules` and `--explain` CLI surfaces and any tooling that needs
+// a stable, deduplicated enumeration of the rule set.
+func (kr *KatasRegistry) AllKatas() []Kata {
+	out := make([]Kata, 0, len(kr.KatasByID))
+	for _, k := range kr.KatasByID {
+		out = append(out, k)
+	}
+	sort.Slice(out, func(i, j int) bool { return out[i].ID < out[j].ID })
+	return out
 }
 
 func (kr *KatasRegistry) Check(node ast.Node, disabledKatas []string) []Violation {

@@ -38,6 +38,8 @@ type runFlags struct {
 	fixMode        *bool
 	diffMode       *bool
 	dryRun         *bool
+	listRules      *bool
+	explain        *string
 }
 
 func run() int {
@@ -50,6 +52,12 @@ func run() int {
 	if *flags.showVersion {
 		fmt.Printf("zshellcheck version %s\n", version.Version)
 		return 0
+	}
+	if *flags.listRules {
+		return printRulesList(os.Stdout, katas.Registry)
+	}
+	if *flags.explain != "" {
+		return printRuleExplain(os.Stdout, os.Stderr, katas.Registry, *flags.explain)
 	}
 	stopProfile, code := startCPUProfile(*flags.cpuprofile)
 	if code != 0 {
@@ -91,6 +99,8 @@ func registerRunFlags() runFlags {
 		fixMode:        flag.Bool("fix", false, "Apply auto-fixes in place for katas that ship a deterministic rewrite."),
 		diffMode:       flag.Bool("diff", false, "Print a unified diff of the fixes instead of writing them."),
 		dryRun:         flag.Bool("dry-run", false, "With -fix, report what would change without modifying files."),
+		listRules:      flag.Bool("list-rules", false, "Print every kata (ID, severity, title) and exit."),
+		explain:        flag.String("explain", "", "Print the full description of a kata by ID (e.g. ZC1001) and exit."),
 	}
 }
 

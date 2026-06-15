@@ -52,7 +52,7 @@ func printUsage(out io.Writer, fset *flag.FlagSet, showBanner bool) {
 		},
 		{
 			title: "DIAGNOSTICS",
-			names: []string{"cpuprofile", "version"},
+			names: []string{"list-rules", "explain", "cpuprofile", "version"},
 			blurb: "Profile, inspect, or print metadata.",
 		},
 	}
@@ -75,6 +75,7 @@ func printUsage(out io.Writer, fset *flag.FlagSet, showBanner bool) {
 		comment, command string
 	}{
 		{"Lint a single script", "zshellcheck path/to/script.zsh"},
+		{"List every kata, or explain one", "zshellcheck -list-rules; zshellcheck -explain ZC1001"},
 		{"Lint a tree, suppress style-level findings", "zshellcheck -severity warning ./scripts"},
 		{"Emit SARIF for GitHub Code Scanning", "zshellcheck -format sarif ./scripts > zshellcheck.sarif"},
 		{"Preview every available auto-fix as a diff", "zshellcheck -diff path/to/script.zsh"},
