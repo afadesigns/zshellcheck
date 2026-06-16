@@ -661,11 +661,11 @@ func TestRun_Statistics(t *testing.T) {
 
 func TestFinalExitCode_FixableFooter(t *testing.T) {
 	n := 3
-	fo := fixOptions{fixable: &n}
-	if code := finalExitCode(5, "text", fo); code != 1 {
+	opts := fixOptions{fixable: &n}
+	if code := finalExitCode(5, "text", opts); code != 1 {
 		t.Errorf("want exit 1 with violations, got %d", code)
 	}
-	if code := finalExitCode(0, "text", fo); code != 0 {
+	if code := finalExitCode(0, "text", opts); code != 0 {
 		t.Errorf("want exit 0 with no violations, got %d", code)
 	}
 }
