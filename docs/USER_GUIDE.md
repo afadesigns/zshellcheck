@@ -8,6 +8,7 @@ The full list lives in [KATAS.md](../KATAS.md).
 ## Contents
 
 - [CLI reference](#cli-reference)
+- [Baseline ratchet](#baseline-ratchet)
 - [Severity levels](#severity-levels)
 - [Configuration](#configuration)
 - [Inline `noka` directives](#inline-noka-directives)
@@ -32,6 +33,8 @@ Files with `.go`, `.md`, `.json`, `.yml`, `.yaml`, or `.txt` extensions are skip
 | --- | --- | --- |
 | `-format <text\|json\|sarif>` | `text` | Output format. `sarif` is for GitHub Code Scanning ingestion. |
 | `-statistics` | off | Print a per-kata count of findings, sorted by frequency, instead of individual reports. |
+| `-baseline <path>` | — | Suppress findings recorded in the baseline file; report only findings new since it. |
+| `-baseline-write <path>` | — | Write a baseline snapshot of the current findings and exit 0. |
 | `-severity <level[,level...]>` | (all) | Comma-separated filter. Accepts `error`, `warning`, `info`, `style`. |
 | `-verbose` | off | Emit full kata descriptions in text output. |
 | `-no-color` | off | Disable ANSI colours. Implied when stdout is not a TTY. |
@@ -108,6 +111,22 @@ Combine flags freely:
 [KATAS.md](../KATAS.md) lists every kata with an explicit `Auto-fix: yes/no` line, and the summary table reports the current count.
 
 ---
+
+## Baseline ratchet
+
+Adopting ZShellCheck on a large existing codebase need not mean fixing every finding at once.
+Snapshot the current findings, then let CI fail only on findings introduced after the snapshot.
+
+```bash
+# Record the current findings once and commit the file.
+zshellcheck -baseline-write .zshellcheck-baseline ./scripts
+
+# In CI: only findings new since the baseline cause a non-zero exit.
+zshellcheck -baseline .zshellcheck-baseline ./scripts
+```
+
+A baseline entry identifies a finding by its kata, file, and the trimmed source line — not the line number — so inserting or removing unrelated lines elsewhere in a file does not resurrect a suppressed finding.
+Re-run `-baseline-write` to refresh the snapshot after you fix some findings.
 
 ## Severity levels
 

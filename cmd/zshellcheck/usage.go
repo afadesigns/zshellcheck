@@ -42,8 +42,8 @@ func printUsage(out io.Writer, fset *flag.FlagSet, showBanner bool) {
 		},
 		{
 			title: "FILTER",
-			names: []string{"severity"},
-			blurb: "Drop violations below a threshold.",
+			names: []string{"severity", "baseline", "baseline-write"},
+			blurb: "Drop violations below a threshold, or ratchet against a baseline.",
 		},
 		{
 			title: "AUTO-FIX",
@@ -78,6 +78,7 @@ func printUsage(out io.Writer, fset *flag.FlagSet, showBanner bool) {
 		{"List every kata, or explain one", "zshellcheck -list-rules; zshellcheck -explain ZC1001"},
 		{"Lint a tree, suppress style-level findings", "zshellcheck -severity warning ./scripts"},
 		{"Triage by frequency: per-kata counts", "zshellcheck -statistics ./scripts"},
+		{"Snapshot findings, then fail only on new ones", "zshellcheck -baseline-write .zshellcheck-baseline ./scripts"},
 		{"Emit SARIF for GitHub Code Scanning", "zshellcheck -format sarif ./scripts > zshellcheck.sarif"},
 		{"Preview every available auto-fix as a diff", "zshellcheck -diff path/to/script.zsh"},
 		{"Apply auto-fixes in place (safe only)", "zshellcheck -fix path/to/script.zsh"},

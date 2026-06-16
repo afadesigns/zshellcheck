@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.6.0] - 2026-06-16
+
+### Added
+- `-baseline-write <path>` records a snapshot of the current findings; `-baseline <path>` then suppresses those findings and reports only ones new since the snapshot, exiting non-zero only on new findings. This lets a large existing codebase adopt ZShellCheck and fail CI on regressions without fixing every pre-existing finding first. A baseline entry is keyed by kata, file, and the trimmed source line, so unrelated line moves do not resurrect a suppressed finding.
+
 ## [1.5.1] - 2026-06-16
 
 ### Added

@@ -41,6 +41,8 @@ type runFlags struct {
 	listRules      *bool
 	explain        *string
 	statistics     *bool
+	baseline       *string
+	baselineWrite  *string
 }
 
 func run() int {
@@ -86,8 +88,18 @@ func run() int {
 	if *flags.statistics {
 		fixOpts.statistics = map[string]int{}
 	}
+	if code := setupBaseline(&fixOpts, *flags.baseline, *flags.baselineWrite); code != 0 {
+		return code
+	}
 	total := scanArgs(cfg, allowedSeverities, *flags.format, fixOpts)
 	emitFixSummary(fixOpts.stats)
+	if *flags.baselineWrite != "" {
+		if err := fixOpts.baseline.writeBaseline(*flags.baselineWrite); err != nil {
+			fmt.Fprintf(os.Stderr, "Error writing baseline: %s\n", err)
+			return 1
+		}
+		return 0
+	}
 	if fixOpts.statistics != nil {
 		emitStatistics(os.Stdout, katas.Registry, fixOpts.statistics)
 		if total == 0 {
@@ -124,6 +136,24 @@ func emitStatistics(out io.Writer, registry *katas.KatasRegistry, counts map[str
 	}
 }
 
+// setupBaseline configures the run for -baseline / -baseline-write,
+// returning a non-zero exit code only when a requested baseline file
+// cannot be read.
+func setupBaseline(fixOpts *fixOptions, baseline, baselineWrite string) int {
+	switch {
+	case baselineWrite != "":
+		fixOpts.baseline = &baselineState{write: true}
+	case baseline != "":
+		b, err := loadBaseline(baseline)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error loading baseline: %s\n", err)
+			return 1
+		}
+		fixOpts.baseline = b
+	}
+	return 0
+}
+
 func registerRunFlags() runFlags {
 	return runFlags{
 		format:         flag.String("format", "text", "Output format. One of text, json, sarif."),
@@ -140,6 +170,8 @@ func registerRunFlags() runFlags {
 		listRules:      flag.Bool("list-rules", false, "Print every kata (ID, severity, title) and exit."),
 		explain:        flag.String("explain", "", "Print the full description of a kata by ID (e.g. ZC1001) and exit."),
 		statistics:     flag.Bool("statistics", false, "Print a per-kata count of findings instead of individual reports."),
+		baseline:       flag.String("baseline", "", "Suppress findings recorded in this baseline file; report only new ones."),
+		baselineWrite:  flag.String("baseline-write", "", "Write a baseline snapshot of current findings to this path and exit 0."),
 	}
 }
 
@@ -403,6 +435,9 @@ type fixOptions struct {
 	// statistics, when non-nil, switches output to a per-kata count table:
 	// individual findings are suppressed and tallied here instead.
 	statistics map[string]int
+	// baseline, when non-nil, records or filters findings against a saved
+	// snapshot so a run reports only findings new since the baseline.
+	baseline *baselineState
 }
 
 // fixStats accumulates fix activity across all files visited in one
@@ -616,6 +651,16 @@ func processFile(filename string, out, errOut io.Writer, cfg config.Config, regi
 	violations, edits := collectViolations(program, registry, disabled, data, fixOpts.enabled)
 	violations, edits = applyDirectiveSilences(violations, edits, directives)
 	violations, edits = applySeverityFilter(violations, edits, allowedSeverities)
+
+	// The baseline ratchet records or suppresses findings against a saved
+	// snapshot. Write mode collects them and stops short of fixing or
+	// reporting; filter mode leaves only findings new since the baseline.
+	if fixOpts.baseline != nil {
+		violations = fixOpts.baseline.applyBaseline(filename, data, violations)
+		if fixOpts.baseline.write {
+			return len(violations)
+		}
+	}
 
 	applyFixIfEnabled(filename, data, registry, disabled, cfg, allowedSeverities, edits, violations, fixOpts, out, errOut)
 	emitReport(filename, out, errOut, format, cfg, violations, data, registry, fixOpts)
