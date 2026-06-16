@@ -39,6 +39,7 @@ type runFlags struct {
 	dryRun         *bool
 	listRules      *bool
 	explain        *string
+	statistics     *bool
 }
 
 func run() int {
@@ -81,9 +82,45 @@ func run() int {
 		return code
 	}
 	fixOpts := buildFixOpts(*flags.fixMode, *flags.diffMode, *flags.dryRun)
+	if *flags.statistics {
+		fixOpts.statistics = map[string]int{}
+	}
 	total := scanArgs(cfg, allowedSeverities, *flags.format, fixOpts)
 	emitFixSummary(fixOpts.stats)
-	return finalExitCode(total, *flags.format)
+	if fixOpts.statistics != nil {
+		emitStatistics(os.Stdout, katas.Registry, fixOpts.statistics)
+		if total == 0 {
+			return 0
+		}
+		return 1
+	}
+	return finalExitCode(total, *flags.format, fixOpts)
+}
+
+// emitStatistics prints a per-kata count table sorted by descending count
+// then kata ID, each row tagged `[*]` when the kata ships an auto-fix.
+func emitStatistics(out io.Writer, registry *katas.KatasRegistry, counts map[string]int) {
+	ids := make([]string, 0, len(counts))
+	for id := range counts {
+		ids = append(ids, id)
+	}
+	sort.Slice(ids, func(i, j int) bool {
+		if counts[ids[i]] != counts[ids[j]] {
+			return counts[ids[i]] > counts[ids[j]]
+		}
+		return ids[i] < ids[j]
+	})
+	for _, id := range ids {
+		mark := "   "
+		if registry.IsFixable(id) {
+			mark = "[*]"
+		}
+		title := ""
+		if k, ok := registry.GetKata(id); ok {
+			title = k.Title
+		}
+		fmt.Fprintf(out, "%5d  %-8s  %s  %s\n", counts[id], id, mark, title)
+	}
 }
 
 func registerRunFlags() runFlags {
@@ -100,6 +137,7 @@ func registerRunFlags() runFlags {
 		dryRun:         flag.Bool("dry-run", false, "With -fix, report what would change without modifying files."),
 		listRules:      flag.Bool("list-rules", false, "Print every kata (ID, severity, title) and exit."),
 		explain:        flag.String("explain", "", "Print the full description of a kata by ID (e.g. ZC1001) and exit."),
+		statistics:     flag.Bool("statistics", false, "Print a per-kata count of findings instead of individual reports."),
 	}
 }
 
@@ -228,6 +266,7 @@ func buildFixOpts(fixMode, diffMode, dryRun bool) fixOptions {
 	if opts.enabled {
 		opts.stats = &fixStats{}
 	}
+	opts.fixable = new(int)
 	return opts
 }
 
@@ -274,12 +313,17 @@ func emitFixSummary(stats *fixStats) {
 		stats.totalEdits, stats.filesModified, stats.filesScanned)
 }
 
-func finalExitCode(total int, format string) int {
+func finalExitCode(total int, format string, fixOpts fixOptions) int {
 	if total == 0 {
 		return 0
 	}
 	if format == "text" {
 		fmt.Fprintf(os.Stderr, "\nFound %d violations.\n", total)
+		// Point at the auto-fixable subset, unless fixes are already
+		// being applied or previewed this run.
+		if !fixOpts.enabled && fixOpts.fixable != nil && *fixOpts.fixable > 0 {
+			fmt.Fprintf(os.Stderr, "[*] %d fixable with the `-fix` option.\n", *fixOpts.fixable)
+		}
 	}
 	return 1
 }
@@ -324,6 +368,12 @@ type fixOptions struct {
 	// formats so they are emitted once as a single JSON / SARIF document.
 	// nil for the text format, which streams per file.
 	collector *[]reporter.FileViolations
+	// fixable counts findings across the run whose kata ships an auto-fix,
+	// for the `[*] N fixable` hint shown after a text report.
+	fixable *int
+	// statistics, when non-nil, switches output to a per-kata count table:
+	// individual findings are suppressed and tallied here instead.
+	statistics map[string]int
 }
 
 // fixStats accumulates fix activity across all files visited in one
@@ -539,7 +589,7 @@ func processFile(filename string, out, errOut io.Writer, cfg config.Config, regi
 	violations, edits = applySeverityFilter(violations, edits, allowedSeverities)
 
 	applyFixIfEnabled(filename, data, registry, disabled, cfg, allowedSeverities, edits, violations, fixOpts, out, errOut)
-	emitReport(filename, out, errOut, format, cfg, violations, data, fixOpts.collector)
+	emitReport(filename, out, errOut, format, cfg, violations, data, registry, fixOpts)
 	return len(violations)
 }
 
@@ -652,17 +702,33 @@ func applyFixInPlace(filename string, data []byte, registry *katas.KatasRegistry
 	}
 }
 
-func emitReport(filename string, out, errOut io.Writer, format string, cfg config.Config, violations []katas.Violation, data []byte, collector *[]reporter.FileViolations) {
+func emitReport(filename string, out, errOut io.Writer, format string, cfg config.Config, violations []katas.Violation, data []byte, registry *katas.KatasRegistry, fixOpts fixOptions) {
 	if len(violations) == 0 {
+		return
+	}
+	// Statistics mode tallies findings per kata and suppresses the
+	// individual reports.
+	if fixOpts.statistics != nil {
+		for _, v := range violations {
+			fixOpts.statistics[v.KataID]++
+		}
 		return
 	}
 	// The machine-readable formats are aggregated and emitted once by the
 	// caller; collect this file's findings and return. Text reports inline.
-	if collector != nil {
-		*collector = append(*collector, reporter.FileViolations{Filename: filename, Violations: violations})
+	if fixOpts.collector != nil {
+		*fixOpts.collector = append(*fixOpts.collector, reporter.FileViolations{Filename: filename, Violations: violations})
 		return
 	}
+	if fixOpts.fixable != nil {
+		for _, v := range violations {
+			if registry.IsFixable(v.KataID) {
+				*fixOpts.fixable++
+			}
+		}
+	}
 	r := reporter.NewTextReporter(out, filename, string(data), cfg)
+	r.MarkFixable(registry.IsFixable)
 	if err := r.Report(violations); err != nil {
 		fmt.Fprintf(errOut, "Error reporting violations: %s\n", err)
 	}

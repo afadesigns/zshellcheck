@@ -51,3 +51,25 @@ func TestFixesForKataWithFix(t *testing.T) {
 		t.Errorf("unexpected fix output: %v", got)
 	}
 }
+
+func TestIsFixable(t *testing.T) {
+	kr := NewKatasRegistry()
+	kr.RegisterKata(ast.IdentifierNode, Kata{
+		ID:    "ZC_FIXABLE",
+		Check: func(ast.Node) []Violation { return nil },
+		Fix:   func(ast.Node, Violation, []byte) []FixEdit { return nil },
+	})
+	kr.RegisterKata(ast.IdentifierNode, Kata{
+		ID:    "ZC_PLAIN",
+		Check: func(ast.Node) []Violation { return nil },
+	})
+	if !kr.IsFixable("ZC_FIXABLE") {
+		t.Error("ZC_FIXABLE should be fixable")
+	}
+	if kr.IsFixable("ZC_PLAIN") {
+		t.Error("ZC_PLAIN should not be fixable")
+	}
+	if kr.IsFixable("ZC_UNKNOWN") {
+		t.Error("unknown kata should not be fixable")
+	}
+}

@@ -22,6 +22,15 @@ type TextReporter struct {
 	filename string
 	lines    []string
 	config   config.Config
+	// fixable, when set, reports whether a kata ID ships an auto-fix; a
+	// fixable finding is tagged with a trailing ` [*]` marker.
+	fixable func(string) bool
+}
+
+// MarkFixable sets the predicate used to tag findings whose kata ships an
+// auto-fix with a ` [*]` marker. Passing nil disables the marker.
+func (r *TextReporter) MarkFixable(fn func(string) bool) {
+	r.fixable = fn
 }
 
 // NewTextReporter creates a new TextReporter.
@@ -42,20 +51,24 @@ func (r *TextReporter) getColor(code string) string {
 }
 
 // Report prints the violations to the writer.
+// levelColor returns the ANSI colour for a severity, honouring NoColor.
+func (r *TextReporter) levelColor(level katas.Severity) string {
+	switch level {
+	case katas.SeverityError:
+		return r.getColor("\033[31m") // Red
+	case katas.SeverityWarning:
+		return r.getColor("\033[33m") // Yellow
+	case katas.SeverityInfo:
+		return r.getColor("\033[34m") // Blue
+	case katas.SeverityStyle:
+		return r.getColor("\033[36m") // Cyan
+	}
+	return ""
+}
+
 func (r *TextReporter) Report(violations []katas.Violation) error {
 	for _, v := range violations {
-		// Severity Color
-		color := ""
-		switch v.Level {
-		case katas.SeverityError:
-			color = r.getColor("\033[31m") // Red
-		case katas.SeverityWarning:
-			color = r.getColor("\033[33m") // Yellow
-		case katas.SeverityInfo:
-			color = r.getColor("\033[34m") // Blue
-		case katas.SeverityStyle:
-			color = r.getColor("\033[36m") // Cyan
-		}
+		color := r.levelColor(v.Level)
 		reset := r.getColor("\033[0m")
 		bold := r.getColor("\033[1m")
 
@@ -64,9 +77,13 @@ func (r *TextReporter) Report(violations []katas.Violation) error {
 			return err
 		}
 
-		// Severity, ID, Message
-		// Example: Error: [ZC1001] Some message
-		if _, err := fmt.Fprintf(r.writer, "%s%s%s: [%s] %s\n", color, v.Level, reset, v.KataID, v.Message); err != nil {
+		// Severity, ID, Message, and a ` [*]` marker when the kata is
+		// auto-fixable. Example: warning: [ZC1001] Some message [*]
+		mark := ""
+		if r.fixable != nil && r.fixable(v.KataID) {
+			mark = " [*]"
+		}
+		if _, err := fmt.Fprintf(r.writer, "%s%s%s: [%s] %s%s\n", color, v.Level, reset, v.KataID, v.Message, mark); err != nil {
 			return err
 		}
 

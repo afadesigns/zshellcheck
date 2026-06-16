@@ -627,6 +627,49 @@ func TestHomeDir(t *testing.T) {
 	_ = homeDir()
 }
 
+func TestEmitStatistics(t *testing.T) {
+	counts := map[string]int{"ZC1037": 3, "ZC1075": 10}
+	var buf bytes.Buffer
+	emitStatistics(&buf, katas.Registry, counts)
+	out := buf.String()
+	// Sorted by descending count: ZC1075 (10) precedes ZC1037 (3).
+	i1075 := strings.Index(out, "ZC1075")
+	i1037 := strings.Index(out, "ZC1037")
+	if i1075 < 0 || i1037 < 0 || i1075 > i1037 {
+		t.Errorf("statistics not sorted by count desc:\n%s", out)
+	}
+	// ZC1037 ships an auto-fix and must carry the marker.
+	for _, line := range strings.Split(out, "\n") {
+		if strings.Contains(line, "ZC1037") && !strings.Contains(line, "[*]") {
+			t.Errorf("ZC1037 line missing fixable marker: %q", line)
+		}
+	}
+}
+
+func TestRun_Statistics(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "test.zsh")
+	if err := os.WriteFile(path, []byte("#!/bin/zsh\nfor i in $(ls); do echo $i; done\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	resetFlags()
+	old := os.Args
+	defer func() { os.Args = old }()
+	os.Args = []string{"zshellcheck", "-statistics", "-no-banner", path}
+	_ = run()
+}
+
+func TestFinalExitCode_FixableFooter(t *testing.T) {
+	n := 3
+	opts := fixOptions{fixable: &n}
+	if code := finalExitCode(5, "text", opts); code != 1 {
+		t.Errorf("want exit 1 with violations, got %d", code)
+	}
+	if code := finalExitCode(0, "text", opts); code != 0 {
+		t.Errorf("want exit 0 with no violations, got %d", code)
+	}
+}
+
 func TestProcessFile_NonexistentFile(t *testing.T) {
 	var out, errOut bytes.Buffer
 	cfg := config.DefaultConfig()

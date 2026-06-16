@@ -31,6 +31,7 @@ Files with `.go`, `.md`, `.json`, `.yml`, `.yaml`, or `.txt` extensions are skip
 | Flag | Default | Purpose |
 | --- | --- | --- |
 | `-format <text\|json\|sarif>` | `text` | Output format. `sarif` is for GitHub Code Scanning ingestion. |
+| `-statistics` | off | Print a per-kata count of findings, sorted by frequency, instead of individual reports. |
 | `-severity <level[,level...]>` | (all) | Comma-separated filter. Accepts `error`, `warning`, `info`, `style`. |
 | `-verbose` | off | Emit full kata descriptions in text output. |
 | `-no-color` | off | Disable ANSI colours. Implied when stdout is not a TTY. |
@@ -76,6 +77,7 @@ zshellcheck -explain ZC1001
 ### Auto-fixes
 
 Katas with a deterministic, reversible rewrite ship a `Fix` implementation.
+A finding from such a kata is tagged with a trailing `[*]` in the text report, and the run ends with a `[*] N fixable with the -fix option.` summary, so you can see at a glance how much the fixer resolves before touching anything.
 Run `zshellcheck -fix <path>` to apply rewrites in place, or `zshellcheck -diff <path>` to preview the unified diff.
 The fixer rewrites only the exact span the kata points at — arguments, quoting, and surrounding whitespace are preserved byte-for-byte.
 
