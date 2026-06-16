@@ -302,10 +302,25 @@ func emitAggregate(out, errOut io.Writer, format string, files []reporter.FileVi
 	case "json":
 		err = reporter.ReportJSON(out, files)
 	case "sarif":
-		err = reporter.ReportSARIF(out, files, version.Version)
+		err = reporter.ReportSARIF(out, files, version.Version, sarifRuleMeta)
 	}
 	if err != nil {
 		fmt.Fprintf(errOut, "Error reporting violations: %s\n", err)
+	}
+}
+
+// sarifRuleMeta supplies SARIF rule metadata for a kata ID from the
+// registry: its title, full description, and a link to the kata catalog.
+func sarifRuleMeta(id string) reporter.RuleMeta {
+	k, ok := katas.Registry.GetKata(id)
+	if !ok {
+		return reporter.RuleMeta{}
+	}
+	return reporter.RuleMeta{
+		Name:        k.Title,
+		Title:       k.Title,
+		Description: k.Description,
+		HelpURI:     "https://github.com/afadesigns/zshellcheck/blob/main/KATAS.md",
 	}
 }
 

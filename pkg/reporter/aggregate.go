@@ -67,13 +67,37 @@ type sarifTool struct {
 }
 
 type sarifDriver struct {
-	Name           string `json:"name"`
-	InformationURI string `json:"informationUri"`
-	Version        string `json:"version"`
+	Name           string      `json:"name"`
+	InformationURI string      `json:"informationUri"`
+	Version        string      `json:"version"`
+	Rules          []sarifRule `json:"rules"`
+}
+
+// RuleMeta is the per-kata metadata embedded in a SARIF run so code
+// scanning can render a description and link for each rule.
+type RuleMeta struct {
+	Name        string
+	Title       string
+	Description string
+	HelpURI     string
+}
+
+type sarifRule struct {
+	ID                   string          `json:"id"`
+	Name                 string          `json:"name,omitempty"`
+	ShortDescription     sarifMessage    `json:"shortDescription"`
+	FullDescription      *sarifMessage   `json:"fullDescription,omitempty"`
+	HelpURI              string          `json:"helpUri,omitempty"`
+	DefaultConfiguration sarifRuleConfig `json:"defaultConfiguration"`
+}
+
+type sarifRuleConfig struct {
+	Level string `json:"level"`
 }
 
 type sarifResult struct {
 	RuleID    string          `json:"ruleId"`
+	RuleIndex int             `json:"ruleIndex"`
 	Level     string          `json:"level"`
 	Message   sarifMessage    `json:"message"`
 	Locations []sarifLocation `json:"locations"`
@@ -103,15 +127,26 @@ type sarifRegion struct {
 
 // ReportSARIF writes every finding across all files as one SARIF 2.1.0
 // document: a single run whose results each carry a physical location
-// (file URI + 1-based line/column) so GitHub code scanning can ingest it.
-func ReportSARIF(w io.Writer, files []FileViolations, toolVersion string) error {
+// (file URI + 1-based line/column) and reference a rule in the driver's
+// rules array, which meta populates with each kata's description, level,
+// and help URI so GitHub code scanning can render them.
+func ReportSARIF(w io.Writer, files []FileViolations, toolVersion string, meta func(string) RuleMeta) error {
 	results := []sarifResult{}
+	rules := []sarifRule{}
+	ruleIndex := map[string]int{}
 	for _, f := range files {
 		for _, v := range f.Violations {
+			idx, ok := ruleIndex[v.KataID]
+			if !ok {
+				idx = len(rules)
+				ruleIndex[v.KataID] = idx
+				rules = append(rules, buildSarifRule(v, meta))
+			}
 			results = append(results, sarifResult{
-				RuleID:  v.KataID,
-				Level:   sarifLevel(v.Level),
-				Message: sarifMessage{Text: v.Message},
+				RuleID:    v.KataID,
+				RuleIndex: idx,
+				Level:     sarifLevel(v.Level),
+				Message:   sarifMessage{Text: v.Message},
 				Locations: []sarifLocation{{
 					PhysicalLocation: sarifPhysical{
 						ArtifactLocation: sarifArtifact{URI: f.Filename},
@@ -132,6 +167,7 @@ func ReportSARIF(w io.Writer, files []FileViolations, toolVersion string) error 
 				Name:           "zshellcheck",
 				InformationURI: "https://github.com/afadesigns/zshellcheck",
 				Version:        toolVersion,
+				Rules:          rules,
 			}},
 			Results: results,
 		}},
@@ -139,6 +175,31 @@ func ReportSARIF(w io.Writer, files []FileViolations, toolVersion string) error 
 	enc := json.NewEncoder(w)
 	enc.SetIndent("", "  ")
 	return enc.Encode(doc)
+}
+
+// buildSarifRule assembles a SARIF rule descriptor from a finding plus its
+// kata metadata. A nil meta yields a minimal descriptor.
+func buildSarifRule(v katas.Violation, meta func(string) RuleMeta) sarifRule {
+	rule := sarifRule{
+		ID:                   v.KataID,
+		ShortDescription:     sarifMessage{Text: v.Message},
+		DefaultConfiguration: sarifRuleConfig{Level: sarifLevel(v.Level)},
+	}
+	if meta == nil {
+		return rule
+	}
+	m := meta(v.KataID)
+	if m.Name != "" {
+		rule.Name = m.Name
+	}
+	if m.Title != "" {
+		rule.ShortDescription = sarifMessage{Text: m.Title}
+	}
+	if m.Description != "" {
+		rule.FullDescription = &sarifMessage{Text: m.Description}
+	}
+	rule.HelpURI = m.HelpURI
+	return rule
 }
 
 // sarifLevel maps a kata severity onto a SARIF result level. SARIF has no

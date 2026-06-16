@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.5.1] - 2026-06-16
+
+### Added
+- The SARIF report now embeds a `rules` array in the tool driver. Each kata that produced a finding contributes a rule descriptor with its title, full description, default severity level, and a help URL, and every result references its rule by index. GitHub code scanning renders these so a finding shows what the rule means and where to read more.
+
 ## [1.5.0] - 2026-06-16
 
 ### Added

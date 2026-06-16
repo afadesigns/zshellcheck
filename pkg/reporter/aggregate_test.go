@@ -66,7 +66,7 @@ func TestReportJSON_WriterError(t *testing.T) {
 
 func TestReportSARIF_MultiFileIsOneValidRun(t *testing.T) {
 	var buf bytes.Buffer
-	if err := ReportSARIF(&buf, twoFiles(), "1.2.3"); err != nil {
+	if err := ReportSARIF(&buf, twoFiles(), "1.2.3", testMeta); err != nil {
 		t.Fatalf("ReportSARIF error: %v", err)
 	}
 	var doc map[string]any
@@ -111,7 +111,8 @@ func TestReportSARIF_LevelMappingAndClamp(t *testing.T) {
 		{KataID: "ZC2", Message: "s", Line: 1, Column: 1, Level: katas.SeverityStyle},
 	}}}
 	var buf bytes.Buffer
-	if err := ReportSARIF(&buf, files, "0.0.0"); err != nil {
+	// nil meta exercises the minimal-descriptor path.
+	if err := ReportSARIF(&buf, files, "0.0.0", nil); err != nil {
 		t.Fatalf("ReportSARIF error: %v", err)
 	}
 	var doc map[string]any
@@ -132,8 +133,49 @@ func TestReportSARIF_LevelMappingAndClamp(t *testing.T) {
 	}
 }
 
+func TestReportSARIF_RulesMetadata(t *testing.T) {
+	var buf bytes.Buffer
+	if err := ReportSARIF(&buf, twoFiles(), "1.2.3", testMeta); err != nil {
+		t.Fatalf("ReportSARIF error: %v", err)
+	}
+	var doc map[string]any
+	if err := json.Unmarshal(buf.Bytes(), &doc); err != nil {
+		t.Fatalf("not valid SARIF: %v", err)
+	}
+	run := doc["runs"].([]any)[0].(map[string]any)
+	// One rule per distinct kata, with description, help URI, and level.
+	rules := run["tool"].(map[string]any)["driver"].(map[string]any)["rules"].([]any)
+	if len(rules) != 3 {
+		t.Fatalf("want 3 rules, got %d", len(rules))
+	}
+	rule0 := rules[0].(map[string]any)
+	if rule0["id"] != "ZC1001" {
+		t.Errorf("rule0 id = %v", rule0["id"])
+	}
+	if rule0["helpUri"] == "" {
+		t.Error("rule0 missing helpUri")
+	}
+	if rule0["fullDescription"].(map[string]any)["text"] != "ZC1001 desc" {
+		t.Errorf("rule0 description = %v", rule0["fullDescription"])
+	}
+	// Results reference their rule by index.
+	results := run["results"].([]any)
+	if results[1].(map[string]any)["ruleIndex"].(float64) != 1 {
+		t.Errorf("ruleIndex not wired: %v", results[1])
+	}
+}
+
+func testMeta(id string) RuleMeta {
+	return RuleMeta{
+		Name:        id + "-name",
+		Title:       id + " title",
+		Description: id + " desc",
+		HelpURI:     "https://example.test/" + id,
+	}
+}
+
 func TestReportSARIF_WriterError(t *testing.T) {
-	if err := ReportSARIF(&failWriter{}, twoFiles(), "1.0.0"); err == nil {
+	if err := ReportSARIF(&failWriter{}, twoFiles(), "1.0.0", testMeta); err == nil {
 		t.Error("expected error from failing writer")
 	}
 }
