@@ -77,8 +77,9 @@ linters:
           - gosec
         text: "G101"
       # Lint pipeline writes the rewritten file at the original path; the
-      # path comes from the user's CLI arg, validated upstream.
-      - path: cmd/zshellcheck/main\.go
+      # path comes from the user's CLI arg, validated upstream. The -fix
+      # writer lives in main.go and the -add-noka writer in directives.go.
+      - path: cmd/zshellcheck/(main|directives)\.go
         linters:
           - gosec
         text: "G703"

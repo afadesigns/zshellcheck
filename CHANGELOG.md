@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.7.0] - 2026-06-16
+
+### Added
+- `-rule-severity <ZC####:level,...>` re-grades specific katas to a chosen severity (`error`, `warning`, `info`, `style`), independent of the global `-severity` floor.
+- `-add-noka` appends a `# noka: ZC####` directive to every line that carries a finding and writes the files, silencing an existing codebase in bulk for review.
+- `-detect-stale-noka` reports `# noka` directives that suppress no actual finding and exits non-zero when any are found, so stale suppressions can be pruned.
+
 ## [1.6.0] - 2026-06-16
 
 ### Added
@@ -308,7 +315,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - `cmd  # noka: ZC1234`      — silences one kata on this line.
     - `cmd  # noka: ZC1234, ZC1075` — multiple, comma- or space-separated.
   Standalone `# noka` directives still apply to the next non-blank code line; placed at file tail with no code after them, they apply file-wide.
-  Rationale: shorter (18 vs 30 chars), distinctive ("no kata"), aligns with the python ecosystem's `# noqa` convention.
+  Rationale: shorter, distinctive ("no kata"), and consistent with the inline-comment suppression conventions other linters use.
   Refactored cleanly while the project is still early — no fork-side migration to coordinate.
 
 ### Added

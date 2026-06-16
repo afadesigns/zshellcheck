@@ -7,7 +7,7 @@
 Static analysis and auto-fix for the setopts, hooks, and globs Bash never learned.
 
 [![CI](https://github.com/afadesigns/zshellcheck/actions/workflows/ci.yml/badge.svg)](https://github.com/afadesigns/zshellcheck/actions/workflows/ci.yml)
-[![Release](https://img.shields.io/badge/release-v1.6.0-blue)](https://github.com/afadesigns/zshellcheck/releases/latest)
+[![Release](https://img.shields.io/badge/release-v1.7.0-blue)](https://github.com/afadesigns/zshellcheck/releases/latest)
 [![Marketplace](https://img.shields.io/badge/Marketplace-ZshellCheck%20v1-2ea44f?logo=githubactions&logoColor=white)](https://github.com/marketplace/actions/zshellcheck-v1)
 [![Auto-fix](https://img.shields.io/badge/auto--fix-132%20katas-2ea44f)](KATAS.md)
 [![Dependencies](https://img.shields.io/badge/dependencies-0-2ea44f)](go.mod)
