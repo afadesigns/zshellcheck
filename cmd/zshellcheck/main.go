@@ -43,6 +43,9 @@ type runFlags struct {
 	statistics     *bool
 	baseline       *string
 	baselineWrite  *string
+	ruleSeverity   *string
+	addNoka        *bool
+	detectStale    *bool
 }
 
 func run() int {
@@ -85,29 +88,63 @@ func run() int {
 		return code
 	}
 	fixOpts := buildFixOpts(*flags.fixMode, *flags.diffMode, *flags.dryRun, *flags.unsafeFixes)
-	if *flags.statistics {
-		fixOpts.statistics = map[string]int{}
-	}
-	if code := setupBaseline(&fixOpts, *flags.baseline, *flags.baselineWrite); code != 0 {
+	if code := configureModes(flags, &fixOpts); code != 0 {
 		return code
 	}
 	total := scanArgs(cfg, allowedSeverities, *flags.format, fixOpts)
 	emitFixSummary(fixOpts.stats)
-	if *flags.baselineWrite != "" {
+	return runResult(flags, total, fixOpts)
+}
+
+// configureModes parses the report-shaping flags onto fixOpts, returning a
+// non-zero exit code only on a malformed value.
+func configureModes(flags runFlags, fixOpts *fixOptions) int {
+	if *flags.statistics {
+		fixOpts.statistics = map[string]int{}
+	}
+	regrade, err := parseRuleSeverity(*flags.ruleSeverity)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "%s\n", err)
+		return 1
+	}
+	fixOpts.ruleSeverity = regrade
+	fixOpts.addNoka = *flags.addNoka
+	if *flags.detectStale {
+		fixOpts.detectStale = true
+		fixOpts.staleCount = new(int)
+	}
+	return setupBaseline(fixOpts, *flags.baseline, *flags.baselineWrite)
+}
+
+// runResult turns the scan total and run mode into the process exit code,
+// emitting any deferred output (baseline file, statistics table).
+func runResult(flags runFlags, total int, fixOpts fixOptions) int {
+	switch {
+	case *flags.addNoka:
+		return 0
+	case *flags.baselineWrite != "":
 		if err := fixOpts.baseline.writeBaseline(*flags.baselineWrite); err != nil {
 			fmt.Fprintf(os.Stderr, "Error writing baseline: %s\n", err)
 			return 1
 		}
 		return 0
-	}
-	if fixOpts.statistics != nil {
+	case fixOpts.statistics != nil:
 		emitStatistics(os.Stdout, katas.Registry, fixOpts.statistics)
-		if total == 0 {
+		if total == 0 && !hasStale(fixOpts) {
 			return 0
 		}
 		return 1
 	}
-	return finalExitCode(total, *flags.format, fixOpts)
+	exit := finalExitCode(total, *flags.format, fixOpts)
+	if exit == 0 && hasStale(fixOpts) {
+		return 1
+	}
+	return exit
+}
+
+// hasStale reports whether stale-suppression detection found anything.
+func hasStale(fixOpts fixOptions) bool {
+	return fixOpts.staleCount != nil && *fixOpts.staleCount > 0
 }
 
 // emitStatistics prints a per-kata count table sorted by descending count
@@ -172,6 +209,9 @@ func registerRunFlags() runFlags {
 		statistics:     flag.Bool("statistics", false, "Print a per-kata count of findings instead of individual reports."),
 		baseline:       flag.String("baseline", "", "Suppress findings recorded in this baseline file; report only new ones."),
 		baselineWrite:  flag.String("baseline-write", "", "Write a baseline snapshot of current findings to this path and exit 0."),
+		ruleSeverity:   flag.String("rule-severity", "", "Re-grade katas: comma-separated ZC####:level (error, warning, info, style)."),
+		addNoka:        flag.Bool("add-noka", false, "Append a `# noka: ZC####` directive to every line with a finding, then exit."),
+		detectStale:    flag.Bool("detect-stale-noka", false, "Report `# noka` directives that suppress no actual finding."),
 	}
 }
 
@@ -438,6 +478,15 @@ type fixOptions struct {
 	// baseline, when non-nil, records or filters findings against a saved
 	// snapshot so a run reports only findings new since the baseline.
 	baseline *baselineState
+	// ruleSeverity re-grades specific katas to a chosen severity.
+	ruleSeverity map[string]katas.Severity
+	// addNoka rewrites each file in place, appending a `# noka` directive
+	// to every line with a finding, then stops short of reporting.
+	addNoka bool
+	// detectStale reports `# noka` directives that suppress no finding;
+	// staleCount tallies them for the exit code.
+	detectStale bool
+	staleCount  *int
 }
 
 // fixStats accumulates fix activity across all files visited in one
@@ -649,7 +698,23 @@ func processFile(filename string, out, errOut io.Writer, cfg config.Config, regi
 	disabled := mergeDisabled(cfg.DisabledKatas, directives.File)
 
 	violations, edits := collectViolations(program, registry, disabled, data, fixOpts.enabled)
+	regradeSeverity(violations, fixOpts.ruleSeverity)
+	// Stale-suppression detection compares the raw findings against the
+	// `# noka` directives before any are silenced.
+	if fixOpts.detectStale {
+		reportStaleNoka(out, filename, violations, directives, fixOpts.staleCount)
+	}
 	violations, edits = applyDirectiveSilences(violations, edits, directives)
+
+	// add-noka rewrites the file in place, silencing every current finding,
+	// and stops short of severity filtering, fixing, or reporting.
+	if fixOpts.addNoka {
+		if err := addNokaDirectives(filename, data, violations); err != nil {
+			fmt.Fprintf(errOut, "add-noka: %s\n", err)
+		}
+		return len(violations)
+	}
+
 	violations, edits = applySeverityFilter(violations, edits, allowedSeverities)
 
 	// The baseline ratchet records or suppresses findings against a saved

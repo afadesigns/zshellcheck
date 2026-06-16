@@ -42,8 +42,13 @@ func printUsage(out io.Writer, fset *flag.FlagSet, showBanner bool) {
 		},
 		{
 			title: "FILTER",
-			names: []string{"severity", "baseline", "baseline-write"},
-			blurb: "Drop violations below a threshold, or ratchet against a baseline.",
+			names: []string{"severity", "rule-severity", "baseline", "baseline-write"},
+			blurb: "Drop violations below a threshold, re-grade katas, or ratchet against a baseline.",
+		},
+		{
+			title: "SUPPRESSION",
+			names: []string{"add-noka", "detect-stale-noka"},
+			blurb: "Manage `# noka` directives in bulk.",
 		},
 		{
 			title: "AUTO-FIX",
@@ -79,6 +84,8 @@ func printUsage(out io.Writer, fset *flag.FlagSet, showBanner bool) {
 		{"Lint a tree, suppress style-level findings", "zshellcheck -severity warning ./scripts"},
 		{"Triage by frequency: per-kata counts", "zshellcheck -statistics ./scripts"},
 		{"Snapshot findings, then fail only on new ones", "zshellcheck -baseline-write .zshellcheck-baseline ./scripts"},
+		{"Re-grade a kata's severity", "zshellcheck -rule-severity ZC1037:error ./scripts"},
+		{"Silence every current finding inline", "zshellcheck -add-noka ./scripts"},
 		{"Emit SARIF for GitHub Code Scanning", "zshellcheck -format sarif ./scripts > zshellcheck.sarif"},
 		{"Preview every available auto-fix as a diff", "zshellcheck -diff path/to/script.zsh"},
 		{"Apply auto-fixes in place (safe only)", "zshellcheck -fix path/to/script.zsh"},

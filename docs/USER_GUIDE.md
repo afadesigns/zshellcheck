@@ -36,6 +36,9 @@ Files with `.go`, `.md`, `.json`, `.yml`, `.yaml`, or `.txt` extensions are skip
 | `-baseline <path>` | — | Suppress findings recorded in the baseline file; report only findings new since it. |
 | `-baseline-write <path>` | — | Write a baseline snapshot of the current findings and exit 0. |
 | `-severity <level[,level...]>` | (all) | Comma-separated filter. Accepts `error`, `warning`, `info`, `style`. |
+| `-rule-severity <ZC####:level[,...]>` | — | Re-grade specific katas to a chosen severity, for example `ZC1037:error`. |
+| `-add-noka` | off | Append a `# noka: ZC####` directive to every line with a finding, write the files, and exit. |
+| `-detect-stale-noka` | off | Report `# noka` directives that suppress no actual finding; exit non-zero if any. |
 | `-verbose` | off | Emit full kata descriptions in text output. |
 | `-no-color` | off | Disable ANSI colours. Implied when stdout is not a TTY. |
 | `-cpuprofile <path>` | — | Write a Go pprof CPU profile to `<path>` for benchmarking. |
@@ -210,6 +213,9 @@ echo "ok"
 
 Multiple IDs may be separated by commas or whitespace.
 Inline IDs are merged with `disabled_katas` from `.zshellcheckrc`.
+
+To silence an existing codebase in bulk, `-add-noka` appends a `# noka` directive to every line that carries a finding, then exits — review the diff before committing.
+Over time directives go stale as the code around them changes; `-detect-stale-noka` reports any `# noka` that no longer suppresses a finding so you can remove it.
 
 ---
 
