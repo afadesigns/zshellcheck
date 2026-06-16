@@ -37,7 +37,7 @@ func printUsage(out io.Writer, fset *flag.FlagSet, showBanner bool) {
 	groups := []flagGroup{
 		{
 			title: "OUTPUT",
-			names: []string{"format", "no-color", "no-banner", "verbose"},
+			names: []string{"format", "statistics", "no-color", "no-banner", "verbose"},
 			blurb: "Shape what lands on stdout / stderr.",
 		},
 		{
@@ -77,6 +77,7 @@ func printUsage(out io.Writer, fset *flag.FlagSet, showBanner bool) {
 		{"Lint a single script", "zshellcheck path/to/script.zsh"},
 		{"List every kata, or explain one", "zshellcheck -list-rules; zshellcheck -explain ZC1001"},
 		{"Lint a tree, suppress style-level findings", "zshellcheck -severity warning ./scripts"},
+		{"Triage by frequency: per-kata counts", "zshellcheck -statistics ./scripts"},
 		{"Emit SARIF for GitHub Code Scanning", "zshellcheck -format sarif ./scripts > zshellcheck.sarif"},
 		{"Preview every available auto-fix as a diff", "zshellcheck -diff path/to/script.zsh"},
 		{"Apply auto-fixes in place", "zshellcheck -fix path/to/script.zsh"},

@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.4.0] - 2026-06-16
+
+### Added
+- The text report tags every finding whose kata ships an auto-fix with a trailing `[*]`, and ends with a `[*] N fixable with the -fix option.` summary. You can now see how much `-fix` resolves before running it.
+- `-statistics` prints a per-kata count of findings, sorted by frequency and tagged with the `[*]` fixable marker, instead of individual reports. Use it to triage which checks dominate a large codebase.
+
 ## [1.3.7] - 2026-06-16
 
 ### Fixed

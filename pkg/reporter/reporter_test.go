@@ -200,6 +200,28 @@ func TestTextReporter_MultiLineSource(t *testing.T) {
 	}
 }
 
+func TestTextReporter_FixableMark(t *testing.T) {
+	violations := []katas.Violation{
+		{KataID: "ZC0001", Message: "fixable one", Level: katas.SeverityWarning, Line: 1, Column: 1},
+		{KataID: "ZC0002", Message: "not fixable", Level: katas.SeverityWarning, Line: 1, Column: 1},
+	}
+	var buf bytes.Buffer
+	cfg := config.DefaultConfig()
+	cfg.NoColor = true
+	r := NewTextReporter(&buf, "test.zsh", "echo hello", cfg)
+	r.MarkFixable(func(id string) bool { return id == "ZC0001" })
+	if err := r.Report(violations); err != nil {
+		t.Fatalf("Report() error: %v", err)
+	}
+	out := buf.String()
+	if !strings.Contains(out, "[ZC0001] fixable one [*]") {
+		t.Errorf("fixable finding not marked:\n%s", out)
+	}
+	if strings.Contains(out, "[ZC0002] not fixable [*]") {
+		t.Errorf("non-fixable finding wrongly marked:\n%s", out)
+	}
+}
+
 type failWriter struct{}
 
 func (w *failWriter) Write(p []byte) (n int, err error) {

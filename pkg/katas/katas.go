@@ -83,6 +83,13 @@ func (kr *KatasRegistry) GetKata(id string) (Kata, bool) {
 	return kata, ok
 }
 
+// IsFixable reports whether the kata with the given ID ships a
+// deterministic auto-fix.
+func (kr *KatasRegistry) IsFixable(id string) bool {
+	kata, ok := kr.KatasByID[id]
+	return ok && kata.Fix != nil
+}
+
 // KatasByNodeType returns all registered Katas grouped by node type.
 func (kr *KatasRegistry) KatasByNodeType() map[string][]Kata {
 	return kr.KatasByType
