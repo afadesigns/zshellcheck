@@ -6,6 +6,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/afadesigns/zshellcheck/pkg/ast"
 	"github.com/afadesigns/zshellcheck/pkg/lexer"
 )
 
@@ -125,4 +126,45 @@ func TestParseBraceGroupCondition(t *testing.T) {
 	parseClean(t, "if { cmd }; then x; fi\n")
 	parseClean(t, "if { a || b }; then x; fi\n")
 	parseClean(t, "while { c }; do x; done\n")
+}
+
+// Zsh's `{ try } always { always-list }` parses as one block; the
+// always-list is not stranded as a bogus `always { … }` command.
+func TestParseAlwaysBlock(t *testing.T) {
+	for _, src := range []string{
+		"{ echo try } always { echo cleanup }\n",
+		"{ false && true } always { echo done }\n",
+		"{ a } always { b } always { c }\n",
+	} {
+		p := New(lexer.New(src))
+		prog := p.ParseProgram()
+		if errs := p.Errors(); len(errs) != 0 {
+			t.Fatalf("unexpected errors for %q: %v", src, errs)
+		}
+		if got := len(prog.Statements); got != 1 {
+			t.Fatalf("want 1 statement for %q, got %d", src, got)
+		}
+		block, ok := prog.Statements[0].(*ast.BlockStatement)
+		if !ok {
+			t.Fatalf("want *ast.BlockStatement for %q, got %T", src, prog.Statements[0])
+		}
+		if len(block.Statements) < 2 {
+			t.Fatalf("always-list not folded into block for %q: %d statements", src, len(block.Statements))
+		}
+	}
+}
+
+// A bare `always` that is not followed by a brace block is consumed but
+// not folded; the parser must not panic or error on the degenerate form.
+func TestParseAlwaysWithoutBlock(t *testing.T) {
+	for _, src := range []string{
+		"{ echo a } always\n",
+		"{ echo a } always cmd\n",
+	} {
+		p := New(lexer.New(src))
+		_ = p.ParseProgram()
+		if errs := p.Errors(); len(errs) != 0 {
+			t.Fatalf("unexpected errors for %q: %v", src, errs)
+		}
+	}
 }

@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.3.4] - 2026-06-16
+
+### Fixed
+- Zsh's `{ try-list } always { always-list }` construct parses as a single block. The `always` clause was treated as a separate `always { … }` command, which left a stray closing brace as its own statement.
+
 ## [1.3.3] - 2026-06-16
 
 ### Fixed

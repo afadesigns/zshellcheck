@@ -212,6 +212,7 @@ func (p *Parser) parseBraceGroupStatement() ast.Statement {
 	p.nextToken()
 	block := p.parseBlockStatement(token.RBRACE)
 	block.Token = tok
+	p.absorbAlwaysBlock(block)
 	for p.peekTokenIs(token.PIPE) || p.peekTokenIs(token.AND) || p.peekTokenIs(token.OR) {
 		p.nextToken()
 		p.nextToken()
@@ -221,6 +222,28 @@ func (p *Parser) parseBraceGroupStatement() ast.Statement {
 		p.nextToken()
 	}
 	return block
+}
+
+// absorbAlwaysBlock folds a Zsh `{ try } always { always-list }` tail into
+// the preceding block. The always-list runs regardless of how the
+// try-list exits; the linter treats both as ordinary command lists, so
+// its statements join the same block. Without this, `always { … }` parsed
+// as a bogus command statement and the inner commands escaped the block.
+// `always` is lexed as a plain identifier and is only valid here, so a
+// bare `always` immediately after a brace group is unambiguously the
+// keyword.
+func (p *Parser) absorbAlwaysBlock(block *ast.BlockStatement) {
+	if !p.peekTokenIs(token.IDENT) || p.peekToken.Literal != "always" {
+		return
+	}
+	p.nextToken() // consume `always`
+	if !p.peekTokenIs(token.LBRACE) {
+		return
+	}
+	p.nextToken() // move onto the always-list `{`
+	if always, ok := p.parseBraceGroupStatement().(*ast.BlockStatement); ok {
+		block.Statements = append(block.Statements, always.Statements...)
+	}
 }
 
 func (p *Parser) parseDoubleLparenStatement() ast.Statement {
