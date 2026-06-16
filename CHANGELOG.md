@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.3.6] - 2026-06-16
+
+### Changed
+- ZShellCheck now builds from the Go standard library alone — zero third-party dependencies. The `github.com/adrg/xdg` and `gopkg.in/yaml.v3` modules (and the transitive `golang.org/x/sys`) are replaced by a small internal XDG config-path resolver and a config parser for the existing flat `.zshellcheckrc` format. Existing config files continue to work unchanged.
+
 ## [1.3.5] - 2026-06-16
 
 ### Fixed

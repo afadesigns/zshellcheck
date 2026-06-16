@@ -12,7 +12,6 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/adrg/xdg"
 	"github.com/afadesigns/zshellcheck/pkg/ast"
 	"github.com/afadesigns/zshellcheck/pkg/config"
 	"github.com/afadesigns/zshellcheck/pkg/fix"
@@ -21,7 +20,6 @@ import (
 	"github.com/afadesigns/zshellcheck/pkg/parser"
 	"github.com/afadesigns/zshellcheck/pkg/reporter"
 	"github.com/afadesigns/zshellcheck/pkg/version"
-	"gopkg.in/yaml.v3"
 )
 
 func main() {
@@ -142,12 +140,50 @@ func maybeEmitBanner(format string, noColor, noBanner bool) {
 }
 
 func resolveConfig() (config.Config, error) {
-	xdgPath, err := xdg.SearchConfigFile("zshellcheck/config.yml")
-	if err != nil {
-		xdgPath, _ = xdg.SearchConfigFile("zshellcheck/config.yaml")
+	xdgPath := xdgConfigSearch("zshellcheck/config.yml")
+	if xdgPath == "" {
+		xdgPath = xdgConfigSearch("zshellcheck/config.yaml")
 	}
-	homePath := filepath.Join(xdg.Home, ".zshellcheckrc")
+	homePath := filepath.Join(homeDir(), ".zshellcheckrc")
 	return loadConfig(xdgPath, homePath, ".zshellcheckrc")
+}
+
+// xdgConfigSearch returns the first existing path for rel under the XDG
+// configuration search path: `$XDG_CONFIG_HOME` (or `~/.config`), then the
+// colon-separated `$XDG_CONFIG_DIRS` (or `/etc/xdg`). It returns "" when
+// none exist. This replaces github.com/adrg/xdg so the binary carries no
+// third-party dependencies.
+func xdgConfigSearch(rel string) string {
+	var dirs []string
+	if home := os.Getenv("XDG_CONFIG_HOME"); home != "" {
+		dirs = append(dirs, home)
+	} else if home := homeDir(); home != "" {
+		dirs = append(dirs, filepath.Join(home, ".config"))
+	}
+	sys := os.Getenv("XDG_CONFIG_DIRS")
+	if sys == "" {
+		sys = "/etc/xdg"
+	}
+	dirs = append(dirs, filepath.SplitList(sys)...)
+	for _, dir := range dirs {
+		if dir == "" {
+			continue
+		}
+		path := filepath.Join(dir, rel)
+		if _, err := os.Stat(path); err == nil {
+			return path
+		}
+	}
+	return ""
+}
+
+// homeDir returns the user's home directory, or "" when it cannot be
+// resolved.
+func homeDir() string {
+	if home, err := os.UserHomeDir(); err == nil {
+		return home
+	}
+	return ""
 }
 
 func applyFlagOverrides(cfg config.Config, noColor, verbose bool) config.Config {
@@ -237,8 +273,7 @@ func loadConfig(paths ...string) (config.Config, error) {
 			return cfg, err
 		}
 
-		var fileConfig config.Config
-		err = yaml.Unmarshal(data, &fileConfig)
+		fileConfig, err := config.Parse(data)
 		if err != nil {
 			return cfg, err
 		}

@@ -59,7 +59,7 @@ It is the canonical reference for the OpenSSF Best Practices `assurance_case` an
 The eight Saltzer/Schroeder principles, ordered as in the original paper, with the project's instance.
 
 1. **Economy of mechanism.**
-   Single static binary (≈2 MB), no runtime dependencies, no plugin host, no network listener.
+   A single static binary built from the Go standard library alone — zero third-party dependencies, no plugin host, no network listener.
 2. **Fail-safe defaults.**
    `-fix` is opt-in; the default is read-only analysis.
    Severity filter defaults to all-on so dangerous findings cannot be silenced by accident.
@@ -91,7 +91,7 @@ Mapping against [CWE/SANS Top 25](https://cwe.mitre.org/top25/) and [OWASP Top 1
 | Out-of-bounds read or write (CWE-125, CWE-787) | Go is memory-safe; no `unsafe` imports in project code. |
 | Use after free (CWE-416) | Garbage-collected runtime; no manual lifetime management. |
 | Path traversal (CWE-22) | The CLI accepts only paths the user passes; relative paths are resolved against the working directory; no symlink chase by default. |
-| Deserialisation of untrusted data (CWE-502) | YAML config uses `yaml.Unmarshal` with a typed struct; no arbitrary type instantiation. |
+| Deserialisation of untrusted data (CWE-502) | The config parser is a hand-written line reader over a fixed, flat key set; it never instantiates arbitrary types and ignores unknown keys. |
 | Insecure dependencies (CWE-1395) | `go.sum` pins every module; OSV-Scanner and Dependabot run continuously. |
 | Insufficient logging (CWE-778) | Violations include file, line, column, kata ID, severity, and message; SARIF output preserves the same. |
 | Improper certificate validation (CWE-295) | The release artefacts are validated by cosign; install scripts verify SHA-256 + cosign before execution. |

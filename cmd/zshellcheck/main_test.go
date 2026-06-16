@@ -546,6 +546,55 @@ func TestApplySafeEdits_Bailouts(t *testing.T) {
 	}
 }
 
+func TestXdgConfigSearch(t *testing.T) {
+	dir := t.TempDir()
+	sub := filepath.Join(dir, "zshellcheck")
+	if err := os.MkdirAll(sub, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	cfgPath := filepath.Join(sub, "config.yml")
+	if err := os.WriteFile(cfgPath, []byte("no_color: true\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	// Found under $XDG_CONFIG_HOME.
+	t.Setenv("XDG_CONFIG_HOME", dir)
+	t.Setenv("XDG_CONFIG_DIRS", "")
+	if got := xdgConfigSearch("zshellcheck/config.yml"); got != cfgPath {
+		t.Errorf("XDG_CONFIG_HOME search = %q, want %q", got, cfgPath)
+	}
+	// Not found anywhere.
+	if got := xdgConfigSearch("zshellcheck/missing.yml"); got != "" {
+		t.Errorf("missing search = %q, want \"\"", got)
+	}
+
+	// Found via $XDG_CONFIG_DIRS, with an empty leading element skipped.
+	empty := t.TempDir()
+	t.Setenv("XDG_CONFIG_HOME", empty)
+	t.Setenv("XDG_CONFIG_DIRS", ":"+dir)
+	if got := xdgConfigSearch("zshellcheck/config.yml"); got != cfgPath {
+		t.Errorf("XDG_CONFIG_DIRS search = %q, want %q", got, cfgPath)
+	}
+
+	// Empty $XDG_CONFIG_HOME falls back to ~/.config (exercises the
+	// homeDir branch); the file does not exist there, so "" is returned.
+	t.Setenv("XDG_CONFIG_HOME", "")
+	t.Setenv("XDG_CONFIG_DIRS", "")
+	_ = xdgConfigSearch("zshellcheck/definitely-absent-xyz.yml")
+}
+
+func TestHomeDir(t *testing.T) {
+	// Success path.
+	if homeDir() == "" {
+		t.Skip("no resolvable home directory in this environment")
+	}
+	// Error path: an unset $HOME makes os.UserHomeDir fail on Linux, so
+	// homeDir returns "". On platforms where it still resolves, the call
+	// is still exercised.
+	t.Setenv("HOME", "")
+	_ = homeDir()
+}
+
 func TestProcessFile_NonexistentFile(t *testing.T) {
 	var out, errOut bytes.Buffer
 	cfg := config.DefaultConfig()

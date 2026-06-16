@@ -7,9 +7,10 @@
 Static analysis and auto-fix for the setopts, hooks, and globs Bash never learned.
 
 [![CI](https://github.com/afadesigns/zshellcheck/actions/workflows/ci.yml/badge.svg)](https://github.com/afadesigns/zshellcheck/actions/workflows/ci.yml)
-[![Release](https://img.shields.io/badge/release-v1.3.5-blue)](https://github.com/afadesigns/zshellcheck/releases/latest)
+[![Release](https://img.shields.io/badge/release-v1.3.6-blue)](https://github.com/afadesigns/zshellcheck/releases/latest)
 [![Marketplace](https://img.shields.io/badge/Marketplace-ZshellCheck%20v1-2ea44f?logo=githubactions&logoColor=white)](https://github.com/marketplace/actions/zshellcheck-v1)
 [![Auto-fix](https://img.shields.io/badge/auto--fix-132%20katas-2ea44f)](KATAS.md)
+[![Dependencies](https://img.shields.io/badge/dependencies-0-2ea44f)](go.mod)
 [![Go Report](https://goreportcard.com/badge/github.com/afadesigns/zshellcheck)](https://goreportcard.com/report/github.com/afadesigns/zshellcheck)
 [![codecov](https://codecov.io/gh/afadesigns/zshellcheck/graph/badge.svg)](https://codecov.io/gh/afadesigns/zshellcheck)
 [![Scorecard](https://api.securityscorecards.dev/projects/github.com/afadesigns/zshellcheck/badge)](https://securityscorecards.dev/viewer/?uri=github.com/afadesigns/zshellcheck)

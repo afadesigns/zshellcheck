@@ -4,8 +4,6 @@ package config
 
 import (
 	"os"
-
-	"gopkg.in/yaml.v3"
 )
 
 // Config holds all configuration for zshellcheck.
@@ -98,7 +96,7 @@ func MergeConfig(base, override Config) Config {
 	return base
 }
 
-// NewConfigFromYAML loads configuration from a YAML file.
+// NewConfigFromYAML loads configuration from a config file.
 func NewConfigFromYAML(path string) (Config, error) {
 	cfg := DefaultConfig()
 
@@ -107,8 +105,7 @@ func NewConfigFromYAML(path string) (Config, error) {
 		return cfg, err
 	}
 
-	var fileConfig Config
-	err = yaml.Unmarshal(data, &fileConfig)
+	fileConfig, err := Parse(data)
 	if err != nil {
 		return cfg, err
 	}
