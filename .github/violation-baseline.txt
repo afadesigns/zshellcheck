@@ -151,7 +151,7 @@ bullet-train/bullet-train.zsh-theme	ZC1002	2
 bullet-train/bullet-train.zsh-theme	ZC1003	1
 bullet-train/bullet-train.zsh-theme	ZC1005	1
 bullet-train/bullet-train.zsh-theme	ZC1008	1
-bullet-train/bullet-train.zsh-theme	ZC1010	78
+bullet-train/bullet-train.zsh-theme	ZC1010	77
 bullet-train/bullet-train.zsh-theme	ZC1011	2
 bullet-train/bullet-train.zsh-theme	ZC1013	1
 bullet-train/bullet-train.zsh-theme	ZC1015	2
@@ -170,7 +170,6 @@ bullet-train/bullet-train.zsh-theme	ZC1086	1
 bullet-train/bullet-train.zsh-theme	ZC1091	5
 bullet-train/bullet-train.zsh-theme	ZC1097	1
 bullet-train/bullet-train.zsh-theme	ZC1098	2
-bullet-train/bullet-train.zsh-theme	ZC1107	1
 bullet-train/bullet-train.zsh-theme	ZC1118	13
 bullet-train/bullet-train.zsh-theme	ZC1119	2
 bullet-train/bullet-train.zsh-theme	ZC1171	1
@@ -224,7 +223,7 @@ F-Sy-H/share/parse/to-parse.zsh	ZC1073	3
 F-Sy-H/share/parse/to-parse.zsh	ZC1075	31
 F-Sy-H/share/parse/to-parse.zsh	ZC1830	1
 fzf/shell/completion.zsh	ZC1003	3
-fzf/shell/completion.zsh	ZC1010	13
+fzf/shell/completion.zsh	ZC1010	10
 fzf/shell/completion.zsh	ZC1043	4
 fzf/shell/completion.zsh	ZC1046	4
 fzf/shell/completion.zsh	ZC1049	1
@@ -234,7 +233,6 @@ fzf/shell/completion.zsh	ZC1075	8
 fzf/shell/completion.zsh	ZC1097	1
 fzf/shell/completion.zsh	ZC1098	3
 fzf/shell/completion.zsh	ZC1100	1
-fzf/shell/completion.zsh	ZC1107	3
 fzf/shell/completion.zsh	ZC1256	1
 fzf/shell/completion.zsh	ZC1275	1
 fzf/shell/completion.zsh	ZC1602	1
@@ -298,7 +296,6 @@ fzf-zsh-plugin/fzf-settings.zsh	ZC1188	1
 fzf-zsh-plugin/fzf-settings.zsh	ZC1271	1
 fzf-zsh-plugin/fzf-zsh-plugin.plugin.zsh	ZC1003	1
 fzf-zsh-plugin/fzf-zsh-plugin.plugin.zsh	ZC1005	1
-fzf-zsh-plugin/fzf-zsh-plugin.plugin.zsh	ZC1010	1
 fzf-zsh-plugin/fzf-zsh-plugin.plugin.zsh	ZC1034	1
 fzf-zsh-plugin/fzf-zsh-plugin.plugin.zsh	ZC1037	4
 fzf-zsh-plugin/fzf-zsh-plugin.plugin.zsh	ZC1043	6
@@ -311,7 +308,6 @@ fzf-zsh-plugin/fzf-zsh-plugin.plugin.zsh	ZC1075	3
 fzf-zsh-plugin/fzf-zsh-plugin.plugin.zsh	ZC1086	6
 fzf-zsh-plugin/fzf-zsh-plugin.plugin.zsh	ZC1098	2
 fzf-zsh-plugin/fzf-zsh-plugin.plugin.zsh	ZC1100	1
-fzf-zsh-plugin/fzf-zsh-plugin.plugin.zsh	ZC1107	1
 fzf-zsh-plugin/fzf-zsh-plugin.plugin.zsh	ZC1118	1
 fzf-zsh-plugin/fzf-zsh-plugin.plugin.zsh	ZC1271	1
 fzf-zsh-plugin/fzf-zsh-plugin.plugin.zsh	ZC1275	1
@@ -373,14 +369,13 @@ mcfly/mcfly.zsh	ZC1086	1
 mcfly/mcfly.zsh	ZC1091	2
 mcfly/mcfly.zsh	ZC1114	1
 minimal/minimal.zsh	ZC1003	12
-minimal/minimal.zsh	ZC1010	27
+minimal/minimal.zsh	ZC1010	15
 minimal/minimal.zsh	ZC1037	2
 minimal/minimal.zsh	ZC1045	8
 minimal/minimal.zsh	ZC1046	1
 minimal/minimal.zsh	ZC1075	4
 minimal/minimal.zsh	ZC1076	1
 minimal/minimal.zsh	ZC1086	22
-minimal/minimal.zsh	ZC1107	12
 minimal/minimal.zsh	ZC1967	1
 navi/shell/navi.plugin.zsh	ZC1010	4
 navi/shell/navi.plugin.zsh	ZC1043	3
@@ -999,7 +994,7 @@ typewritten/lib/colors.zsh	ZC1288	2
 typewritten/lib/git.zsh	ZC1002	3
 typewritten/lib/git.zsh	ZC1003	1
 typewritten/lib/git.zsh	ZC1009	1
-typewritten/lib/git.zsh	ZC1010	3
+typewritten/lib/git.zsh	ZC1010	2
 typewritten/lib/git.zsh	ZC1015	3
 typewritten/lib/git.zsh	ZC1037	5
 typewritten/lib/git.zsh	ZC1045	4
@@ -1007,7 +1002,6 @@ typewritten/lib/git.zsh	ZC1074	1
 typewritten/lib/git.zsh	ZC1075	4
 typewritten/lib/git.zsh	ZC1091	1
 typewritten/lib/git.zsh	ZC1100	1
-typewritten/lib/git.zsh	ZC1107	1
 typewritten/lib/git.zsh	ZC1274	1
 typewritten/lib/git.zsh	ZC1339	1
 typewritten/tests/smoke.zsh	ZC1004	1
@@ -1030,14 +1024,13 @@ zaw/sources/aliases.zsh	ZC1049	2
 zaw/sources/aliases.zsh	ZC1086	1
 zaw/sources/aliases.zsh	ZC1284	1
 zaw/sources/applications.zsh	ZC1003	2
-zaw/sources/applications.zsh	ZC1010	3
+zaw/sources/applications.zsh	ZC1010	1
 zaw/sources/applications.zsh	ZC1012	1
 zaw/sources/applications.zsh	ZC1040	1
 zaw/sources/applications.zsh	ZC1071	1
 zaw/sources/applications.zsh	ZC1075	2
 zaw/sources/applications.zsh	ZC1080	1
 zaw/sources/applications.zsh	ZC1086	2
-zaw/sources/applications.zsh	ZC1107	2
 zaw/sources/applications.zsh	ZC1362	1
 zaw/sources/applications.zsh	ZC1916	1
 zaw/sources/bookmark.zsh	ZC1076	1
@@ -1545,7 +1538,7 @@ zsh-history-substring-search/zsh-history-substring-search.zsh	ZC1091	20
 zsh-history-substring-search/zsh-history-substring-search.zsh	ZC1098	3
 zsh-hist/zsh-hist.plugin.zsh	ZC1031	1
 zsh-interactive-cd/zsh-interactive-cd.plugin.zsh	ZC1003	2
-zsh-interactive-cd/zsh-interactive-cd.plugin.zsh	ZC1010	16
+zsh-interactive-cd/zsh-interactive-cd.plugin.zsh	ZC1010	14
 zsh-interactive-cd/zsh-interactive-cd.plugin.zsh	ZC1037	15
 zsh-interactive-cd/zsh-interactive-cd.plugin.zsh	ZC1043	2
 zsh-interactive-cd/zsh-interactive-cd.plugin.zsh	ZC1074	2
@@ -1554,7 +1547,6 @@ zsh-interactive-cd/zsh-interactive-cd.plugin.zsh	ZC1076	1
 zsh-interactive-cd/zsh-interactive-cd.plugin.zsh	ZC1078	1
 zsh-interactive-cd/zsh-interactive-cd.plugin.zsh	ZC1081	2
 zsh-interactive-cd/zsh-interactive-cd.plugin.zsh	ZC1099	4
-zsh-interactive-cd/zsh-interactive-cd.plugin.zsh	ZC1107	2
 zsh-interactive-cd/zsh-interactive-cd.plugin.zsh	ZC1118	3
 zsh-interactive-cd/zsh-interactive-cd.plugin.zsh	ZC1274	1
 zsh-interactive-cd/zsh-interactive-cd.plugin.zsh	ZC1275	1

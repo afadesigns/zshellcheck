@@ -319,22 +319,13 @@ func checkZC1107SimpleCommand(node ast.Node) []Violation {
 		return nil
 	}
 
-	var violations []Violation
-	for _, arg := range cmd.Arguments {
-		argText := arg.TokenLiteral()
-		switch argText {
-		case "-eq", "-ne", "-lt", "-le", "-gt", "-ge":
-			violations = append(violations, Violation{
-				KataID:  "ZC1107",
-				Message: "Prefer `(( ... ))` for arithmetic comparisons (e.g., `(( a > b ))`) over `[ ... ]` with flags like `" + argText + "`.",
-				Line:    arg.TokenLiteralNode().Line,
-				Column:  arg.TokenLiteralNode().Column,
-				Level:   SeverityStyle,
-			})
-		}
-	}
-
-	return violations
+	// The `[ … -eq … ]` arithmetic-comparison advice is owned by ZC1003
+	// (same `(( … ))` suggestion, and it carries the auto-fix). ZC1107's
+	// SimpleCommand branch emitted a second, identical finding on the same
+	// line, so defer entirely. ZC1091 owns the `[[ … ]]` form; with both
+	// branches deferred ZC1107 no longer double-flags any comparison.
+	_ = cmd
+	return nil
 }
 
 func init() {

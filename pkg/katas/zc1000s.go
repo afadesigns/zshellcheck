@@ -766,6 +766,16 @@ func checkZC1010(node ast.Node) []Violation {
 	if cmd, ok := node.(*ast.SimpleCommand); ok {
 		// Check if command name is "["
 		if cmd.Name.String() == "[" {
+			// An arithmetic comparison (`[ "$a" -eq "$b" ]`) is better
+			// rewritten as `(( a == b ))` than `[[ … ]]`; ZC1003 owns that
+			// advice (and the fix). Defer to it rather than stack a
+			// conflicting `[[ … ]]` suggestion on the same line.
+			for _, arg := range cmd.Arguments {
+				switch arg.TokenLiteral() {
+				case "-eq", "-ne", "-lt", "-le", "-gt", "-ge":
+					return violations
+				}
+			}
 			violations = append(violations, Violation{
 				KataID:  "ZC1010",
 				Message: "Use `[[ ... ]]` instead of `[ ... ]` or `test`. `[[` is safer and more powerful.",

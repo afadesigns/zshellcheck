@@ -367,7 +367,14 @@ func TestCheckZC1010(t *testing.T) {
 		expected []katas.Violation
 	}{
 		{
-			input: `[ 1 -eq 1 ]`,
+			// An arithmetic comparison defers to ZC1003 (`(( … ))`), not
+			// ZC1010 (`[[ … ]]`), so ZC1010 does not fire here.
+			input:    `[ 1 -eq 1 ]`,
+			expected: []katas.Violation{},
+		},
+		{
+			// A non-arithmetic test still gets the `[[ … ]]` advice.
+			input: `[ -f file ]`,
 			expected: []katas.Violation{
 				{
 					KataID:  "ZC1010",

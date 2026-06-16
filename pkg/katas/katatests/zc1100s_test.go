@@ -348,22 +348,23 @@ func TestZC1107(t *testing.T) {
 			want: 0,
 		},
 		{
-			name: "Invalid -eq",
+			// `[ … -eq … ]` arithmetic is owned by ZC1003 (same `(( … ))`
+			// suggestion + fix); ZC1107 no longer double-flags it.
+			name: "single-bracket arithmetic is ZC1003, not ZC1107",
 			src:  "if [ $a -eq $b ]; then echo yes; fi",
-			want: 1,
+			want: 0,
 		},
 		{
-			// `[[ … -gt … ]]` arithmetic is owned by ZC1091 (same
-			// suggestion + fix); ZC1107 must not double-flag the
-			// double-bracket form, only the `[ … ]` / test builtin form.
+			// `[[ … -gt … ]]` arithmetic is owned by ZC1091; ZC1107 must
+			// not double-flag the double-bracket form either.
 			name: "double-bracket arithmetic is ZC1091, not ZC1107",
 			src:  "if [[ $a -gt 5 ]]; then echo yes; fi",
 			want: 0,
 		},
 		{
-			name: "Invalid -le",
+			name: "single-bracket -le is ZC1003, not ZC1107",
 			src:  "while [ $count -le 10 ]; do ((count++)); done",
-			want: 1,
+			want: 0,
 		},
 	}
 
