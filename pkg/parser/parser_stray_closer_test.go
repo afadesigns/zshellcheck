@@ -153,3 +153,18 @@ func TestParseAlwaysBlock(t *testing.T) {
 		}
 	}
 }
+
+// A bare `always` that is not followed by a brace block is consumed but
+// not folded; the parser must not panic or error on the degenerate form.
+func TestParseAlwaysWithoutBlock(t *testing.T) {
+	for _, src := range []string{
+		"{ echo a } always\n",
+		"{ echo a } always cmd\n",
+	} {
+		p := New(lexer.New(src))
+		_ = p.ParseProgram()
+		if errs := p.Errors(); len(errs) != 0 {
+			t.Fatalf("unexpected errors for %q: %v", src, errs)
+		}
+	}
+}
