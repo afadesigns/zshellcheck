@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.3.2] - 2026-06-16
+
+### Changed
+- Each `echo` now gets a single recommendation: ZC1037 (`print -r --`, the idiomatic Zsh replacement, which carries the auto-fix). ZC1030 (`printf`) and ZC1092 (`prefer print`) defer to it instead of stacking up to three divergent suggestions on one line.
+- A single-bracket arithmetic comparison (`[ $a -eq $b ]`) now gets a single recommendation: ZC1003 (`(( … ))`, with the fix). ZC1107 defers, and ZC1010 defers when an arithmetic operator is present so it no longer suggests `[[ … ]]` over the better `(( … ))`.
+
+### Fixed
+- ZC1075 no longer flags word-splitting parameter-flag expansions (`${(f)x}`, `${(s:,:)x}`, `${(@)arr}`, `${(kv)map}`). They expand to multiple words; quoting them defeats the idiom. The parser now preserves the `(flags)` group on the expansion node.
+- A concatenated assignment right-hand side with a glued identifier path tail (`x=${a}/init`) is no longer split into two statements.
+
 ## [1.3.1] - 2026-06-16
 
 ### Fixed
