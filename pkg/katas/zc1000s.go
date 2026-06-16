@@ -57,12 +57,18 @@ func fixZC1001(node ast.Node, v Violation, source []byte) []FixEdit {
 	if closeOff < 0 {
 		return nil
 	}
-	return []FixEdit{
-		// Insert `{` immediately after the `$`.
-		{Line: v.Line, Column: v.Column + 1, Length: 0, Replace: "{"},
-		// Insert `}` immediately after the closing `]`.
-		offsetToEdit(source, closeOff+1, 0, "}"),
-	}
+	// Emit one replacement spanning `$name[subscript]` rather than two
+	// separate `{` / `}` insertions. A single span lets the fix engine's
+	// overlap check see a conflict with an adjacent edit on the same
+	// token — notably ZC1073, which deletes the `$` inside `(( … ))`.
+	// Two zero-width inserts straddle that delete without overlapping it,
+	// so both used to apply and produced the broken `{name[subscript]}`.
+	return []FixEdit{{
+		Line:    v.Line,
+		Column:  v.Column,
+		Length:  closeOff + 1 - dollarOff,
+		Replace: "${" + string(source[dollarOff+1:closeOff+1]) + "}",
+	}}
 }
 
 // findSubscriptClose returns the byte offset of the `]` that closes
@@ -2200,6 +2206,14 @@ func fixZC1040(_ ast.Node, v Violation, source []byte) []FixEdit {
 		return nil
 	}
 	end := start + argLen
+	// Double-qualify guard: if the pattern's source span already carries a
+	// null-glob qualifier, do not append another `(N)`. unquotedArgLen
+	// absorbs a trailing `(…)` group, but the parser does not fold it back
+	// into the loop item's value, so checkZC1040's own hasNullGlobQualifier
+	// stays false and every fix pass would stack another: `pat(N)(N)(N)…`.
+	if hasNullGlobQualifier(string(source[start:end])) {
+		return nil
+	}
 	endLine, endCol := offsetLineColZC1040(source, end)
 	if endLine < 0 {
 		return nil

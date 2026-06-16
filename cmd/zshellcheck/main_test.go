@@ -7,6 +7,7 @@ import (
 	"flag"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/afadesigns/zshellcheck/pkg/config"
@@ -463,6 +464,75 @@ func TestApplyFixesUntilStable_RewritesBackticks(t *testing.T) {
 	}
 	if out == src {
 		t.Errorf("expected source rewrite, got identity")
+	}
+}
+
+// Auto-fix must never write source that parses worse than the input.
+// These inputs trigger colliding fixes (ZC1073 deleting `$` while ZC1001
+// rewrites the same subscript; the `[ ]`->`[[ ]]` rewrite over an array
+// subscript) that used to corrupt the source.
+func TestApplyFixesUntilStable_NeverBreaksParse(t *testing.T) {
+	cfg := config.DefaultConfig()
+	registry := katas.Registry
+	for _, src := range []string{
+		"(( $reply[x] )) && return\n",
+		"if [ $commands[oc] ]; then :; fi\n",
+	} {
+		initial := collectEdits(src, registry, nil, cfg, nil)
+		out, _, err := applyFixesUntilStable(src, initial, registry, nil, cfg, nil, 5)
+		if err != nil {
+			t.Fatalf("unexpected error for %q: %v", src, err)
+		}
+		if got := parseErrorCount(out); got != 0 {
+			t.Errorf("auto-fix introduced %d parse error(s) for %q:\n%s", got, src, out)
+		}
+	}
+}
+
+// The ZC1001 subscript fix produces `${arr[x]}`, never the brace-stripped
+// `{arr[x]}` that resulted when its `{`/`}` inserts straddled ZC1073's
+// `$` deletion inside `(( … ))`.
+func TestApplyFixesUntilStable_ArithSubscript(t *testing.T) {
+	cfg := config.DefaultConfig()
+	registry := katas.Registry
+	src := "(( $reply[x] )) && return\n"
+	out, _, err := applyFixesUntilStable(src, collectEdits(src, registry, nil, cfg, nil), registry, nil, cfg, nil, 5)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if strings.Contains(out, "{reply[x]}") && !strings.Contains(out, "${reply[x]}") {
+		t.Errorf("ZC1001 dropped the `$`: %q", out)
+	}
+}
+
+// The ZC1040 nullglob fix must not stack qualifiers on repeated runs.
+func TestApplyFixesUntilStable_NullglobIdempotent(t *testing.T) {
+	cfg := config.DefaultConfig()
+	registry := katas.Registry
+	src := "for f in *.txt; do print -r -- $f; done\n"
+	once, _, _ := applyFixesUntilStable(src, collectEdits(src, registry, nil, cfg, nil), registry, nil, cfg, nil, 5)
+	twice, _, _ := applyFixesUntilStable(once, collectEdits(once, registry, nil, cfg, nil), registry, nil, cfg, nil, 5)
+	if once != twice {
+		t.Errorf("ZC1040 fix not idempotent:\n once:  %q\n twice: %q", once, twice)
+	}
+	if !strings.Contains(once, "*.txt(N)") {
+		t.Errorf("ZC1040 fix did not apply: %q", once)
+	}
+}
+
+func TestApplySafeEdits_Bailouts(t *testing.T) {
+	base := "echo hi\n"
+	// Every candidate edit breaks the parse alone -> nothing is kept and
+	// base is returned unchanged.
+	stray := katas.FixEdit{Line: 1, Column: 1, Length: 0, Replace: "fi\n"}
+	if out, n := applySafeEdits(base, []katas.FixEdit{stray}); out != base || n != 0 {
+		t.Errorf("all-break: want base/0, got %q/%d", out, n)
+	}
+	// A safe edit is kept while the breaking one is dropped.
+	safe := katas.FixEdit{Line: 1, Column: 1, Length: 4, Replace: "print -r --"}
+	out, n := applySafeEdits(base, []katas.FixEdit{stray, safe})
+	if n != 1 || !strings.Contains(out, "print -r --") {
+		t.Errorf("mixed: want 1 kept with rewrite, got %q/%d", out, n)
 	}
 }
 

@@ -294,12 +294,57 @@ func applyFixesUntilStable(src string, initialEdits []katas.FixEdit, registry *k
 		if next == current {
 			break
 		}
-		totalEdits += len(edits)
+		applied := len(edits)
+		// Safety net: never accept a pass that introduces parse errors.
+		// Two fixes can collide on adjacent spans (for example ZC1073
+		// deleting the `$` while another rewrites the same token) and
+		// produce broken source. Rather than write it, keep only the
+		// edits that are individually safe.
+		if parseErrorCount(next) > parseErrorCount(current) {
+			next, applied = applySafeEdits(current, edits)
+			if next == current {
+				break
+			}
+		}
+		totalEdits += applied
 		current = next
 		// Re-collect edits from the new source.
 		edits = collectEdits(current, registry, disabled, cfg, allowedSeverities)
 	}
 	return current, totalEdits, nil
+}
+
+// parseErrorCount reports how many parser errors src produces. Used by
+// the auto-fix safety net to reject any rewrite that breaks the parse.
+func parseErrorCount(src string) int {
+	p := parser.New(lexer.New(src))
+	p.ParseProgram()
+	return len(p.Errors())
+}
+
+// applySafeEdits is the fallback when the full edit batch breaks the
+// parse. It keeps only the edits that, applied alone to base, do not
+// raise the parser-error count, then verifies the combined result still
+// parses cleanly. If the surviving set still collides, it returns base
+// unchanged so a broken file is never written.
+func applySafeEdits(base string, edits []katas.FixEdit) (string, int) {
+	baseErrs := parseErrorCount(base)
+	safe := make([]katas.FixEdit, 0, len(edits))
+	for _, e := range edits {
+		one, err := fix.Apply(base, []katas.FixEdit{e})
+		if err != nil || parseErrorCount(one) > baseErrs {
+			continue
+		}
+		safe = append(safe, e)
+	}
+	if len(safe) == 0 {
+		return base, 0
+	}
+	combined, err := fix.Apply(base, safe)
+	if err != nil || parseErrorCount(combined) > baseErrs {
+		return base, 0
+	}
+	return combined, len(safe)
 }
 
 // collectEdits parses src and returns the auto-fix edits the registry

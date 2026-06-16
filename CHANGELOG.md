@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.3.5] - 2026-06-16
+
+### Fixed
+- Auto-fix never writes source that fails to parse. When a pass would introduce a parser error — for example two fixes colliding on the same token — only the individually safe edits are kept, and a still-conflicting set is skipped entirely.
+- The ZC1001 `${...}` rewrite emits a single replacement spanning `$name[subscript]`. The previous pair of `{` / `}` insertions straddled ZC1073's `$` deletion inside `(( … ))` and produced the broken `{name[subscript]}`.
+- The ZC1040 `(N)` nullglob fix no longer stacks qualifiers (`pattern(N)(N)(N)…`) when run more than once.
+
 ## [1.3.4] - 2026-06-16
 
 ### Fixed
