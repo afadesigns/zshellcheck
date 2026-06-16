@@ -569,9 +569,11 @@ func TestXdgConfigSearch(t *testing.T) {
 	}
 
 	// Found via $XDG_CONFIG_DIRS, with an empty leading element skipped.
+	// Use the OS path-list separator so the test holds on Windows (`;`).
 	empty := t.TempDir()
+	sep := string(os.PathListSeparator)
 	t.Setenv("XDG_CONFIG_HOME", empty)
-	t.Setenv("XDG_CONFIG_DIRS", ":"+dir)
+	t.Setenv("XDG_CONFIG_DIRS", sep+dir)
 	if got := xdgConfigSearch("zshellcheck/config.yml"); got != cfgPath {
 		t.Errorf("XDG_CONFIG_DIRS search = %q, want %q", got, cfgPath)
 	}
