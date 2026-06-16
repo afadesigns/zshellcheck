@@ -534,6 +534,16 @@ func TestApplySafeEdits_Bailouts(t *testing.T) {
 	if n != 1 || !strings.Contains(out, "print -r --") {
 		t.Errorf("mixed: want 1 kept with rewrite, got %q/%d", out, n)
 	}
+
+	// Two safe edits on different lines exercise the highest-offset-first
+	// ordering: the line-two edit applies before the line-one edit.
+	multi := "echo a\necho b\n"
+	e1 := katas.FixEdit{Line: 1, Column: 1, Length: 4, Replace: "print"}
+	e2 := katas.FixEdit{Line: 2, Column: 1, Length: 4, Replace: "print"}
+	mout, mn := applySafeEdits(multi, []katas.FixEdit{e1, e2})
+	if mn != 2 || strings.Contains(mout, "echo") {
+		t.Errorf("multiline: want both applied, got %q/%d", mout, mn)
+	}
 }
 
 func TestProcessFile_NonexistentFile(t *testing.T) {

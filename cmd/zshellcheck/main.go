@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime/pprof"
+	"sort"
 	"strings"
 
 	"github.com/adrg/xdg"
@@ -323,28 +324,33 @@ func parseErrorCount(src string) int {
 }
 
 // applySafeEdits is the fallback when the full edit batch breaks the
-// parse. It keeps only the edits that, applied alone to base, do not
-// raise the parser-error count, then verifies the combined result still
-// parses cleanly. If the surviving set still collides, it returns base
-// unchanged so a broken file is never written.
+// parse. It applies edits one at a time, highest source offset first, and
+// keeps an edit only when it does not raise the parser-error count of the
+// accumulated result. Highest-offset-first ordering means accepting an
+// edit never shifts the line/column of the edits not yet tried, so each
+// stays valid against the growing source. A failed apply or a fix that
+// would break the parse is simply skipped, so a broken file is never
+// written.
 func applySafeEdits(base string, edits []katas.FixEdit) (string, int) {
 	baseErrs := parseErrorCount(base)
-	safe := make([]katas.FixEdit, 0, len(edits))
-	for _, e := range edits {
-		one, err := fix.Apply(base, []katas.FixEdit{e})
-		if err != nil || parseErrorCount(one) > baseErrs {
+	ordered := append([]katas.FixEdit(nil), edits...)
+	sort.SliceStable(ordered, func(i, j int) bool {
+		if ordered[i].Line != ordered[j].Line {
+			return ordered[i].Line > ordered[j].Line
+		}
+		return ordered[i].Column > ordered[j].Column
+	})
+	acc := base
+	applied := 0
+	for _, e := range ordered {
+		trial, err := fix.Apply(acc, []katas.FixEdit{e})
+		if err != nil || parseErrorCount(trial) > baseErrs {
 			continue
 		}
-		safe = append(safe, e)
+		acc = trial
+		applied++
 	}
-	if len(safe) == 0 {
-		return base, 0
-	}
-	combined, err := fix.Apply(base, safe)
-	if err != nil || parseErrorCount(combined) > baseErrs {
-		return base, 0
-	}
-	return combined, len(safe)
+	return acc, applied
 }
 
 // collectEdits parses src and returns the auto-fix edits the registry
