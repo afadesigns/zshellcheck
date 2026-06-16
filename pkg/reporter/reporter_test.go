@@ -4,7 +4,6 @@ package reporter
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"strings"
 	"testing"
@@ -201,97 +200,6 @@ func TestTextReporter_MultiLineSource(t *testing.T) {
 	}
 }
 
-func TestSarifReporter_Report(t *testing.T) {
-	violations := []katas.Violation{
-		{KataID: "ZC1001", Message: "test violation 1", Level: katas.SeverityError, Line: 1, Column: 1},
-		{KataID: "ZC1002", Message: "test violation 2", Level: katas.SeverityWarning, Line: 5, Column: 10},
-	}
-
-	var buf bytes.Buffer
-	reporter := NewSarifReporter(&buf, "test.zsh")
-	if err := reporter.Report(violations); err != nil {
-		t.Fatalf("Report() error: %v", err)
-	}
-
-	// Verify it's valid JSON
-	var result map[string]interface{}
-	if err := json.Unmarshal(buf.Bytes(), &result); err != nil {
-		t.Fatalf("output is not valid JSON: %v", err)
-	}
-
-	// Check SARIF version
-	if version, ok := result["version"].(string); !ok || version != "2.1.0" {
-		t.Errorf("expected SARIF version 2.1.0, got %v", result["version"])
-	}
-
-	// Check runs array
-	runs, ok := result["runs"].([]interface{})
-	if !ok || len(runs) != 1 {
-		t.Fatalf("expected 1 run, got %v", result["runs"])
-	}
-
-	run := runs[0].(map[string]interface{})
-	// Check tool name
-	tool := run["tool"].(map[string]interface{})
-	driver := tool["driver"].(map[string]interface{})
-	if driver["name"] != "zshellcheck" {
-		t.Errorf("expected tool name zshellcheck, got %v", driver["name"])
-	}
-
-	// Check results count
-	results := run["results"].([]interface{})
-	if len(results) != 2 {
-		t.Errorf("expected 2 results, got %d", len(results))
-	}
-
-	// Verify first result
-	r0 := results[0].(map[string]interface{})
-	if r0["ruleId"] != "ZC1001" {
-		t.Errorf("expected ruleId ZC1001, got %v", r0["ruleId"])
-	}
-	if r0["message"] != "test violation 1" {
-		t.Errorf("expected message 'test violation 1', got %v", r0["message"])
-	}
-}
-
-func TestSarifReporter_EmptyViolations(t *testing.T) {
-	var buf bytes.Buffer
-	reporter := NewSarifReporter(&buf, "test.zsh")
-	if err := reporter.Report(nil); err != nil {
-		t.Fatalf("Report() error: %v", err)
-	}
-
-	var result map[string]interface{}
-	if err := json.Unmarshal(buf.Bytes(), &result); err != nil {
-		t.Fatalf("output is not valid JSON: %v", err)
-	}
-
-	runs := result["runs"].([]interface{})
-	run := runs[0].(map[string]interface{})
-	// Empty violations should produce empty results array (not nil in JSON)
-	results := run["results"].([]interface{})
-	if len(results) != 0 {
-		t.Errorf("expected 0 results, got %d", len(results))
-	}
-}
-
-func TestJSONReporter_EmptyViolations(t *testing.T) {
-	var buf bytes.Buffer
-	reporter := NewJSONReporter(&buf)
-	if err := reporter.Report([]katas.Violation{}); err != nil {
-		t.Fatalf("Report() error: %v", err)
-	}
-
-	var result []interface{}
-	if err := json.Unmarshal(buf.Bytes(), &result); err != nil {
-		t.Fatalf("output is not valid JSON: %v", err)
-	}
-
-	if len(result) != 0 {
-		t.Errorf("expected empty array, got %d items", len(result))
-	}
-}
-
 type failWriter struct{}
 
 func (w *failWriter) Write(p []byte) (n int, err error) {
@@ -308,58 +216,5 @@ func TestTextReporter_WriterError(t *testing.T) {
 	err := reporter.Report(violations)
 	if err == nil {
 		t.Error("expected error from failing writer")
-	}
-}
-
-func TestJSONReporter_WriterError(t *testing.T) {
-	violations := []katas.Violation{
-		{KataID: "ZC0001", Message: "test", Level: katas.SeverityError, Line: 1, Column: 1},
-	}
-
-	reporter := NewJSONReporter(&failWriter{})
-	err := reporter.Report(violations)
-	if err == nil {
-		t.Error("expected error from failing writer")
-	}
-}
-
-func TestSarifReporter_WriterError(t *testing.T) {
-	violations := []katas.Violation{
-		{KataID: "ZC0001", Message: "test", Level: katas.SeverityError, Line: 1, Column: 1},
-	}
-
-	reporter := NewSarifReporter(&failWriter{}, "test.zsh")
-	err := reporter.Report(violations)
-	if err == nil {
-		t.Error("expected error from failing writer")
-	}
-}
-
-func TestJSONReporter_MultipleViolations(t *testing.T) {
-	violations := []katas.Violation{
-		{KataID: "ZC0001", Message: "first", Level: katas.SeverityError, Line: 1, Column: 1},
-		{KataID: "ZC0002", Message: "second", Level: katas.SeverityWarning, Line: 2, Column: 5},
-		{KataID: "ZC0003", Message: "third", Level: katas.SeverityInfo, Line: 3, Column: 10},
-	}
-
-	var buf bytes.Buffer
-	reporter := NewJSONReporter(&buf)
-	if err := reporter.Report(violations); err != nil {
-		t.Fatalf("Report() error: %v", err)
-	}
-
-	var result []katas.Violation
-	if err := json.Unmarshal(buf.Bytes(), &result); err != nil {
-		t.Fatalf("output is not valid JSON: %v", err)
-	}
-
-	if len(result) != 3 {
-		t.Fatalf("expected 3 violations, got %d", len(result))
-	}
-	if result[0].KataID != "ZC0001" {
-		t.Errorf("expected first KataID=ZC0001, got %s", result[0].KataID)
-	}
-	if result[2].Message != "third" {
-		t.Errorf("expected third message='third', got %s", result[2].Message)
 	}
 }

@@ -5,6 +5,7 @@ package main
 import (
 	"bytes"
 	"flag"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -12,7 +13,36 @@ import (
 
 	"github.com/afadesigns/zshellcheck/pkg/config"
 	"github.com/afadesigns/zshellcheck/pkg/katas"
+	"github.com/afadesigns/zshellcheck/pkg/reporter"
 )
+
+type failingWriter struct{}
+
+func (failingWriter) Write(p []byte) (int, error) { return 0, io.ErrShortWrite }
+
+func TestEmitAggregate(t *testing.T) {
+	files := []reporter.FileViolations{
+		{Filename: "x.zsh", Violations: []katas.Violation{
+			{KataID: "ZC1", Message: "m", Line: 1, Column: 1, Level: katas.SeverityError},
+		}},
+	}
+	var buf bytes.Buffer
+	emitAggregate(&buf, &buf, "json", files)
+	if !strings.Contains(buf.String(), "ZC1") {
+		t.Error("json aggregate missing finding")
+	}
+	buf.Reset()
+	emitAggregate(&buf, &buf, "sarif", files)
+	if !strings.Contains(buf.String(), "2.1.0") {
+		t.Error("sarif aggregate missing version")
+	}
+	// Error branch: a writer that always fails.
+	var errBuf bytes.Buffer
+	emitAggregate(failingWriter{}, &errBuf, "json", files)
+	if !strings.Contains(errBuf.String(), "Error reporting") {
+		t.Errorf("expected error reported, got %q", errBuf.String())
+	}
+}
 
 // resetFlags resets the global flag.CommandLine for testing run().
 func resetFlags() {

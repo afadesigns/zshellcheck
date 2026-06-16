@@ -232,11 +232,38 @@ func buildFixOpts(fixMode, diffMode, dryRun bool) fixOptions {
 }
 
 func scanArgs(cfg config.Config, allowed []katas.Severity, format string, fixOpts fixOptions) int {
+	// The machine-readable formats accumulate findings across every file
+	// and are emitted once as a single document; without this each file
+	// printed its own array, so multi-file output was not valid JSON or
+	// SARIF. Text streams per file.
+	var collector *[]reporter.FileViolations
+	if format == "json" || format == "sarif" {
+		collector = &[]reporter.FileViolations{}
+		fixOpts.collector = collector
+	}
 	total := 0
 	for _, filename := range flag.Args() {
 		total += processPath(filename, os.Stdout, os.Stderr, cfg, katas.Registry, format, allowed, fixOpts)
 	}
+	if collector != nil {
+		emitAggregate(os.Stdout, os.Stderr, format, *collector)
+	}
 	return total
+}
+
+// emitAggregate writes the collected findings for the machine-readable
+// formats as a single document.
+func emitAggregate(out, errOut io.Writer, format string, files []reporter.FileViolations) {
+	var err error
+	switch format {
+	case "json":
+		err = reporter.ReportJSON(out, files)
+	case "sarif":
+		err = reporter.ReportSARIF(out, files, version.Version)
+	}
+	if err != nil {
+		fmt.Fprintf(errOut, "Error reporting violations: %s\n", err)
+	}
 }
 
 func emitFixSummary(stats *fixStats) {
@@ -293,6 +320,10 @@ type fixOptions struct {
 	// can print a one-line summary footer when -fix runs over a
 	// directory tree. nil when -fix is disabled.
 	stats *fixStats
+	// collector accumulates per-file findings for the machine-readable
+	// formats so they are emitted once as a single JSON / SARIF document.
+	// nil for the text format, which streams per file.
+	collector *[]reporter.FileViolations
 }
 
 // fixStats accumulates fix activity across all files visited in one
@@ -508,7 +539,7 @@ func processFile(filename string, out, errOut io.Writer, cfg config.Config, regi
 	violations, edits = applySeverityFilter(violations, edits, allowedSeverities)
 
 	applyFixIfEnabled(filename, data, registry, disabled, cfg, allowedSeverities, edits, violations, fixOpts, out, errOut)
-	emitReport(filename, out, errOut, format, cfg, violations, data)
+	emitReport(filename, out, errOut, format, cfg, violations, data, fixOpts.collector)
 	return len(violations)
 }
 
@@ -621,19 +652,17 @@ func applyFixInPlace(filename string, data []byte, registry *katas.KatasRegistry
 	}
 }
 
-func emitReport(filename string, out, errOut io.Writer, format string, cfg config.Config, violations []katas.Violation, data []byte) {
+func emitReport(filename string, out, errOut io.Writer, format string, cfg config.Config, violations []katas.Violation, data []byte, collector *[]reporter.FileViolations) {
 	if len(violations) == 0 {
 		return
 	}
-	var r reporter.Reporter
-	switch format {
-	case "json":
-		r = reporter.NewJSONReporter(out)
-	case "sarif":
-		r = reporter.NewSarifReporter(out, filename)
-	default:
-		r = reporter.NewTextReporter(out, filename, string(data), cfg)
+	// The machine-readable formats are aggregated and emitted once by the
+	// caller; collect this file's findings and return. Text reports inline.
+	if collector != nil {
+		*collector = append(*collector, reporter.FileViolations{Filename: filename, Violations: violations})
+		return
 	}
+	r := reporter.NewTextReporter(out, filename, string(data), cfg)
 	if err := r.Report(violations); err != nil {
 		fmt.Fprintf(errOut, "Error reporting violations: %s\n", err)
 	}

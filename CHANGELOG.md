@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.3.7] - 2026-06-16
+
+### Fixed
+- `--format=json` and `--format=sarif` over more than one file now emit a single valid document. Each file previously produced its own array or object, concatenated into output that no JSON or SARIF consumer could parse.
+- SARIF results now carry a physical location (file URI plus 1-based line and column) and a per-severity level, so GitHub code scanning can ingest the report. They previously contained only a rule id and message.
+- A clean scan in a machine-readable format now emits an empty document (`[]` for JSON, an empty run for SARIF) instead of no output.
+
+### Changed
+- Each JSON finding now includes a `File` field. Existing single-file consumers are unaffected.
+
 ## [1.3.6] - 2026-06-16
 
 ### Changed
