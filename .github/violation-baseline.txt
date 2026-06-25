@@ -1248,7 +1248,7 @@ zinit/zinit-autoload.zsh	ZC1049	1
 zinit/zinit-autoload.zsh	ZC1053	1
 zinit/zinit-autoload.zsh	ZC1064	1
 zinit/zinit-autoload.zsh	ZC1073	3
-zinit/zinit-autoload.zsh	ZC1075	41
+zinit/zinit-autoload.zsh	ZC1075	40
 zinit/zinit-autoload.zsh	ZC1083	2
 zinit/zinit-autoload.zsh	ZC1091	32
 zinit/zinit-autoload.zsh	ZC1098	3

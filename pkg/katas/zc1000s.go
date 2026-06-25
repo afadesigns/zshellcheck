@@ -5486,6 +5486,14 @@ func checkZC1075(node ast.Node) []Violation {
 				})
 			}
 		} else if aa, ok := arg.(*ast.ArrayAccess); ok {
+			// A flag-led expansion the parser cannot resolve to a subject
+			// (`${(%):-default}`, `${(P)…}`, `${(l:n:)…}`) leaves Left nil.
+			// Without the subject the elision behaviour is unknowable, and
+			// these forms commonly carry a `:-` default or a width modifier
+			// that never produces an empty word, so do not flag them.
+			if aa.Left == nil {
+				continue
+			}
 			// A `:-word` / `:=word` / `:+word` default-value expansion
 			// always yields a value, so it never elides — flagging it
 			// warns against the canonical `: ${VAR:=default}` idiom.
