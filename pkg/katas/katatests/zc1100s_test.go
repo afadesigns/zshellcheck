@@ -195,16 +195,11 @@ func TestZC1104(t *testing.T) {
 		expected []katas.Violation
 	}{
 		{
-			name:  "export PATH assignment",
-			input: `export PATH=$PATH:/bin`,
-			expected: []katas.Violation{
-				{
-					KataID:  "ZC1104",
-					Message: "Use the `path` array instead of manually manipulating the `$PATH` string.",
-					Line:    1,
-					Column:  1,
-				},
-			},
+			// ZC1104 is retired — a duplicate of ZC1188, which now owns the
+			// `export PATH=…` detection. ZC1104 fires on nothing.
+			name:     "export PATH assignment is handled by ZC1188",
+			input:    `export PATH=$PATH:/bin`,
+			expected: []katas.Violation{},
 		},
 		{
 			name:     "valid path array assignment",

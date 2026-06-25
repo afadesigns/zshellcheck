@@ -54,17 +54,12 @@ antidote/tests/bin/test_fzf_opts_manual.zsh	ZC1017	1
 antidote/tests/bin/test_fzf_opts_manual.zsh	ZC1075	2
 antidote/tests/__init__.zsh	ZC1031	1
 antidote/tests/testdata/real/.zsh_plugins.zsh	ZC1001	1
-antidote/tests/testdata/real/.zsh_plugins.zsh	ZC1104	1
 antidote/tests/testdata/real/.zsh_plugins.zsh	ZC1188	1
-antidote/tests/testdata/.zplugins_fake_load.zsh	ZC1104	1
 antidote/tests/testdata/.zplugins_fake_load.zsh	ZC1188	1
 antidote/tests/testdata/.zplugins_fake_zcompile_static.zsh	ZC1075	1
 antidote/tests/testdata/.zplugins_fake_zcompile_static.zsh	ZC1086	1
-antidote/tests/testdata/.zplugins_fake_zcompile_static.zsh	ZC1104	1
 antidote/tests/testdata/.zplugins_fake_zcompile_static.zsh	ZC1188	1
-antidote/tests/testdata/.zsh_plugins_using.zsh	ZC1104	1
 antidote/tests/testdata/.zsh_plugins_using.zsh	ZC1188	1
-antidote/tests/testdata/.zsh_plugins.zsh	ZC1104	1
 antidote/tests/testdata/.zsh_plugins.zsh	ZC1188	1
 antidote/tests/tmp_home/.zsh/aliases.zsh	ZC1037	1
 antidote/tests/tmp_home/.zsh/custom/lib/lib1.zsh	ZC1037	1
@@ -283,7 +278,6 @@ fzf-tab/test/ztst.zsh	ZC1830	1
 fzf-zsh-plugin/fzf-settings.zsh	ZC1005	1
 fzf-zsh-plugin/fzf-settings.zsh	ZC1034	1
 fzf-zsh-plugin/fzf-settings.zsh	ZC1086	1
-fzf-zsh-plugin/fzf-settings.zsh	ZC1104	1
 fzf-zsh-plugin/fzf-settings.zsh	ZC1188	1
 fzf-zsh-plugin/fzf-settings.zsh	ZC1271	1
 fzf-zsh-plugin/fzf-zsh-plugin.plugin.zsh	ZC1003	1
@@ -318,7 +312,6 @@ git-flow-completion/git-flow-completion.zsh	ZC1288	4
 git-open/git-open.plugin.zsh	ZC1067	1
 git-open/git-open.plugin.zsh	ZC1074	1
 git-open/git-open.plugin.zsh	ZC1100	1
-git-open/git-open.plugin.zsh	ZC1104	1
 git-open/git-open.plugin.zsh	ZC1188	1
 git-open/git-open.plugin.zsh	ZC1275	1
 gitstatus/gitstatus.plugin.zsh	ZC1001	7
@@ -697,7 +690,6 @@ spaceship/tests/ansible.test.zsh	ZC1045	4
 spaceship/tests/ansible.test.zsh	ZC1051	3
 spaceship/tests/ansible.test.zsh	ZC1075	8
 spaceship/tests/ansible.test.zsh	ZC1097	3
-spaceship/tests/ansible.test.zsh	ZC1104	1
 spaceship/tests/ansible.test.zsh	ZC1128	3
 spaceship/tests/ansible.test.zsh	ZC1188	1
 spaceship/tests/ansible.test.zsh	ZC1602	1
@@ -706,14 +698,12 @@ spaceship/tests/azure.test.zsh	ZC1044	1
 spaceship/tests/azure.test.zsh	ZC1045	2
 spaceship/tests/azure.test.zsh	ZC1049	1
 spaceship/tests/azure.test.zsh	ZC1075	1
-spaceship/tests/azure.test.zsh	ZC1104	1
 spaceship/tests/azure.test.zsh	ZC1188	1
 spaceship/tests/azure.test.zsh	ZC1602	1
 spaceship/tests/bun.test.zsh	ZC1043	9
 spaceship/tests/bun.test.zsh	ZC1044	1
 spaceship/tests/bun.test.zsh	ZC1045	3
 spaceship/tests/bun.test.zsh	ZC1075	1
-spaceship/tests/bun.test.zsh	ZC1104	1
 spaceship/tests/bun.test.zsh	ZC1128	2
 spaceship/tests/bun.test.zsh	ZC1188	1
 spaceship/tests/bun.test.zsh	ZC1602	1
@@ -726,7 +716,6 @@ spaceship/tests/crystal.test.zsh	ZC1043	10
 spaceship/tests/crystal.test.zsh	ZC1044	1
 spaceship/tests/crystal.test.zsh	ZC1045	3
 spaceship/tests/crystal.test.zsh	ZC1075	1
-spaceship/tests/crystal.test.zsh	ZC1104	1
 spaceship/tests/crystal.test.zsh	ZC1128	2
 spaceship/tests/crystal.test.zsh	ZC1188	1
 spaceship/tests/crystal.test.zsh	ZC1602	1
@@ -737,7 +726,6 @@ spaceship/tests/dart.test.zsh	ZC1049	2
 spaceship/tests/dart.test.zsh	ZC1051	5
 spaceship/tests/dart.test.zsh	ZC1075	11
 spaceship/tests/dart.test.zsh	ZC1097	3
-spaceship/tests/dart.test.zsh	ZC1104	1
 spaceship/tests/dart.test.zsh	ZC1128	4
 spaceship/tests/dart.test.zsh	ZC1136	1
 spaceship/tests/dart.test.zsh	ZC1188	1
@@ -748,7 +736,6 @@ spaceship/tests/deno.test.zsh	ZC1045	3
 spaceship/tests/deno.test.zsh	ZC1051	2
 spaceship/tests/deno.test.zsh	ZC1075	5
 spaceship/tests/deno.test.zsh	ZC1097	2
-spaceship/tests/deno.test.zsh	ZC1104	1
 spaceship/tests/deno.test.zsh	ZC1128	2
 spaceship/tests/deno.test.zsh	ZC1188	1
 spaceship/tests/deno.test.zsh	ZC1602	1
@@ -763,7 +750,6 @@ spaceship/tests/docker_compose.test.zsh	ZC1045	2
 spaceship/tests/docker_compose.test.zsh	ZC1051	1
 spaceship/tests/docker_compose.test.zsh	ZC1075	3
 spaceship/tests/docker_compose.test.zsh	ZC1097	1
-spaceship/tests/docker_compose.test.zsh	ZC1104	1
 spaceship/tests/docker_compose.test.zsh	ZC1128	1
 spaceship/tests/docker_compose.test.zsh	ZC1188	1
 spaceship/tests/docker_compose.test.zsh	ZC1602	1
@@ -771,7 +757,6 @@ spaceship/tests/elm.test.zsh	ZC1043	15
 spaceship/tests/elm.test.zsh	ZC1044	1
 spaceship/tests/elm.test.zsh	ZC1045	5
 spaceship/tests/elm.test.zsh	ZC1075	1
-spaceship/tests/elm.test.zsh	ZC1104	1
 spaceship/tests/elm.test.zsh	ZC1128	3
 spaceship/tests/elm.test.zsh	ZC1188	1
 spaceship/tests/elm.test.zsh	ZC1602	1
@@ -781,7 +766,6 @@ spaceship/tests/erlang.test.zsh	ZC1045	2
 spaceship/tests/erlang.test.zsh	ZC1051	1
 spaceship/tests/erlang.test.zsh	ZC1075	3
 spaceship/tests/erlang.test.zsh	ZC1097	1
-spaceship/tests/erlang.test.zsh	ZC1104	1
 spaceship/tests/erlang.test.zsh	ZC1128	1
 spaceship/tests/erlang.test.zsh	ZC1188	1
 spaceship/tests/erlang.test.zsh	ZC1602	1
@@ -793,7 +777,6 @@ spaceship/tests/gleam.test.zsh	ZC1045	3
 spaceship/tests/gleam.test.zsh	ZC1051	2
 spaceship/tests/gleam.test.zsh	ZC1075	5
 spaceship/tests/gleam.test.zsh	ZC1097	2
-spaceship/tests/gleam.test.zsh	ZC1104	1
 spaceship/tests/gleam.test.zsh	ZC1128	2
 spaceship/tests/gleam.test.zsh	ZC1188	1
 spaceship/tests/gleam.test.zsh	ZC1602	1
@@ -801,7 +784,6 @@ spaceship/tests/gnu_screen.test.zsh	ZC1043	9
 spaceship/tests/gnu_screen.test.zsh	ZC1044	1
 spaceship/tests/gnu_screen.test.zsh	ZC1045	2
 spaceship/tests/gnu_screen.test.zsh	ZC1075	1
-spaceship/tests/gnu_screen.test.zsh	ZC1104	1
 spaceship/tests/gnu_screen.test.zsh	ZC1188	1
 spaceship/tests/gnu_screen.test.zsh	ZC1602	1
 spaceship/tests/haxe.test.zsh	ZC1043	12
@@ -810,7 +792,6 @@ spaceship/tests/haxe.test.zsh	ZC1045	3
 spaceship/tests/haxe.test.zsh	ZC1051	2
 spaceship/tests/haxe.test.zsh	ZC1075	5
 spaceship/tests/haxe.test.zsh	ZC1097	2
-spaceship/tests/haxe.test.zsh	ZC1104	1
 spaceship/tests/haxe.test.zsh	ZC1128	2
 spaceship/tests/haxe.test.zsh	ZC1188	1
 spaceship/tests/haxe.test.zsh	ZC1602	1
@@ -825,7 +806,6 @@ spaceship/tests/kotlin.test.zsh	ZC1045	2
 spaceship/tests/kotlin.test.zsh	ZC1051	1
 spaceship/tests/kotlin.test.zsh	ZC1075	3
 spaceship/tests/kotlin.test.zsh	ZC1097	1
-spaceship/tests/kotlin.test.zsh	ZC1104	1
 spaceship/tests/kotlin.test.zsh	ZC1128	1
 spaceship/tests/kotlin.test.zsh	ZC1188	1
 spaceship/tests/kotlin.test.zsh	ZC1602	1
@@ -835,7 +815,6 @@ spaceship/tests/lua.test.zsh	ZC1045	4
 spaceship/tests/lua.test.zsh	ZC1051	3
 spaceship/tests/lua.test.zsh	ZC1075	7
 spaceship/tests/lua.test.zsh	ZC1097	3
-spaceship/tests/lua.test.zsh	ZC1104	1
 spaceship/tests/lua.test.zsh	ZC1128	2
 spaceship/tests/lua.test.zsh	ZC1136	1
 spaceship/tests/lua.test.zsh	ZC1188	1
@@ -844,7 +823,6 @@ spaceship/tests/nix_shell.test.zsh	ZC1043	9
 spaceship/tests/nix_shell.test.zsh	ZC1044	1
 spaceship/tests/nix_shell.test.zsh	ZC1045	3
 spaceship/tests/nix_shell.test.zsh	ZC1075	1
-spaceship/tests/nix_shell.test.zsh	ZC1104	1
 spaceship/tests/nix_shell.test.zsh	ZC1188	1
 spaceship/tests/nix_shell.test.zsh	ZC1602	1
 spaceship/tests/ocaml.test.zsh	ZC1043	13
@@ -853,7 +831,6 @@ spaceship/tests/ocaml.test.zsh	ZC1045	4
 spaceship/tests/ocaml.test.zsh	ZC1051	2
 spaceship/tests/ocaml.test.zsh	ZC1075	5
 spaceship/tests/ocaml.test.zsh	ZC1097	3
-spaceship/tests/ocaml.test.zsh	ZC1104	1
 spaceship/tests/ocaml.test.zsh	ZC1128	3
 spaceship/tests/ocaml.test.zsh	ZC1188	1
 spaceship/tests/ocaml.test.zsh	ZC1602	1
@@ -865,7 +842,6 @@ spaceship/tests/package_maven.test.zsh	ZC1044	1
 spaceship/tests/package_maven.test.zsh	ZC1045	4
 spaceship/tests/package_maven.test.zsh	ZC1051	4
 spaceship/tests/package_maven.test.zsh	ZC1075	12
-spaceship/tests/package_maven.test.zsh	ZC1104	1
 spaceship/tests/package_maven.test.zsh	ZC1128	4
 spaceship/tests/package_maven.test.zsh	ZC1188	1
 spaceship/tests/package_maven.test.zsh	ZC1477	1
@@ -880,7 +856,6 @@ spaceship/tests/perl.test.zsh	ZC1045	3
 spaceship/tests/perl.test.zsh	ZC1051	2
 spaceship/tests/perl.test.zsh	ZC1075	5
 spaceship/tests/perl.test.zsh	ZC1097	2
-spaceship/tests/perl.test.zsh	ZC1104	1
 spaceship/tests/perl.test.zsh	ZC1128	2
 spaceship/tests/perl.test.zsh	ZC1188	1
 spaceship/tests/perl.test.zsh	ZC1602	1
@@ -888,7 +863,6 @@ spaceship/tests/pulumi.test.zsh	ZC1043	10
 spaceship/tests/pulumi.test.zsh	ZC1044	1
 spaceship/tests/pulumi.test.zsh	ZC1045	3
 spaceship/tests/pulumi.test.zsh	ZC1075	1
-spaceship/tests/pulumi.test.zsh	ZC1104	1
 spaceship/tests/pulumi.test.zsh	ZC1128	4
 spaceship/tests/pulumi.test.zsh	ZC1188	1
 spaceship/tests/pulumi.test.zsh	ZC1602	1
@@ -896,7 +870,6 @@ spaceship/tests/purescript.test.zsh	ZC1043	5
 spaceship/tests/purescript.test.zsh	ZC1044	1
 spaceship/tests/purescript.test.zsh	ZC1045	3
 spaceship/tests/purescript.test.zsh	ZC1075	1
-spaceship/tests/purescript.test.zsh	ZC1104	1
 spaceship/tests/purescript.test.zsh	ZC1128	2
 spaceship/tests/purescript.test.zsh	ZC1188	1
 spaceship/tests/purescript.test.zsh	ZC1602	1
@@ -906,7 +879,6 @@ spaceship/tests/red.test.zsh	ZC1045	3
 spaceship/tests/red.test.zsh	ZC1051	2
 spaceship/tests/red.test.zsh	ZC1075	5
 spaceship/tests/red.test.zsh	ZC1097	2
-spaceship/tests/red.test.zsh	ZC1104	1
 spaceship/tests/red.test.zsh	ZC1128	2
 spaceship/tests/red.test.zsh	ZC1188	1
 spaceship/tests/red.test.zsh	ZC1602	1
@@ -916,7 +888,6 @@ spaceship/tests/rlang.test.zsh	ZC1045	3
 spaceship/tests/rlang.test.zsh	ZC1051	2
 spaceship/tests/rlang.test.zsh	ZC1075	5
 spaceship/tests/rlang.test.zsh	ZC1097	2
-spaceship/tests/rlang.test.zsh	ZC1104	1
 spaceship/tests/rlang.test.zsh	ZC1128	2
 spaceship/tests/rlang.test.zsh	ZC1188	1
 spaceship/tests/rlang.test.zsh	ZC1602	1
@@ -926,7 +897,6 @@ spaceship/tests/scala.test.zsh	ZC1045	4
 spaceship/tests/scala.test.zsh	ZC1051	3
 spaceship/tests/scala.test.zsh	ZC1075	7
 spaceship/tests/scala.test.zsh	ZC1097	3
-spaceship/tests/scala.test.zsh	ZC1104	1
 spaceship/tests/scala.test.zsh	ZC1128	2
 spaceship/tests/scala.test.zsh	ZC1136	1
 spaceship/tests/scala.test.zsh	ZC1188	1
@@ -948,7 +918,6 @@ spaceship/tests/vlang.test.zsh	ZC1045	3
 spaceship/tests/vlang.test.zsh	ZC1051	2
 spaceship/tests/vlang.test.zsh	ZC1075	5
 spaceship/tests/vlang.test.zsh	ZC1097	2
-spaceship/tests/vlang.test.zsh	ZC1104	1
 spaceship/tests/vlang.test.zsh	ZC1128	2
 spaceship/tests/vlang.test.zsh	ZC1188	1
 spaceship/tests/vlang.test.zsh	ZC1602	1
@@ -956,7 +925,6 @@ spaceship/tests/zig.test.zsh	ZC1043	5
 spaceship/tests/zig.test.zsh	ZC1044	1
 spaceship/tests/zig.test.zsh	ZC1045	3
 spaceship/tests/zig.test.zsh	ZC1075	1
-spaceship/tests/zig.test.zsh	ZC1104	1
 spaceship/tests/zig.test.zsh	ZC1128	2
 spaceship/tests/zig.test.zsh	ZC1188	1
 spaceship/tests/zig.test.zsh	ZC1602	1
@@ -1322,7 +1290,6 @@ zpm/lib/imperative.zsh	ZC1288	1
 zpm/lib/imperative.zsh	ZC1686	1
 zpm/zpm.zsh	ZC1046	2
 zpm/zpm.zsh	ZC1098	2
-zpm/zpm.zsh	ZC1104	1
 zpm/zpm.zsh	ZC1188	1
 zsh-256color/zsh-256color.plugin.zsh	ZC1001	1
 zsh-256color/zsh-256color.plugin.zsh	ZC1037	1

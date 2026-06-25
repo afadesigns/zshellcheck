@@ -120,7 +120,7 @@ Auto-fix availability is marked per-entry below as **Auto-fix:** `yes` or `no`. 
 - [ZC1101: Use `$(( ))` instead of `bc` for simple arithmetic](#zc1101)
 - [ZC1102: Redirecting output of `sudo` doesn't work as expected](#zc1102)
 - [ZC1103: Suggest `path` array instead of `$PATH` string manipulation (direct assignment)](#zc1103)
-- [ZC1104: Suggest `path` array instead of `export PATH` string manipulation](#zc1104)
+- [ZC1104: Superseded by ZC1188 — retired duplicate](#zc1104)
 - [ZC1105: Avoid nested arithmetic expansions for clarity](#zc1105)
 - [ZC1106: Avoid `set -x` in production scripts for sensitive data exposure](#zc1106)
 - [ZC1107: Use (( ... )) for arithmetic conditions](#zc1107)
@@ -2257,12 +2257,12 @@ Disable by adding `ZC1103` to `disabled_katas` in `.zshellcheckrc`.
 ---
 
 <a id="zc1104"></a>
-### ZC1104 — Suggest `path` array instead of `export PATH` string manipulation
+### ZC1104 — Superseded by ZC1188 — retired duplicate
 
 **Severity:** `style`  
 **Auto-fix:** `no`
 
-Zsh automatically maps the `$PATH` environment variable to the `$path` array. Modifying `$path` is cleaner and less error-prone than manipulating the colon-separated `$PATH` string.
+Retired duplicate of ZC1188, which gives the same `export PATH` advice with a direction-aware message. Stubbed to a no-op so legacy `disabled_katas` lists keep parsing; the detection lives in ZC1188.
 
 Disable by adding `ZC1104` to `disabled_katas` in `.zshellcheckrc`.
 
