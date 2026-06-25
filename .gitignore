@@ -14,6 +14,8 @@ zshellcheck-windows-amd64.exe
 # Editor and IDE files
 .vscode/
 .idea/
+*.sublime-project
+*.sublime-workspace
 *.swp
 *~
 .#*
