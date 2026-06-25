@@ -101,6 +101,10 @@ jobs:
         env:
           ZSHELLCHECK_BIN: ${{ github.workspace }}/zshellcheck
         run: bash scripts/violation-corpus-sweep.sh
+      - name: Sweep auto-fixes for corruption and non-convergence
+        env:
+          ZSHELLCHECK_BIN: ${{ github.workspace }}/zshellcheck
+        run: bash scripts/fix-corpus-sweep.sh
 
   lint-shell:
     name: Lint Shell Scripts

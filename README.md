@@ -128,10 +128,11 @@ The full catalog with file counts lives in [INTEGRATIONS.md](INTEGRATIONS.md).
 
 ## Quality
 
-Every release replays the linter over the pinned integration corpora and gates on two snapshots:
+Every release replays the linter over the pinned integration corpora and gates on:
 
 - Parser errors and crashes stay at zero.
 - Kata findings match a reviewed baseline; a new finding on known-good code fails the build as a candidate false positive.
+- Auto-fixes round-trip cleanly: applying every fix to a corpus file never raises its parser-error count and always converges, so a rewrite cannot corrupt working code.
 
 Semantic-preserving rewrites — added blank lines, comments, or variable renames — must not change which katas fire.
 See the [local checks](CONTRIBUTING.md#local-checks) for the commands.
