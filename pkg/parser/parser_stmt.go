@@ -740,6 +740,14 @@ func reshapeCommandAssignment(cmd *ast.SimpleCommand) ast.Expression {
 	if !ok || len(concat.Parts) < 2 {
 		return cmd
 	}
+	// A malformed (fuzzed) input can leave a nil part in the slice; leave
+	// such a command untouched rather than build an assignment whose RHS
+	// would dereference nil downstream.
+	for _, part := range concat.Parts {
+		if part == nil {
+			return cmd
+		}
+	}
 	// `cmd =$x` with a separating space is a real command and argument, not
 	// an assignment; only a glued `=` continues the command-name word.
 	if cmd.Arguments[0].TokenLiteralNode().HasPrecedingSpace {
@@ -753,8 +761,11 @@ func reshapeCommandAssignment(cmd *ast.SimpleCommand) ast.Expression {
 	if len(concat.Parts) == 2 {
 		rhs = concat.Parts[1]
 	} else {
+		// Reuse the concatenation's own token for position — a part can be
+		// a nil expression on a malformed (fuzzed) input, so never deref
+		// `Parts[1]` for its token.
 		rhs = &ast.ConcatenatedExpression{
-			Token: concat.Parts[1].TokenLiteralNode(),
+			Token: concat.Token,
 			Parts: concat.Parts[1:],
 		}
 	}
