@@ -2592,6 +2592,18 @@ func checkZC1043(node ast.Node) []Violation {
 }
 
 func zc1043HarvestLocals(n ast.Node, locals map[string]bool) {
+	// `local -a x`, `typeset -A m`, `declare -i n` — a flagged declaration
+	// parses as a DeclarationStatement, not a command, so its names must be
+	// harvested here too or a later assignment to the already-local
+	// variable is wrongly flagged.
+	if decl, ok := n.(*ast.DeclarationStatement); ok {
+		for _, assign := range decl.Assignments {
+			if assign.Name != nil {
+				locals[assign.Name.String()] = true
+			}
+		}
+		return
+	}
 	cmd, ok := n.(*ast.SimpleCommand)
 	if !ok {
 		return
@@ -2648,6 +2660,22 @@ var zc1043SpecialGlobals = map[string]bool{
 	"RPROMPT": true, "RPROMPT2": true, "SPROMPT": true,
 	"PS1": true, "PS2": true, "PS3": true, "PS4": true,
 	"RPS1": true, "RPS2": true, "prompt_opts": true,
+	// Special tied and shell-state parameters. path/PATH (and the other
+	// *path pairs) are tied; fpath, cdpath, options, dirstack and the
+	// alias/function hashes are global by nature. Assigning them inside a
+	// function mutates the shell-wide value on purpose — `local fpath`
+	// scopes it away and silently breaks plugin load/unload. ZC1043 must
+	// not suggest `local` for them.
+	"path": true, "PATH": true, "fpath": true, "FPATH": true,
+	"cdpath": true, "CDPATH": true, "manpath": true, "MANPATH": true,
+	"mailpath": true, "MAILPATH": true, "infopath": true, "INFOPATH": true,
+	"module_path": true, "MODULE_PATH": true,
+	"psvar": true, "watch": true, "fignore": true,
+	"options": true, "commands": true, "functions": true,
+	"dis_functions": true, "aliases": true, "galiases": true,
+	"saliases": true, "dis_aliases": true, "parameters": true,
+	"modules": true, "dirstack": true, "nameddirs": true,
+	"userdirs": true,
 }
 
 func zc1043UnscopedAssign(n ast.Node, locals map[string]bool) (Violation, bool) {
