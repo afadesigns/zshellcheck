@@ -41,6 +41,7 @@ Files with `.go`, `.md`, `.json`, `.yml`, `.yaml`, or `.txt` extensions are skip
 | `-detect-stale-noka` | off | Report `# noka` directives that suppress no actual finding; exit non-zero if any. |
 | `-verbose` | off | Emit full kata descriptions in text output. |
 | `-no-color` | off | Disable ANSI colours. Implied when stdout is not a TTY. |
+| `-no-banner` | off | Suppress the startup banner. Implied for JSON and SARIF output and when `-no-color` is set. |
 | `-cpuprofile <path>` | — | Write a Go pprof CPU profile to `<path>` for benchmarking. |
 | `-fix` | off | Apply auto-fixes in place. Safe (value-preserving) fixes only, unless `-unsafe-fixes` is set. |
 | `-unsafe-fixes` | off | Also apply fixes that may change runtime behavior — command and flag swaps, scope changes, glob qualifiers. |
