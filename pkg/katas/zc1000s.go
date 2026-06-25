@@ -5433,6 +5433,18 @@ func zc1075HasSplitFlag(flags string) bool {
 	return strings.ContainsAny(head, "fs0zwpkv@")
 }
 
+// zc1075HasWidthFlag reports whether flags carry a width modifier
+// (`l:n:` left-pad or `r:n:` right-pad). These produce a fixed-width
+// result that is never empty. The `:` argument distinguishes them from
+// `(r)` (reverse), which can still be empty.
+func zc1075HasWidthFlag(flags string) bool {
+	i := strings.IndexByte(flags, ':')
+	if i < 0 {
+		return false
+	}
+	return strings.ContainsAny(flags[:i], "lr")
+}
+
 func zc1075HasDefaultModifier(left ast.Expression) bool {
 	ident, ok := left.(*ast.Identifier)
 	if !ok {
@@ -5523,6 +5535,11 @@ func zc1075FlagCommand(cmd *ast.SimpleCommand, arrays map[string]bool, violation
 			// words; quoting it would join them and defeat the idiom, so
 			// it is not an elision hazard.
 			if zc1075HasSplitFlag(aa.Flags) {
+				continue
+			}
+			// A width modifier `${(l:n:)x}` / `${(r:n:)x}` pads to a fixed
+			// width, so the result is never an empty word.
+			if zc1075HasWidthFlag(aa.Flags) {
 				continue
 			}
 			// A bare whole-array expansion `${arr}` joins under quoting, so
@@ -5655,6 +5672,14 @@ func zc1075ArrayAssignName(arg ast.Expression) (string, bool) {
 // first name; when it carries `a`/`A` the remaining names are arrays. A
 // `name=(…)` assignment value is an array literal.
 func zc1075HarvestArrayDecl(ds *ast.DeclarationStatement, arrays map[string]bool) {
+	// `typeset arr=(a b)` — the array-literal value renders with a leading
+	// `(`. A quoted scalar such as `q="(literal)"` renders with the opening
+	// quote first, so it is not mistaken for an array.
+	for _, a := range ds.Assignments {
+		if a.Name != nil && a.Value != nil && strings.HasPrefix(a.Value.String(), "(") {
+			arrays[a.Name.String()] = true
+		}
+	}
 	// Only a flagged declaration can carry the `-a`/`-A` array flag. The
 	// parser stores it as the first "name", so when that name contains
 	// `a`/`A` the remaining names are arrays.

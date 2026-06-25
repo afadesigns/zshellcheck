@@ -324,7 +324,7 @@ git-open/git-open.plugin.zsh	ZC1275	1
 gitstatus/gitstatus.plugin.zsh	ZC1001	7
 gitstatus/gitstatus.plugin.zsh	ZC1043	3
 gitstatus/gitstatus.plugin.zsh	ZC1046	1
-gitstatus/gitstatus.plugin.zsh	ZC1075	61
+gitstatus/gitstatus.plugin.zsh	ZC1075	60
 gitstatus/gitstatus.plugin.zsh	ZC1086	11
 gitstatus/gitstatus.plugin.zsh	ZC1167	1
 gitstatus/gitstatus.plugin.zsh	ZC1176	3
@@ -556,7 +556,7 @@ spaceship/lib/utils.zsh	ZC1010	1
 spaceship/lib/utils.zsh	ZC1037	3
 spaceship/lib/utils.zsh	ZC1045	3
 spaceship/lib/utils.zsh	ZC1073	1
-spaceship/lib/utils.zsh	ZC1075	6
+spaceship/lib/utils.zsh	ZC1075	5
 spaceship/lib/utils.zsh	ZC1097	1
 spaceship/lib/utils.zsh	ZC1517	1
 spaceship/lib/worker.zsh	ZC1043	2
