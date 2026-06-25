@@ -717,7 +717,53 @@ func (p *Parser) parseSingleCommand() ast.Expression {
 		cmd.Arguments = append(cmd.Arguments, arg)
 	}
 
-	return cmd
+	return reshapeCommandAssignment(cmd)
+}
+
+// reshapeCommandAssignment converts a command-position assignment that the
+// single-command parser captured as a `name` plus a glued `=value` argument
+// (`foo && cd=$bar`, `a | b=1`) into the `=` InfixExpression an assignment
+// kata expects. At statement start `name=value` already parses this way via
+// the Pratt path; only the command-position forms (after `&&`/`||`, in a
+// pipeline) reach the single-command parser and were left as a bogus command
+// whose name was the variable. A lone glued `=value` argument qualifies: a
+// following word (`FOO=bar cmd`) is an env-prefixed command and stays a
+// SimpleCommand. The reshape runs after the command is fully parsed, so it
+// never changes token consumption — the caller's cursor is untouched, which
+// is what makes it safe where an early re-parse desynced the dispatch loop.
+func reshapeCommandAssignment(cmd *ast.SimpleCommand) ast.Expression {
+	name, ok := cmd.Name.(*ast.Identifier)
+	if !ok || len(cmd.Arguments) != 1 {
+		return cmd
+	}
+	concat, ok := cmd.Arguments[0].(*ast.ConcatenatedExpression)
+	if !ok || len(concat.Parts) < 2 {
+		return cmd
+	}
+	// `cmd =$x` with a separating space is a real command and argument, not
+	// an assignment; only a glued `=` continues the command-name word.
+	if cmd.Arguments[0].TokenLiteralNode().HasPrecedingSpace {
+		return cmd
+	}
+	eq, ok := concat.Parts[0].(*ast.StringLiteral)
+	if !ok || eq.String() != "=" {
+		return cmd
+	}
+	var rhs ast.Expression
+	if len(concat.Parts) == 2 {
+		rhs = concat.Parts[1]
+	} else {
+		rhs = &ast.ConcatenatedExpression{
+			Token: concat.Parts[1].TokenLiteralNode(),
+			Parts: concat.Parts[1:],
+		}
+	}
+	return &ast.InfixExpression{
+		Token:    eq.TokenLiteralNode(),
+		Operator: "=",
+		Left:     name,
+		Right:    rhs,
+	}
 }
 
 // commandWordLiteralTokens is the set of token types that appear inside

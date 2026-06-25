@@ -257,9 +257,6 @@ fzf-tab/test/runtests.zsh	ZC1073	2
 fzf-tab/test/runtests.zsh	ZC1075	1
 fzf-tab/test/ztst.zsh	ZC1001	3
 fzf-tab/test/ztst.zsh	ZC1004	1
-fzf-tab/test/ztst.zsh	ZC1006	1
-fzf-tab/test/ztst.zsh	ZC1020	1
-fzf-tab/test/ztst.zsh	ZC1036	1
 fzf-tab/test/ztst.zsh	ZC1037	1
 fzf-tab/test/ztst.zsh	ZC1043	19
 fzf-tab/test/ztst.zsh	ZC1044	1
@@ -272,7 +269,6 @@ fzf-tab/test/ztst.zsh	ZC1075	22
 fzf-tab/test/ztst.zsh	ZC1078	1
 fzf-tab/test/ztst.zsh	ZC1091	4
 fzf-tab/test/ztst.zsh	ZC1136	3
-fzf-tab/test/ztst.zsh	ZC1293	1
 fzf-tab/test/ztst.zsh	ZC1830	1
 fzf-zsh-plugin/fzf-settings.zsh	ZC1005	1
 fzf-zsh-plugin/fzf-settings.zsh	ZC1034	1
@@ -300,7 +296,7 @@ fzf-zsh-plugin/fzf-zsh-plugin.plugin.zsh	ZC1591	1
 geometry/geometry.zsh	ZC1001	1
 geometry/geometry.zsh	ZC1043	1
 geometry/geometry.zsh	ZC1045	5
-geometry/geometry.zsh	ZC1075	10
+geometry/geometry.zsh	ZC1075	7
 geometry/geometry.zsh	ZC1091	1
 geometry/geometry.zsh	ZC1097	1
 geometry/geometry.zsh	ZC1517	1
@@ -318,7 +314,6 @@ gitstatus/gitstatus.plugin.zsh	ZC1043	3
 gitstatus/gitstatus.plugin.zsh	ZC1046	1
 gitstatus/gitstatus.plugin.zsh	ZC1075	48
 gitstatus/gitstatus.plugin.zsh	ZC1086	11
-gitstatus/gitstatus.plugin.zsh	ZC1167	1
 gitstatus/gitstatus.plugin.zsh	ZC1176	3
 gitstatus/gitstatus.prompt.zsh	ZC1086	1
 gitstatus/gitstatus.prompt.zsh	ZC1967	1
@@ -1408,6 +1403,7 @@ zsh-completion-generator/zsh-completion-generator.plugin.zsh	ZC1010	1
 zsh-completion-generator/zsh-completion-generator.plugin.zsh	ZC1020	1
 zsh-completion-generator/zsh-completion-generator.plugin.zsh	ZC1036	1
 zsh-completion-generator/zsh-completion-generator.plugin.zsh	ZC1037	2
+zsh-completion-generator/zsh-completion-generator.plugin.zsh	ZC1071	1
 zsh-completion-generator/zsh-completion-generator.plugin.zsh	ZC1075	4
 zsh-completion-generator/zsh-completion-generator.plugin.zsh	ZC1293	1
 zsh-defer/zsh-defer.plugin.zsh	ZC1001	2
@@ -1513,10 +1509,8 @@ zsh-nvm/zsh-nvm.plugin.zsh	ZC1281	1
 zsh-nvm/zsh-nvm.plugin.zsh	ZC1293	1
 zsh-nvm/zsh-nvm.plugin.zsh	ZC1643	1
 zsh-nvm/zsh-nvm.plugin.zsh	ZC1773	1
-zsh-shift-select/zsh-shift-select.plugin.zsh	ZC1061	1
 zsh-shift-select/zsh-shift-select.plugin.zsh	ZC1075	5
 zsh-shift-select/zsh-shift-select.plugin.zsh	ZC1086	6
-zsh-shift-select/zsh-shift-select.plugin.zsh	ZC1276	1
 zsh-utils/completion/completion.plugin.zsh	ZC1128	1
 zsh-utils/completion/completion.plugin.zsh	ZC1686	1
 zsh-utils/editor/editor.plugin.zsh	ZC1053	1

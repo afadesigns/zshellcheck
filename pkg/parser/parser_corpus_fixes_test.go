@@ -527,3 +527,52 @@ func TestParseLogicalChainCompoundBodyWalked(t *testing.T) {
 		}
 	}
 }
+
+// A `name=value` in command position (after `&&` / `||`, in a pipeline)
+// is an assignment, not a command. The single-command parser captured it
+// as a bogus command whose name was the variable, so a variable named for
+// a builtin (`timeout=-t$2`, `seq=$x`, `test=$(…)`) was mis-flagged as
+// that command. reshapeCommandAssignment converts the fully-parsed node to
+// an `=` InfixExpression without changing token consumption. The
+// env-prefixed form (`FOO=bar cmd`) and the spaced form (`cd =$x`) stay
+// commands.
+func TestParseCommandPositionAssignment(t *testing.T) {
+	assignment := []string{
+		"foo && cd=$bar\n",
+		"foo || timeout=-t$2\n",
+		"a | b=1\n",
+	}
+	for _, src := range assignment {
+		p := New(lexer.New(src))
+		prog := p.ParseProgram()
+		if errs := p.Errors(); len(errs) != 0 {
+			t.Fatalf("unexpected parser errors for %q: %v", src, errs)
+		}
+		n := 0
+		ast.Walk(prog, func(node ast.Node) bool {
+			if ix, ok := node.(*ast.InfixExpression); ok && ix.Operator == "=" {
+				n++
+			}
+			return true
+		})
+		if n != 1 {
+			t.Errorf("command-position assignment %q: want 1 `=` InfixExpression, got %d", src, n)
+		}
+	}
+	// An env-prefixed command and a space-separated form are not standalone
+	// assignments: the following / spaced word is a real command.
+	for _, src := range []string{"foo && FOO=bar cmd\n", "foo && cd =$bar\n"} {
+		p := New(lexer.New(src))
+		prog := p.ParseProgram()
+		n := 0
+		ast.Walk(prog, func(node ast.Node) bool {
+			if ix, ok := node.(*ast.InfixExpression); ok && ix.Operator == "=" {
+				n++
+			}
+			return true
+		})
+		if n != 0 {
+			t.Errorf("env-prefix / spaced form %q wrongly reshaped to an assignment (%d)", src, n)
+		}
+	}
+}
