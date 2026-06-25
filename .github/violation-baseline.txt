@@ -11,7 +11,6 @@ agkozak-prompt/lib/async.zsh	ZC1001	5
 agkozak-prompt/lib/async.zsh	ZC1043	2
 agkozak-prompt/lib/async.zsh	ZC1046	1
 agkozak-prompt/lib/async.zsh	ZC1075	30
-agkozak-prompt/lib/async.zsh	ZC1098	1
 agkozak-prompt/lib/async.zsh	ZC1134	1
 agkozak-prompt/lib/async.zsh	ZC1176	1
 agkozak-prompt/lib/async.zsh	ZC1509	2
@@ -502,7 +501,6 @@ purer/async.zsh	ZC1046	1
 purer/async.zsh	ZC1075	26
 purer/async.zsh	ZC1078	1
 purer/async.zsh	ZC1097	3
-purer/async.zsh	ZC1098	1
 purer/async.zsh	ZC1134	1
 purer/async.zsh	ZC1176	1
 purer/pure.zsh	ZC1001	2
@@ -520,7 +518,6 @@ spaceship/async.zsh	ZC1001	5
 spaceship/async.zsh	ZC1043	2
 spaceship/async.zsh	ZC1046	1
 spaceship/async.zsh	ZC1075	30
-spaceship/async.zsh	ZC1098	1
 spaceship/async.zsh	ZC1134	1
 spaceship/async.zsh	ZC1176	1
 spaceship/async.zsh	ZC1509	2
@@ -972,7 +969,6 @@ typewritten/async.zsh	ZC1001	5
 typewritten/async.zsh	ZC1043	2
 typewritten/async.zsh	ZC1046	1
 typewritten/async.zsh	ZC1075	30
-typewritten/async.zsh	ZC1098	1
 typewritten/async.zsh	ZC1134	1
 typewritten/async.zsh	ZC1176	1
 typewritten/async.zsh	ZC1509	2
@@ -1386,7 +1382,6 @@ zsh-async/async.zsh	ZC1001	5
 zsh-async/async.zsh	ZC1043	2
 zsh-async/async.zsh	ZC1046	1
 zsh-async/async.zsh	ZC1075	30
-zsh-async/async.zsh	ZC1098	1
 zsh-async/async.zsh	ZC1134	1
 zsh-async/async.zsh	ZC1176	1
 zsh-async/async.zsh	ZC1509	2

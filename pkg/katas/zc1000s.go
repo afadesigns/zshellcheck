@@ -7617,6 +7617,13 @@ func zc1098StringIsSingleExpansion(value string) bool {
 	if inner[1] == '{' {
 		return zc1098IsSingleBraceExpansion(inner)
 	}
+	// `$@` / `$*` expand all positional parameters as the command to run
+	// (`eval "$@"` is the standard argument-dispatch idiom). Like a bare
+	// `$cmd`, quoting them with `(q)` collapses the words and breaks
+	// execution, so treat them as standalone too.
+	if rest := inner[1:]; rest == "@" || rest == "*" {
+		return true
+	}
 	return zc1098IsBareName(inner[1:])
 }
 
