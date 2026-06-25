@@ -5041,8 +5041,15 @@ func checkZC1071(node ast.Node) []Violation {
 	if !ok {
 		return nil
 	}
+	// A true append needs the whole array reference PLUS at least one
+	// appended element (`arr=($arr a)` ≡ `arr+=(a)`). A single-element
+	// rebuild is never an append: it is an identity (`arr=($arr)`) or a
+	// transform/filter (`arr=(${arr[@]:#pat})`, `arr=(${arr[@]//a/b})`).
+	// The parser collapses `${arr[@]:#pat}` and a plain `${arr[@]}` to the
+	// same indexed node — the `:#`/`//` modifier is not preserved — so the
+	// element-count guard is what separates a filter from an append.
 	arrayLit, ok := infix.Right.(*ast.ArrayLiteral)
-	if !ok || len(arrayLit.Elements) == 0 {
+	if !ok || len(arrayLit.Elements) < 2 {
 		return nil
 	}
 	// Only a true append rewrites to `+=`. That means the unmodified
@@ -5445,6 +5452,19 @@ func zc1075HasWidthFlag(flags string) bool {
 	return strings.ContainsAny(flags[:i], "lr")
 }
 
+// zc1075HasQuoteFlag reports whether a `${(flags)name}` flag group
+// carries a `q` quoting flag (`q`, `qq`, `q-`, `q+`, or a combination
+// such as `Vq-`). A quoted expansion renders an empty value as a quoted
+// empty string — a non-empty word — so it never elides. Only the leading
+// flag characters (before any `:delimiter:` section) are inspected.
+func zc1075HasQuoteFlag(flags string) bool {
+	head := flags
+	if i := strings.IndexByte(head, ':'); i >= 0 {
+		head = head[:i]
+	}
+	return strings.IndexByte(head, 'q') >= 0
+}
+
 func zc1075HasDefaultModifier(left ast.Expression) bool {
 	ident, ok := left.(*ast.Identifier)
 	if !ok {
@@ -5502,6 +5522,16 @@ func zc1075FlagCommand(cmd *ast.SimpleCommand, arrays map[string]bool, violation
 
 		// If it's a bare IdentifierNode (variable expansion), it's unquoted.
 		if ident, ok := arg.(*ast.Identifier); ok {
+			// A `$name` glued to the preceding word with no separating space
+			// (`prefix$name`, the command-name form `_clear$fsuf`) is part of
+			// a concatenation: the literal prefix keeps the word non-empty, so
+			// an empty value cannot elide it. The parser splits `name$var` in
+			// command position into the name plus this glued argument, so the
+			// arg looks bare; the no-preceding-space flag is what marks it as a
+			// concatenation tail.
+			if !ident.Token.HasPrecedingSpace {
+				continue
+			}
 			// Only a bare `$name` expansion can elide to nothing; a suffixed
 			// form like `$dir/foo` keeps a literal tail and never elides.
 			if zc1075IsBareExpansion(ident.Value) && !arrays[zc1075BareName(ident.Value)] {
@@ -5539,7 +5569,8 @@ func zc1075FlagArrayAccess(aa *ast.ArrayAccess, arrays map[string]bool, violatio
 	if zc1075HasDefaultModifier(aa.Left) {
 		return
 	}
-	if zc1075HasSplitFlag(aa.Flags) || zc1075HasWidthFlag(aa.Flags) {
+	if zc1075HasSplitFlag(aa.Flags) || zc1075HasWidthFlag(aa.Flags) ||
+		zc1075HasQuoteFlag(aa.Flags) {
 		return
 	}
 	// A bare whole-array expansion `${arr}` joins under quoting; an element

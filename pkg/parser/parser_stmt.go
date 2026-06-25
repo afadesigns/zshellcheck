@@ -460,9 +460,18 @@ func keywordStmtToExpression(stmt ast.Statement) ast.Expression {
 	if es, ok := stmt.(*ast.ExpressionStatement); ok {
 		return es.Expression
 	}
-	// Wrap in a stub Identifier so callers see a non-nil expression.
-	// The Token preserves the head keyword for kata-side walks of
-	// containing CallExpression / DollarParenExpression bodies.
+	// Compound statements (BlockStatement / IfStatement / ForLoopStatement
+	// / CaseStatement / SelectStatement) all implement Expression. Return
+	// the real node so the AST walker descends into the body. A stub
+	// Identifier hid the body from every kata, so dangerous code inside a
+	// logical-chain compound (`cmd && { rm -rf $x }`, `cmd && if …; then
+	// rm -rf $x; fi`) went unlinted. The WHILE head already returns its
+	// statement directly; this brings the other compound heads in line.
+	if expr, ok := stmt.(ast.Expression); ok {
+		return expr
+	}
+	// Fallback stub for a non-Expression statement: callers still see a
+	// non-nil expression carrying the head keyword.
 	return &ast.Identifier{Token: stmt.TokenLiteralNode(), Value: stmt.TokenLiteral()}
 }
 

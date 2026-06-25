@@ -5,6 +5,7 @@ package parser
 import (
 	"testing"
 
+	"github.com/afadesigns/zshellcheck/pkg/ast"
 	"github.com/afadesigns/zshellcheck/pkg/lexer"
 )
 
@@ -487,6 +488,42 @@ func TestParseAssignmentGluedQuoteTail(t *testing.T) {
 		prog := p.ParseProgram()
 		if n := len(prog.Statements); n != 2 {
 			t.Errorf("env-prefix %q: want 2 statements, got %d (space tail wrongly absorbed)", src, n)
+		}
+	}
+}
+
+// A compound statement on the right of a `&&` / `||` logical chain
+// (`cmd && { … }`, `cmd && if …; fi`, `cmd && for …; done`,
+// `cmd && case … esac`) must keep its body in the tree so katas walk it.
+// keywordStmtToExpression previously wrapped the compound in a stub
+// Identifier, hiding the body — dangerous code inside the block went
+// unlinted. Each real node implements Expression and is now returned
+// directly; the walker descends into the body. Proxy for "body walked":
+// the inner `rm` SimpleCommand is reachable (two SimpleCommands total).
+func TestParseLogicalChainCompoundBodyWalked(t *testing.T) {
+	cases := []string{
+		"x && { rm -rf $y }\n",
+		"x || { rm -rf $y }\n",
+		"x && if a; then rm -rf $y; fi\n",
+		"x && for i in a; do rm -rf $y; done\n",
+		"x && case $z in a) rm -rf $y ;; esac\n",
+		"x && select n in a; do rm -rf $y; done\n",
+	}
+	for _, src := range cases {
+		p := New(lexer.New(src))
+		prog := p.ParseProgram()
+		if errs := p.Errors(); len(errs) != 0 {
+			t.Fatalf("unexpected parser errors for %q: %v", src, errs)
+		}
+		n := 0
+		ast.Walk(prog, func(node ast.Node) bool {
+			if _, ok := node.(*ast.SimpleCommand); ok {
+				n++
+			}
+			return true
+		})
+		if n < 2 {
+			t.Errorf("compound RHS body not walked for %q: want >=2 SimpleCommands, got %d", src, n)
 		}
 	}
 }

@@ -2597,6 +2597,23 @@ func init() {
 	})
 }
 
+// zc1149GoesToStderr reports whether a print/echo command already directs
+// its output to stderr — via the `print -u2` / `print -u 2` file-descriptor
+// flag or a `>&2` / `2>` redirection word. Such a command needs no fix.
+func zc1149GoesToStderr(cmd *ast.SimpleCommand) bool {
+	for i, arg := range cmd.Arguments {
+		s := arg.String()
+		if s == "-u2" || strings.Contains(s, ">&2") || strings.HasPrefix(s, "2>") {
+			return true
+		}
+		// The split `-u 2` form: a `-u` flag followed by the fd `2`.
+		if s == "-u" && i+1 < len(cmd.Arguments) && cmd.Arguments[i+1].String() == "2" {
+			return true
+		}
+	}
+	return false
+}
+
 func checkZC1149(node ast.Node) []Violation {
 	cmd, ok := node.(*ast.SimpleCommand)
 	if !ok {
@@ -2612,28 +2629,42 @@ func checkZC1149(node ast.Node) []Violation {
 		return nil
 	}
 
+	// Already routed to stderr: `print -u2 …`, `print -u 2 …`, or any
+	// `>&2` / `2>` redirection. The error message is on the right stream,
+	// so the kata has nothing to recommend.
+	if zc1149GoesToStderr(cmd) {
+		return nil
+	}
+
 	for _, arg := range cmd.Arguments {
-		val := arg.String()
-		// Check for error-like messages
-		if len(val) > 5 {
-			clean := val
-			if len(clean) > 2 && (clean[0] == '\'' || clean[0] == '"') {
-				clean = clean[1 : len(clean)-1]
-			}
-			if len(clean) >= 5 && (clean[:5] == "Error" || clean[:5] == "error" || clean[:5] == "ERROR") {
-				return []Violation{{
-					KataID: "ZC1149",
-					Message: "Error messages should go to stderr. Use `print -u2` or append `>&2` " +
-						"to separate error output from normal stdout.",
-					Line:   cmd.Token.Line,
-					Column: cmd.Token.Column,
-					Level:  SeverityInfo,
-				}}
-			}
+		if zc1149IsErrorPrefixed(arg.String()) {
+			return []Violation{{
+				KataID: "ZC1149",
+				Message: "Error messages should go to stderr. Use `print -u2` or append `>&2` " +
+					"to separate error output from normal stdout.",
+				Line:   cmd.Token.Line,
+				Column: cmd.Token.Column,
+				Level:  SeverityInfo,
+			}}
 		}
 	}
 
 	return nil
+}
+
+// zc1149IsErrorPrefixed reports whether a print/echo argument is a string
+// that begins with `Error`/`error`/`ERROR` (with surrounding quotes
+// stripped) — the diagnostic-message shape the kata routes to stderr.
+func zc1149IsErrorPrefixed(val string) bool {
+	if len(val) <= 5 {
+		return false
+	}
+	clean := val
+	if len(clean) > 2 && (clean[0] == '\'' || clean[0] == '"') {
+		clean = clean[1 : len(clean)-1]
+	}
+	return len(clean) >= 5 &&
+		(clean[:5] == "Error" || clean[:5] == "error" || clean[:5] == "ERROR")
 }
 
 func init() {

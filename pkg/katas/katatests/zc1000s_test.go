@@ -3081,16 +3081,13 @@ func TestZC1071(t *testing.T) {
 		expected []katas.Violation
 	}{
 		{
-			name:  "invalid append self reference single",
-			input: `arr=($arr)`,
-			expected: []katas.Violation{
-				{
-					KataID:  "ZC1071",
-					Message: "Appending to an array using `arr=($arr ...)` is verbose and slower. Use `arr+=(...)` instead.",
-					Line:    1,
-					Column:  1,
-				},
-			},
+			// A bare self-reference with no appended elements is an identity
+			// reassignment, not an append: `arr+=()` adds nothing, so the
+			// `+=` advice does not apply. A true append needs at least one
+			// element after the whole-array reference.
+			name:     "single self reference is not an append",
+			input:    `arr=($arr)`,
+			expected: []katas.Violation{},
 		},
 		{
 			name:  "valid append whole array first then new elements",
