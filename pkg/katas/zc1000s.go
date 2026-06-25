@@ -656,6 +656,17 @@ func fixZC1010(node ast.Node, v Violation, source []byte) []FixEdit {
 	if cmd.Name == nil || cmd.Name.String() != "[" {
 		return nil
 	}
+	// Bail on binary `-a` / `-o`. In `[ ]` these are POSIX AND / OR
+	// connectives; `[[ ]]` has no binary `-a` / `-o` (it uses `&&` / `||`
+	// and reads `-a` / `-o` as unary file-exists / option-set tests), so a
+	// naive `[` -> `[[` swap turns `[ x -o y ]` into a syntax error. A
+	// leading `-a` / `-o` (the first operand) is the unary form and stays
+	// fixable.
+	for i := 1; i < len(cmd.Arguments); i++ {
+		if s := cmd.Arguments[i].String(); s == "-a" || s == "-o" {
+			return nil
+		}
+	}
 	open := LineColToByteOffset(source, v.Line, v.Column)
 	if open < 0 || open >= len(source) || source[open] != '[' {
 		return nil
@@ -5486,6 +5497,10 @@ func fixZC1076(node ast.Node, v Violation, source []byte) []FixEdit {
 	if nameLen != len("autoload") {
 		return nil
 	}
+	insert := zc1076MissingFlags(cmd)
+	if insert == "" {
+		return nil
+	}
 	insertAt := nameOffset + nameLen
 	insLine, insCol := offsetLineColZC1076(source, insertAt)
 	if insLine < 0 {
@@ -5495,8 +5510,38 @@ func fixZC1076(node ast.Node, v Violation, source []byte) []FixEdit {
 		Line:    insLine,
 		Column:  insCol,
 		Length:  0,
-		Replace: " -Uz",
+		Replace: insert,
 	}}
+}
+
+// zc1076MissingFlags returns the flags to insert after `autoload` so the
+// command carries both `-U` and `-z`, adding only the absent one. It
+// returns "" when both are already present, so a command that already
+// has `-U` gains just ` -z` rather than a duplicate ` -Uz`.
+func zc1076MissingFlags(cmd *ast.SimpleCommand) string {
+	hasU, hasZ := false, false
+	for _, arg := range cmd.Arguments {
+		s := strings.Trim(arg.String(), "\"'")
+		if !strings.HasPrefix(s, "-") {
+			continue
+		}
+		if strings.Contains(s, "U") {
+			hasU = true
+		}
+		if strings.Contains(s, "z") {
+			hasZ = true
+		}
+	}
+	switch {
+	case !hasU && !hasZ:
+		return " -Uz"
+	case !hasU:
+		return " -U"
+	case !hasZ:
+		return " -z"
+	default:
+		return ""
+	}
 }
 
 func offsetLineColZC1076(source []byte, offset int) (int, int) {
@@ -6356,6 +6401,18 @@ func fixZC1086(node ast.Node, v Violation, source []byte) []FixEdit {
 	nameStart, ok := zc1086NameStart(source, kwOffset, name)
 	if !ok {
 		return nil
+	}
+	// Bail when the source name continues past the parsed identifier — a
+	// concatenated or parameter-expanded name such as
+	// `name"${1:-}"() { ... }`. The parser captures only the leading
+	// identifier, so inserting `()` after it would split the real name
+	// and silently define a different function.
+	if after := nameStart + len(name); after < len(source) {
+		switch source[after] {
+		case ' ', '\t', '\n', '\r', '(':
+		default:
+			return nil
+		}
 	}
 	edits := []FixEdit{{
 		Line:    v.Line,
