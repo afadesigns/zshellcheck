@@ -20,6 +20,12 @@ func FuzzParser(f *testing.F) {
 		"func() { echo body; }",
 		"time command",
 		"coproc command",
+		// Command-position assignments exercise reshapeCommandAssignment,
+		// including a multi-part RHS and a truncated form whose parts may
+		// be incomplete.
+		"foo && cd=$bar",
+		"a | b=$c/$d",
+		"x && y=$(",
 	}
 
 	for _, tc := range testcases {
