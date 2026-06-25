@@ -454,3 +454,39 @@ func TestAbsorbGluedRhsTailBranches(t *testing.T) {
 		p.ParseProgram() // must not panic; covers the absorber branches
 	}
 }
+
+// A quoted segment or bare word glued to an assignment RHS with no
+// separating space continues the same concatenated word in zsh
+// (`expansion='b'cd` assigns `bcd`). The trailing `cd` must not be
+// orphaned into a second statement, which previously parsed it as a
+// bare `cd` command and emitted a spurious ZC1044 cd-failure warning on
+// a plain string assignment. The zsh-abbr quote-handling tests exercise
+// every glue position; the space-guarded env-prefix form is preserved.
+func TestParseAssignmentGluedQuoteTail(t *testing.T) {
+	glued := []string{
+		"expansion='b'cd\n",     // single quotes at the start
+		"expansion=b'c'd\n",     // single quotes in the middle
+		"expansion=\"b\"cd\n",   // double quotes at the start
+		"expansion='b\"c\"d'\n", // single-quoted double quotes
+	}
+	for _, src := range glued {
+		p := New(lexer.New(src))
+		prog := p.ParseProgram()
+		if errs := p.Errors(); len(errs) != 0 {
+			t.Fatalf("unexpected parser errors for %q: %v", src, errs)
+		}
+		if n := len(prog.Statements); n != 1 {
+			t.Errorf("glued assignment %q: want 1 statement, got %d (tail orphaned)", src, n)
+		}
+	}
+	// A separating space marks the env-prefix form: the word after the
+	// assignment is a real command, so it stays its own statement.
+	spaced := []string{"x='b' cd\n", "FOO=bar cmd\n"}
+	for _, src := range spaced {
+		p := New(lexer.New(src))
+		prog := p.ParseProgram()
+		if n := len(prog.Statements); n != 2 {
+			t.Errorf("env-prefix %q: want 2 statements, got %d (space tail wrongly absorbed)", src, n)
+		}
+	}
+}

@@ -584,6 +584,16 @@ func (p *Parser) absorbGluedRhsTail() {
 			// (`${DIR}/init` → `${ DIR }` then IDENT `/init`). Absorb that
 			// glued path tail so it is not orphaned into a second statement.
 			p.nextToken()
+		case p.peekTokenIs(token.STRING) || p.peekTokenIs(token.IDENT):
+			// A quoted segment or bare word glued with no preceding
+			// space continues the same concatenated word in zsh
+			// (`x='b'cd` → `bcd`, `x=b'c'd` → `bcd`, `x="b"cd` → `bcd`).
+			// Absorb it so the tail is not orphaned into a spurious
+			// command — a glued `cd`/`rm`/… otherwise parsed as its own
+			// statement and mis-flagged (ZC1044 et al.). The leading
+			// `HasPrecedingSpace` guard keeps the env-prefix form
+			// (`x='b' cd`) intact: a space means `cd` is a real command.
+			p.nextToken()
 		case p.peekTokenIs(token.SLASH):
 			// A standalone `/` before an expansion (`${a}/${b}`). Consume
 			// the slash; if a glued expansion follows, consume that too.

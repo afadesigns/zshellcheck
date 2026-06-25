@@ -1300,7 +1300,6 @@ zsh-abbr/tests/_abbr-expand-line.ztr.zsh	ZC1075	8
 zsh-abbr/tests/_abbr-set-line-cursor.ztr.zsh	ZC1043	2
 zsh-abbr/tests/_abbr-set-line-cursor.ztr.zsh	ZC1075	3
 zsh-abbr/tests/_add.ztr.zsh	ZC1037	1
-zsh-abbr/tests/_add.ztr.zsh	ZC1044	2
 zsh-abbr/tests/_add.ztr.zsh	ZC1075	7
 zsh-abbr/tests/_erase.ztr.zsh	ZC1037	2
 zsh-abbr/tests/_erase.ztr.zsh	ZC1075	6
