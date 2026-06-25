@@ -5329,7 +5329,7 @@ func checkZC1074(node ast.Node) []Violation {
 }
 
 func init() {
-	RegisterKata(ast.SimpleCommandNode, Kata{
+	RegisterKata(ast.ProgramNode, Kata{
 		ID:    "ZC1075",
 		Title: "Quote variable expansions to prevent empty-word elision",
 		Description: "An unquoted expansion whose value is empty or unset is elided " +
@@ -5448,13 +5448,29 @@ func zc1075HasDefaultModifier(left ast.Expression) bool {
 }
 
 func checkZC1075(node ast.Node) []Violation {
-	cmd, ok := node.(*ast.SimpleCommand)
+	prog, ok := node.(*ast.Program)
 	if !ok {
 		return nil
 	}
-
+	arrays := make(map[string]bool)
+	ast.Walk(prog, func(n ast.Node) bool {
+		zc1075HarvestArrays(n, arrays)
+		return true
+	})
 	violations := []Violation{}
+	ast.Walk(prog, func(n ast.Node) bool {
+		if cmd, ok := n.(*ast.SimpleCommand); ok {
+			zc1075FlagCommand(cmd, arrays, &violations)
+		}
+		return true
+	})
+	return violations
+}
 
+// zc1075FlagCommand applies the elision check to one command, skipping a
+// bare expansion of a variable known to hold an array (quoting `$arr` as
+// `"$arr"` joins the elements; `"${arr[@]}"` is the correct form).
+func zc1075FlagCommand(cmd *ast.SimpleCommand, arrays map[string]bool, violations *[]Violation) {
 	isAssignBuiltin := zc1075IsAssignmentBuiltin(cmd.Name)
 
 	for _, arg := range cmd.Arguments {
@@ -5476,8 +5492,8 @@ func checkZC1075(node ast.Node) []Violation {
 		if ident, ok := arg.(*ast.Identifier); ok {
 			// Only a bare `$name` expansion can elide to nothing; a suffixed
 			// form like `$dir/foo` keeps a literal tail and never elides.
-			if zc1075IsBareExpansion(ident.Value) {
-				violations = append(violations, Violation{
+			if zc1075IsBareExpansion(ident.Value) && !arrays[zc1075BareName(ident.Value)] {
+				*violations = append(*violations, Violation{
 					KataID:  "ZC1075",
 					Message: "Quote `" + ident.Value + "`. An unquoted empty or unset value is elided entirely, dropping the word.",
 					Line:    ident.Token.Line,
@@ -5509,6 +5525,12 @@ func checkZC1075(node ast.Node) []Violation {
 			if zc1075HasSplitFlag(aa.Flags) {
 				continue
 			}
+			// A bare whole-array expansion `${arr}` joins under quoting, so
+			// the elision advice does not apply; an element `${arr[i]}` is a
+			// single scalar that still elides.
+			if aa.Index == nil && arrays[zc1075BareName(aa.Left.String())] {
+				continue
+			}
 			// Distinguish a true array element (`${arr[i]}`, Index set)
 			// from a plain scalar / positional (`${V}`, Index nil) so the
 			// message does not mislabel a scalar as an array element.
@@ -5516,7 +5538,7 @@ func checkZC1075(node ast.Node) []Violation {
 			if aa.Index != nil {
 				msg = "Quote this array element. An unquoted empty value is elided, dropping the word."
 			}
-			violations = append(violations, Violation{
+			*violations = append(*violations, Violation{
 				KataID:  "ZC1075",
 				Message: msg,
 				Line:    arg.TokenLiteralNode().Line,
@@ -5534,8 +5556,136 @@ func checkZC1075(node ast.Node) []Violation {
 		// literal part keeps the word non-empty, and Zsh does not split or
 		// glob the expansion by default. Nothing to flag here.
 	}
+}
 
-	return violations
+// zc1075BareName returns the leading parameter name of an expansion such
+// as `$flags` or `flags`.
+func zc1075BareName(value string) string {
+	s := value
+	if len(s) > 0 && s[0] == '$' {
+		s = s[1:]
+	}
+	end := 0
+	for end < len(s) && zc1075IsNameByte(s[end]) {
+		end++
+	}
+	return s[:end]
+}
+
+// zc1075HarvestArrays records variables declared or assigned as arrays so
+// a bare `$arr` is not flagged for elision.
+func zc1075HarvestArrays(n ast.Node, arrays map[string]bool) {
+	switch node := n.(type) {
+	case *ast.InfixExpression:
+		// `arr=(a b c)` — assignment whose right side is an array literal.
+		if node.Operator != "=" {
+			return
+		}
+		if _, ok := node.Right.(*ast.ArrayLiteral); !ok {
+			return
+		}
+		if id, ok := node.Left.(*ast.Identifier); ok {
+			arrays[zc1075BareName(id.Value)] = true
+		}
+	case *ast.SimpleCommand:
+		zc1075HarvestArrayCmd(node, arrays)
+	case *ast.DeclarationStatement:
+		zc1075HarvestArrayDecl(node, arrays)
+	}
+}
+
+// zc1075HarvestArrayCmd reads array names from a `local`/`typeset`/
+// `declare`/`readonly` command: an `-a`/`-A` flag marks its bare name
+// arguments as arrays, and a `name=(…)` argument is an array literal.
+func zc1075HarvestArrayCmd(cmd *ast.SimpleCommand, arrays map[string]bool) {
+	if !zc1075IsDeclName(cmd.Name) {
+		return
+	}
+	hasArrayFlag := false
+	var names []string
+	for _, arg := range cmd.Arguments {
+		s := arg.String()
+		if strings.HasPrefix(s, "-") {
+			if strings.ContainsAny(s, "aA") {
+				hasArrayFlag = true
+			}
+			continue
+		}
+		if name, ok := zc1075ArrayAssignName(arg); ok {
+			arrays[name] = true
+			continue
+		}
+		// A scalar assignment `name=value` is not an array name. (`String()`
+		// is unreliable for arrays here — the array node is detected above.)
+		if strings.IndexByte(s, '=') > 0 {
+			continue
+		}
+		names = append(names, s)
+	}
+	if hasArrayFlag {
+		for _, nm := range names {
+			arrays[nm] = true
+		}
+	}
+}
+
+// zc1075ArrayAssignName returns the name of a `name=(…)` array-literal
+// assignment word. It inspects the parsed value node (an ArrayLiteral
+// part) rather than the rendered text, because the renderer wraps even a
+// scalar value such as `$1` in parentheses (`name=($1)`).
+func zc1075ArrayAssignName(arg ast.Expression) (string, bool) {
+	ce, ok := arg.(*ast.ConcatenatedExpression)
+	if !ok || len(ce.Parts) < 2 {
+		return "", false
+	}
+	id, ok := ce.Parts[0].(*ast.Identifier)
+	if !ok {
+		return "", false
+	}
+	for _, p := range ce.Parts[1:] {
+		if _, ok := p.(*ast.ArrayLiteral); ok {
+			return id.Value, true
+		}
+	}
+	return "", false
+}
+
+// zc1075HarvestArrayDecl reads array names from a DeclarationStatement. A
+// flagged declaration (`typeset -A m`) parses with the flag string as the
+// first name; when it carries `a`/`A` the remaining names are arrays. A
+// `name=(…)` assignment value is an array literal.
+func zc1075HarvestArrayDecl(ds *ast.DeclarationStatement, arrays map[string]bool) {
+	// Only a flagged declaration can carry the `-a`/`-A` array flag. The
+	// parser stores it as the first "name", so when that name contains
+	// `a`/`A` the remaining names are arrays.
+	if len(ds.Flags) == 0 {
+		return
+	}
+	var names []string
+	for _, a := range ds.Assignments {
+		if a.Name != nil {
+			names = append(names, a.Name.String())
+		}
+	}
+	if len(names) > 1 && strings.ContainsAny(names[0], "aA") {
+		for _, nm := range names[1:] {
+			arrays[nm] = true
+		}
+	}
+}
+
+// zc1075IsDeclName reports whether name is a declaration builtin that can
+// declare arrays.
+func zc1075IsDeclName(name ast.Expression) bool {
+	id, ok := name.(*ast.Identifier)
+	if !ok {
+		return false
+	}
+	switch id.Value {
+	case "local", "typeset", "declare", "readonly":
+		return true
+	}
+	return false
 }
 
 func init() {
