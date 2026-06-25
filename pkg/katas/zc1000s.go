@@ -3136,6 +3136,14 @@ func checkZC1049(node ast.Node) []Violation {
 		if zc1049HasGlobalOrSuffixFlag(cmd) {
 			return nil
 		}
+		// Only an alias definition (`alias name=value`) can be replaced by
+		// a function. The listing and query forms (`alias`, `alias -L`,
+		// `alias name`, `alias | …`) have no `name=value` argument and just
+		// print existing aliases, so "prefer a function" is impossible
+		// advice. Skip them.
+		if !zc1049HasDefinition(cmd) {
+			return nil
+		}
 		return []Violation{{
 			KataID: "ZC1049",
 			Message: "Prefer functions over aliases. " +
@@ -3147,6 +3155,24 @@ func checkZC1049(node ast.Node) []Violation {
 	}
 
 	return nil
+}
+
+// zc1049HasDefinition reports whether the alias command actually defines
+// an alias — an argument of the form `name=value`. Without one the
+// command lists or queries existing aliases, which no function replaces.
+func zc1049HasDefinition(cmd *ast.SimpleCommand) bool {
+	for _, arg := range cmd.Arguments {
+		// A definition word carries `=` with a non-empty name in front.
+		// Flags (`-L`, `-m`, the already-handled `-g`/`-s`) never carry
+		// `=`, so an `=` past the first byte means a real definition. Use
+		// the node's full text rather than reassembling parts, so a name
+		// built from a parameter expansion (`alias ${CMD}=val`) or an
+		// unusual dashed name (`alias -- -='cd -'`) is still recognised.
+		if eq := strings.IndexByte(arg.String(), '='); eq > 0 {
+			return true
+		}
+	}
+	return false
 }
 
 // zc1049HasGlobalOrSuffixFlag reports whether an alias command carries
@@ -7420,6 +7446,12 @@ func zc1097UnscopedLoopVar(n ast.Node, locals map[string]bool) (Violation, bool)
 	if !ok || loop.Name == nil || locals[loop.Name.Value] {
 		return Violation{}, false
 	}
+	// A positional parameter name (`for 1 in …`) is already scoped to the
+	// function and cannot be declared with `local` — `local 1` is a zsh
+	// error ("not an identifier: 1"). Skip all-numeric loop variables.
+	if zc1097IsPositionalName(loop.Name.Value) {
+		return Violation{}, false
+	}
 	return Violation{
 		KataID: "ZC1097",
 		Message: "Loop variable '" + loop.Name.Value + "' is used without 'local'. It will be global. " +
@@ -7428,6 +7460,21 @@ func zc1097UnscopedLoopVar(n ast.Node, locals map[string]bool) (Violation, bool)
 		Column: loop.Name.Token.Column,
 		Level:  SeverityStyle,
 	}, true
+}
+
+// zc1097IsPositionalName reports whether name is a positional parameter
+// name (all decimal digits, such as `1` in `for 1 in …`). These are
+// already function-local and cannot be declared with `local`.
+func zc1097IsPositionalName(name string) bool {
+	if name == "" {
+		return false
+	}
+	for i := 0; i < len(name); i++ {
+		if name[i] < '0' || name[i] > '9' {
+			return false
+		}
+	}
+	return true
 }
 
 func init() {
