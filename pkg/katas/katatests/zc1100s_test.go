@@ -3387,7 +3387,7 @@ func TestZC1188(t *testing.T) {
 			expected: []katas.Violation{
 				{
 					KataID:  "ZC1188",
-					Message: "Use `path+=(dir)` instead of `export PATH=$PATH:dir`. Zsh ties the `path` array to `$PATH` for cleaner manipulation.",
+					Message: "Append with `path+=(dir)` instead of `export PATH=$PATH:dir`. Zsh ties the `path` array to `$PATH`.",
 					Line:    1,
 					Column:  1,
 				},

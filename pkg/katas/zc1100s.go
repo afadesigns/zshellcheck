@@ -4577,17 +4577,35 @@ func checkZC1188(node ast.Node) []Violation {
 		val := arg.String()
 		if len(val) > 5 && val[:5] == "PATH=" {
 			return []Violation{{
-				KataID: "ZC1188",
-				Message: "Use `path+=(dir)` instead of `export PATH=$PATH:dir`. " +
-					"Zsh ties the `path` array to `$PATH` for cleaner manipulation.",
-				Line:   cmd.Token.Line,
-				Column: cmd.Token.Column,
-				Level:  SeverityStyle,
+				KataID:  "ZC1188",
+				Message: zc1188Advice(val[5:]),
+				Line:    cmd.Token.Line,
+				Column:  cmd.Token.Column,
+				Level:   SeverityStyle,
 			}}
 		}
 	}
 
 	return nil
+}
+
+// zc1188Advice tailors the message to the direction of the PATH edit.
+// A prepend (`dir:$PATH`) must use `path=(dir $path)`; advising the
+// append form `path+=(dir)` there would move the directory to the end
+// and reverse command precedence. An append (`$PATH:dir`) uses
+// `path+=(dir)`. Anything else gets both forms.
+func zc1188Advice(rhs string) string {
+	const tie = " Zsh ties the `path` array to `$PATH`."
+	switch {
+	case strings.HasSuffix(rhs, ":$PATH"), strings.HasSuffix(rhs, ":${PATH}"):
+		return "Prepend with `path=(dir $path)` instead of `export PATH=dir:$PATH`. " +
+			"`path+=(dir)` would append the directory and reverse command precedence."
+	case strings.HasPrefix(rhs, "$PATH:"), strings.HasPrefix(rhs, "${PATH}:"):
+		return "Append with `path+=(dir)` instead of `export PATH=$PATH:dir`." + tie
+	default:
+		return "Manipulate the tied `path` array instead of `export PATH=…`: " +
+			"`path=(dir $path)` to prepend, `path+=(dir)` to append."
+	}
 }
 
 func init() {
