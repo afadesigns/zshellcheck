@@ -2839,15 +2839,25 @@ func checkCommandZC1044(cmd *ast.SimpleCommand, isChecked bool, violations *[]Vi
 	if isChecked {
 		return
 	}
-	if name, ok := cmd.Name.(*ast.Identifier); ok && name.Value == "cd" {
-		*violations = append(*violations, Violation{
-			KataID:  "ZC1044",
-			Message: "Use `cd ... || return` (or `exit`) in case cd fails.",
-			Line:    name.Token.Line,
-			Column:  name.Token.Column,
-			Level:   SeverityWarning,
-		})
+	name, ok := cmd.Name.(*ast.Identifier)
+	if !ok || name.Value != "cd" {
+		return
 	}
+	// An assignment to a variable named `cd` (`cd=${cd/…}`) is parsed as a
+	// `cd` command whose first argument is the `=value` tail when it sits on
+	// the right of `&&`/`||`. The cd builtin never takes an argument that
+	// begins with `=`, so this shape is the assignment, not a directory
+	// change — skip it.
+	if len(cmd.Arguments) > 0 && strings.HasPrefix(cmd.Arguments[0].String(), "=") {
+		return
+	}
+	*violations = append(*violations, Violation{
+		KataID:  "ZC1044",
+		Message: "Use `cd ... || return` (or `exit`) in case cd fails.",
+		Line:    name.Token.Line,
+		Column:  name.Token.Column,
+		Level:   SeverityWarning,
+	})
 }
 
 func init() {

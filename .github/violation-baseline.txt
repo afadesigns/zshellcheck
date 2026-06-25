@@ -1602,7 +1602,6 @@ zsh-vi-mode/zsh-vi-mode.zsh	ZC1477	2
 zsh-z/zsh-z.plugin.zsh	ZC1001	1
 zsh-z/zsh-z.plugin.zsh	ZC1004	2
 zsh-z/zsh-z.plugin.zsh	ZC1043	3
-zsh-z/zsh-z.plugin.zsh	ZC1044	1
 zsh-z/zsh-z.plugin.zsh	ZC1049	1
 zsh-z/zsh-z.plugin.zsh	ZC1073	6
 zsh-z/zsh-z.plugin.zsh	ZC1075	32
