@@ -5514,54 +5514,7 @@ func zc1075FlagCommand(cmd *ast.SimpleCommand, arrays map[string]bool, violation
 				})
 			}
 		} else if aa, ok := arg.(*ast.ArrayAccess); ok {
-			// A flag-led expansion the parser cannot resolve to a subject
-			// (`${(%):-default}`, `${(P)…}`, `${(l:n:)…}`) leaves Left nil.
-			// Without the subject the elision behaviour is unknowable, and
-			// these forms commonly carry a `:-` default or a width modifier
-			// that never produces an empty word, so do not flag them.
-			if aa.Left == nil {
-				continue
-			}
-			// A `:-word` / `:=word` / `:+word` default-value expansion
-			// always yields a value, so it never elides — flagging it
-			// warns against the canonical `: ${VAR:=default}` idiom.
-			// Path modifiers (`:h`, `:t`, `:r`) still can elide, so keep
-			// flagging those.
-			if zc1075HasDefaultModifier(aa.Left) {
-				continue
-			}
-			// A word-splitting parameter flag (`${(f)x}`, `${(s:,:)x}`,
-			// `${(@)arr}`, `${(kv)map}`) is meant to expand to multiple
-			// words; quoting it would join them and defeat the idiom, so
-			// it is not an elision hazard.
-			if zc1075HasSplitFlag(aa.Flags) {
-				continue
-			}
-			// A width modifier `${(l:n:)x}` / `${(r:n:)x}` pads to a fixed
-			// width, so the result is never an empty word.
-			if zc1075HasWidthFlag(aa.Flags) {
-				continue
-			}
-			// A bare whole-array expansion `${arr}` joins under quoting, so
-			// the elision advice does not apply; an element `${arr[i]}` is a
-			// single scalar that still elides.
-			if aa.Index == nil && arrays[zc1075BareName(aa.Left.String())] {
-				continue
-			}
-			// Distinguish a true array element (`${arr[i]}`, Index set)
-			// from a plain scalar / positional (`${V}`, Index nil) so the
-			// message does not mislabel a scalar as an array element.
-			msg := "Quote this expansion. An unquoted empty or unset value is elided, dropping the word."
-			if aa.Index != nil {
-				msg = "Quote this array element. An unquoted empty value is elided, dropping the word."
-			}
-			*violations = append(*violations, Violation{
-				KataID:  "ZC1075",
-				Message: msg,
-				Line:    arg.TokenLiteralNode().Line,
-				Column:  arg.TokenLiteralNode().Column,
-				Level:   SeverityWarning,
-			})
+			zc1075FlagArrayAccess(aa, arrays, violations)
 		} else if _, ok := arg.(*ast.InvalidArrayAccess); ok {
 			_ = ok
 			// $arr[idx] - ZC1001 flags this, but it's also unquoted.
@@ -5573,6 +5526,38 @@ func zc1075FlagCommand(cmd *ast.SimpleCommand, arrays map[string]bool, violation
 		// literal part keeps the word non-empty, and Zsh does not split or
 		// glob the expansion by default. Nothing to flag here.
 	}
+}
+
+// zc1075FlagArrayAccess flags a `${…}` expansion for elision unless it is
+// a form that never produces an empty word: one the parser cannot resolve
+// (Left nil), a `:-`/`:=`/`:+` default, a word-splitting flag, a width
+// modifier, or a whole-array expansion of a known array.
+func zc1075FlagArrayAccess(aa *ast.ArrayAccess, arrays map[string]bool, violations *[]Violation) {
+	if aa.Left == nil {
+		return
+	}
+	if zc1075HasDefaultModifier(aa.Left) {
+		return
+	}
+	if zc1075HasSplitFlag(aa.Flags) || zc1075HasWidthFlag(aa.Flags) {
+		return
+	}
+	// A bare whole-array expansion `${arr}` joins under quoting; an element
+	// `${arr[i]}` is a single scalar that still elides.
+	if aa.Index == nil && arrays[zc1075BareName(aa.Left.String())] {
+		return
+	}
+	msg := "Quote this expansion. An unquoted empty or unset value is elided, dropping the word."
+	if aa.Index != nil {
+		msg = "Quote this array element. An unquoted empty value is elided, dropping the word."
+	}
+	*violations = append(*violations, Violation{
+		KataID:  "ZC1075",
+		Message: msg,
+		Line:    aa.TokenLiteralNode().Line,
+		Column:  aa.TokenLiteralNode().Column,
+		Level:   SeverityWarning,
+	})
 }
 
 // zc1075BareName returns the leading parameter name of an expansion such
