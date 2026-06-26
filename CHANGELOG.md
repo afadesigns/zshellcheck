@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.7.1] - 2026-06-26
+
+### Fixed
+- Code inside a `&&` / `||` logical-chain compound body (`cmd && { ... }`, `cmd && if ...; fi`, `cmd && for ...; done`, `cmd && case ... esac`) is now linted. It was previously invisible to every kata, so an unquoted `rm -rf $x` or similar inside such a block went unreported; upgrading may surface new findings.
+- A command-position assignment after `&&` / `||` or in a pipeline (`[[ cond ]] && var=value`) parses as an assignment, so a variable named for a builtin (`test=`, `seq=`, `timeout=`) is no longer mis-flagged as that command.
+- A quoted segment glued to an assignment value (`x='b'cd`) is absorbed into the assignment instead of being orphaned into a spurious `cd`-failure warning.
+- ZC1075 no longer flags flag-led expansions (`${(q)x}`), bare expansions of known arrays, width-padded expansions, `typeset` arrays, or a `$var` glued to a command-name prefix.
+- ZC1043, ZC1049, ZC1097, and ZC1098 no longer report false positives (local/global tracking, positional names, alias definitions, and the `eval "$@"` dispatch idiom).
+- ZC1044 no longer flags a `cd=` variable assignment as a `cd` command.
+- ZC1188 gives direction-aware `PATH` advice; ZC1104 is retired as a duplicate of ZC1188.
+- Auto-fixes no longer emit broken code; a corpus round-trip gate and per-kata golden tests guard every fixable kata.
+- The `-no-color` TTY note, the SARIF parse-error FAQ, exit code 2, and the integration-sweep scope are documented accurately.
+
 ## [1.7.0] - 2026-06-16
 
 ### Added
