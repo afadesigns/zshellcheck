@@ -40,7 +40,7 @@ Files with `.go`, `.md`, `.json`, `.yml`, `.yaml`, or `.txt` extensions are skip
 | `-add-noka` | off | Append a `# noka: ZC####` directive to every line with a finding, write the files, and exit. |
 | `-detect-stale-noka` | off | Report `# noka` directives that suppress no actual finding; exit non-zero if any. |
 | `-verbose` | off | Emit full kata descriptions in text output. |
-| `-no-color` | off | Disable ANSI colours. Implied when stdout is not a TTY. |
+| `-no-color` | off | Disable ANSI colours in the report. |
 | `-no-banner` | off | Suppress the startup banner. Implied for JSON and SARIF output and when `-no-color` is set. |
 | `-cpuprofile <path>` | — | Write a Go pprof CPU profile to `<path>` for benchmarking. |
 | `-fix` | off | Apply auto-fixes in place. Safe (value-preserving) fixes only, unless `-unsafe-fixes` is set. |
@@ -57,7 +57,8 @@ Files with `.go`, `.md`, `.json`, `.yml`, `.yaml`, or `.txt` extensions are skip
 | Code | Meaning |
 | ---: | --- |
 | `0` | No violations. |
-| `1` | One or more violations, a parse error, or a usage error. |
+| `1` | One or more violations, a parse error, or an invalid flag value. |
+| `2` | A command-line parsing error: an unknown flag, or a flag missing its value. |
 
 ### Examples
 
@@ -330,9 +331,10 @@ The set of fixable katas is listed in [KATAS.md](../KATAS.md) — every entry ca
 `-fix` runs multi-pass (up to five iterations) so nested rewrites resolve in a single invocation.
 Pair `-fix` with `-dry-run` to report what would change without writing.
 
-### The SARIF output is empty after a parse error. Why?
+### Why does a file with a parse error report no findings?
 
-When the parser rejects a file, ZShellCheck exits before katas run; there is nothing to emit.
+A parse error stops ZShellCheck before the katas run, so the file yields no findings and the run exits `1`.
+The machine-readable formats still emit a well-formed document — JSON an empty array, SARIF a valid run with an empty `results` list — so downstream tooling always receives parseable output.
 Fix the syntax (`zsh -n file.zsh` is a fast sanity check), or open an issue when valid Zsh is being rejected.
 
 ### Where does ZShellCheck look for config?
