@@ -115,8 +115,8 @@ Pin `@latest` and `rev: latest` to a tag from [Releases](https://github.com/afad
 ## Integrations
 
 ZShellCheck is verified against widely used Zsh frameworks, plugin managers, plugins, and prompts on every release.
-Each runs a parse-and-findings sweep: zero parser errors, zero crashes, and kata findings locked to a reviewed baseline.
-The full catalog with file counts lives in [INTEGRATIONS.md](INTEGRATIONS.md).
+The pinned corpus matrix runs a parse-and-findings sweep: zero parser errors, zero crashes, and kata findings locked to a reviewed baseline.
+The heaviest trees are swept manually; the full catalog with file counts lives in [INTEGRATIONS.md](INTEGRATIONS.md).
 
 | Category | Examples |
 | :--- | :--- |

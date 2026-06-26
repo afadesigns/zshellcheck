@@ -1,7 +1,8 @@
 # Integrations
 
 ZShellCheck is verified against the script trees of widely used Zsh integrations.
-Every release runs a parse and lint sweep over each — no panics, no crashes, deterministic output.
+Every release runs a parse and lint sweep over the pinned corpus matrix — no panics, no crashes, deterministic output.
+The heaviest Featured trees are swept manually rather than in the per-release gate, because their clones are too large to pin in CI.
 The list grows with every release.
 
 ## Featured
@@ -140,7 +141,8 @@ To propose another corpus, follow [Adding an integration](#adding-an-integration
 
 ## How the sweep runs
 
-Each release tag triggers a parse and lint pass over every integration listed in the **Featured** and per-category tables.
+Each release tag triggers a parse and lint pass over every integration in the pinned corpus matrix.
+The heaviest Featured trees, whose clones are too large to pin in CI, are swept manually instead.
 Each pass produces:
 
 - `parse_errors` — total parser failures across the integration.
