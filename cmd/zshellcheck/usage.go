@@ -57,7 +57,7 @@ func printUsage(out io.Writer, fset *flag.FlagSet, showBanner bool) {
 		},
 		{
 			title: "DIAGNOSTICS",
-			names: []string{"list-rules", "explain", "cpuprofile", "version"},
+			names: []string{"list-rules", "explain", "cpuprofile", "version", "help"},
 			blurb: "Profile, inspect, or print metadata.",
 		},
 	}

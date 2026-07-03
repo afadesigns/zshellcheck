@@ -82,6 +82,22 @@ func TestPrintUsageContainsCoreSections(t *testing.T) {
 	}
 }
 
+func TestPrintUsageListsHelpFlag(t *testing.T) {
+	fs := flag.NewFlagSet("zshellcheck", flag.ContinueOnError)
+	fs.Bool("help", false, "Print this help screen and exit (alias: -h).")
+
+	var buf bytes.Buffer
+	printUsage(&buf, fs, false)
+	out := buf.String()
+
+	if !strings.Contains(out, "-help") {
+		t.Error("printUsage missing -help flag")
+	}
+	if !strings.Contains(out, "alias: -h") {
+		t.Error("printUsage missing -h alias mention")
+	}
+}
+
 func TestRenderFlag(t *testing.T) {
 	fs := flag.NewFlagSet("t", flag.ContinueOnError)
 	fs.String("config", "default.yml", "Path to the config file")

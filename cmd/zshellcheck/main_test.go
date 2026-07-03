@@ -1028,15 +1028,155 @@ func TestRun_NoColorWithBanner(t *testing.T) {
 	_ = code
 }
 
+// captureStdout redirects os.Stdout to a pipe around fn and returns what
+// it wrote. Reads concurrently so output can't fill the pipe and block fn.
+func captureStdout(t *testing.T, fn func()) string {
+	t.Helper()
+	r, w, err := os.Pipe()
+	if err != nil {
+		t.Fatal(err)
+	}
+	old := os.Stdout
+	os.Stdout = w
+	done := make(chan string)
+	go func() {
+		var buf bytes.Buffer
+		_, _ = io.Copy(&buf, r)
+		done <- buf.String()
+	}()
+	fn()
+	os.Stdout = old
+	_ = w.Close()
+	return <-done
+}
+
 func TestRun_HelpFlag(t *testing.T) {
 	resetFlags()
 	oldArgs := os.Args
 	defer func() { os.Args = oldArgs }()
 	os.Args = []string{"zshellcheck", "-help"}
 
-	// -help triggers flag.Usage which prints usage to stderr
-	code := run()
-	_ = code
+	var code int
+	out := captureStdout(t, func() { code = run() })
+	if code != 0 {
+		t.Errorf("expected exit code 0 for -help, got %d", code)
+	}
+	if !strings.Contains(out, "USAGE") {
+		t.Error("help output missing USAGE section")
+	}
+	if !strings.Contains(out, "-format") {
+		t.Error("help output missing -format flag")
+	}
+	if !strings.Contains(out, "quiet linter") {
+		t.Error("help output missing banner tagline")
+	}
+}
+
+func TestRun_HelpShortAlias(t *testing.T) {
+	resetFlags()
+	oldArgs := os.Args
+	defer func() { os.Args = oldArgs }()
+	os.Args = []string{"zshellcheck", "-h"}
+
+	var code int
+	out := captureStdout(t, func() { code = run() })
+	if code != 0 {
+		t.Errorf("expected exit code 0 for -h, got %d", code)
+	}
+	if !strings.Contains(out, "USAGE") {
+		t.Error("help output missing USAGE section")
+	}
+}
+
+func TestRun_HelpDoubleDash(t *testing.T) {
+	resetFlags()
+	oldArgs := os.Args
+	defer func() { os.Args = oldArgs }()
+	os.Args = []string{"zshellcheck", "--help"}
+
+	var code int
+	out := captureStdout(t, func() { code = run() })
+	if code != 0 {
+		t.Errorf("expected exit code 0 for --help, got %d", code)
+	}
+	if !strings.Contains(out, "USAGE") {
+		t.Error("help output missing USAGE section")
+	}
+}
+
+func TestRun_HelpAfterPositional(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "test.zsh")
+	if err := os.WriteFile(path, []byte("#!/bin/zsh\necho hello\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	resetFlags()
+	oldArgs := os.Args
+	defer func() { os.Args = oldArgs }()
+	os.Args = []string{"zshellcheck", path, "--help"}
+
+	var code int
+	out := captureStdout(t, func() { code = run() })
+	if code != 0 {
+		t.Errorf("expected exit code 0 for trailing --help, got %d", code)
+	}
+	if !strings.Contains(out, "USAGE") {
+		t.Error("help output missing USAGE section")
+	}
+}
+
+func TestRun_HelpRespectsNoBanner(t *testing.T) {
+	resetFlags()
+	oldArgs := os.Args
+	defer func() { os.Args = oldArgs }()
+	os.Args = []string{"zshellcheck", "-no-banner", "-help"}
+
+	var code int
+	out := captureStdout(t, func() { code = run() })
+	if code != 0 {
+		t.Errorf("expected exit code 0 for -no-banner -help, got %d", code)
+	}
+	if !strings.Contains(out, "USAGE") {
+		t.Error("help output missing USAGE section")
+	}
+	if strings.Contains(out, "quiet linter") {
+		t.Error("help output shows banner despite -no-banner")
+	}
+}
+
+func TestRun_DoubleDashTerminatorNotHelp(t *testing.T) {
+	resetFlags()
+	oldArgs := os.Args
+	defer func() { os.Args = oldArgs }()
+	os.Args = []string{"zshellcheck", "--", "--help"}
+
+	out := captureStdout(t, func() { _ = run() })
+	if strings.Contains(out, "USAGE") {
+		t.Error("--help after -- terminator must stay a literal path, not trigger help")
+	}
+}
+
+func TestWantsHelp(t *testing.T) {
+	cases := []struct {
+		args []string
+		want bool
+	}{
+		{nil, false},
+		{[]string{"-h"}, true},
+		{[]string{"--h"}, true},
+		{[]string{"-help"}, true},
+		{[]string{"--help"}, true},
+		{[]string{"a.zsh", "--help"}, true},
+		{[]string{"-no-banner", "a.zsh", "-h"}, true},
+		{[]string{"--", "--help"}, false},
+		{[]string{"a.zsh"}, false},
+	}
+	for _, tc := range cases {
+		if got := wantsHelp(tc.args); got != tc.want {
+			t.Errorf("wantsHelp(%v) = %v, want %v", tc.args, got, tc.want)
+		}
+	}
 }
 
 func TestRun_CPUProfileError(t *testing.T) {

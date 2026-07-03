@@ -27,6 +27,7 @@ func main() {
 }
 
 type runFlags struct {
+	help           *bool
 	format         *string
 	cpuprofile     *string
 	showVersion    *bool
@@ -55,6 +56,10 @@ func run() int {
 	}
 	flag.Parse()
 
+	if *flags.help || wantsHelp(os.Args[1:]) {
+		printUsage(os.Stdout, flag.CommandLine, !*flags.noBanner)
+		return 0
+	}
 	if *flags.showVersion {
 		fmt.Printf("zshellcheck version %s\n", version.Version)
 		return 0
@@ -192,7 +197,10 @@ func setupBaseline(fixOpts *fixOptions, baseline, baselineWrite string) int {
 }
 
 func registerRunFlags() runFlags {
+	help := flag.Bool("help", false, "Print this help screen and exit (alias: -h).")
+	flag.BoolVar(help, "h", false, "Print this help screen and exit (alias for -help).")
 	return runFlags{
+		help:           help,
 		format:         flag.String("format", "text", "Output format. One of text, json, sarif."),
 		cpuprofile:     flag.String("cpuprofile", "", "Write a Go pprof CPU profile to this path."),
 		showVersion:    flag.Bool("version", false, "Print the version and exit."),
@@ -234,6 +242,22 @@ func startCPUProfile(path string) (func(), int) {
 		pprof.StopCPUProfile()
 		_ = f.Close()
 	}, 0
+}
+
+// wantsHelp reports whether argv holds an explicit help request before a
+// `--` terminator. flag.Parse stops at the first positional argument, so
+// `zshellcheck script.zsh --help` never reaches the registered -help
+// flag; this scan catches it. Anything after `--` stays a literal path.
+func wantsHelp(args []string) bool {
+	for _, a := range args {
+		switch a {
+		case "--":
+			return false
+		case "-h", "--h", "-help", "--help":
+			return true
+		}
+	}
+	return false
 }
 
 func printRunUsage(noBanner bool) {
