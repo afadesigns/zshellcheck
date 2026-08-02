@@ -91,6 +91,7 @@ dockers:
     goarch: amd64
     image_templates:
       - "ghcr.io/afadesigns/zshellcheck:{{ .Version }}-amd64"
+      - "ghcr.io/afadesigns/zshellcheck:latest"
       - "ghcr.io/afadesigns/zshellcheck:latest-amd64"
     build_flag_templates:
       - "--platform=linux/amd64"
@@ -107,6 +108,7 @@ dockers:
     goarch: arm64
     image_templates:
       - "ghcr.io/afadesigns/zshellcheck:{{ .Version }}-arm64"
+      - "ghcr.io/afadesigns/zshellcheck:latest"
       - "ghcr.io/afadesigns/zshellcheck:latest-arm64"
     build_flag_templates:
       - "--platform=linux/arm64"
@@ -126,6 +128,7 @@ docker_manifests:
   - name_template: "ghcr.io/afadesigns/zshellcheck:latest"
     image_templates:
       - "ghcr.io/afadesigns/zshellcheck:latest-amd64"
+      - "ghcr.io/afadesigns/zshellcheck:latest-arm64"
       - "ghcr.io/afadesigns/zshellcheck:latest-arm64"
 
 # AUR (Arch Linux User Repository) — pushes a PKGBUILD to
