@@ -215,9 +215,11 @@ func buildSarifRule(v katas.Violation, meta func(string) RuleMeta) sarifRule {
 // which broke consumers that parse the field strictly.
 func sarifFileURI(path string) string {
 	s := filepath.ToSlash(path)
-	if filepath.IsAbs(path) {
-		// A Windows drive path (C:/dir) needs a leading slash to form the
-		// file:///C:/dir shape; POSIX absolute paths already have one.
+	// A slash-rooted path is treated as absolute on every platform, so the
+	// same input renders identically on Windows, where filepath.IsAbs
+	// rejects a rooted path without a drive letter. A Windows drive path
+	// (C:/dir) gains the leading slash the file:///C:/dir shape needs.
+	if filepath.IsAbs(path) || strings.HasPrefix(s, "/") {
 		if !strings.HasPrefix(s, "/") {
 			s = "/" + s
 		}
