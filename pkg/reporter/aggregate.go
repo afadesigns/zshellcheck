@@ -5,6 +5,9 @@ package reporter
 import (
 	"encoding/json"
 	"io"
+	"net/url"
+	"path/filepath"
+	"strings"
 
 	"github.com/afadesigns/zshellcheck/pkg/katas"
 )
@@ -149,7 +152,7 @@ func ReportSARIF(w io.Writer, files []FileViolations, toolVersion string, meta f
 				Message:   sarifMessage{Text: v.Message},
 				Locations: []sarifLocation{{
 					PhysicalLocation: sarifPhysical{
-						ArtifactLocation: sarifArtifact{URI: f.Filename},
+						ArtifactLocation: sarifArtifact{URI: sarifFileURI(f.Filename)},
 						Region: sarifRegion{
 							StartLine:   atLeastOne(v.Line),
 							StartColumn: atLeastOne(v.Column),
@@ -200,6 +203,37 @@ func buildSarifRule(v katas.Violation, meta func(string) RuleMeta) sarifRule {
 	}
 	rule.HelpURI = m.HelpURI
 	return rule
+}
+
+// sarifFileURI renders a scanned path as a SARIF artifactLocation URI.
+// An absolute path becomes a file:// URI; a relative path stays a relative
+// URI reference with forward slashes and percent-encoded segments, which
+// SARIF consumers resolve against their own base — GitHub code scanning
+// requires the relative form to map results onto repository files. A first
+// segment containing a colon gains a "./" prefix so it cannot be misread
+// as a URI scheme. Raw filesystem paths are not URIs (SARIF 2.1.0 3.4.3),
+// which broke consumers that parse the field strictly.
+func sarifFileURI(path string) string {
+	s := filepath.ToSlash(path)
+	// A slash-rooted path is treated as absolute on every platform, so the
+	// same input renders identically on Windows, where filepath.IsAbs
+	// rejects a rooted path without a drive letter. A Windows drive path
+	// (C:/dir) gains the leading slash the file:///C:/dir shape needs.
+	if filepath.IsAbs(path) || strings.HasPrefix(s, "/") {
+		if !strings.HasPrefix(s, "/") {
+			s = "/" + s
+		}
+		return (&url.URL{Scheme: "file", Path: s}).String()
+	}
+	esc := (&url.URL{Path: s}).EscapedPath()
+	seg := esc
+	if i := strings.IndexByte(esc, '/'); i >= 0 {
+		seg = esc[:i]
+	}
+	if strings.Contains(seg, ":") {
+		esc = "./" + esc
+	}
+	return esc
 }
 
 // sarifLevel maps a kata severity onto a SARIF result level. SARIF has no

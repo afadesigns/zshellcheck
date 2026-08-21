@@ -179,3 +179,46 @@ func TestReportSARIF_WriterError(t *testing.T) {
 		t.Error("expected error from failing writer")
 	}
 }
+
+// A SARIF artifactLocation uri must be a valid URI, not a raw filesystem
+// path: an absolute path gains the file:// scheme, a relative path stays a
+// relative URI reference with percent-encoded segments, and a first segment
+// containing a colon is prefixed so it cannot parse as a URI scheme.
+func TestSarifFileURI(t *testing.T) {
+	cases := map[string]string{
+		"a.zsh":              "a.zsh",
+		"dir/sub/b.zsh":      "dir/sub/b.zsh",
+		"my file.zsh":        "my%20file.zsh",
+		"/path/to/test.zsh":  "file:///path/to/test.zsh",
+		"/tmp/with space.sh": "file:///tmp/with%20space.sh",
+		"odd:name.zsh":       "./odd:name.zsh",
+		"dir/odd:name.zsh":   "dir/odd:name.zsh",
+	}
+	for in, want := range cases {
+		if got := sarifFileURI(in); got != want {
+			t.Errorf("sarifFileURI(%q) = %q, want %q", in, got, want)
+		}
+	}
+}
+
+// An absolute scanned path round-trips through ReportSARIF as a file:// URI
+// (issue #1435: consumers that parse the field strictly rejected the raw
+// path form).
+func TestReportSARIF_AbsolutePathURI(t *testing.T) {
+	files := []FileViolations{{Filename: "/path/to/test.zsh", Violations: []katas.Violation{
+		{KataID: "ZC1037", Message: "m", Line: 1, Column: 1, Level: katas.SeverityStyle},
+	}}}
+	var buf bytes.Buffer
+	if err := ReportSARIF(&buf, files, "1.0.0", nil); err != nil {
+		t.Fatalf("ReportSARIF error: %v", err)
+	}
+	var doc map[string]any
+	if err := json.Unmarshal(buf.Bytes(), &doc); err != nil {
+		t.Fatalf("invalid SARIF: %v", err)
+	}
+	run := doc["runs"].([]any)[0].(map[string]any)
+	loc := run["results"].([]any)[0].(map[string]any)["locations"].([]any)[0].(map[string]any)["physicalLocation"].(map[string]any)
+	if got := loc["artifactLocation"].(map[string]any)["uri"]; got != "file:///path/to/test.zsh" {
+		t.Errorf("want file:///path/to/test.zsh, got %v", got)
+	}
+}
