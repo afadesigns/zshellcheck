@@ -242,7 +242,7 @@ jobs:
           go-version: 'stable'
           cache: true
       - name: Install govulncheck
-        run: go install golang.org/x/vuln/cmd/govulncheck@v1.1.4
+        run: go install golang.org/x/vuln/cmd/govulncheck@v1.7.0
       - name: Scan for vulnerabilities
         run: govulncheck ./...
 
