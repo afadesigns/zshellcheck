@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.7.2] - 2026-08-24
+
+### Fixed
+- A SARIF `artifactLocation.uri` now carries a valid URI instead of a raw filesystem path: an absolute or slash-rooted path becomes a `file://` URI with percent-encoded segments, a relative path stays a relative URI reference, and a first segment containing a colon gains a `./` prefix so it cannot be misread as a URI scheme.
+
+### Changed
+- Release builds use Go 1.27.0.
+
 ## [1.7.1] - 2026-06-26
 
 ### Fixed
