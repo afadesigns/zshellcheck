@@ -2765,19 +2765,41 @@ func walkZC1044Compound(node ast.Node, isChecked bool, violations *[]Violation) 
 		walkZC1044(n.Expression, isChecked, violations)
 	case *ast.IfStatement:
 		walkZC1044(n.Condition, true, violations)
-		walkZC1044(n.Consequence, false, violations)
-		walkZC1044(n.Alternative, false, violations)
+		walkZC1044(n.Consequence, isChecked, violations)
+		walkZC1044(n.Alternative, isChecked, violations)
 	case *ast.WhileLoopStatement:
 		walkZC1044(n.Condition, true, violations)
 		walkZC1044(n.Body, false, violations)
 	case *ast.ForLoopStatement:
 		walkZC1044ForLoop(n, violations)
 	case *ast.FunctionDefinition:
+		walkZC1044(n.Body, true, violations)
+	case *ast.FunctionLiteral:
+		// `function name { … }` builds a FunctionLiteral while `name() { … }`
+		// builds a FunctionDefinition. The two forms are identical in Zsh, so
+		// a `cd` inside either changes the caller's directory the same way.
+		walkZC1044(n.Body, true, violations)
+	case *ast.CaseStatement:
+		walkZC1044CaseClauses(n, isChecked, violations)
+	case *ast.SelectStatement:
 		walkZC1044(n.Body, false, violations)
 	default:
 		return false
 	}
 	return true
+}
+
+// walkZC1044CaseClauses descends into a case statement's clause bodies. A
+// clause body runs in the current shell, so a `cd` there has the same
+// blast radius as one at the top level; only the subject expression is
+// skipped, since it cannot hold a command whose failure matters here.
+func walkZC1044CaseClauses(n *ast.CaseStatement, isChecked bool, violations *[]Violation) {
+	for _, clause := range n.Clauses {
+		if clause == nil {
+			continue
+		}
+		walkZC1044(clause.Body, isChecked, violations)
+	}
 }
 
 func walkZC1044Leaf(node ast.Node, isChecked bool, violations *[]Violation) {
