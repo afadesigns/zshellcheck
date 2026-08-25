@@ -1704,6 +1704,66 @@ func TestZC1044(t *testing.T) {
 			},
 		},
 		{
+			// `function name { … }` and `name() { … }` are the same thing in
+			// Zsh, so a `cd` followed by more work must report in both.
+			name:  "cd in function-keyword body",
+			input: "function f {\n  cd /tmp\n  print x\n}",
+			expected: []katas.Violation{
+				{
+					KataID:  "ZC1044",
+					Message: "Use `cd ... || return` (or `exit`) in case cd fails.",
+					Line:    2,
+					Column:  3,
+				},
+			},
+		},
+		{
+			// A case clause body runs in the current shell, so its blast
+			// radius matches the top level.
+			name:  "cd in case clause body",
+			input: "case $q in\n  a) cd /tmp\n     print x ;;\nesac",
+			expected: []katas.Violation{
+				{
+					KataID:  "ZC1044",
+					Message: "Use `cd ... || return` (or `exit`) in case cd fails.",
+					Line:    2,
+					Column:  6,
+				},
+			},
+		},
+		{
+			name:  "cd in select body",
+			input: "select s in a; do\n  cd /tmp\n  print x\ndone",
+			expected: []katas.Violation{
+				{
+					KataID:  "ZC1044",
+					Message: "Use `cd ... || return` (or `exit`) in case cd fails.",
+					Line:    2,
+					Column:  3,
+				},
+			},
+		},
+		{
+			// Nothing runs after a failed `cd` that ends a function, and the
+			// failure leaves the directory unchanged and surfaces as the
+			// function's exit status, so the guard adds nothing.
+			name:     "cd as the last command in a function",
+			input:    "f() {\n  cd /tmp\n}",
+			expected: []katas.Violation{},
+		},
+		{
+			name:     "cd last through a trailing if",
+			input:    "f() {\n  if [[ -n $d ]]; then\n    cd $d\n  fi\n}",
+			expected: []katas.Violation{},
+		},
+		{
+			// A subshell forks: a failed `cd` cannot move the caller, and the
+			// non-zero status is visible at the call site.
+			name:     "cd inside a subshell",
+			input:    "( cd /tmp\n  print x )",
+			expected: []katas.Violation{},
+		},
+		{
 			name:  "cd in for loop body",
 			input: `for d in /tmp /var; do cd $d; done`,
 			expected: []katas.Violation{
