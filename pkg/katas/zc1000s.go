@@ -3707,38 +3707,170 @@ func checkCommandZC1053(cmd *ast.SimpleCommand, isSilenced bool, violations *[]V
 	if isSilenced {
 		return
 	}
+	name, ok := cmd.Name.(*ast.Identifier)
+	if !ok {
+		return
+	}
+	switch name.Value {
+	case "grep", "egrep", "fgrep", "zgrep":
+	default:
+		return
+	}
+	if zc1053HasQuietFlag(cmd.Arguments) || zc1053HasDevNullRedirect(cmd.Arguments) {
+		return
+	}
+	*violations = append(*violations, Violation{
+		KataID:  "ZC1053",
+		Message: "Silence `grep` output in conditions. Use `grep -q` or redirect to `/dev/null`.",
+		Line:    name.Token.Line,
+		Column:  name.Token.Column,
+		Level:   SeverityStyle,
+	})
+}
 
-	if name, ok := cmd.Name.(*ast.Identifier); ok {
-		if name.Value == "grep" || name.Value == "egrep" || name.Value == "fgrep" || name.Value == "zgrep" {
-			// Check args for -q, --quiet, --silent
-			hasQuiet := false
-			for _, arg := range cmd.Arguments {
-				argStr := arg.String()
-				argStr = strings.Trim(argStr, "\"'")
-				if strings.HasPrefix(argStr, "-") {
-					if argStr == "-q" || argStr == "--quiet" || argStr == "--silent" {
-						hasQuiet = true
-						break
-					}
-					// Check for combined flags e.g. -rq
-					if !strings.HasPrefix(argStr, "--") && strings.Contains(argStr, "q") {
-						hasQuiet = true
-						break
-					}
-				}
-			}
+// zc1053ValueFlags are the single-letter grep options that consume the rest
+// of their cluster as a value (`-e PATTERN`, `-m NUM`, `-A NUM`). A `q` after
+// one of them is that value, not the quiet flag: `grep -eq f` searches for
+// the pattern `q`.
+const zc1053ValueFlags = "efmABCdD"
 
-			if !hasQuiet {
-				*violations = append(*violations, Violation{
-					KataID:  "ZC1053",
-					Message: "Silence `grep` output in conditions. Use `grep -q` or redirect to `/dev/null`.",
-					Line:    name.Token.Line,
-					Column:  name.Token.Column,
-					Level:   SeverityStyle,
-				})
+// zc1053HasQuietFlag reports whether the arguments carry a real quiet flag.
+// Only an unquoted option word counts — a quoted `"-quiet"` is the search
+// pattern — and scanning stops at `--`, after which every word is an operand.
+func zc1053HasQuietFlag(args []ast.Expression) bool {
+	skipNext := false
+	for _, arg := range args {
+		if skipNext {
+			skipNext = false
+			continue
+		}
+		word, quoted := zc1053ArgWord(arg)
+		if quoted || !strings.HasPrefix(word, "-") || word == "-" {
+			continue
+		}
+		if word == "--" {
+			return false
+		}
+		if strings.HasPrefix(word, "--") {
+			if word == "--quiet" || word == "--silent" {
+				return true
 			}
+			continue
+		}
+		quiet, wantsValue := zc1053ScanCluster(word)
+		if quiet {
+			return true
+		}
+		skipNext = wantsValue
+	}
+	return false
+}
+
+// zc1053ScanCluster walks a short-option cluster left to right, reporting
+// whether it enables quiet mode and whether it ends on an option whose value
+// is the following word (`grep -e q`).
+func zc1053ScanCluster(word string) (quiet, wantsValue bool) {
+	for i := 1; i < len(word); i++ {
+		c := word[i]
+		if c == 'q' {
+			return true, false
+		}
+		if strings.IndexByte(zc1053ValueFlags, c) >= 0 {
+			// The remainder of the cluster is this option's value; when the
+			// cluster ends here the value is the next word instead.
+			return false, i == len(word)-1
 		}
 	}
+	return false, false
+}
+
+// zc1053HasDevNullRedirect reports whether the arguments carry a redirection
+// of stdout to /dev/null. The parser folds a redirection into the argument
+// list rather than building a redirection node, so the operator arrives glued
+// to its target (`>/dev/null`) or as two adjacent words (`> /dev/null`).
+// A stderr-only redirect (`2>/dev/null`) leaves stdout live and does not
+// count, and a quoted `'>/dev/null'` is a search pattern, not a redirection.
+func zc1053HasDevNullRedirect(args []ast.Expression) bool {
+	for i, arg := range args {
+		word, quoted := zc1053ArgWord(arg)
+		if quoted {
+			continue
+		}
+		op, target := zc1053SplitRedirect(word)
+		if op == "" || !zc1053RedirectsStdout(op) {
+			continue
+		}
+		if target == "" && i+1 < len(args) {
+			target, _ = zc1053ArgWord(args[i+1])
+		}
+		if zc1053UnquoteWord(target) == "/dev/null" {
+			return true
+		}
+	}
+	return false
+}
+
+// zc1053SplitRedirect splits a word into its leading redirection operator
+// (with any file-descriptor prefix) and the target that follows it. It
+// returns an empty operator when the word does not open a redirection.
+func zc1053SplitRedirect(word string) (op, target string) {
+	i := 0
+	for i < len(word) && word[i] >= '0' && word[i] <= '9' {
+		i++
+	}
+	start := i
+	for i < len(word) && (word[i] == '>' || word[i] == '&' || word[i] == '|') {
+		i++
+	}
+	if i == start {
+		return "", ""
+	}
+	return word[:i], word[i:]
+}
+
+// zc1053RedirectsStdout reports whether a redirection operator sends stdout
+// to its target. A bare operator and an explicit `1` both mean stdout; any
+// other file descriptor (notably `2`) does not.
+func zc1053RedirectsStdout(op string) bool {
+	switch strings.TrimPrefix(op, "1") {
+	case ">", ">>", "&>", ">&", ">|":
+		return true
+	}
+	return false
+}
+
+// zc1053ArgWord renders an argument as its source word and reports whether it
+// opened with a quote, in which case it is data rather than shell syntax.
+func zc1053ArgWord(arg ast.Expression) (word string, quoted bool) {
+	if lit, ok := arg.(*ast.StringLiteral); ok {
+		return lit.Value, zc1053IsQuoted(lit.Value)
+	}
+	concat, ok := arg.(*ast.ConcatenatedExpression)
+	if !ok {
+		return getStringValueZC1053(arg), false
+	}
+	var sb strings.Builder
+	for i, part := range concat.Parts {
+		text := part.String()
+		if i == 0 && zc1053IsQuoted(text) {
+			return text, true
+		}
+		sb.WriteString(text)
+	}
+	return sb.String(), false
+}
+
+// zc1053IsQuoted reports whether a word opens with a quote character.
+func zc1053IsQuoted(word string) bool {
+	return len(word) > 0 && (word[0] == '\'' || word[0] == '"')
+}
+
+// zc1053UnquoteWord strips one layer of surrounding quotes from a word.
+func zc1053UnquoteWord(word string) string {
+	if len(word) >= 2 && (word[0] == '"' || word[0] == '\'') && word[len(word)-1] == word[0] {
+		return word[1 : len(word)-1]
+	}
+	return word
 }
 
 func isDevNull(node ast.Node) bool {
@@ -3753,6 +3885,10 @@ func isDevNull(node ast.Node) bool {
 func getStringValueZC1053(node ast.Node) string {
 	switch n := node.(type) {
 	case *ast.StringLiteral:
+		return n.Value
+	case *ast.Identifier:
+		// An unquoted redirection target (`> /dev/null`) parses as a bare
+		// identifier, so the string form has to read it too.
 		return n.Value
 	case *ast.ConcatenatedExpression:
 		var sb strings.Builder

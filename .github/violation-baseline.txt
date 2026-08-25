@@ -418,7 +418,6 @@ prezto/modules/git/alias.zsh	ZC1049	212
 prezto/modules/gnu-utility/init.zsh	ZC1046	1
 prezto/modules/gnu-utility/init.zsh	ZC1098	1
 prezto/modules/gpg/init.zsh	ZC1046	1
-prezto/modules/gpg/init.zsh	ZC1053	1
 prezto/modules/gpg/init.zsh	ZC1086	1
 prezto/modules/gpg/init.zsh	ZC1098	1
 prezto/modules/gpg/init.zsh	ZC1125	1
@@ -652,7 +651,6 @@ spaceship/sections/rust.zsh	ZC1284	2
 spaceship/sections/scala.zsh	ZC1045	2
 spaceship/sections/sudo.zsh	ZC1047	1
 spaceship/sections/swiftenv.zsh	ZC1010	1
-spaceship/sections/swiftenv.zsh	ZC1053	1
 spaceship/sections/swiftenv.zsh	ZC1273	1
 spaceship/sections/swift.zsh	ZC1045	1
 spaceship/sections/swift.zsh	ZC1110	1
@@ -666,7 +664,6 @@ spaceship/sections/vlang.zsh	ZC1109	1
 spaceship/sections/vlang.zsh	ZC1284	1
 spaceship/sections/xcenv.zsh	ZC1010	2
 spaceship/sections/xcenv.zsh	ZC1045	1
-spaceship/sections/xcenv.zsh	ZC1053	1
 spaceship/sections/xcenv.zsh	ZC1075	2
 spaceship/sections/xcenv.zsh	ZC1273	1
 spaceship/sections/xcode.zsh	ZC1045	1
@@ -1173,7 +1170,6 @@ zinit/zinit-autoload.zsh	ZC1040	2
 zinit/zinit-autoload.zsh	ZC1045	6
 zinit/zinit-autoload.zsh	ZC1046	8
 zinit/zinit-autoload.zsh	ZC1049	1
-zinit/zinit-autoload.zsh	ZC1053	1
 zinit/zinit-autoload.zsh	ZC1064	1
 zinit/zinit-autoload.zsh	ZC1073	3
 zinit/zinit-autoload.zsh	ZC1075	42
@@ -1201,7 +1197,6 @@ zinit/zinit-install.zsh	ZC1037	3
 zinit/zinit-install.zsh	ZC1043	1
 zinit/zinit-install.zsh	ZC1045	10
 zinit/zinit-install.zsh	ZC1046	16
-zinit/zinit-install.zsh	ZC1053	1
 zinit/zinit-install.zsh	ZC1064	5
 zinit/zinit-install.zsh	ZC1073	1
 zinit/zinit-install.zsh	ZC1075	63
@@ -1255,7 +1250,6 @@ zpm/zpm.zsh	ZC1098	2
 zpm/zpm.zsh	ZC1188	1
 zsh-256color/zsh-256color.plugin.zsh	ZC1001	1
 zsh-256color/zsh-256color.plugin.zsh	ZC1037	1
-zsh-256color/zsh-256color.plugin.zsh	ZC1053	1
 zsh-256color/zsh-256color.plugin.zsh	ZC1097	2
 zsh-256color/zsh-256color.plugin.zsh	ZC1502	1
 zsh-abbr/tests/_abbr-expand-line.ztr.zsh	ZC1075	8
@@ -1487,7 +1481,6 @@ zsh-shift-select/zsh-shift-select.plugin.zsh	ZC1075	5
 zsh-shift-select/zsh-shift-select.plugin.zsh	ZC1086	6
 zsh-utils/completion/completion.plugin.zsh	ZC1128	1
 zsh-utils/completion/completion.plugin.zsh	ZC1686	1
-zsh-utils/editor/editor.plugin.zsh	ZC1053	1
 zsh-utils/editor/editor.plugin.zsh	ZC1086	6
 zsh-utils/editor/editor.plugin.zsh	ZC1273	1
 zsh-utils/history/history.plugin.zsh	ZC1049	1
