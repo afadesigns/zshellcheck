@@ -2226,6 +2226,99 @@ func TestZC1053(t *testing.T) {
 			expected: []katas.Violation{},
 		},
 		{
+			// The kata's own advice is `grep -q` or a redirect to
+			// /dev/null, so a redirected grep must not report.
+			name:     "grep redirected to /dev/null",
+			input:    `if grep pattern file >/dev/null; then echo found; fi`,
+			expected: []katas.Violation{},
+		},
+		{
+			name:     "grep redirected with a space",
+			input:    `if grep pattern file > /dev/null; then echo found; fi`,
+			expected: []katas.Violation{},
+		},
+		{
+			name:     "grep redirected on both streams",
+			input:    `if grep pattern file &>/dev/null; then echo found; fi`,
+			expected: []katas.Violation{},
+		},
+		{
+			name:     "grep redirected to an explicit stdout fd",
+			input:    `if grep pattern file 1>/dev/null 2>&1; then echo found; fi`,
+			expected: []katas.Violation{},
+		},
+		{
+			// A stderr-only redirect leaves stdout printing.
+			name:  "grep with stderr-only redirect",
+			input: `if grep pattern file 2>/dev/null; then echo found; fi`,
+			expected: []katas.Violation{
+				{
+					KataID:  "ZC1053",
+					Message: "Silence `grep` output in conditions. Use `grep -q` or redirect to `/dev/null`.",
+					Line:    1,
+					Column:  4,
+				},
+			},
+		},
+		{
+			// `/dev/null.txt` is an ordinary file, not the null device.
+			name:  "grep redirected to a look-alike path",
+			input: `if grep pattern file >/dev/null.txt; then echo found; fi`,
+			expected: []katas.Violation{
+				{
+					KataID:  "ZC1053",
+					Message: "Silence `grep` output in conditions. Use `grep -q` or redirect to `/dev/null`.",
+					Line:    1,
+					Column:  4,
+				},
+			},
+		},
+		{
+			// A quoted redirect is the search pattern, not a redirection.
+			name:  "grep searching for a redirect literal",
+			input: `if grep '>/dev/null' file; then echo found; fi`,
+			expected: []katas.Violation{
+				{
+					KataID:  "ZC1053",
+					Message: "Silence `grep` output in conditions. Use `grep -q` or redirect to `/dev/null`.",
+					Line:    1,
+					Column:  4,
+				},
+			},
+		},
+		{
+			// `-fq` is `-f q`: the q is the pattern-file operand, not the
+			// quiet flag.
+			name:  "grep with a value-taking flag cluster",
+			input: `if grep -fq file; then echo found; fi`,
+			expected: []katas.Violation{
+				{
+					KataID:  "ZC1053",
+					Message: "Silence `grep` output in conditions. Use `grep -q` or redirect to `/dev/null`.",
+					Line:    1,
+					Column:  4,
+				},
+			},
+		},
+		{
+			// A quoted `-quiet` is the pattern.
+			name:  "grep searching for a quiet-looking pattern",
+			input: `if grep "-quiet" file; then echo found; fi`,
+			expected: []katas.Violation{
+				{
+					KataID:  "ZC1053",
+					Message: "Silence `grep` output in conditions. Use `grep -q` or redirect to `/dev/null`.",
+					Line:    1,
+					Column:  4,
+				},
+			},
+		},
+		{
+			name:     "grep with a combined quiet cluster",
+			input:    `if grep -sq pattern file; then echo found; fi`,
+			expected: []katas.Violation{},
+		},
+		{
 			name:  "grep without -q in condition",
 			input: `if grep pattern file; then echo found; fi`,
 			expected: []katas.Violation{

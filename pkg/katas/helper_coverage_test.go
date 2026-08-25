@@ -77,8 +77,16 @@ func TestIsDevNullAndStringValue(t *testing.T) {
 	if got := getStringValueZC1053(concat); got != "/dev/null" {
 		t.Errorf("getStringValueZC1053(concat): got %q want /dev/null", got)
 	}
-	if got := getStringValueZC1053(&ast.Identifier{Value: "x"}); got != "" {
-		t.Errorf("getStringValueZC1053(non-string): got %q want \"\"", got)
+	// A bare word is a valid redirection target (`> /dev/null` parses the
+	// path as an identifier), so the string form reads it.
+	if got := getStringValueZC1053(&ast.Identifier{Value: "/dev/null"}); got != "/dev/null" {
+		t.Errorf("getStringValueZC1053(identifier): got %q want /dev/null", got)
+	}
+	if !isDevNull(&ast.Identifier{Value: "/dev/null"}) {
+		t.Errorf("isDevNull(unquoted /dev/null): expected true")
+	}
+	if got := getStringValueZC1053(&ast.IntegerLiteral{Value: 2}); got != "" {
+		t.Errorf("getStringValueZC1053(unsupported node): got %q want \"\"", got)
 	}
 }
 
