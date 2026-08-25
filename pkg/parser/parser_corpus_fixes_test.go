@@ -576,3 +576,95 @@ func TestParseCommandPositionAssignment(t *testing.T) {
 		}
 	}
 }
+
+// A `( … )` group in command position — a pipeline stage, or the
+// right-hand side of a `&&` / `||` chain — is a subshell running a command
+// list, not an array literal. The group previously reached the array
+// parser, which flattened the body into a word list and hid it from every
+// kata that walks commands (`cmd || ( cd $d && eval "$x" )` reported
+// nothing from inside the parens). An array literal is only ever the
+// right-hand side of an assignment word, which takes the expression path
+// and is unaffected.
+func TestParseCommandPositionSubshell(t *testing.T) {
+	subshell := []string{
+		"mycmd && ( rm -rf $x )\n",
+		"test -z \"$g\" || ( cd $d && eval \"echo $g\" )\n",
+		"[[ -d $d ]] && ( rm -rf $x )\n",
+		"(( n > 0 )) && ( rm -rf $x )\n",
+		"echo a | ( rm -rf $x )\n",
+		"echo a | ( rm -rf $x ) 2>/dev/null\n",
+	}
+	for _, src := range subshell {
+		p := New(lexer.New(src))
+		prog := p.ParseProgram()
+		if errs := p.Errors(); len(errs) != 0 {
+			t.Fatalf("unexpected parser errors for %q: %v", src, errs)
+		}
+		var sub, arr int
+		ast.Walk(prog, func(node ast.Node) bool {
+			switch node.(type) {
+			case *ast.Subshell:
+				sub++
+			case *ast.ArrayLiteral:
+				arr++
+			}
+			return true
+		})
+		if sub == 0 {
+			t.Errorf("command-position group %q: want a Subshell node, got none", src)
+		}
+		if arr != 0 {
+			t.Errorf("command-position group %q: want no ArrayLiteral, got %d", src, arr)
+		}
+	}
+
+	// An assignment right-hand side reaches the grouped-expression parser
+	// through the expression path and still builds an array literal.
+	// `typeset` / `declare` take the declaration path instead, which has
+	// never produced an ArrayLiteral node, so they are covered by the
+	// clean-parse group below rather than here.
+	unchanged := map[string]bool{ // src -> expect an ArrayLiteral
+		"arr=(a b c)\n":          true,
+		"arr+=(x)\n":             true,
+		"local -a v=( 1 2 3 )\n": true,
+	}
+	for src, wantArray := range unchanged {
+		p := New(lexer.New(src))
+		prog := p.ParseProgram()
+		if errs := p.Errors(); len(errs) != 0 {
+			t.Fatalf("unexpected parser errors for %q: %v", src, errs)
+		}
+		var arr int
+		ast.Walk(prog, func(node ast.Node) bool {
+			if _, ok := node.(*ast.ArrayLiteral); ok {
+				arr++
+			}
+			return true
+		})
+		if wantArray && arr == 0 {
+			t.Errorf("assignment RHS %q: want an ArrayLiteral, got none", src)
+		}
+	}
+
+	// Forms that must keep parsing cleanly: the anonymous-function body,
+	// arithmetic, paren word lists, a case pattern's leading paren, and a
+	// glob alternation inside `[[ … ]]`.
+	for _, src := range []string{
+		"mycmd && () { print hi }\n",
+		"mycmd && (( i++ ))\n",
+		"for x (a b c) print -n $x\n",
+		"repeat 2 (print R)\n",
+		"case $x in (a|b) echo hi ;; esac\n",
+		"[[ $x == (wip|WIP) ]]\n",
+		"f() ( print body )\n",
+		"time ( sleep 1 )\n",
+		"typeset -a w=( \"$@\" )\n",
+		"declare -a d=( a b )\n",
+	} {
+		p := New(lexer.New(src))
+		_ = p.ParseProgram()
+		if errs := p.Errors(); len(errs) != 0 {
+			t.Errorf("unexpected parser errors for %q: %v", src, errs)
+		}
+	}
+}
