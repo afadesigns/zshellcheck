@@ -143,11 +143,10 @@ func (p *Parser) parsePipelineHead() (ast.Expression, bool) {
 		// parsers leave the cursor on `)` with consumedParenTerminator set,
 		// so the caller's terminator handling is unchanged.
 		//
-		// Inside `[[ … ]]` the group is a glob alternation (`[[ $x = (a|b) ]]`),
-		// not a command list, so that context keeps the grouped-expression path.
-		if p.inDoubleBracket {
-			return p.parseGroupedExpression(), false
-		}
+		// A glob alternation inside `[[ … ]]` (`[[ $x = (a|b) ]]`) never
+		// reaches here: the conditional parser evaluates its operands
+		// through the expression path, which keeps routing `(` to the
+		// grouped-expression parser.
 		left := keywordStmtToExpression(p.parseSubshellStatement())
 		p.drainFDPrefixedRedirections()
 		return left, false
