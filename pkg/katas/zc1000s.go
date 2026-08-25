@@ -3851,13 +3851,26 @@ func zc1053ArgWord(arg ast.Expression) (word string, quoted bool) {
 	}
 	var sb strings.Builder
 	for i, part := range concat.Parts {
-		text := part.String()
+		text := zc1053PartText(part)
 		if i == 0 && zc1053IsQuoted(text) {
 			return text, true
 		}
 		sb.WriteString(text)
 	}
 	return sb.String(), false
+}
+
+// zc1053PartText renders one piece of a concatenated word. A string literal
+// keeps its quotes, which is what distinguishes a redirection from a quoted
+// search pattern.
+func zc1053PartText(part ast.Expression) string {
+	switch n := part.(type) {
+	case *ast.StringLiteral:
+		return n.Value
+	case *ast.Identifier:
+		return n.Value
+	}
+	return part.String()
 }
 
 // zc1053IsQuoted reports whether a word opens with a quote character.
