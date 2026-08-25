@@ -131,7 +131,26 @@ func (p *Parser) parsePipelineHead() (ast.Expression, bool) {
 	case token.WHILE:
 		return p.parseWhileLoopStatement(), false
 	case token.LPAREN:
-		return p.parseGroupedExpression(), false
+		// A `( … )` in command position — a pipeline stage, or the
+		// right-hand side of a `&&` / `||` chain — is a subshell running a
+		// command list. An array literal is only ever the right-hand side
+		// of an assignment word (`name=(…)`, `name+=(…)`), which reaches
+		// the grouped-expression parser through the expression path
+		// instead, so it is unaffected here. Routing command position to
+		// the array parser left the body as a flat word list, hiding it
+		// from every kata that walks commands. parseSubshellStatement also
+		// recognises the anonymous-function form `() { … }`, and both
+		// parsers leave the cursor on `)` with consumedParenTerminator set,
+		// so the caller's terminator handling is unchanged.
+		//
+		// Inside `[[ … ]]` the group is a glob alternation (`[[ $x = (a|b) ]]`),
+		// not a command list, so that context keeps the grouped-expression path.
+		if p.inDoubleBracket {
+			return p.parseGroupedExpression(), false
+		}
+		left := keywordStmtToExpression(p.parseSubshellStatement())
+		p.drainFDPrefixedRedirections()
+		return left, false
 	case token.LBRACE:
 		// Brace-group: `{ cmd1; cmd2 } 2>&1` appears inside `$(…)`
 		// and as a pipeline head. Parse as a brace block so the
