@@ -48,7 +48,7 @@ func TestZC1053QuietFlagScan(t *testing.T) {
 }
 
 // TestZC1053DevNullRedirect covers every shape a stdout redirection reaches
-// the kata in, plus the look-alikes that must not count as silencing.
+// the kata in, plus the forms that only look like one and must still report.
 func TestZC1053DevNullRedirect(t *testing.T) {
 	concat := func(parts ...ast.Expression) ast.Expression {
 		return &ast.ConcatenatedExpression{Parts: parts}
