@@ -576,8 +576,8 @@ func TestApplySafeEdits_Bailouts(t *testing.T) {
 		{Line: 1, Column: 10, Length: 3, Replace: "==", Group: 7},
 		{Line: 1, Column: 1, Length: 0, Replace: "fi\n", Group: 7},
 	}
-	if aout, an := applySafeEdits(atomicBase, atomic); aout != atomicBase || an != 0 {
-		t.Errorf("atomic: a group with one breaking edit must be dropped whole, got %q/%d", aout, an)
+	if got, n := applySafeEdits(atomicBase, atomic); got != atomicBase || n != 0 {
+		t.Errorf("atomic: a group with one breaking edit must be dropped whole, got %q/%d", got, n)
 	}
 
 	// Two safe edits on different lines exercise the highest-offset-first
