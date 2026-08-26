@@ -554,22 +554,37 @@ func TestApplySafeEdits_Bailouts(t *testing.T) {
 	base := "echo hi\n"
 	// Every candidate edit breaks the parse alone -> nothing is kept and
 	// base is returned unchanged.
-	stray := katas.FixEdit{Line: 1, Column: 1, Length: 0, Replace: "fi\n"}
+	stray := katas.FixEdit{Line: 1, Column: 1, Length: 0, Replace: "fi\n", Group: 1}
 	if out, n := applySafeEdits(base, []katas.FixEdit{stray}); out != base || n != 0 {
 		t.Errorf("all-break: want base/0, got %q/%d", out, n)
 	}
-	// A safe edit is kept while the breaking one is dropped.
-	safe := katas.FixEdit{Line: 1, Column: 1, Length: 4, Replace: "print -r --"}
+	// Two edits from different violations are independent: the safe one is
+	// kept while the breaking one is dropped.
+	safe := katas.FixEdit{Line: 1, Column: 1, Length: 4, Replace: "print -r --", Group: 2}
 	out, n := applySafeEdits(base, []katas.FixEdit{stray, safe})
 	if n != 1 || !strings.Contains(out, "print -r --") {
 		t.Errorf("mixed: want 1 kept with rewrite, got %q/%d", out, n)
 	}
 
+	// Edits from ONE violation are atomic. A rewrite that only makes sense
+	// as a whole must not be applied in part: keeping just the operator of
+	// `[[ a -eq b ]]` would leave `[[ a == b ]]`, which parses but compares
+	// as a glob pattern instead of a number.
+	atomicBase := "if [[ $a -eq 0 ]]; then :; fi\n"
+	atomic := []katas.FixEdit{
+		{Line: 1, Column: 4, Length: 2, Replace: "((", Group: 7},
+		{Line: 1, Column: 10, Length: 3, Replace: "==", Group: 7},
+		{Line: 1, Column: 1, Length: 0, Replace: "fi\n", Group: 7},
+	}
+	if aout, an := applySafeEdits(atomicBase, atomic); aout != atomicBase || an != 0 {
+		t.Errorf("atomic: a group with one breaking edit must be dropped whole, got %q/%d", aout, an)
+	}
+
 	// Two safe edits on different lines exercise the highest-offset-first
 	// ordering: the line-two edit applies before the line-one edit.
 	multi := "echo a\necho b\n"
-	e1 := katas.FixEdit{Line: 1, Column: 1, Length: 4, Replace: "print"}
-	e2 := katas.FixEdit{Line: 2, Column: 1, Length: 4, Replace: "print"}
+	e1 := katas.FixEdit{Line: 1, Column: 1, Length: 4, Replace: "print", Group: 1}
+	e2 := katas.FixEdit{Line: 2, Column: 1, Length: 4, Replace: "print", Group: 2}
 	mout, mn := applySafeEdits(multi, []katas.FixEdit{e1, e2})
 	if mn != 2 || strings.Contains(mout, "echo") {
 		t.Errorf("multiline: want both applied, got %q/%d", mout, mn)

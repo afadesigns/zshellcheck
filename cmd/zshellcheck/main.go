@@ -560,26 +560,51 @@ func parseErrorCount(src string) int {
 // stays valid against the growing source. A failed apply or a fix that
 // would break the parse is simply skipped, so a broken file is never
 // written.
+// applySafeEdits retries a rejected pass one violation at a time, keeping
+// only the groups that parse. A group is all-or-nothing: the edits that
+// rewrite `[[ a -eq b ]]` into `(( a == b ))` are meaningless apart, and
+// applying just the operator would leave `[[ a == b ]]`, which parses but
+// compares as a glob pattern instead of a number.
 func applySafeEdits(base string, edits []katas.FixEdit) (string, int) {
 	baseErrs := parseErrorCount(base)
-	ordered := append([]katas.FixEdit(nil), edits...)
-	sort.SliceStable(ordered, func(i, j int) bool {
-		if ordered[i].Line != ordered[j].Line {
-			return ordered[i].Line > ordered[j].Line
-		}
-		return ordered[i].Column > ordered[j].Column
-	})
+	groups := groupEdits(edits)
 	acc := base
 	applied := 0
-	for _, e := range ordered {
-		trial, err := fix.Apply(acc, []katas.FixEdit{e})
+	for _, group := range groups {
+		trial, err := fix.Apply(acc, group)
 		if err != nil || parseErrorCount(trial) > baseErrs {
 			continue
 		}
 		acc = trial
-		applied++
+		applied += len(group)
 	}
 	return acc, applied
+}
+
+// groupEdits splits edits into per-violation groups, ordered from the end of
+// the file backwards so an accepted group cannot shift the offsets of a group
+// that has not been tried yet.
+func groupEdits(edits []katas.FixEdit) [][]katas.FixEdit {
+	byGroup := map[int][]katas.FixEdit{}
+	var order []int
+	for _, e := range edits {
+		if _, seen := byGroup[e.Group]; !seen {
+			order = append(order, e.Group)
+		}
+		byGroup[e.Group] = append(byGroup[e.Group], e)
+	}
+	sort.SliceStable(order, func(i, j int) bool {
+		a, b := byGroup[order[i]][0], byGroup[order[j]][0]
+		if a.Line != b.Line {
+			return a.Line > b.Line
+		}
+		return a.Column > b.Column
+	})
+	groups := make([][]katas.FixEdit, 0, len(order))
+	for _, g := range order {
+		groups = append(groups, byGroup[g])
+	}
+	return groups
 }
 
 // collectEdits parses src and returns the auto-fix edits the registry
@@ -601,42 +626,59 @@ func collectEdits(src string, registry *katas.KatasRegistry, disabled []string, 
 	var edits []katas.FixEdit
 	ast.Walk(program, func(node ast.Node) bool {
 		vs, es := registry.CheckAndFix(node, allDisabled, []byte(src))
+		// CheckAndFix numbers groups from the start of its own violation
+		// slice; shift them past the violations already gathered so each
+		// group names exactly one violation in this file.
+		base := len(violations)
+		for i := range es {
+			es[i].Group += base
+		}
 		violations = append(violations, vs...)
 		edits = append(edits, es...)
 		return true
 	})
 	if len(directives.PerLine) > 0 {
 		keptV := violations[:0]
-		keptE := edits[:0]
+		keep := make(map[int]bool, len(violations))
 		for i, v := range violations {
 			if directives.IsDisabledOn(v.KataID, v.Line) {
 				continue
 			}
+			keep[i] = true
 			keptV = append(keptV, v)
-			if i < len(edits) {
-				keptE = append(keptE, edits[i])
-			}
 		}
 		violations = keptV
-		edits = keptE
+		edits = editsForGroups(edits, keep)
 	}
 	if len(allowedSeverities) > 0 {
-		filtered := edits[:0]
 		filteredV := violations[:0]
+		keep := make(map[int]bool, len(violations))
 		for i, v := range violations {
 			for _, s := range allowedSeverities {
 				if v.Level == s {
+					keep[i] = true
 					filteredV = append(filteredV, v)
-					if i < len(edits) {
-						filtered = append(filtered, edits[i])
-					}
 					break
 				}
 			}
 		}
-		edits = filtered
+		violations = filteredV
+		edits = editsForGroups(edits, keep)
 	}
 	return applicableEdits(edits, registry, unsafe)
+}
+
+// editsForGroups keeps the edits whose group belongs to a retained
+// violation. Selecting by group rather than by position matters because one
+// violation can produce several edits, so the two slices do not line up.
+func editsForGroups(edits []katas.FixEdit, keep map[int]bool) []katas.FixEdit {
+	kept := edits[:0]
+	for _, e := range edits {
+		if keep[e.Group] {
+			kept = append(kept, e)
+		}
+	}
+	return kept
 }
 
 func processPath(path string, out, errOut io.Writer, cfg config.Config, registry *katas.KatasRegistry, format string, allowedSeverities []katas.Severity, fixOpts fixOptions) int {
