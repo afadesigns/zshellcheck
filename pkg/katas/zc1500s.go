@@ -1221,7 +1221,10 @@ func checkZC1521(node ast.Node) []Violation {
 	// Any filter flag present → skip.
 	for _, arg := range cmd.Arguments {
 		v := arg.String()
-		if v == "-e" || v == "--trace" || v == "--trace-path" || v == "-P" {
+		// strace documents both as taking an inline value:
+		// `--trace=syscall_set`, `--trace-path=path`.
+		name, _ := LongFlagName(v)
+		if name == "-e" || name == "--trace" || name == "--trace-path" || name == "-P" {
 			return nil
 		}
 	}
@@ -4374,7 +4377,8 @@ func checkZC1579(node ast.Node) []Violation {
 		if v == "--retry-all-errors" {
 			hasRetryAll = true
 		}
-		if v == "--max-time" || v == "-m" {
+		// curl accepts `--max-time=5` as well as `--max-time 5`.
+		if name, _ := LongFlagName(v); name == "--max-time" || name == "-m" {
 			hasMaxTime = true
 		}
 	}

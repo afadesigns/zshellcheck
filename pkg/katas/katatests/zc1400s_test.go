@@ -219,6 +219,18 @@ func TestZC1406(t *testing.T) {
 			expected: []katas.Violation{},
 		},
 		{
+			name:  "invalid — xargs --max-procs=4",
+			input: `xargs --max-procs=4 cmd`,
+			expected: []katas.Violation{
+				{
+					KataID:  "ZC1406",
+					Message: "Consider `zargs -P N` (autoload -Uz zargs) instead of `xargs -P N`. Parallel execution with Zsh functions in scope — no subshell-per-item.",
+					Line:    1,
+					Column:  1,
+				},
+			},
+		},
+		{
 			name:  "invalid — xargs -P 4",
 			input: `xargs -P 4 cmd`,
 			expected: []katas.Violation{
@@ -4170,6 +4182,12 @@ func TestZC1494(t *testing.T) {
 		{
 			name:     "valid — tcpdump -w capture.pcap -Z tcpdump",
 			input:    `tcpdump -i eth0 -w capture.pcap -Z tcpdump`,
+			expected: []katas.Violation{},
+		},
+		{
+			// tcpdump documents the value inline: --relinquish-privileges=user.
+			name:     "valid — tcpdump -w with inline privilege drop",
+			input:    `tcpdump -i eth0 -w capture.pcap --relinquish-privileges=tcpdump`,
 			expected: []katas.Violation{},
 		},
 		{

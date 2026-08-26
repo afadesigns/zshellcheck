@@ -506,16 +506,19 @@ func checkZC1111(node ast.Node) []Violation {
 	for _, arg := range cmd.Arguments {
 		val := arg.String()
 		if len(val) > 1 && val[0] == '-' {
+			// `--max-procs`, `--replace` and `--max-lines` take a value,
+			// which xargs accepts inline as `--max-procs=4`.
+			name, _ := LongFlagName(val)
 			switch {
-			case val == "-0", val == "--null":
+			case name == "-0", name == "--null":
 				return nil
-			case val == "-P", val == "--max-procs":
+			case name == "-P", name == "--max-procs":
 				return nil
-			case val == "-I", val == "--replace":
+			case name == "-I", name == "--replace":
 				return nil
-			case val == "-L", val == "--max-lines":
+			case name == "-L", name == "--max-lines":
 				return nil
-			case val == "-p", val == "--interactive":
+			case name == "-p", name == "--interactive":
 				return nil
 			}
 		}

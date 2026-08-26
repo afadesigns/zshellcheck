@@ -433,7 +433,9 @@ func checkZC1406(node ast.Node) []Violation {
 
 	for i, arg := range cmd.Arguments {
 		v := arg.String()
-		if v == "-P" || v == "--max-procs" ||
+		// xargs accepts the value inline: `--max-procs=4`.
+		name, _ := LongFlagName(v)
+		if name == "-P" || name == "--max-procs" ||
 			(len(v) > 2 && v[:2] == "-P") {
 			_ = i
 			return []Violation{{
@@ -5044,7 +5046,8 @@ func checkZC1494(node ast.Node) []Violation {
 		if v == "-w" || v == "--write-file" {
 			hasW = true
 		}
-		if v == "-Z" || v == "--relinquish-privileges" {
+		// tcpdump documents the value inline: `--relinquish-privileges=user`.
+		if name, _ := LongFlagName(v); name == "-Z" || name == "--relinquish-privileges" {
 			hasZ = true
 		}
 	}

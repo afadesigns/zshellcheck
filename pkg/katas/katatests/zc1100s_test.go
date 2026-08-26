@@ -557,6 +557,23 @@ func TestZC1111(t *testing.T) {
 			expected: []katas.Violation{},
 		},
 		{
+			// xargs accepts the value inline for every option that takes
+			// one, and that spelling must count the same as the spaced one.
+			name:     "valid xargs with parallel inline value",
+			input:    `xargs --max-procs=4 cmd`,
+			expected: []katas.Violation{},
+		},
+		{
+			name:     "valid xargs with replace inline value",
+			input:    `xargs --replace=@ mv @ /dest`,
+			expected: []katas.Violation{},
+		},
+		{
+			name:     "valid xargs with max-lines inline value",
+			input:    `xargs --max-lines=1 cmd`,
+			expected: []katas.Violation{},
+		},
+		{
 			name:     "valid xargs with parallel",
 			input:    `xargs -P 4 cmd`,
 			expected: []katas.Violation{},

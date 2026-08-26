@@ -1003,6 +1003,16 @@ func TestZC1521(t *testing.T) {
 			expected: []katas.Violation{},
 		},
 		{
+			name:     "valid — strace --trace=openat cmd",
+			input:    `strace --trace=openat ls`,
+			expected: []katas.Violation{},
+		},
+		{
+			name:     "valid — strace --trace-path=/etc cmd",
+			input:    `strace --trace-path=/etc ls`,
+			expected: []katas.Violation{},
+		},
+		{
 			name:  "invalid — strace -f cmd",
 			input: `strace -f ls`,
 			expected: []katas.Violation{
@@ -3863,6 +3873,12 @@ func TestZC1579(t *testing.T) {
 		{
 			name:     "valid — curl --retry-all-errors --max-time 30 URL",
 			input:    `curl https://host --retry-all-errors --max-time 30`,
+			expected: []katas.Violation{},
+		},
+		{
+			// curl accepts `--max-time=30` as well as `--max-time 30`.
+			name:     "valid — curl --retry-all-errors --max-time=30 URL",
+			input:    `curl https://host --retry-all-errors --max-time=30`,
 			expected: []katas.Violation{},
 		},
 		{
