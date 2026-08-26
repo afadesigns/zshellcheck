@@ -3,6 +3,9 @@
 package parser
 
 import (
+	"fmt"
+	"strings"
+
 	"github.com/afadesigns/zshellcheck/pkg/ast"
 	"github.com/afadesigns/zshellcheck/pkg/token"
 )
@@ -735,7 +738,95 @@ func (p *Parser) parseSingleCommand() ast.Expression {
 		cmd.Arguments = append(cmd.Arguments, arg)
 	}
 
+	p.checkDanglingRedirect(cmd)
 	return reshapeCommandAssignment(cmd)
+}
+
+// redirectOperators are the redirection operators that require a target
+// word after them. A file-descriptor prefix (`1>`, `2>>`) is stripped
+// before the lookup.
+var redirectOperators = map[string]bool{
+	">": true, ">>": true, ">|": true, ">&": true, "&>": true, "&>>": true,
+	"<": true, "<>": true, "<&": true,
+}
+
+// checkDanglingRedirect records a parser error when a command ends on a
+// redirection operator with nothing to redirect to.
+//
+// A redirection is folded into the argument list rather than parsed as a
+// redirection node, so `cmd >` arrives as a final argument holding the bare
+// operator. Zsh rejects that outright. Accepting it silently is how a
+// rewrite that removed a redirect target while leaving its operator behind
+// passed the auto-fix safety gate, which measures corruption with this
+// parser.
+func (p *Parser) checkDanglingRedirect(cmd *ast.SimpleCommand) {
+	n := len(cmd.Arguments)
+	if n == 0 {
+		return
+	}
+	// `>|` and `>>|` override NO_CLOBBER. The lexer splits them into the
+	// operator plus a pipe token, so a glued pipe after the operator means
+	// the target is still to come, not that it is missing.
+	if p.peekTokenIs(token.PIPE) && !p.peekToken.HasPrecedingSpace {
+		return
+	}
+	last := cmd.Arguments[n-1]
+	word, ok := bareRedirectOperator(last)
+	if !ok {
+		return
+	}
+	tok := last.TokenLiteralNode()
+	p.errors = append(p.errors, fmt.Sprintf("line %d:%d: redirection %q has no target",
+		tok.Line, tok.Column, word))
+}
+
+// bareRedirectOperator reports whether an argument is nothing but a
+// redirection operator. A quoted word is data, not syntax.
+func bareRedirectOperator(arg ast.Expression) (string, bool) {
+	var word string
+	switch n := arg.(type) {
+	case *ast.StringLiteral:
+		word = n.Value
+	case *ast.Identifier:
+		word = n.Value
+	case *ast.ConcatenatedExpression:
+		// A file-descriptor prefix splits the word: `2>` arrives as the
+		// integer 2 glued to the operator.
+		for _, part := range n.Parts {
+			text, ok := redirectPartText(part)
+			if !ok {
+				return "", false
+			}
+			word += text
+		}
+	default:
+		return "", false
+	}
+	if word == "" || word[0] == '\'' || word[0] == '"' {
+		return "", false
+	}
+	trimmed := strings.TrimLeft(word, "0123456789")
+	if trimmed == "" || !redirectOperators[trimmed] {
+		return "", false
+	}
+	return word, true
+}
+
+// redirectPartText renders one piece of a concatenated word, reporting
+// false for a part that cannot belong to a bare redirection operator.
+func redirectPartText(part ast.Expression) (string, bool) {
+	switch n := part.(type) {
+	case *ast.StringLiteral:
+		if n.Value != "" && (n.Value[0] == '\'' || n.Value[0] == '"') {
+			return "", false
+		}
+		return n.Value, true
+	case *ast.Identifier:
+		return n.Value, true
+	case *ast.IntegerLiteral:
+		return n.String(), true
+	}
+	return "", false
 }
 
 // reshapeCommandAssignment converts a command-position assignment that the

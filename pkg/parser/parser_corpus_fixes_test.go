@@ -668,3 +668,53 @@ func TestParseCommandPositionSubshell(t *testing.T) {
 		}
 	}
 }
+
+// A redirection needs a target. Zsh rejects `cmd >` outright, and this
+// parser used to accept it, which is how a rewrite that removed a redirect
+// target while leaving its operator behind passed the auto-fix safety gate.
+// `>|` and `>>|` override NO_CLOBBER and are not dangling, even though the
+// lexer splits them into an operator and a pipe.
+func TestParseDanglingRedirection(t *testing.T) {
+	dangling := []string{
+		"grep p f >\n",
+		"grep p f >>\n",
+		"grep p f 1>\n",
+		"grep p f 2>\n",
+		"echo x > | cat\n",
+		// The compound operators reach the expression-path redirection
+		// parser rather than the command one.
+		"x=1 >>\n",
+		"( cmd >> )\n",
+		"a && b >>\n",
+		"cmd | b <&\n",
+		"f() { cmd >& }\n",
+	}
+	for _, src := range dangling {
+		p := New(lexer.New(src))
+		p.ParseProgram()
+		if len(p.Errors()) == 0 {
+			t.Errorf("want a parser error for %q, got none", src)
+		}
+	}
+
+	clean := []string{
+		"grep p f > /dev/null\n",
+		"grep p f >/dev/null\n",
+		"echo x >> log\n",
+		"cmd > out 2>&1\n",
+		"exec 3>&1\n",
+		": >| /dev/null\n",
+		": >>| \"${FILE}\"\n",
+		"cat <<< \"$x\"\n",
+		"diff <(a) <(b)\n",
+		"grep \">\" f\n",
+		"if (( a > b )); then :; fi\n",
+	}
+	for _, src := range clean {
+		p := New(lexer.New(src))
+		p.ParseProgram()
+		if errs := p.Errors(); len(errs) != 0 {
+			t.Errorf("unexpected parser errors for %q: %v", src, errs)
+		}
+	}
+}
