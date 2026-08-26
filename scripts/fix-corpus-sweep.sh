@@ -5,8 +5,13 @@
 # never corrupts the source and always converges:
 #
 #   1. No corruption — the rewritten file must not raise the parser-error
-#      count above the original file's own count. A fix that turns
-#      parseable source into unparseable source is a destructive bug.
+#      count above the original file's own count, and, where a real zsh is
+#      available, must not turn a file zsh accepts into one it rejects.
+#      A fix that turns parseable source into unparseable source is a
+#      destructive bug. The second check matters because this linter's
+#      parser is more permissive than zsh: it accepts a dangling `>` or a
+#      stray `]]`, so measuring corruption with the linter alone is blind
+#      exactly where a fix has gone wrong.
 #   2. Idempotent — a second `-fix` pass over the already-fixed file must
 #      produce no further change. A fix that keeps rewriting (for example
 #      stacking a glob qualifier every pass) never converges.
@@ -34,6 +39,7 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 MANIFEST="${REPO_ROOT}/.github/parser-corpus-manifest.txt"
 WORK_DIR="${PARSER_SWEEP_WORK:-${REPO_ROOT}/testdata/external-corpora}"
 BIN="${ZSHELLCHECK_BIN:-${REPO_ROOT}/zshellcheck}"
+ZSH_BIN="$(command -v zsh || true)"
 
 if [[ ! -f "${MANIFEST}" ]]; then
     echo "::error::manifest not found: ${MANIFEST}" >&2
@@ -96,6 +102,25 @@ parser_errors() {
     "${BIN}" -no-banner "$1" 2>/dev/null | grep -c "^Parser Error" || true
 }
 
+# Print zsh's own syntax complaint about a file, or nothing when zsh is
+# happy or unavailable.
+#
+# Two traps. `zsh -n` exits 0 while still printing some diagnostics, so the
+# exit status cannot be trusted — read stderr instead. And `$(<file)` makes
+# `zsh -n` try to open the file, which reports "no such file or directory";
+# that is a missing input, not a syntax error, so it is ignored.
+zsh_syntax_error() {
+    if [[ -z "${ZSH_BIN}" ]]; then
+        return 0
+    fi
+    local err
+    err="$("${ZSH_BIN}" -n "$1" 2>&1 >/dev/null | head -1)"
+    case "${err}" in
+        '' | *'no such file or directory'*) return 0 ;;
+        *) printf '%s' "${err}" ;;
+    esac
+}
+
 total_files=0
 corruptions=()
 non_idempotent=()
@@ -111,6 +136,7 @@ while IFS=$'\t' read -r name sha url glob_list; do
         rel="${name}/${f#${WORK_DIR}/${name}/}"
         total_files=$((total_files+1))
         orig_errors=$(parser_errors "${f}")
+        orig_zsh_error="$(zsh_syntax_error "${f}")"
 
         for mode in safe unsafe; do
             if [[ "${mode}" == unsafe ]]; then
@@ -132,6 +158,13 @@ while IFS=$'\t' read -r name sha url glob_list; do
             fixed_errors=$(parser_errors "${SCRATCH}/work")
             if (( fixed_errors > orig_errors )); then
                 corruptions+=("${rel} [${mode}]: parser errors ${orig_errors} -> ${fixed_errors}")
+            elif [[ -z "${orig_zsh_error}" ]]; then
+                fixed_zsh_error="$(zsh_syntax_error "${SCRATCH}/work")"
+                if [[ -n "${fixed_zsh_error}" ]]; then
+                    # zsh prefixes its complaint with the scratch path; report
+                    # the corpus file instead, keeping line and reason.
+                    corruptions+=("${rel} [${mode}]: zsh rejects the rewrite at line ${fixed_zsh_error##*/work:}")
+                fi
             fi
 
             cp "${SCRATCH}/work" "${SCRATCH}/work2"
@@ -143,7 +176,11 @@ while IFS=$'\t' read -r name sha url glob_list; do
     done < <(list_files "${WORK_DIR}/${name}" "${globs[@]}")
 done < "${MANIFEST}"
 
-echo "fix-corpus sweep: files=${total_files} corruptions=${#corruptions[@]} non_idempotent=${#non_idempotent[@]} panics=${#PANICS[@]}"
+zsh_note="zsh=$(basename "${ZSH_BIN:-none}")"
+echo "fix-corpus sweep: files=${total_files} corruptions=${#corruptions[@]} non_idempotent=${#non_idempotent[@]} panics=${#PANICS[@]} ${zsh_note}"
+if [[ -z "${ZSH_BIN}" ]]; then
+    echo "::warning::zsh not found — the rewrite was checked against this linter's parser only"
+fi
 
 # A panic is always fatal.
 if (( ${#PANICS[@]} > 0 )); then
