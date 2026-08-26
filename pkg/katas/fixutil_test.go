@@ -136,3 +136,42 @@ func TestFixZC1231RefusesSecondShallowFlag(t *testing.T) {
 		t.Errorf("fixZC1231 on a full clone returned %d edits, want 1", len(edits))
 	}
 }
+
+// TestFlagValueAt pins how an option's value is read in either spelling,
+// including the bounds guards the kata loops never reach.
+func TestFlagValueAt(t *testing.T) {
+	args := func(words ...string) []ast.Expression {
+		out := make([]ast.Expression, 0, len(words))
+		for _, w := range words {
+			out = append(out, &ast.Identifier{Value: w})
+		}
+		return out
+	}
+	cases := []struct {
+		name      string
+		args      []ast.Expression
+		index     int
+		names     []string
+		wantValue string
+		wantSpan  int
+	}{
+		{"inline", args("--directory=/"), 0, []string{"--directory"}, "/", 1},
+		{"spaced", args("--directory", "/"), 0, []string{"--directory"}, "/", 2},
+		{"short spaced", args("-C", "/"), 0, []string{"-C", "--directory"}, "/", 2},
+		{"empty inline value", args("--directory="), 0, []string{"--directory"}, "", 1},
+		{"other option", args("--exclude=/"), 0, []string{"--directory"}, "", 0},
+		{"value missing", args("--directory"), 0, []string{"--directory"}, "", 0},
+		{"index past end", args("--directory", "/"), 2, []string{"--directory"}, "", 0},
+		{"negative index", args("--directory", "/"), -1, []string{"--directory"}, "", 0},
+		{"no names", args("--directory=/"), 0, nil, "", 0},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			value, span := FlagValueAt(tc.args, tc.index, tc.names...)
+			if value != tc.wantValue || span != tc.wantSpan {
+				t.Errorf("FlagValueAt(%s) = (%q, %d), want (%q, %d)",
+					tc.name, value, span, tc.wantValue, tc.wantSpan)
+			}
+		})
+	}
+}

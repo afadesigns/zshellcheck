@@ -3146,6 +3146,24 @@ func TestZC1661(t *testing.T) {
 			expected: []katas.Violation{},
 		},
 		{
+			// curl takes the bundle path inline as well.
+			name:  "invalid — curl URL --cacert=/dev/null",
+			input: `curl https://example.com --cacert=/dev/null`,
+			expected: []katas.Violation{
+				{
+					KataID:  "ZC1661",
+					Message: "`curl --cacert /dev/null` feeds curl an empty trust store — most TLS backends then accept any peer cert. Use a real bundle or `--pinnedpubkey`.",
+					Line:    1,
+					Column:  1,
+				},
+			},
+		},
+		{
+			name:     "valid — curl URL --cacert=/etc/ssl/cert.pem",
+			input:    `curl https://example.com --cacert=/etc/ssl/cert.pem`,
+			expected: []katas.Violation{},
+		},
+		{
 			name:  "invalid — curl URL --cacert /dev/null",
 			input: `curl https://example.com --cacert /dev/null`,
 			expected: []katas.Violation{

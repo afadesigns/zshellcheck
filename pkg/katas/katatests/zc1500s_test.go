@@ -1108,6 +1108,25 @@ func TestZC1523(t *testing.T) {
 			expected: []katas.Violation{},
 		},
 		{
+			// tar takes the directory inline too, and it extracts into
+			// exactly the same place.
+			name:  "invalid — tar xf foo.tar --directory=/",
+			input: `tar xf foo.tar --directory=/`,
+			expected: []katas.Violation{
+				{
+					KataID:  "ZC1523",
+					Message: "`tar -C /` extracts into the filesystem root — overwrites any path that happens to be inside the archive. Stage, inspect, then copy.",
+					Line:    1,
+					Column:  1,
+				},
+			},
+		},
+		{
+			name:     "valid — tar xf foo.tar --directory=/tmp/stage",
+			input:    `tar xf foo.tar --directory=/tmp/stage`,
+			expected: []katas.Violation{},
+		},
+		{
 			name:  "invalid — tar xf foo.tar -C /",
 			input: `tar xf foo.tar -C /`,
 			expected: []katas.Violation{

@@ -1749,6 +1749,24 @@ func TestZC1835(t *testing.T) {
 			expected: []katas.Violation{},
 		},
 		{
+			name:     "valid — `smartctl --smart=on $DISK`",
+			input:    `smartctl --smart=on $DISK`,
+			expected: []katas.Violation{},
+		},
+		{
+			// smartctl documents the value inline: --smart=off.
+			name:  "invalid — `smartctl --smart=off $DISK`",
+			input: `smartctl --smart=off $DISK`,
+			expected: []katas.Violation{
+				{
+					KataID:  "ZC1835",
+					Message: "`smartctl -s off` disables the drive's SMART attribute collection — `smartctl -H` keeps reporting PASSED until the disk falls off the bus. Leave it `on` and configure `smartd.conf` for proactive alerts.",
+					Line:    1,
+					Column:  1,
+				},
+			},
+		},
+		{
 			name:  "invalid — `smartctl -s off $DISK`",
 			input: `smartctl -s off $DISK`,
 			expected: []katas.Violation{

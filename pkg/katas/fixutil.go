@@ -136,3 +136,34 @@ func LongFlagName(word string) (string, bool) {
 	}
 	return word, false
 }
+
+// FlagValueAt returns the value carried by the option at args[i] when that
+// option is one of names, together with the number of arguments it spans.
+// `--directory=/` spans one argument, `--directory /` spans two. A word that
+// names no listed option, or an option whose value never arrives, yields
+// ("", 0).
+func FlagValueAt(args []ast.Expression, i int, names ...string) (string, int) {
+	if i < 0 || i >= len(args) {
+		return "", 0
+	}
+	word := args[i].String()
+	name, inline := LongFlagName(word)
+	matched := false
+	for _, want := range names {
+		if name == want {
+			matched = true
+			break
+		}
+	}
+	if !matched {
+		return "", 0
+	}
+	if inline {
+		_, value, _ := strings.Cut(word, "=")
+		return value, 1
+	}
+	if i+1 >= len(args) {
+		return "", 0
+	}
+	return args[i+1].String(), 2
+}
