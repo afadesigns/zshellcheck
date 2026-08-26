@@ -1563,6 +1563,22 @@ func TestFixIntegration_ZC1293_TestToDoubleBracket(t *testing.T) {
 	}
 }
 
+// A redirection is not part of the test expression, so the closing bracket
+// goes before it. Wrapping it inside produces `[[ -f f 2>/dev/null ]]`,
+// which Zsh rejects.
+func TestFixIntegration_ZC1293_RedirectStaysOutsideBrackets(t *testing.T) {
+	cases := map[string]string{
+		"test -f f 2>/dev/null\n":  "[[ -f f ]] 2>/dev/null\n",
+		"test -f f 2> /dev/null\n": "[[ -f f ]] 2> /dev/null\n",
+		"test -f f >/dev/null\n":   "[[ -f f ]] >/dev/null\n",
+	}
+	for src, want := range cases {
+		if got := runFix(t, src); got != want {
+			t.Errorf("got %q, want %q", got, want)
+		}
+	}
+}
+
 func TestFixIntegration_ZC1293_AlreadyDoubleBracket(t *testing.T) {
 	src := "[[ -f /etc/passwd ]]\n"
 	if got := runFix(t, src); got != src {
