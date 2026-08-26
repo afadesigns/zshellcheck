@@ -1571,6 +1571,9 @@ func TestFixIntegration_ZC1293_RedirectStaysOutsideBrackets(t *testing.T) {
 		"test -f f 2>/dev/null\n":  "[[ -f f ]] 2>/dev/null\n",
 		"test -f f 2> /dev/null\n": "[[ -f f ]] 2> /dev/null\n",
 		"test -f f >/dev/null\n":   "[[ -f f ]] >/dev/null\n",
+		// Nothing but a redirection follows the command name, so there is
+		// no expression to wrap and the source is left alone.
+		"test 2>/dev/null\n": "test 2>/dev/null\n",
 	}
 	for src, want := range cases {
 		if got := runFix(t, src); got != want {
