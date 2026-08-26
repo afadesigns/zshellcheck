@@ -2917,7 +2917,8 @@ func checkZC1365(node ast.Node) []Violation {
 
 	for _, arg := range cmd.Arguments {
 		v := arg.String()
-		if v == "-c" || v == "--format" || v == "--printf" {
+		// stat documents `--format=FORMAT` and `--printf=FORMAT`.
+		if name, _ := LongFlagName(v); name == "-c" || name == "--format" || name == "--printf" {
 			return []Violation{{
 				KataID: "ZC1365",
 				Message: "Use Zsh `zmodload zsh/stat; zstat -H meta file` for file metadata instead " +

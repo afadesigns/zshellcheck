@@ -87,6 +87,19 @@ func TestZC1402(t *testing.T) {
 			expected: []katas.Violation{},
 		},
 		{
+			// This spelling was meant to be covered already; the prefix test compared six characters against a seven-character literal.
+			name:  "invalid — date --date=",
+			input: `date --date=@1700000000 +%Y-%m-%d`,
+			expected: []katas.Violation{
+				{
+					KataID:  "ZC1402",
+					Message: "Use Zsh `strftime` (from `zsh/datetime`) instead of `date -d @N -- +fmt`. The `-d`/`@` form is GNU-specific; `strftime` is portable Zsh.",
+					Line:    1,
+					Column:  1,
+				},
+			},
+		},
+		{
 			name:  "invalid — date -d",
 			input: `date -d @1700000000 +%Y-%m-%d`,
 			expected: []katas.Violation{

@@ -126,8 +126,9 @@ func checkZC1402(node ast.Node) []Violation {
 
 	for _, arg := range cmd.Arguments {
 		v := arg.String()
-		if v == "-d" || v == "--date" ||
-			(len(v) > 6 && v[:6] == "--date=") {
+		// The inline form was meant to be handled here, but `v[:6]` is
+		// `--date` and never equals the seven-character `--date=`.
+		if name, _ := LongFlagName(v); name == "-d" || name == "--date" {
 			return []Violation{{
 				KataID: "ZC1402",
 				Message: "Use Zsh `strftime` (from `zsh/datetime`) instead of `date -d @N -- +fmt`. " +

@@ -2424,6 +2424,18 @@ func TestZC1365(t *testing.T) {
 			expected: []katas.Violation{},
 		},
 		{
+			name:  "invalid — stat --format=%s",
+			input: `stat --format=%s file`,
+			expected: []katas.Violation{
+				{
+					KataID:  "ZC1365",
+					Message: "Use Zsh `zmodload zsh/stat; zstat -H meta file` for file metadata instead of `stat -c '%...'`. The associative array `meta` exposes every stat field.",
+					Line:    1,
+					Column:  1,
+				},
+			},
+		},
+		{
 			name:  "invalid — stat -c %s",
 			input: `stat -c %s file`,
 			expected: []katas.Violation{
