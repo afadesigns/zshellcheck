@@ -39,6 +39,11 @@ type FixEdit struct {
 	Length  int
 	Replace string
 	KataID  string
+	// Group ties every edit produced by one Fix call to the violation it
+	// repairs. A rewrite such as `[[ a -eq b ]]` to `(( a == b ))` spans
+	// three edits that only make sense together, so the applier keeps or
+	// discards a group as a unit and a filter drops a group as a unit.
+	Group int
 }
 
 // safeFixKatas lists the katas whose auto-fix is purely syntactic and
@@ -166,14 +171,16 @@ func (kr *KatasRegistry) FixesFor(node ast.Node, v Violation, source []byte) []F
 	if !ok || kata.Fix == nil {
 		return nil
 	}
-	return stampKataID(kata.Fix(node, v, source), kata.ID)
+	// A single violation's edits form one group.
+	return stampKataID(kata.Fix(node, v, source), kata.ID, 0)
 }
 
 // stampKataID records the producing kata on each edit so the CLI can
 // filter behavior-changing fixes without re-deriving their origin.
-func stampKataID(edits []FixEdit, id string) []FixEdit {
+func stampKataID(edits []FixEdit, id string, group int) []FixEdit {
 	for i := range edits {
 		edits[i].KataID = id
+		edits[i].Group = group
 	}
 	return edits
 }
@@ -208,7 +215,11 @@ func (kr *KatasRegistry) CheckAndFix(node ast.Node, disabledKatas []string, sour
 				vs[i].Level = kata.Severity
 			}
 			if kata.Fix != nil {
-				edits = append(edits, stampKataID(kata.Fix(node, vs[i], source), kata.ID)...)
+				// Group is the violation's index in the slice this call
+				// returns; the caller shifts it by the number of violations
+				// already collected so every group is unique per file.
+				group := len(violations) + i
+				edits = append(edits, stampKataID(kata.Fix(node, vs[i], source), kata.ID, group)...)
 			}
 		}
 		violations = append(violations, vs...)
