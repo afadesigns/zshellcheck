@@ -681,6 +681,13 @@ func TestParseDanglingRedirection(t *testing.T) {
 		"grep p f 1>\n",
 		"grep p f 2>\n",
 		"echo x > | cat\n",
+		// The compound operators reach the expression-path redirection
+		// parser rather than the command one.
+		"x=1 >>\n",
+		"( cmd >> )\n",
+		"a && b >>\n",
+		"cmd | b <&\n",
+		"f() { cmd >& }\n",
 	}
 	for _, src := range dangling {
 		p := New(lexer.New(src))
