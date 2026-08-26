@@ -3520,15 +3520,9 @@ func checkZC1661(node ast.Node) []Violation {
 		return nil
 	}
 
-	for i, arg := range cmd.Arguments {
-		v := arg.String()
-		if v != "--cacert" && v != "--capath" {
-			continue
-		}
-		if i+1 >= len(cmd.Arguments) {
-			continue
-		}
-		if cmd.Arguments[i+1].String() == "/dev/null" {
+	// curl takes the bundle path inline as well: `--cacert=/dev/null`.
+	for i := range cmd.Arguments {
+		if path, _ := FlagValueAt(cmd.Arguments, i, "--cacert", "--capath"); path == "/dev/null" {
 			return zc1661Hit(cmd)
 		}
 	}

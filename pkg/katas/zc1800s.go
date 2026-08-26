@@ -2251,12 +2251,9 @@ func checkZC1835(node ast.Node) []Violation {
 		return nil
 	}
 	args := cmd.Arguments
-	for i := 0; i+1 < len(args); i++ {
-		flag := args[i].String()
-		if flag != "-s" && flag != "--smart" {
-			continue
-		}
-		val := args[i+1].String()
+	// smartctl documents the value inline: `--smart=off`.
+	for i := range args {
+		val, _ := FlagValueAt(args, i, "-s", "--smart")
 		if val == "off" {
 			return []Violation{{
 				KataID: "ZC1835",

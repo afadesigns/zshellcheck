@@ -1322,24 +1322,18 @@ func checkZC1523(node ast.Node) []Violation {
 		return nil
 	}
 
-	var prevC bool
-	for _, arg := range cmd.Arguments {
-		v := arg.String()
-		if prevC {
-			prevC = false
-			if v == "/" {
-				return []Violation{{
-					KataID: "ZC1523",
-					Message: "`tar -C /` extracts into the filesystem root — overwrites any " +
-						"path that happens to be inside the archive. Stage, inspect, then copy.",
-					Line:   cmd.Token.Line,
-					Column: cmd.Token.Column,
-					Level:  SeverityError,
-				}}
-			}
-		}
-		if v == "-C" || v == "--directory" {
-			prevC = true
+	// tar documents the directory inline as `--directory=DIR` as well as
+	// spaced, and both extract into the same place.
+	for i := range cmd.Arguments {
+		if dir, _ := FlagValueAt(cmd.Arguments, i, "-C", "--directory"); dir == "/" {
+			return []Violation{{
+				KataID: "ZC1523",
+				Message: "`tar -C /` extracts into the filesystem root — overwrites any " +
+					"path that happens to be inside the archive. Stage, inspect, then copy.",
+				Line:   cmd.Token.Line,
+				Column: cmd.Token.Column,
+				Level:  SeverityError,
+			}}
 		}
 	}
 	return nil
