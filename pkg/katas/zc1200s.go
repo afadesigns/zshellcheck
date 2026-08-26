@@ -4356,72 +4356,13 @@ func init() {
 		ID:       "ZC1273",
 		Title:    "Use `grep -q` instead of redirecting grep output to `/dev/null`",
 		Severity: SeverityStyle,
-		Description: "`grep -q` suppresses output and exits on first match, which is faster and more " +
-			"idiomatic than piping or redirecting to `/dev/null`.",
+		Description: "`grep -q` suppresses output and exits on the first match, which is faster " +
+			"than reading the whole input and discarding it. Rewrite by hand: the two forms are " +
+			"not interchangeable. `-q` exits early, so under `setopt pipefail` a producer earlier " +
+			"in the pipeline is killed by SIGPIPE and the pipeline status becomes 141 rather than " +
+			"0. `-q` also leaves stderr alone, so it does not replace `&>` or `2>&1`.",
 		Check: checkZC1273,
-		Fix:   fixZC1273,
 	})
-}
-
-// fixZC1273 inserts ` -q` after `grep` and strips the trailing
-// `/dev/null` argument (including its leading whitespace). Two edits;
-// the detector already gates on the absence of `-q`, so the rewrite
-// is idempotent on a re-run.
-func fixZC1273(node ast.Node, v Violation, source []byte) []FixEdit {
-	cmd, ok := node.(*ast.SimpleCommand)
-	if !ok {
-		return nil
-	}
-	ident, ok := cmd.Name.(*ast.Identifier)
-	if !ok || ident.Value != "grep" {
-		return nil
-	}
-	var devNull ast.Expression
-	for _, arg := range cmd.Arguments {
-		if arg.String() == "/dev/null" {
-			devNull = arg
-			break
-		}
-	}
-	if devNull == nil {
-		return nil
-	}
-	nameOff := LineColToByteOffset(source, v.Line, v.Column)
-	if nameOff < 0 || IdentLenAt(source, nameOff) != len("grep") {
-		return nil
-	}
-	insertAt := nameOff + len("grep")
-	insLine, insCol := offsetLineColZC1273(source, insertAt)
-	if insLine < 0 {
-		return nil
-	}
-	stripEdits := zc1238StripFlag(source, devNull, "/dev/null")
-	if stripEdits == nil {
-		return nil
-	}
-	return append([]FixEdit{{
-		Line:    insLine,
-		Column:  insCol,
-		Length:  0,
-		Replace: " -q",
-	}}, stripEdits...)
-}
-
-func offsetLineColZC1273(source []byte, offset int) (int, int) {
-	if offset < 0 || offset > len(source) {
-		return -1, -1
-	}
-	line := 1
-	col := 1
-	for i := 0; i < offset; i++ {
-		if source[i] == '\n' {
-			line++
-			col = 1
-			continue
-		}
-		col++
-	}
-	return line, col
 }
 
 func checkZC1273(node ast.Node) []Violation {
@@ -4429,39 +4370,73 @@ func checkZC1273(node ast.Node) []Violation {
 	if !ok {
 		return nil
 	}
-
 	ident, ok := cmd.Name.(*ast.Identifier)
 	if !ok || ident.Value != "grep" {
 		return nil
 	}
-
-	hasQuiet := false
-	for _, arg := range cmd.Arguments {
-		val := arg.String()
-		if val == "-q" || val == "--quiet" || val == "--silent" {
-			hasQuiet = true
-			break
-		}
-	}
-
-	if hasQuiet {
+	if zc1053HasQuietFlag(cmd.Arguments) || !zc1273RedirectsStdoutToDevNull(cmd.Arguments) {
 		return nil
 	}
+	return []Violation{{
+		KataID:  "ZC1273",
+		Message: "Use `grep -q` instead of redirecting to `/dev/null`. It exits on the first match instead of reading the whole input.",
+		Line:    cmd.Token.Line,
+		Column:  cmd.Token.Column,
+		Level:   SeverityStyle,
+	}}
+}
 
-	for _, arg := range cmd.Arguments {
-		val := arg.String()
-		if val == "/dev/null" {
-			return []Violation{{
-				KataID:  "ZC1273",
-				Message: "Use `grep -q` instead of redirecting to `/dev/null`. It is faster and more idiomatic.",
-				Line:    cmd.Token.Line,
-				Column:  cmd.Token.Column,
-				Level:   SeverityStyle,
-			}}
+// zc1273RedirectsStdoutToDevNull reports whether the arguments send grep's
+// stdout, and only its stdout, to /dev/null.
+//
+// The advice holds only for a plain stdout redirect. `&>` and `2>&1` also
+// discard stderr, which `grep -q` keeps printing, and `2>` never touched
+// stdout in the first place. A bare `/dev/null` with no operator before it
+// is a second search file, not a redirection: `grep pattern file /dev/null`
+// is the idiom that forces grep to prefix its output with file names.
+func zc1273RedirectsStdoutToDevNull(args []ast.Expression) bool {
+	if zc1273SuppressesStderr(args) {
+		return false
+	}
+	for i, arg := range args {
+		word, quoted := zc1053ArgWord(arg)
+		if quoted {
+			continue
+		}
+		op, target := zc1053SplitRedirect(word)
+		if op == "" {
+			continue
+		}
+		if target == "" && i+1 < len(args) {
+			target, _ = zc1053ArgWord(args[i+1])
+		}
+		if zc1053UnquoteWord(target) != "/dev/null" {
+			continue
+		}
+		if op == ">" || op == "1>" {
+			return true
 		}
 	}
+	return false
+}
 
-	return nil
+// zc1273SuppressesStderr reports whether the arguments also discard stderr,
+// through `&>`, `2>`, or a `2>&1` duplication. `grep -q` silences only
+// stdout, so it cannot stand in for any of these: grep would start printing
+// its errors again.
+func zc1273SuppressesStderr(args []ast.Expression) bool {
+	for _, arg := range args {
+		word, quoted := zc1053ArgWord(arg)
+		if quoted {
+			continue
+		}
+		op, _ := zc1053SplitRedirect(word)
+		switch op {
+		case "&>", "2>", "2>&", "&>>":
+			return true
+		}
+	}
+	return false
 }
 
 func init() {

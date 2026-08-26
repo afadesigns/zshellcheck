@@ -2644,16 +2644,69 @@ func TestZC1273(t *testing.T) {
 			expected: []katas.Violation{},
 		},
 		{
-			name:  "invalid grep redirected to /dev/null",
-			input: `grep pattern file.txt /dev/null`,
+			name:  "stdout redirected to /dev/null",
+			input: `grep pattern file.txt > /dev/null`,
 			expected: []katas.Violation{
 				{
 					KataID:  "ZC1273",
-					Message: "Use `grep -q` instead of redirecting to `/dev/null`. It is faster and more idiomatic.",
+					Message: "Use `grep -q` instead of redirecting to `/dev/null`. It exits on the first match instead of reading the whole input.",
 					Line:    1,
 					Column:  1,
 				},
 			},
+		},
+		{
+			name:  "stdout redirect written without a space",
+			input: `grep pattern file.txt >/dev/null`,
+			expected: []katas.Violation{
+				{
+					KataID:  "ZC1273",
+					Message: "Use `grep -q` instead of redirecting to `/dev/null`. It exits on the first match instead of reading the whole input.",
+					Line:    1,
+					Column:  1,
+				},
+			},
+		},
+		{
+			name:  "explicit stdout file descriptor",
+			input: `grep pattern file.txt 1>/dev/null`,
+			expected: []katas.Violation{
+				{
+					KataID:  "ZC1273",
+					Message: "Use `grep -q` instead of redirecting to `/dev/null`. It exits on the first match instead of reading the whole input.",
+					Line:    1,
+					Column:  1,
+				},
+			},
+		},
+		{
+			// `/dev/null` with no operator before it is a second search
+			// file, the idiom that forces grep to print file-name prefixes.
+			name:     "second search file is not a redirect",
+			input:    `grep pattern file.txt /dev/null`,
+			expected: []katas.Violation{},
+		},
+		{
+			// `grep -q` keeps printing to stderr, so it cannot replace a
+			// redirect that also discards stderr.
+			name:     "both streams discarded",
+			input:    `grep pattern file.txt &> /dev/null`,
+			expected: []katas.Violation{},
+		},
+		{
+			name:     "stderr duplicated onto stdout",
+			input:    `grep pattern file.txt > /dev/null 2>&1`,
+			expected: []katas.Violation{},
+		},
+		{
+			name:     "stderr only",
+			input:    `grep pattern file.txt 2> /dev/null`,
+			expected: []katas.Violation{},
+		},
+		{
+			name:     "appended rather than truncated",
+			input:    `grep pattern file.txt >> /dev/null`,
+			expected: []katas.Violation{},
 		},
 	}
 

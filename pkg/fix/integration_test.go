@@ -1270,11 +1270,19 @@ func TestFixIntegration_ZC1675_ExportStripFlag(t *testing.T) {
 	}
 }
 
-func TestFixIntegration_ZC1273_GrepDevNullToDashQ(t *testing.T) {
-	src := "grep PAT file /dev/null\n"
-	want := "grep -q PAT file\n"
-	if got := runFix(t, src); got != want {
-		t.Errorf("got %q, want %q", got, want)
+// ZC1273 reports without rewriting. The two forms differ in exit status
+// under `setopt pipefail`, in what happens to stderr, and in how much input
+// is read, so the source must come back untouched.
+func TestFixIntegration_ZC1273_ReportsWithoutRewriting(t *testing.T) {
+	for _, src := range []string{
+		"grep PAT file > /dev/null\n",
+		"grep PAT file >/dev/null\n",
+		"grep PAT file /dev/null\n",
+		"grep PAT file &> /dev/null\n",
+	} {
+		if got := runFix(t, src); got != src {
+			t.Errorf("ZC1273 rewrote %q into %q; it must only report", src, got)
+		}
 	}
 }
 
