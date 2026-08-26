@@ -4452,7 +4452,8 @@ func checkZC1184(node ast.Node) []Violation {
 
 	for _, arg := range cmd.Arguments {
 		val := arg.String()
-		if val == "-u" || val == "--unified" {
+		// diff documents `--unified[=NUM]`.
+		if name, _ := LongFlagName(val); name == "-u" || name == "--unified" {
 			return []Violation{{
 				KataID: "ZC1184",
 				Message: "Consider `git diff` instead of `diff -u` when working in a repository. " +

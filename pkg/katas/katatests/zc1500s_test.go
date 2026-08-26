@@ -711,6 +711,19 @@ func TestZC1514(t *testing.T) {
 			},
 		},
 		{
+			// The hash is just as exposed written inline.
+			name:  "invalid — usermod --password=hash bob",
+			input: `usermod --password=$6$salt$hashhash bob`,
+			expected: []katas.Violation{
+				{
+					KataID:  "ZC1514",
+					Message: "`usermod -p <hash>` puts the hashed password in ps / /proc / history. Use `chpasswd --crypt-method=SHA512` from stdin.",
+					Line:    1,
+					Column:  1,
+				},
+			},
+		},
+		{
 			name:  "invalid — usermod -p hash bob",
 			input: `usermod -p $6$salt$hashhash bob`,
 			expected: []katas.Violation{
@@ -2934,6 +2947,18 @@ func TestZC1560(t *testing.T) {
 			expected: []katas.Violation{},
 		},
 		{
+			name:  "invalid — pip install --trusted-host=host foo",
+			input: `pip install --trusted-host=pypi.example.com foo`,
+			expected: []katas.Violation{
+				{
+					KataID:  "ZC1560",
+					Message: "`pip --trusted-host` skips TLS verification and allows plain-HTTP for that index. Fix the CA trust and keep --index-url on https://.",
+					Line:    1,
+					Column:  1,
+				},
+			},
+		},
+		{
 			name:  "invalid — pip install --trusted-host pypi.example.com foo",
 			input: `pip install --trusted-host pypi.example.com foo`,
 			expected: []katas.Violation{
@@ -3046,6 +3071,19 @@ func TestZC1562(t *testing.T) {
 			},
 		},
 		{
+			// env documents the name inline as well.
+			name:  "invalid — env --unset=LD_PRELOAD cmd",
+			input: `env --unset=LD_PRELOAD cmd`,
+			expected: []katas.Violation{
+				{
+					KataID:  "ZC1562",
+					Message: "`env -u LD_PRELOAD` clears a security-relevant variable mid-run. Use `env -i` to sanitise, or set the right value explicitly.",
+					Line:    1,
+					Column:  1,
+				},
+			},
+		},
+		{
 			name:  "invalid — env -u LD_PRELOAD cmd",
 			input: `env -u LD_PRELOAD cmd`,
 			expected: []katas.Violation{
@@ -3120,6 +3158,18 @@ func TestZC1564(t *testing.T) {
 			name:     "valid — timedatectl status",
 			input:    `timedatectl status`,
 			expected: []katas.Violation{},
+		},
+		{
+			name:  "invalid — date --set=2025-01-01",
+			input: `date --set=2025-01-01`,
+			expected: []katas.Violation{
+				{
+					KataID:  "ZC1564",
+					Message: "`date -s` sets the wall clock manually — breaks TLS certs, cron catch-up, and systemd timer math. Use timesyncd/chrony/ntpd.",
+					Line:    1,
+					Column:  1,
+				},
+			},
 		},
 		{
 			name:  "invalid — date -s 2025-01-01",

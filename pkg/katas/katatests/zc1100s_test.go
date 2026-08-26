@@ -3262,6 +3262,18 @@ func TestZC1184(t *testing.T) {
 			expected: []katas.Violation{},
 		},
 		{
+			name:  "invalid diff --unified=3",
+			input: `diff --unified=3 old.txt new.txt`,
+			expected: []katas.Violation{
+				{
+					KataID:  "ZC1184",
+					Message: "Consider `git diff` instead of `diff -u` when working in a repository. `git diff` provides better context and integration.",
+					Line:    1,
+					Column:  1,
+				},
+			},
+		},
+		{
 			name:  "invalid diff -u",
 			input: `diff -u old.txt new.txt`,
 			expected: []katas.Violation{
