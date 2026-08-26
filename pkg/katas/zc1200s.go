@@ -5305,7 +5305,11 @@ func fixZC1293(node ast.Node, v Violation, source []byte) []FixEdit {
 	if string(source[cmdOff:cmdOff+len("test")]) != "test" {
 		return nil
 	}
-	lastArg := cmd.Arguments[len(cmd.Arguments)-1]
+	exprEnd := zc1293LastExprArg(cmd.Arguments)
+	if exprEnd < 0 {
+		return nil
+	}
+	lastArg := cmd.Arguments[exprEnd]
 	lastTok := lastArg.TokenLiteralNode()
 	lastOff := LineColToByteOffset(source, lastTok.Line, lastTok.Column)
 	if lastOff < 0 {
@@ -5324,6 +5328,30 @@ func fixZC1293(node ast.Node, v Violation, source []byte) []FixEdit {
 		{Line: v.Line, Column: v.Column, Length: len("test"), Replace: "[["},
 		{Line: endLine, Column: endCol, Length: 0, Replace: " ]]"},
 	}
+}
+
+// zc1293LastExprArg returns the index of the last argument belonging to the
+// test expression itself, stopping before any trailing redirection.
+//
+// The parser folds a redirection into the argument list rather than building
+// a redirection node, so `test -f f 2>/dev/null` arrives with the redirect
+// among the arguments. Closing the bracket after it would produce
+// `[[ -f f 2>/dev/null ]]`, which Zsh rejects; the redirect has to stay
+// outside, as `[[ -f f ]] 2>/dev/null`. Returns -1 when nothing but a
+// redirection follows the command name.
+func zc1293LastExprArg(args []ast.Expression) int {
+	end := len(args)
+	for i, arg := range args {
+		word, quoted := zc1053ArgWord(arg)
+		if quoted {
+			continue
+		}
+		if op, _ := zc1053SplitRedirect(word); op != "" {
+			end = i
+			break
+		}
+	}
+	return end - 1
 }
 
 func offsetLineColZC1293(source []byte, offset int) (int, int) {
