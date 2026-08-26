@@ -706,6 +706,12 @@ func findTestCloseBracket(source []byte, open int) int {
 type bracketScan struct {
 	inSingle, inDouble bool
 	braceDepth         int
+	// A `[` inside the expression opens a glob character class
+	// (`file[1]`, `[^[:space:]]`) and a `(` opens a glob qualifier
+	// (`*(.,@[1])`). Both can contain a `]` that does not end the test, so
+	// the scan has to count them.
+	bracketDepth int
+	parenDepth   int
 }
 
 // advance returns (newIndex, true) when the byte at i drives the scanner
@@ -744,8 +750,20 @@ func (s *bracketScan) closedAt(source []byte, i int) bool {
 		if s.braceDepth > 0 {
 			s.braceDepth--
 		}
+	case '[':
+		s.bracketDepth++
+	case '(':
+		s.parenDepth++
+	case ')':
+		if s.parenDepth > 0 {
+			s.parenDepth--
+		}
 	case ']':
-		if s.braceDepth == 0 {
+		if s.bracketDepth > 0 {
+			s.bracketDepth--
+			return false
+		}
+		if s.braceDepth == 0 && s.parenDepth == 0 {
 			return true
 		}
 	}

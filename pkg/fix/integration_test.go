@@ -1566,6 +1566,22 @@ func TestFixIntegration_ZC1293_TestToDoubleBracket(t *testing.T) {
 // A redirection is not part of the test expression, so the closing bracket
 // goes before it. Wrapping it inside produces `[[ -f f 2>/dev/null ]]`,
 // which Zsh rejects.
+// The `]` that ends a test is not always the first one: a glob character
+// class or a glob qualifier can carry its own. Doubling the wrong bracket
+// produced `[[ -e f(.,@[1]]) ]`, which Zsh rejects.
+func TestFixIntegration_ZC1010_ClosingBracketPastNestedBrackets(t *testing.T) {
+	cases := map[string]string{
+		"[ -e \"$1\"/*\"$2\"(.,@[1]) ]\n": "[[ -e \"$1\"/*\"$2\"(.,@[1]) ]]\n",
+		"[ -e file[1] ]\n":                "[[ -e file[1] ]]\n",
+		"[ -e \"${arr[1]}\" ]\n":          "[[ -e \"${arr[1]}\" ]]\n",
+	}
+	for src, want := range cases {
+		if got := runFix(t, src); got != want {
+			t.Errorf("got %q, want %q", got, want)
+		}
+	}
+}
+
 func TestFixIntegration_ZC1293_RedirectStaysOutsideBrackets(t *testing.T) {
 	cases := map[string]string{
 		"test -f f 2>/dev/null\n":  "[[ -f f ]] 2>/dev/null\n",
