@@ -170,3 +170,44 @@ func TestZC1053SilencesStdout(t *testing.T) {
 		t.Error("zc1053SilencesStdout(< /dev/null) = true, want false")
 	}
 }
+
+// TestZC1293LastExprArg pins where the rewritten conditional ends. A
+// trailing redirection belongs outside the brackets, and a quoted word that
+// merely looks like one is part of the expression.
+func TestZC1293LastExprArg(t *testing.T) {
+	concat := func(parts ...ast.Expression) ast.Expression {
+		return &ast.ConcatenatedExpression{Parts: parts}
+	}
+	cases := []struct {
+		name string
+		args []ast.Expression
+		want int
+	}{
+		{"no redirection", []ast.Expression{zc1053Ident("-f"), zc1053Ident("file")}, 1},
+		{
+			"attached redirection",
+			[]ast.Expression{zc1053Ident("-f"), zc1053Ident("f"), concat(zc1053Str("2>"), zc1053Ident("/dev/null"))},
+			1,
+		},
+		{
+			"spaced redirection",
+			[]ast.Expression{zc1053Ident("-f"), zc1053Ident("f"), zc1053Str(">"), zc1053Ident("/dev/null")},
+			1,
+		},
+		{
+			// A quoted word is an operand even when it looks like an operator.
+			"quoted operator is an operand",
+			[]ast.Expression{zc1053Ident("-n"), zc1053Str(`">"`)},
+			1,
+		},
+		{"only a redirection", []ast.Expression{concat(zc1053Str(">"), zc1053Ident("/dev/null"))}, -1},
+		{"no arguments", []ast.Expression{}, -1},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			if got := zc1293LastExprArg(tc.args); got != tc.want {
+				t.Errorf("zc1293LastExprArg(%s) = %d, want %d", tc.name, got, tc.want)
+			}
+		})
+	}
+}
