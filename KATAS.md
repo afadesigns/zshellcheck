@@ -11,7 +11,7 @@ Auto-generated list of all 1000 implemented checks. Do not edit by hand — rege
 | `info` | 64 |
 | `style` | 257 |
 | **total** | **1000** |
-| **with auto-fix** | **132** |
+| **with auto-fix** | **131** |
 
 Auto-fix availability is marked per-entry below as **Auto-fix:** `yes` or `no`. Run `zshellcheck -fix path/...` to apply every available rewrite, or `-diff` to preview without writing.
 
@@ -286,7 +286,7 @@ Auto-fix availability is marked per-entry below as **Auto-fix:** `yes` or `no`. 
 - [ZC1270: Use `mktemp` instead of hardcoded `/tmp` paths](#zc1270)
 - [ZC1271: Use `command -v` instead of `which` for command existence checks](#zc1271) · auto-fix
 - [ZC1272: Use `install -m` instead of separate `cp` and `chmod`](#zc1272)
-- [ZC1273: Use `grep -q` instead of redirecting grep output to `/dev/null`](#zc1273) · auto-fix
+- [ZC1273: Use `grep -q` instead of redirecting grep output to `/dev/null`](#zc1273)
 - [ZC1274: Use Zsh `${var:t}` instead of `basename`](#zc1274)
 - [ZC1275: Use Zsh `${var:h}` instead of `dirname`](#zc1275)
 - [ZC1276: Use Zsh `{start..end}` instead of `seq`](#zc1276) · auto-fix
@@ -4252,9 +4252,9 @@ Disable by adding `ZC1272` to `disabled_katas` in `.zshellcheckrc`.
 ### ZC1273 — Use `grep -q` instead of redirecting grep output to `/dev/null`
 
 **Severity:** `style`  
-**Auto-fix:** `yes`
+**Auto-fix:** `no`
 
-`grep -q` suppresses output and exits on first match, which is faster and more idiomatic than piping or redirecting to `/dev/null`.
+`grep -q` suppresses output and exits on the first match, which is faster than reading the whole input and discarding it. Rewrite by hand: the two forms are not interchangeable. `-q` exits early, so under `setopt pipefail` a producer earlier in the pipeline is killed by SIGPIPE and the pipeline status becomes 141 rather than 0. `-q` also leaves stderr alone, so it does not replace `&>` or `2>&1`.
 
 Disable by adding `ZC1273` to `disabled_katas` in `.zshellcheckrc`.
 

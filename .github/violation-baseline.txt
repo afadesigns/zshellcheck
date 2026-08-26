@@ -421,7 +421,6 @@ prezto/modules/gpg/init.zsh	ZC1046	1
 prezto/modules/gpg/init.zsh	ZC1086	1
 prezto/modules/gpg/init.zsh	ZC1098	1
 prezto/modules/gpg/init.zsh	ZC1125	1
-prezto/modules/gpg/init.zsh	ZC1273	1
 prezto/modules/gpg/init.zsh	ZC1502	1
 prezto/modules/helper/init.zsh	ZC1076	1
 prezto/modules/helper/init.zsh	ZC1086	9
@@ -603,7 +602,6 @@ spaceship/sections/haxe.zsh	ZC1091	1
 spaceship/sections/hg_branch.zsh	ZC1045	1
 spaceship/sections/hg_status.zsh	ZC1037	4
 spaceship/sections/hg_status.zsh	ZC1045	1
-spaceship/sections/hg_status.zsh	ZC1273	4
 spaceship/sections/hg.zsh	ZC1010	1
 spaceship/sections/hg.zsh	ZC1045	2
 spaceship/sections/hg.zsh	ZC1097	1
@@ -1184,7 +1182,6 @@ zinit/zinit-autoload.zsh	ZC1197	1
 zinit/zinit-autoload.zsh	ZC1227	2
 zinit/zinit-autoload.zsh	ZC1241	1
 zinit/zinit-autoload.zsh	ZC1255	2
-zinit/zinit-autoload.zsh	ZC1273	1
 zinit/zinit-autoload.zsh	ZC1502	1
 zinit/zinit-autoload.zsh	ZC1520	4
 zinit/zinit-autoload.zsh	ZC1604	5
@@ -1207,6 +1204,7 @@ zinit/zinit-install.zsh	ZC1099	1
 zinit/zinit-install.zsh	ZC1139	1
 zinit/zinit-install.zsh	ZC1166	1
 zinit/zinit-install.zsh	ZC1179	3
+zinit/zinit-install.zsh	ZC1273	1
 zinit/zinit-install.zsh	ZC1833	3
 zinit/zinit-install.zsh	ZC1867	1
 zinit/zinit-install.zsh	ZC1875	7
@@ -1251,6 +1249,7 @@ zpm/zpm.zsh	ZC1188	1
 zsh-256color/zsh-256color.plugin.zsh	ZC1001	1
 zsh-256color/zsh-256color.plugin.zsh	ZC1037	1
 zsh-256color/zsh-256color.plugin.zsh	ZC1097	2
+zsh-256color/zsh-256color.plugin.zsh	ZC1273	1
 zsh-256color/zsh-256color.plugin.zsh	ZC1502	1
 zsh-abbr/tests/_abbr-expand-line.ztr.zsh	ZC1075	8
 zsh-abbr/tests/_abbr-set-line-cursor.ztr.zsh	ZC1043	2
