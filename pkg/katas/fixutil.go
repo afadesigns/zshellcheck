@@ -2,7 +2,11 @@
 // Copyright the ZShellCheck contributors.
 package katas
 
-import "github.com/afadesigns/zshellcheck/pkg/ast"
+import (
+	"strings"
+
+	"github.com/afadesigns/zshellcheck/pkg/ast"
+)
 
 // LineColToByteOffset converts a 1-based (line, column) coordinate
 // pair into a 0-based byte offset within source. It returns -1 when
@@ -115,4 +119,20 @@ func CommandIdentifier(cmd *ast.SimpleCommand) string {
 		return ""
 	}
 	return ident.Value
+}
+
+// LongFlagName splits a long option into its name and reports whether the
+// argument carried an inline value. `--depth=1` yields `--depth`, true;
+// `--depth` yields `--depth`, false. A word that is not a long option comes
+// back unchanged. Most GNU-style tools accept both spellings for a
+// value-taking option, so a kata that compares an argument against a bare
+// `--flag` sees only half of real usage.
+func LongFlagName(word string) (string, bool) {
+	if !strings.HasPrefix(word, "--") {
+		return word, false
+	}
+	if name, _, found := strings.Cut(word, "="); found {
+		return name, true
+	}
+	return word, false
 }

@@ -1125,7 +1125,6 @@ zgen/zgen.zsh	ZC1075	3
 zgen/zgen.zsh	ZC1097	7
 zgen/zgen.zsh	ZC1098	1
 zgen/zgen.zsh	ZC1099	1
-zgen/zgen.zsh	ZC1231	1
 zgen/zgen.zsh	ZC1830	1
 zhooks/zhooks.plugin.zsh	ZC1075	2
 zimfw/zimfw.zsh	ZC1040	1
