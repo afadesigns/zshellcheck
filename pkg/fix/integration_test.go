@@ -653,6 +653,23 @@ func TestFixIntegration_ZC1231_GitCloneShallow(t *testing.T) {
 	}
 }
 
+// A clone that already limits its history is left alone. Inserting a second
+// history-limiting option is never an improvement: git refuses `--depth`
+// together with `--shallow-since`, and a second `--depth` silently overrides
+// the first.
+func TestFixIntegration_ZC1231_ShallowCloneUntouched(t *testing.T) {
+	for _, src := range []string{
+		"git clone --depth=1 https://github.com/x/y\n",
+		"git clone --depth=50 https://github.com/x/y\n",
+		"git clone --shallow-since=2024-01-01 https://github.com/x/y\n",
+		"git clone --shallow-exclude=refs/tags/v1 https://github.com/x/y\n",
+	} {
+		if got := runFix(t, src); got != src {
+			t.Errorf("got %q, want it unchanged", got)
+		}
+	}
+}
+
 func TestFixIntegration_ZC1241_XargsAddNullSep(t *testing.T) {
 	src := "xargs rm\n"
 	// ZC1773 (xargs -r to skip the no-input run) shares this fixture and

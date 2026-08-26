@@ -53,3 +53,50 @@ func TestIdentLenAt(t *testing.T) {
 		t.Errorf("IdentLenAt(eof)=%d, want 0", got)
 	}
 }
+
+// TestLongFlagName pins the split between a long option and its inline
+// value, including the words that are not long options at all.
+func TestLongFlagName(t *testing.T) {
+	cases := []struct {
+		word      string
+		wantName  string
+		wantValue bool
+	}{
+		{"--depth=1", "--depth", true},
+		{"--depth", "--depth", false},
+		{"--filter=blob:none", "--filter", true},
+		{`--depth="1"`, "--depth", true},
+		{"--depth=", "--depth", true},
+		{"--", "--", false},
+		{"-d=1", "-d=1", false},
+		{"clone", "clone", false},
+		{"", "", false},
+	}
+	for _, tc := range cases {
+		name, value := LongFlagName(tc.word)
+		if name != tc.wantName || value != tc.wantValue {
+			t.Errorf("LongFlagName(%q) = (%q, %v), want (%q, %v)",
+				tc.word, name, value, tc.wantName, tc.wantValue)
+		}
+	}
+}
+
+// TestZC1231LimitsHistory pins which `git clone` options count as already
+// limiting the downloaded history.
+func TestZC1231LimitsHistory(t *testing.T) {
+	for _, word := range []string{
+		"--depth", "--depth=1", "--shallow-since=2024-01-01",
+		"--shallow-since", "--shallow-exclude=refs/tags/v1",
+	} {
+		if !zc1231LimitsHistory(word) {
+			t.Errorf("zc1231LimitsHistory(%q) = false, want true", word)
+		}
+	}
+	for _, word := range []string{
+		"--single-branch", "--filter=blob:none", "--recursive", "-b", "clone", "",
+	} {
+		if zc1231LimitsHistory(word) {
+			t.Errorf("zc1231LimitsHistory(%q) = true, want false", word)
+		}
+	}
+}

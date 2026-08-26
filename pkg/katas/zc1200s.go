@@ -1724,6 +1724,22 @@ func init() {
 	})
 }
 
+// zc1231ShallowFlags are the `git clone` options that truncate the history
+// the clone downloads. Each takes a value, and git accepts both spellings:
+// `--depth 1` and `--depth=1`.
+var zc1231ShallowFlags = map[string]bool{
+	"--depth":           true,
+	"--shallow-since":   true,
+	"--shallow-exclude": true,
+}
+
+// zc1231LimitsHistory reports whether a `git clone` argument already limits
+// how much history the clone downloads.
+func zc1231LimitsHistory(word string) bool {
+	name, _ := LongFlagName(word)
+	return zc1231ShallowFlags[name]
+}
+
 // fixZC1231 inserts ` --depth 1` after the `clone` subcommand in
 // `git clone …`. Mirrors ZC1234's subcommand-level insertion for
 // docker run --rm.
@@ -1738,6 +1754,14 @@ func fixZC1231(node ast.Node, _ Violation, source []byte) []FixEdit {
 	cloneArg := cmd.Arguments[0]
 	if cloneArg.String() != "clone" {
 		return nil
+	}
+	// Adding a second history-limiting option is never right: `--depth 1`
+	// alongside `--shallow-since` makes git refuse the clone outright, and
+	// alongside another `--depth` the last value silently wins.
+	for _, arg := range cmd.Arguments[1:] {
+		if zc1231LimitsHistory(arg.String()) {
+			return nil
+		}
 	}
 	tok := cloneArg.TokenLiteralNode()
 	off := LineColToByteOffset(source, tok.Line, tok.Column)
@@ -1798,8 +1822,7 @@ func checkZC1231(node ast.Node) []Violation {
 
 	hasDepth := false
 	for _, arg := range cmd.Arguments[1:] {
-		val := arg.String()
-		if val == "--depth" || val == "--shallow-since" || val == "--single-branch" {
+		if zc1231LimitsHistory(arg.String()) {
 			hasDepth = true
 		}
 	}

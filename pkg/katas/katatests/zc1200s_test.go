@@ -1098,6 +1098,52 @@ func TestZC1231(t *testing.T) {
 			expected: []katas.Violation{},
 		},
 		{
+			// Git accepts an inline value for every option that
+			// truncates history, and that spelling is the common one.
+			name:     "valid git clone --depth=1",
+			input:    `git clone --depth=1 https://github.com/user/repo`,
+			expected: []katas.Violation{},
+		},
+		{
+			name:     "valid git clone --depth=50",
+			input:    `git clone --depth=50 https://github.com/user/repo`,
+			expected: []katas.Violation{},
+		},
+		{
+			name:     "valid git clone --depth quoted value",
+			input:    `git clone --depth="1" https://github.com/user/repo`,
+			expected: []katas.Violation{},
+		},
+		{
+			name:     "valid git clone --shallow-since inline",
+			input:    `git clone --shallow-since=2024-01-01 https://github.com/user/repo`,
+			expected: []katas.Violation{},
+		},
+		{
+			name:     "valid git clone --shallow-since spaced",
+			input:    `git clone --shallow-since 2024-01-01 https://github.com/user/repo`,
+			expected: []katas.Violation{},
+		},
+		{
+			name:     "valid git clone --shallow-exclude",
+			input:    `git clone --shallow-exclude=refs/tags/v1 https://github.com/user/repo`,
+			expected: []katas.Violation{},
+		},
+		{
+			// `--single-branch` narrows the clone to one branch but still
+			// downloads that branch's whole history.
+			name:  "invalid git clone --single-branch",
+			input: `git clone --single-branch https://github.com/user/repo`,
+			expected: []katas.Violation{
+				{
+					KataID:  "ZC1231",
+					Message: "Consider `git clone --depth 1` in scripts. Full clones download entire history which is unnecessary for builds and CI.",
+					Line:    1,
+					Column:  1,
+				},
+			},
+		},
+		{
 			name:  "invalid git clone full",
 			input: `git clone https://github.com/user/repo`,
 			expected: []katas.Violation{
