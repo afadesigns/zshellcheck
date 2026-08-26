@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.7.3] - 2026-08-26
+
+### Fixed
+- Auto-fix no longer rewrites a file into code Zsh cannot parse. A violation's edits now apply as one unit, so a rewrite that only partly succeeds is dropped whole rather than left half-applied. Applying every fix across the pinned corpora previously broke eleven files; it now breaks none.
+- ZC1273 reports a `grep` that could use `-q` without rewriting the redirect. The rewrite orphaned the redirection operator, and `-q` is not equivalent in a pipeline under `pipefail` or when stderr is also redirected.
+- ZC1293 keeps a trailing redirection outside the brackets it introduces, instead of wrapping it inside them.
+- ZC1003 and ZC1010 find the bracket that really closes a test, counting nested glob character classes and glob qualifiers instead of stopping at the first `]`.
+- ZC1053 no longer reports a `grep` whose output is already discarded. The kata now recognises every redirection spelling, including the attached `>/dev/null`, and reads an option cluster left to right so a flag that takes a value cannot be mistaken for `-q`.
+- ZC1044 reports a `cd` where a failed one can actually do harm: function bodies declared with `function name { … }`, `case` clause bodies and `select` bodies are now walked, and a `cd` that ends a function is exempt.
+- A `( … )` in command position parses as a subshell rather than an array literal, so katas that walk commands see the body.
+- A redirection with no target is a parser error, as it is in Zsh. The auto-fix safety gate measures corruption with this parser, so a rewrite that dropped a redirect target while leaving its operator behind used to pass unnoticed.
+- Sixteen katas read an option written as `--flag=value`, not only as `--flag value`. Among them: ZC1231 stops reporting `git clone --depth=1` and no longer produces `--depth 1 --shallow-since=<date>`, a pair Git refuses; ZC1523 catches `tar --directory=/`; ZC1514 catches `usermod --password=<hash>`; and ZC1402's inline-form branch, which compared six characters against a seven-character literal and could never be taken, now works.
+
 ## [1.7.2] - 2026-08-24
 
 ### Fixed
