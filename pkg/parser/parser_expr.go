@@ -1437,10 +1437,33 @@ func (p *Parser) parseRedirection(left ast.Expression) ast.Expression {
 		Left:     left,
 	}
 
+	// A redirection needs somewhere to redirect to. Zsh rejects `cmd >`
+	// outright, and accepting it silently is how a rewrite that deleted a
+	// redirect target while leaving its operator behind passed every gate:
+	// the fix-safety sweep measures corruption with this parser, so what
+	// this parser forgives, that gate cannot see.
+	if p.redirectTargetMissing() {
+		p.errors = append(p.errors, fmt.Sprintf("line %d:%d: redirection %q has no target",
+			expr.Token.Line, expr.Token.Column, expr.Operator))
+		return expr
+	}
+
 	p.nextToken()
 	expr.Right = p.parseExpression(LOWEST)
 
 	return expr
+}
+
+// redirectTargetMissing reports whether the redirection operator at
+// curToken is followed by nothing that could name a target: the end of the
+// input, a command separator, or the start of a new logical line.
+func (p *Parser) redirectTargetMissing() bool {
+	switch p.peekToken.Type {
+	case token.EOF, token.SEMICOLON, token.DSEMI, token.PIPE, token.AND, token.OR,
+		token.AMPERSAND, token.RPAREN, token.RBRACE, token.DoubleRparen, token.RDBRACKET:
+		return true
+	}
+	return !p.peekOnSameLogicalLine()
 }
 
 func (p *Parser) parseIndexExpression(left ast.Expression) ast.Expression {
