@@ -2,7 +2,12 @@
 // Copyright the ZShellCheck contributors.
 package katas
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/afadesigns/zshellcheck/pkg/ast"
+	"github.com/afadesigns/zshellcheck/pkg/token"
+)
 
 func TestLineColToByteOffset(t *testing.T) {
 	src := []byte("abc\ndef\nghi")
@@ -98,5 +103,36 @@ func TestZC1231LimitsHistory(t *testing.T) {
 		if zc1231LimitsHistory(word) {
 			t.Errorf("zc1231LimitsHistory(%q) = true, want false", word)
 		}
+	}
+}
+
+// TestFixZC1231RefusesSecondShallowFlag pins the guard inside the fix. The
+// check never reports a clone that already limits its history, so this path
+// exists to keep a future change to the check from producing
+// `--depth 1 --shallow-since=...`, which git refuses outright.
+func TestFixZC1231RefusesSecondShallowFlag(t *testing.T) {
+	// The fix locates the `clone` token in the source by position, so the
+	// argument carries the column it occupies in `source`.
+	clone := func(flag string) *ast.SimpleCommand {
+		cloneArg := &ast.Identifier{
+			Token: token.Token{Literal: "clone", Line: 1, Column: 5},
+			Value: "clone",
+		}
+		args := []ast.Expression{cloneArg}
+		if flag != "" {
+			args = append(args, &ast.Identifier{Value: flag})
+		}
+		args = append(args, &ast.Identifier{Value: "https://example.com/r"})
+		return &ast.SimpleCommand{Name: &ast.Identifier{Value: "git"}, Arguments: args}
+	}
+	source := []byte("git clone https://example.com/r\n")
+	for _, flag := range []string{"--depth=1", "--shallow-since=2024-01-01", "--shallow-exclude=v1"} {
+		if edits := fixZC1231(clone(flag), Violation{}, source); edits != nil {
+			t.Errorf("fixZC1231 with %s returned %d edits, want none", flag, len(edits))
+		}
+	}
+	// A clone with no such flag still gets the insertion.
+	if edits := fixZC1231(clone(""), Violation{}, source); len(edits) != 1 {
+		t.Errorf("fixZC1231 on a full clone returned %d edits, want 1", len(edits))
 	}
 }
