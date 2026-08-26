@@ -93,6 +93,11 @@ jobs:
           cache: true
       - name: Build zshellcheck
         run: go build -o zshellcheck ./cmd/zshellcheck
+      - name: Install Zsh
+        # The auto-fix sweep asks zsh whether a rewritten file still parses.
+        # Without zsh that check skips itself, so the gate would pass while
+        # seeing only what our own parser sees.
+        run: sudo apt-get update && sudo apt-get install -y zsh
       - name: Sweep pinned corpora against baseline
         env:
           ZSHELLCHECK_BIN: ${{ github.workspace }}/zshellcheck
