@@ -15,9 +15,9 @@ The full CLI reference lives in [docs/USER_GUIDE.md](docs/USER_GUIDE.md).
 
 ## macOS
 
-The signed installer covers Apple Silicon and Intel.
+The installer covers Apple Silicon and Intel.
 
-### Recommended: automated installer
+### Recommended: download installer
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/afadesigns/zshellcheck/main/install.sh | bash
@@ -26,8 +26,9 @@ curl -fsSL https://raw.githubusercontent.com/afadesigns/zshellcheck/main/install
 What the installer does:
 
 - Resolves the latest GitHub release tag.
-- Verifies the SHA-256 checksum against `checksums.txt`.
-- Verifies the cosign signature when `cosign` is on `$PATH`; the SHA check is the floor when it is not.
+- Verifies a matching SHA-256 entry when checksum tools and `checksums.txt` are available.
+  Missing verification support produces a warning and installation continues.
+- Leaves signature and provenance verification to the [manual procedure](#verifying-a-release-manually).
 - Drops the binary into `~/.local/bin/zshellcheck` without `sudo`.
 - Installs a man page to `~/.local/share/man/man1` and shell completions to `~/.local/share/zsh/site-functions` and `~/.local/share/bash-completion/completions`.
 - Updates the shell `fpath` for completions when the prompt is accepted.
@@ -63,6 +64,27 @@ mv zshellcheck ~/.local/bin/
 `uname -m` returns `arm64` on Apple Silicon and `x86_64` on Intel.
 Both are pre-built and signed.
 The archive includes the binary, `LICENSE`, `README.md`, `CHANGELOG.md`, the man page, and shell completions.
+
+### Zsh completions from the binary
+
+You can install the completion function without downloading another file:
+
+```zsh
+mkdir -p ~/.local/share/zsh/site-functions
+zshellcheck --completions > ~/.local/share/zsh/site-functions/_zshellcheck
+```
+
+Add the directory to `fpath` before calling `compinit` in your `.zshrc`:
+
+```zsh
+fpath=(~/.local/share/zsh/site-functions $fpath)
+autoload -Uz compinit
+compinit
+```
+
+If your configuration already calls `compinit`, place the `fpath` line before that call.
+Restart Zsh to load the completion function.
+The output is an autoload file for `fpath`; do not source it directly.
 
 ---
 
@@ -181,7 +203,7 @@ The `zshellcheck-bin` AUR package is in flight.
 See [ROADMAP.md → Distribution channels](ROADMAP.md#version-1x--beyond-the-milestone).
 Until it lands, use the universal installer below.
 
-### Universal: automated installer
+### Universal: download installer
 
 Works on every distribution with `bash`, `curl`, and `tar`.
 Skips the package manager.
@@ -191,7 +213,8 @@ curl -fsSL https://raw.githubusercontent.com/afadesigns/zshellcheck/main/install
 ```
 
 Installs to `~/.local/bin/zshellcheck`, or `/usr/local/bin/zshellcheck` when run as root.
-Same SHA-256 and cosign verification as macOS.
+Uses the same optional SHA-256 verification as the macOS installer.
+Verify signatures and provenance with the manual procedure below.
 
 Pin a version: `bash -s -- --version vX.Y.Z`.
 Uninstall: `bash -s -- --uninstall`.
@@ -262,16 +285,38 @@ Subsequent `git commit` invocations run ZShellCheck against staged Zsh files.
 Every Releases archive ships with three sibling files: `<archive>.pem` (cosign certificate), `<archive>.sig` (cosign signature), and `checksums.txt` (SHA-256 of every artifact).
 
 ```bash
+release_tag=vX.Y.Z
 cosign verify-blob \
   --certificate zshellcheck_Linux_x86_64.tar.gz.pem \
   --signature   zshellcheck_Linux_x86_64.tar.gz.sig \
-  --certificate-identity-regexp 'https://github.com/afadesigns/zshellcheck/.*' \
+  --certificate-identity "https://github.com/afadesigns/zshellcheck/.github/workflows/release-build.yml@refs/tags/$release_tag" \
   --certificate-oidc-issuer https://token.actions.githubusercontent.com \
   zshellcheck_Linux_x86_64.tar.gz
 ```
 
+Replace `vX.Y.Z` with the intended release tag.
 The SHA-256 sum file `checksums.txt` is itself signed (`checksums.txt.pem`, `checksums.txt.sig`).
-SLSA Level 3 build provenance lives at <https://github.com/afadesigns/zshellcheck/attestations>.
+
+Release archives, packages, archive SBOMs, and checksums have SLSA build provenance from an isolated signing workflow.
+Download `zshellcheck-provenance.json` alongside the archive and verify its signer and source:
+
+```bash
+release_tag=vX.Y.Z
+release_commit=REVIEWED_COMMIT_SHA
+gh attestation verify zshellcheck_Linux_x86_64.tar.gz \
+  --bundle zshellcheck-provenance.json \
+  --repo afadesigns/zshellcheck \
+  --cert-identity "https://github.com/afadesigns/zshellcheck/.github/workflows/release-provenance.yml@refs/tags/$release_tag" \
+  --signer-digest "$release_commit" \
+  --source-ref "refs/tags/$release_tag" --source-digest "$release_commit" \
+  --deny-self-hosted-runners
+```
+
+Replace both placeholders with the intended tag and its independently reviewed commit SHA.
+The signer workflow must be reviewed at that commit; trusting a checksum alone does not establish the builder's identity.
+The release workflow checks every attested file before publishing the GitHub release.
+Container images retain separate cosign signatures and are outside this file-provenance guarantee.
+See the [attestations index](https://github.com/afadesigns/zshellcheck/attestations) for published statements.
 
 ---
 
@@ -283,8 +328,8 @@ Open a new shell.
 Verify the directory is on `$PATH` with `echo $PATH | tr ':' '\n' | grep zshellcheck`.
 
 **`cosign not on PATH — skipping signature verification`.**
-Optional but recommended.
-Install cosign from <https://github.com/sigstore/cosign>; the installer falls back to SHA-256 only.
+The Windows installer verifies signatures when cosign is available.
+The POSIX installer requires the manual verification procedure above.
 
 **Apple Silicon vs Intel.**
 The installer detects `uname -m`.

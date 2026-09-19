@@ -13,6 +13,8 @@ Set Padding 24
 Set TypingSpeed 45ms
 Set CursorBlink false
 
+# Set ZSHELLCHECK_DEMO_DIR to a disposable directory containing deploy.zsh.
+# Install zshellcheck on PATH before recording.
 # Hidden setup — load p10k via ~/.zshrc, alias zshellcheck to suppress the banner
 # (the banner is shown above this GIF as banner.png; xterm.js renders block glyphs
 # with sub-pixel gaps so embedding the chafa banner here looks bad).
@@ -20,9 +22,9 @@ Hide
 Type "source ~/.zshrc 2>/dev/null"
 Enter
 Sleep 1800ms
-Type "alias zshellcheck='/home/rtx/.config/zsh/zshellcheck/bin/zshellcheck -no-banner'"
+Type "alias zshellcheck='command zshellcheck -no-banner'"
 Enter
-Type "cd ~/.config/zsh/zshellcheck/samples"
+Type "cd \"${ZSHELLCHECK_DEMO_DIR:?Set ZSHELLCHECK_DEMO_DIR before recording}\""
 Enter
 Type "clear"
 Enter

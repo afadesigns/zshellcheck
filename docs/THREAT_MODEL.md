@@ -34,11 +34,26 @@ It is the canonical reference for the OpenSSF Best Practices `assurance_case` an
 | Boundary | Inside (trusted) | Outside (not trusted) |
 | :--- | :--- | :--- |
 | Filesystem read | Files the user passed on the CLI | Anything else under `$HOME` |
-| Filesystem write | Same paths under `-fix`; report files under `-cpuprofile` | Everything else |
+| Filesystem write | Input paths under `-fix` or `-add-noka`; explicit destinations under `-baseline-write` and `-cpuprofile` | Everything else |
 | Network | None at runtime | All network endpoints |
 | Process exec | None | All external processes |
-| Build pipeline | GitHub-hosted runners, signed cosign attestations, pinned action SHAs | Any unsigned artefact |
+| Build pipeline | Reviewed reusable workflows, ephemeral GitHub-hosted runners, pinned action SHAs | Build hooks and dependency code |
+| Provenance signing | Isolated workflow with platform-generated provenance | Build job; only validated subject names and SHA-256 digests cross this boundary |
 | Release distribution | cosign-verified archives + SHA-256 checksum file | Mirror copies, third-party rehosts |
+| POSIX installation | Selected executable, man page, and completion members from the release archive | Other archive members |
+
+`--completions` emits an embedded completion asset to stdout.
+It does not execute the asset, read configuration, or scan input paths.
+The shell loads the asset only after you install it in `fpath` and initialize completion.
+The POSIX installer checks a matching SHA-256 entry when available; it warns and continues when checksum verification is unavailable.
+Use the signature-verification procedure in [INSTALL.md](../INSTALL.md#verifying-a-release-manually) before trusting a downloaded archive.
+
+`release-build.yml` builds with restored caches disabled and invokes `release-provenance.yml` on a separate runner.
+The signer checks every checksum record and runs no checkout, build hooks, or caller-provided commands.
+Its OIDC identity differs from the build job's cosign identity.
+The publication job downloads draft assets, checks their digests, and verifies every attested file against the exact signer identity, signer commit, source ref, and source commit.
+Only then does it publish the GitHub release.
+Archives, packages, archive SBOMs, and checksums are covered; container publication retains separate cosign signing.
 
 ## Threat model
 
@@ -47,8 +62,8 @@ It is the canonical reference for the OpenSSF Best Practices `assurance_case` an
 | Hostile Zsh source triggers RCE via parser bug | Parser is recursive-descent over a typed token stream; no `eval`, no `exec`, no shell-out. Fuzz harness runs nightly against the lexer and parser. |
 | Hostile input causes infinite loop or memory exhaustion | Parser has bounded recursion. Lexer is single-pass. Fuzz harness exercises pathological inputs. |
 | `-fix` corrupts user files | Fixes are byte-exact, idempotent, and context-free per kata. Preview with `-diff` and `-dry-run` before write. Multi-pass cap prevents oscillation. |
-| MITM on install script | `install.sh` and `install.ps1` are served over HTTPS, verify SHA-256 against `checksums.txt`, and verify cosign signatures when cosign is on PATH. |
-| Compromised release artefact | Every archive ships with a cosign signature pinned to the GitHub Actions OIDC issuer. SLSA Level 3 build provenance is queryable from the attestations index. |
+| MITM on install script | Install scripts are served over HTTPS. The POSIX installer uses available SHA-256 checksums; signature verification is a separate manual step. |
+| Compromised release artefact | Archive signatures and isolated build provenance bind release files to the reviewed workflows. Publication requires matching checksums and verified signer/source identities. |
 | Dependency hijack | `go.mod` and `go.sum` pin every direct and transitive module. Dependabot opens PRs for security advisories. OSV-Scanner runs on every PR. |
 | Malicious GitHub Action | Every third-party action is pinned to a 40-char commit SHA, never a tag. `actionlint` validates workflow syntax; CodeQL scans every push. |
 | Leaked credential | Repository has GitHub Secret Scanning and Push Protection enabled. The trace-hygiene rule blocks credential-shaped patterns at write time. |
@@ -94,7 +109,7 @@ Mapping against [CWE/SANS Top 25](https://cwe.mitre.org/top25/) and [OWASP Top 1
 | Deserialisation of untrusted data (CWE-502) | The config parser is a hand-written line reader over a fixed, flat key set; it never instantiates arbitrary types and ignores unknown keys. |
 | Insecure dependencies (CWE-1395) | `go.sum` pins every module; OSV-Scanner and Dependabot run continuously. |
 | Insufficient logging (CWE-778) | Violations include file, line, column, kata ID, severity, and message; SARIF output preserves the same. |
-| Improper certificate validation (CWE-295) | The release artefacts are validated by cosign; install scripts verify SHA-256 + cosign before execution. |
+| Improper certificate validation (CWE-295) | Downloads use HTTPS. Release archives carry cosign signatures for verification using the documented procedure. |
 | Insecure defaults (CWE-1188) | `-fix` requires explicit opt-in; `-no-color` is auto-set on non-TTY; severity filter defaults to all. |
 | Missing authentication / authorization (CWE-306, CWE-862) | Not applicable; the CLI has no authentication surface. |
 
@@ -115,6 +130,8 @@ Each review re-walks the threats table, the trust boundaries, and the CWE/SANS-T
 
 | Date | Scope | Reviewer | Notes |
 | :--- | :--- | :--- | :--- |
+| 2026-09-20 | Release provenance and publication boundary. | Andreas Fahl (@afadesigns) | Provenance signing runs without source checkout or build hooks. Only checksum subjects cross from the build job. File publication requires digest and signer/source identity verification. Container signatures remain separate. |
+| 2026-09-19 | Completion export, downloaded support files, and scan failure handling. | Andreas Fahl (@afadesigns) | Completion export uses embedded bytes. The POSIX installer extracts only named support files. Incomplete scans cannot replace baselines. The description of optional POSIX checksum verification matches the installer. |
 | 2026-04-26 | Full review against the OpenSSF Best Practices gold criteria. Threat model, trust boundaries, secure-design principles, and CWE/SANS Top 25 mapping re-walked end-to-end. CodeQL, gosec, govulncheck, OSV-Scanner, and golangci-lint clean on `main` at commit `aefcedc`. Fuzz-nightly green. | Andreas Fahl (@afadesigns) | Initial review. No outstanding issues. |
 
 A formal external review may be commissioned once the project crosses adoption thresholds that justify it.

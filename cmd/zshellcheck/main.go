@@ -12,6 +12,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/afadesigns/zshellcheck/completions"
 	"github.com/afadesigns/zshellcheck/pkg/ast"
 	"github.com/afadesigns/zshellcheck/pkg/config"
 	"github.com/afadesigns/zshellcheck/pkg/fix"
@@ -30,6 +31,7 @@ type runFlags struct {
 	format         *string
 	cpuprofile     *string
 	showVersion    *bool
+	completions    *bool
 	verbose        *bool
 	noColor        *bool
 	noBanner       *bool
@@ -55,6 +57,9 @@ func run() int {
 	}
 	flag.Parse()
 
+	if *flags.completions {
+		return printCompletions(os.Stdout, os.Stderr)
+	}
 	if *flags.showVersion {
 		fmt.Printf("zshellcheck version %s\n", version.Version)
 		return 0
@@ -119,6 +124,9 @@ func configureModes(flags runFlags, fixOpts *fixOptions) int {
 // runResult turns the scan total and run mode into the process exit code,
 // emitting any deferred output (baseline file, statistics table).
 func runResult(flags runFlags, total int, fixOpts fixOptions) int {
+	if fixOpts.hasFailed() {
+		return 1
+	}
 	switch {
 	case *flags.addNoka:
 		return 0
@@ -196,6 +204,7 @@ func registerRunFlags() runFlags {
 		format:         flag.String("format", "text", "Output format. One of text, json, sarif."),
 		cpuprofile:     flag.String("cpuprofile", "", "Write a Go pprof CPU profile to this path."),
 		showVersion:    flag.Bool("version", false, "Print the version and exit."),
+		completions:    flag.Bool("completions", false, "Print the Zsh completion function and exit."),
 		verbose:        flag.Bool("verbose", false, "Include the full kata description under each violation."),
 		noColor:        flag.Bool("no-color", false, "Disable ANSI colours in the report."),
 		noBanner:       flag.Bool("no-banner", false, "Suppress the startup banner — useful for CI and scripted runs."),
@@ -213,6 +222,14 @@ func registerRunFlags() runFlags {
 		addNoka:        flag.Bool("add-noka", false, "Append a `# noka: ZC####` directive to every line with a finding, then exit."),
 		detectStale:    flag.Bool("detect-stale-noka", false, "Report `# noka` directives that suppress no actual finding."),
 	}
+}
+
+func printCompletions(out, errOut io.Writer) int {
+	if _, err := io.WriteString(out, completions.Zsh()); err != nil {
+		fmt.Fprintf(errOut, "Error writing completions: %s\n", err)
+		return 1
+	}
+	return 0
 }
 
 func startCPUProfile(path string) (func(), int) {
@@ -343,6 +360,7 @@ func buildFixOpts(fixMode, diffMode, dryRun, unsafeFixes bool) fixOptions {
 	}
 	opts.fixable = new(int)
 	opts.unsafeFixable = new(int)
+	opts.failed = new(bool)
 	return opts
 }
 
@@ -361,14 +379,16 @@ func scanArgs(cfg config.Config, allowed []katas.Severity, format string, fixOpt
 		total += processPath(filename, os.Stdout, os.Stderr, cfg, katas.Registry, format, allowed, fixOpts)
 	}
 	if collector != nil {
-		emitAggregate(os.Stdout, os.Stderr, format, *collector)
+		if err := emitAggregate(os.Stdout, os.Stderr, format, *collector); err != nil {
+			fixOpts.markFailed()
+		}
 	}
 	return total
 }
 
 // emitAggregate writes the collected findings for the machine-readable
 // formats as a single document.
-func emitAggregate(out, errOut io.Writer, format string, files []reporter.FileViolations) {
+func emitAggregate(out, errOut io.Writer, format string, files []reporter.FileViolations) error {
 	var err error
 	switch format {
 	case "json":
@@ -379,6 +399,7 @@ func emitAggregate(out, errOut io.Writer, format string, files []reporter.FileVi
 	if err != nil {
 		fmt.Fprintf(errOut, "Error reporting violations: %s\n", err)
 	}
+	return err
 }
 
 // sarifRuleMeta supplies SARIF rule metadata for a kata ID from the
@@ -456,6 +477,9 @@ type fixOptions struct {
 	diff      bool
 	dryRun    bool
 	maxPasses int
+	// failed records operational errors independently of finding counts.
+	// Every file in a run shares it, including deferred report failures.
+	failed *bool
 	// stats tracks per-run aggregate fix activity so processPath
 	// can print a one-line summary footer when -fix runs over a
 	// directory tree. nil when -fix is disabled.
@@ -487,6 +511,16 @@ type fixOptions struct {
 	// staleCount tallies them for the exit code.
 	detectStale bool
 	staleCount  *int
+}
+
+func (opts fixOptions) markFailed() {
+	if opts.failed != nil {
+		*opts.failed = true
+	}
+}
+
+func (opts fixOptions) hasFailed() bool {
+	return opts.failed != nil && *opts.failed
 }
 
 // fixStats accumulates fix activity across all files visited in one
@@ -685,6 +719,7 @@ func processPath(path string, out, errOut io.Writer, cfg config.Config, registry
 	info, err := os.Stat(path)
 	if err != nil {
 		fmt.Fprintf(errOut, "Error stating path %s: %s\n", path, err)
+		fixOpts.markFailed()
 		return 0
 	}
 
@@ -716,6 +751,7 @@ func processPath(path string, out, errOut io.Writer, cfg config.Config, registry
 		})
 		if err != nil {
 			fmt.Fprintf(errOut, "Error walking directory %s: %s\n", path, err)
+			fixOpts.markFailed()
 		}
 	} else {
 		count += processFile(path, out, errOut, cfg, registry, format, allowedSeverities, fixOpts)
@@ -727,10 +763,12 @@ func processFile(filename string, out, errOut io.Writer, cfg config.Config, regi
 	data, err := os.ReadFile(filename)
 	if err != nil {
 		fmt.Fprintf(errOut, "Error reading file %s: %s\n", filename, err)
+		fixOpts.markFailed()
 		return 0
 	}
 	program, errs := parseSource(data)
 	if len(errs) != 0 {
+		fixOpts.markFailed()
 		for _, msg := range errs {
 			fmt.Fprintf(errOut, "Parser Error in %s: %s\n", filename, msg)
 		}
@@ -744,7 +782,7 @@ func processFile(filename string, out, errOut io.Writer, cfg config.Config, regi
 	// Stale-suppression detection compares the raw findings against the
 	// `# noka` directives before any are silenced.
 	if fixOpts.detectStale {
-		reportStaleNoka(out, filename, violations, directives, fixOpts.staleCount)
+		reportStaleNoka(diagnosticOutput(out, errOut, format), filename, violations, directives, fixOpts.staleCount)
 	}
 	violations, edits = applyDirectiveSilences(violations, edits, directives)
 
@@ -753,6 +791,7 @@ func processFile(filename string, out, errOut io.Writer, cfg config.Config, regi
 	if fixOpts.addNoka {
 		if err := addNokaDirectives(filename, data, violations); err != nil {
 			fmt.Fprintf(errOut, "add-noka: %s\n", err)
+			fixOpts.markFailed()
 		}
 		return len(violations)
 	}
@@ -938,5 +977,14 @@ func emitReport(filename string, out, errOut io.Writer, format string, cfg confi
 	r.MarkFixable(marked)
 	if err := r.Report(violations); err != nil {
 		fmt.Fprintf(errOut, "Error reporting violations: %s\n", err)
+		fixOpts.markFailed()
 	}
+}
+
+// diagnosticOutput keeps prose diagnostics outside structured reports.
+func diagnosticOutput(out, errOut io.Writer, format string) io.Writer {
+	if format == "json" || format == "sarif" {
+		return errOut
+	}
+	return out
 }

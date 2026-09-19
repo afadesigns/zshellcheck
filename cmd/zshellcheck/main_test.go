@@ -27,18 +27,24 @@ func TestEmitAggregate(t *testing.T) {
 		}},
 	}
 	var buf bytes.Buffer
-	emitAggregate(&buf, &buf, "json", files)
+	if err := emitAggregate(&buf, &buf, "json", files); err != nil {
+		t.Fatal(err)
+	}
 	if !strings.Contains(buf.String(), "ZC1") {
 		t.Error("json aggregate missing finding")
 	}
 	buf.Reset()
-	emitAggregate(&buf, &buf, "sarif", files)
+	if err := emitAggregate(&buf, &buf, "sarif", files); err != nil {
+		t.Fatal(err)
+	}
 	if !strings.Contains(buf.String(), "2.1.0") {
 		t.Error("sarif aggregate missing version")
 	}
 	// Error branch: a writer that always fails.
 	var errBuf bytes.Buffer
-	emitAggregate(failingWriter{}, &errBuf, "json", files)
+	if err := emitAggregate(failingWriter{}, &errBuf, "json", files); err == nil {
+		t.Error("expected aggregate write failure")
+	}
 	if !strings.Contains(errBuf.String(), "Error reporting") {
 		t.Errorf("expected error reported, got %q", errBuf.String())
 	}

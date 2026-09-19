@@ -1,19 +1,49 @@
 #compdef zshellcheck
 
 _zshellcheck() {
+    local -i index=2
+    # A string flag can consume -- as its value; only an unconsumed --
+    # terminates options. The completion parser's -S mode cannot distinguish it.
+    while (( index < CURRENT )); do
+        case ${words[index]} in
+            --|-|[!-]*)
+                _files -g '*.zsh *.zsh-theme *.sh' -/
+                return
+                ;;
+            -format|--format|-severity|--severity|-cpuprofile|--cpuprofile|\
+            -baseline|--baseline|-baseline-write|--baseline-write|\
+            -explain|--explain|-rule-severity|--rule-severity)
+                (( index += 2 ))
+                ;;
+            *) (( index++ )) ;;
+        esac
+    done
     local -a arguments
     arguments=(
-        '-format[Output format]:format:(text json sarif)'
-        '-severity[Comma-separated severity filter]:levels:_values -s , "severity" error warning info style'
-        '--no-color[Disable ANSI colours in text output]'
-        '--verbose[Emit full kata descriptions]'
-        '-cpuprofile[Write Go CPU profile to file]:file:_files'
-        '-version[Print version and exit]'
-        '-h[Show help]'
-        '--help[Show help]'
+        {-format,--format}'=[Output format]:format:(text json sarif)'
+        {-severity,--severity}'=[Comma-separated severity filter]:levels:_values -s , "severity" error warning info style'
+        {-no-color,--no-color}'[Disable ANSI colours in text output]'
+        {-no-banner,--no-banner}'[Suppress the startup banner]'
+        {-verbose,--verbose}'[Emit full kata descriptions]'
+        {-cpuprofile,--cpuprofile}'=[Write Go CPU profile to file]:file:_files'
+        {-fix,--fix}'[Apply safe fixes in place]'
+        {-diff,--diff}'[Print a unified diff of fixes]'
+        {-dry-run,--dry-run}'[Preview in-place fixes]'
+        {-unsafe-fixes,--unsafe-fixes}'[Include fixes that may change behavior]'
+        {-list-rules,--list-rules}'[List all katas]'
+        {-explain,--explain}'=[Describe a kata]:kata ID:'
+        {-statistics,--statistics}'[Print finding counts per kata]'
+        {-baseline,--baseline}'=[Suppress findings in a baseline]:baseline file:_files'
+        {-baseline-write,--baseline-write}'=[Write a baseline snapshot]:baseline file:_files'
+        {-rule-severity,--rule-severity}'=[Override kata severities]:ZC####\:level,...:'
+        {-add-noka,--add-noka}'[Append suppression directives to findings]'
+        {-detect-stale-noka,--detect-stale-noka}'[Report unused suppression directives]'
+        {-completions,--completions}'[Print the Zsh completion function]'
+        {-version,--version}'[Print version and exit]'
+        {-h,--h,-help,--help}'[Show help]'
         '*:target:_files -g "*.zsh *.zsh-theme *.sh" -/'
     )
-    _arguments -s $arguments
+    _arguments -A '-?*' $arguments
 }
 
 _zshellcheck "$@"

@@ -7,11 +7,10 @@
 Static analysis and auto-fix for the setopts, hooks, and globs Bash never learned.
 
 [![CI](https://github.com/afadesigns/zshellcheck/actions/workflows/ci.yml/badge.svg)](https://github.com/afadesigns/zshellcheck/actions/workflows/ci.yml)
-[![Release](https://img.shields.io/badge/release-v1.7.3-blue)](https://github.com/afadesigns/zshellcheck/releases/latest)
+[![Release](https://img.shields.io/badge/release-v1.8.0-blue)](https://github.com/afadesigns/zshellcheck/releases/latest)
 [![Marketplace](https://img.shields.io/badge/Marketplace-ZshellCheck%20v1-2ea44f?logo=githubactions&logoColor=white)](https://github.com/marketplace/actions/zshellcheck-v1)
-[![Auto-fix](https://img.shields.io/badge/auto--fix-132%20katas-2ea44f)](KATAS.md)
+[![Auto-fix](https://img.shields.io/badge/auto--fix-131%20katas-2ea44f)](KATAS.md)
 [![Dependencies](https://img.shields.io/badge/dependencies-0-2ea44f)](go.mod)
-[![Go Report](https://goreportcard.com/badge/github.com/afadesigns/zshellcheck)](https://goreportcard.com/report/github.com/afadesigns/zshellcheck)
 [![codecov](https://codecov.io/gh/afadesigns/zshellcheck/graph/badge.svg)](https://codecov.io/gh/afadesigns/zshellcheck)
 [![Scorecard](https://api.securityscorecards.dev/projects/github.com/afadesigns/zshellcheck/badge)](https://securityscorecards.dev/viewer/?uri=github.com/afadesigns/zshellcheck)
 [![OpenSSF Best Practices](https://www.bestpractices.dev/projects/12657/badge?v=gold)](https://www.bestpractices.dev/projects/12657)
@@ -68,7 +67,7 @@ zshellcheck -diff path/to/script.zsh
 zshellcheck -fix path/to/script.zsh
 ```
 
-Exits `0` on a clean run, `1` when anything was flagged.
+Exits `0` on a clean run, `1` when findings or scan errors occur.
 `zshellcheck -h` lists every flag, grouped by intent.
 
 Silence inline with `# noka: ZC1234`.
