@@ -97,9 +97,22 @@ list_files() {
     find "${dir}" -type f \( "${find_args[@]}" \) -print 2>/dev/null | sort
 }
 
-# Count parser errors a file raises, suppressing the banner.
+# Preserve diagnostics and reject a crash on every linter invocation.
+run_linter() {
+    local out rc=0
+    out=$("${BIN}" "$@" 2>&1) || rc=$?
+    if (( rc >= 2 )) || grep -qiE 'panic:|^goroutine [0-9]+ |^fix: (apply|write|diff) failed' <<< "${out}"; then
+        printf '::error::linter failed (exit %s): %s\n' "${rc}" "${out}" >&2
+        return 2
+    fi
+    printf '%s\n' "${out}"
+}
+
+# Parser diagnostics are written to stderr; a normal finding exits 1.
 parser_errors() {
-    "${BIN}" -no-banner "$1" 2>/dev/null | grep -c "^Parser Error" || true
+    local out
+    out=$(run_linter -no-banner "$1") || return 2
+    awk '/^Parser Error/ { count++ } END { print count+0 }' <<< "${out}"
 }
 
 # Print zsh's own syntax complaint about a file, or nothing when zsh is
@@ -135,7 +148,10 @@ while IFS=$'\t' read -r name sha url glob_list; do
         [[ -z "${f}" ]] && continue
         rel="${name}/${f#${WORK_DIR}/${name}/}"
         total_files=$((total_files+1))
-        orig_errors=$(parser_errors "${f}")
+        if ! orig_errors=$(parser_errors "${f}"); then
+            PANICS+=("${rel} [original scan]")
+            continue
+        fi
         orig_zsh_error="$(zsh_syntax_error "${f}")"
 
         for mode in safe unsafe; do
@@ -146,16 +162,15 @@ while IFS=$'\t' read -r name sha url glob_list; do
             fi
 
             cp "${f}" "${SCRATCH}/work"
-            set +e
-            out=$("${BIN}" "${fix_args[@]}" "${SCRATCH}/work" 2>&1)
-            rc=$?
-            set -e
-            if (( rc >= 2 )) || grep -qiE 'panic:|^goroutine [0-9]+ ' <<< "${out}"; then
-                PANICS+=("${rel} [${mode}] (exit ${rc})")
+            if ! run_linter "${fix_args[@]}" "${SCRATCH}/work" >/dev/null; then
+                PANICS+=("${rel} [${mode}, first fix]")
                 continue
             fi
 
-            fixed_errors=$(parser_errors "${SCRATCH}/work")
+            if ! fixed_errors=$(parser_errors "${SCRATCH}/work"); then
+                PANICS+=("${rel} [${mode}, fixed scan]")
+                continue
+            fi
             if (( fixed_errors > orig_errors )); then
                 corruptions+=("${rel} [${mode}]: parser errors ${orig_errors} -> ${fixed_errors}")
             elif [[ -z "${orig_zsh_error}" ]]; then
@@ -168,7 +183,10 @@ while IFS=$'\t' read -r name sha url glob_list; do
             fi
 
             cp "${SCRATCH}/work" "${SCRATCH}/work2"
-            "${BIN}" "${fix_args[@]}" "${SCRATCH}/work2" > /dev/null 2>&1 || true
+            if ! run_linter "${fix_args[@]}" "${SCRATCH}/work2" >/dev/null; then
+                PANICS+=("${rel} [${mode}, second fix]")
+                continue
+            fi
             if ! cmp -s "${SCRATCH}/work" "${SCRATCH}/work2"; then
                 non_idempotent+=("${rel} [${mode}]: second -fix pass changed the file")
             fi

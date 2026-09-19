@@ -1,0 +1,70 @@
+name: Release provenance
+
+on:
+  workflow_call:
+    inputs:
+      subjects:
+        description: Base64-encoded SHA-256 checksum records for release assets
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  attest:
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+      id-token: write
+      attestations: write
+    steps:
+      # No checkout, build commands, caller predicates, or executable inputs.
+      - name: Validate subject records
+        shell: bash
+        env:
+          SUBJECTS: ${{ inputs.subjects }}
+        run: |
+          python3 - <<'PY'
+          import base64
+          import os
+          import pathlib
+          import re
+
+          encoded = os.environ['SUBJECTS']
+          if not encoded or len(encoded) > 128000:
+              raise SystemExit('Missing or oversized subject list')
+          records = base64.b64decode(encoded, validate=True).decode('ascii').splitlines()
+          if not 1 <= len(records) <= 1024:
+              raise SystemExit('Invalid subject count')
+          names = set()
+          for record in records:
+              match = re.fullmatch(r'[0-9a-f]{64}  ([A-Za-z0-9][A-Za-z0-9._-]*)', record)
+              if not match or match[1] in names:
+                  raise SystemExit('Invalid or duplicate subject record')
+              names.add(match[1])
+          if 'checksums.txt' not in names:
+              raise SystemExit('Missing checksum manifest')
+          for suffix in ('.tar.gz', '.zip', '.deb', '.rpm', '.apk', '.sbom.json'):
+              if not any(name.endswith(suffix) for name in names):
+                  raise SystemExit('Missing release artifact class: ' + suffix)
+          target = pathlib.Path(os.environ['RUNNER_TEMP']) / 'subjects.txt'
+          target.write_text('\n'.join(records) + '\n', encoding='ascii')
+          PY
+      - name: Attest build provenance
+        id: attest
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-checksums: ${{ runner.temp }}/subjects.txt
+      - name: Attach provenance bundle to draft
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BUNDLE: ${{ steps.attest.outputs.bundle-path }}
+        run: |
+          test "$(gh release view "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --json isDraft --jq .isDraft)" = true
+          cp "$BUNDLE" "$RUNNER_TEMP/zshellcheck-provenance.json"
+          gh release upload "$GITHUB_REF_NAME" "$RUNNER_TEMP/zshellcheck-provenance.json" \
+            --repo "$GITHUB_REPOSITORY" --clobber

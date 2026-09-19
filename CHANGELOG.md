@@ -7,6 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.8.0] - 2026-09-20
+
+### Added
+
+- `--completions` prints the bundled Zsh completion function for installation in `fpath`, without requiring a separate download.
+  The command works without scan targets or configuration.
+
+### Fixed
+
+- Missing files, unreadable files, and directory traversal errors produce a nonzero exit status, including statistics and suppression modes.
+- Incomplete scans preserve an existing baseline and do not create an empty replacement.
+  Parse errors and failed report writes also prevent baseline generation.
+- Stale-suppression diagnostics go to stderr when the report format is JSON or SARIF, preserving valid structured output.
+- Zsh and Bash completions cover every CLI flag, both supported dash forms, and option values.
+  Completion stops offering flags after the first scan target or `--`.
+- The download installer installs the man page and both completion files bundled in release archives.
+  Archives containing only the executable remain supported.
+- The fix-corpus gate counts parser diagnostics on stderr and rejects crashes during every scan and fix pass.
+- Required CI checks include corpus checks and reject complexity-tool failures.
+
+### Changed
+
+- CI and release builds use Go 1.27.1 with matching toolchain pins.
+- Workflow actions use updated pinned release revisions.
+- Source-quality checks run directly in CI after the Go Report Card service retirement.
+- Release-file provenance uses an isolated signer; draft publication requires verified artifact digests and signer/source identities.
+
 ## [1.7.3] - 2026-08-26
 
 ### Fixed

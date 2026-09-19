@@ -58,6 +58,21 @@ func TestPrintUsageBannerEmitted(t *testing.T) {
 	}
 }
 
+func TestPrintUsageIncludesRegisteredFlags(t *testing.T) {
+	old := flag.CommandLine
+	t.Cleanup(func() { flag.CommandLine = old })
+	resetFlags()
+	registerRunFlags()
+	var out bytes.Buffer
+	printUsage(&out, flag.CommandLine, false)
+	flag.CommandLine.VisitAll(func(f *flag.Flag) {
+		prefix := "\n  -" + f.Name
+		if !strings.Contains(out.String(), prefix+"\n") && !strings.Contains(out.String(), prefix+" ") {
+			t.Errorf("help omits registered flag %q", f.Name)
+		}
+	})
+}
+
 func TestPrintUsageContainsCoreSections(t *testing.T) {
 	fs := flag.NewFlagSet("zshellcheck", flag.ContinueOnError)
 	fs.String("format", "text", "Output format")

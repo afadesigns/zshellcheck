@@ -4,6 +4,7 @@ builds:
   - main: ./cmd/zshellcheck
     env:
       - CGO_ENABLED=0
+      - GOTOOLCHAIN=go1.27.1
     goos:
       - linux
       - windows
@@ -49,8 +50,8 @@ nfpms:
     homepage: https://github.com/afadesigns/zshellcheck
     description: |-
       Static analysis and auto-fix for the setopts, hooks, and globs Bash never learned.
-      ZShellCheck lints Zsh scripts with compiler-grade precision: 1000 Zsh-specific katas,
-      67 deterministic auto-fixes, signed releases, SLSA Level 3 provenance.
+      ZShellCheck provides Zsh-specific checks, deterministic auto-fixes,
+      signed releases, and verifiable build provenance.
     maintainer: Andreas Fahl <github@afadesign.co>
     license: MIT
     vendor: afadesigns
