@@ -49,6 +49,7 @@ Files with `.go`, `.md`, `.json`, `.yml`, `.yaml`, or `.txt` extensions are skip
 | `-dry-run` | off | With `-fix`, report what would change without modifying files. |
 | `-list-rules` | — | Print every kata (ID, severity, title) and exit. |
 | `-explain <ZC####>` | — | Print one kata's full description and exit. Case-insensitive. |
+| `-completions` | off | Print the Zsh completion function and exit. See [completion installation](../INSTALL.md#zsh-completions-from-the-binary). |
 | `-version` | — | Print the version and exit. |
 | `-h`, `--help` | — | Print usage and exit. |
 
@@ -57,7 +58,7 @@ Files with `.go`, `.md`, `.json`, `.yml`, `.yaml`, or `.txt` extensions are skip
 | Code | Meaning |
 | ---: | --- |
 | `0` | No violations. |
-| `1` | One or more violations, a parse error, or an invalid flag value. |
+| `1` | Findings, stale suppressions, a scan or write error, or an invalid flag value. |
 | `2` | A command-line parsing error: an unknown flag, or a flag missing its value. |
 
 ### Examples
@@ -132,6 +133,7 @@ zshellcheck -baseline .zshellcheck-baseline ./scripts
 
 A baseline entry identifies a finding by its kata, file, and the trimmed source line — not the line number — so inserting or removing unrelated lines elsewhere in a file does not resurrect a suppressed finding.
 Re-run `-baseline-write` to refresh the snapshot after you fix some findings.
+If any input cannot be read or parsed, the command exits `1` and leaves the baseline unchanged.
 
 ## Severity levels
 
@@ -218,6 +220,7 @@ Inline IDs are merged with `disabled_katas` from `.zshellcheckrc`.
 
 To silence an existing codebase in bulk, `-add-noka` appends a `# noka` directive to every line that carries a finding, then exits — review the diff before committing.
 Over time directives go stale as the code around them changes; `-detect-stale-noka` reports any `# noka` that no longer suppresses a finding so you can remove it.
+With JSON or SARIF output, stale-suppression diagnostics go to stderr so stdout remains a single structured report.
 
 ---
 

@@ -309,6 +309,14 @@ if [ "$BUILD_SUCCESS" = false ]; then
         fi
 
         tar -xzf "$FILENAME" zshellcheck
+        # Extract only the documented support files. Older archives may
+        # contain only the executable.
+        for member in man/man1/zshellcheck.1 completions/zsh/_zshellcheck \
+            completions/bash/zshellcheck-completion.bash; do
+            if tar -tzf "$FILENAME" "$member" > /dev/null 2>&1; then
+                tar -xzf "$FILENAME" "$member"
+            fi
+        done
         BUILD_SUCCESS=true
     else
         echo -e "${RED}Download failed.${NC}"
@@ -336,20 +344,9 @@ fi
 # Source of files depends on build method
 if [ -n "$TMP_DIR" ]; then
     SOURCE_BIN="$TMP_DIR/zshellcheck"
-    # If downloading binary, we might not have man/completions unless they are in the tarball
-    # The .goreleaser.yml says: "files: - LICENSE - README.md"
-    # It does NOT seem to include completions/manpages in the archive yet.
-    # We should probably fix goreleaser to include them, but for now, 
-    # if we are downloading, we might miss them if they aren't in the tarball.
-    # Assuming they ARE in the tarball or we fetch them separately.
-    # For now, let's assume the installer is run from the repo for manpages, 
-    # OR we need to download them raw if missing.
-    
-    # Fallback: if man page not in tmp dir, try to fetch from raw github content?
-    # That gets complicated. For now, let's just install binary if that's all we have.
-    SOURCE_MAN=""
-    SOURCE_ZSH_COMP=""
-    SOURCE_BASH_COMP=""
+    SOURCE_MAN="$TMP_DIR/man/man1/zshellcheck.1"
+    SOURCE_ZSH_COMP="$TMP_DIR/completions/zsh/_zshellcheck"
+    SOURCE_BASH_COMP="$TMP_DIR/completions/bash/zshellcheck-completion.bash"
 else
     SOURCE_BIN="zshellcheck"
     SOURCE_MAN="man/man1/zshellcheck.1"
