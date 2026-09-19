@@ -154,10 +154,29 @@ func shellOutput(t *testing.T, shell, script string, args ...string) string {
 	if err != nil {
 		t.Skipf("%s is unavailable", shell)
 	}
-	command := exec.Command(bin, append([]string{"-c", script, shell}, args...)...)
+	// Keep quotes in test inputs out of Windows command-line argument parsing.
+	var input strings.Builder
+	input.WriteString("set --")
+	for _, arg := range args {
+		input.WriteString(" '")
+		input.WriteString(strings.ReplaceAll(arg, "'", `'\''`))
+		input.WriteByte('\'')
+	}
+	input.WriteByte('\n')
+	input.WriteString(script)
+	command := exec.Command(bin, "-s")
+	command.Stdin = strings.NewReader(input.String())
 	out, err := command.CombinedOutput()
 	if err != nil {
 		t.Fatalf("%s: %v\n%s", shell, err, out)
 	}
 	return string(out)
+}
+
+func TestShellOutputArguments(t *testing.T) {
+	args := []string{"", `--baseline="file"`, "file's name", `path\with\slashes\`, "$literal", "two\nlines"}
+	want := strings.Join(args, "\x00") + "\x00"
+	if got := shellOutput(t, "bash", `printf '%s\000' "$@"`, args...); got != want {
+		t.Errorf("shell arguments=%q, want %q", got, want)
+	}
 }
