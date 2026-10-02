@@ -124,7 +124,7 @@ func TestKatasRegistry_Check(t *testing.T) {
 	}
 
 	// Check with one disabled kata
-	violations = kr.Check(node, []string{"ZC_CHK_001"})
+	violations = kr.Check(node, map[string]Severity{"ZC_CHK_001": SeverityDisabled})
 	if len(violations) != 1 {
 		t.Fatalf("expected 1 violation with disabled kata, got %d", len(violations))
 	}
@@ -174,5 +174,26 @@ func TestKatasRegistry_CheckPreservesExplicitLevel(t *testing.T) {
 	// Second violation has no level - should get kata's default (SeverityWarning)
 	if violations[1].Level != SeverityWarning {
 		t.Errorf("expected default SeverityWarning level, got %s", violations[1].Level)
+	}
+}
+
+func TestSetSeverity(t *testing.T) {
+	m := map[string]Severity{}
+	if w := SetSeverity(m, "ZC1", SeverityWarning); w != "" {
+		t.Errorf("first set warned: %q", w)
+	}
+	if w := SetSeverity(m, "ZC1", SeverityWarning); w == "" || m["ZC1"] != SeverityWarning {
+		t.Errorf("same-level repeat: warning %q, got %s", w, m["ZC1"])
+	}
+	if w := SetSeverity(m, "ZC1", SeverityStyle); w == "" || m["ZC1"] != SeverityWarning {
+		t.Errorf("lower repeat must lose: warning %q, got %s", w, m["ZC1"])
+	}
+	if w := SetSeverity(m, "ZC1", SeverityError); w == "" || m["ZC1"] != SeverityError {
+		t.Errorf("higher repeat must win: warning %q, got %s", w, m["ZC1"])
+	}
+	SetSeverity(m, "ZC2", SeverityDisabled)
+	SetSeverity(m, "ZC2", SeverityStyle)
+	if m["ZC2"] != SeverityStyle {
+		t.Errorf("disabled ranks lowest, got %s", m["ZC2"])
 	}
 }

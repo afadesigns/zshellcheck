@@ -3,27 +3,29 @@
 package main
 
 import (
-	"reflect"
 	"testing"
 
 	"github.com/afadesigns/zshellcheck/pkg/config"
 	"github.com/afadesigns/zshellcheck/pkg/katas"
 )
 
-func TestMergeDisabledNoExtra(t *testing.T) {
-	base := []string{"ZC1001", "ZC1002"}
-	got := mergeDisabled(base, nil)
-	if !reflect.DeepEqual(got, base) {
-		t.Errorf("expected base, got %v", got)
+func TestMergeModifiedSeveritiesConfigOnly(t *testing.T) {
+	configMap := map[string]katas.Severity{"ZC1001": katas.SeverityDisabled}
+	got := mergeModifiedSeverities(configMap, nil)
+	if got["ZC1001"] != katas.SeverityDisabled {
+		t.Errorf("expected ZC1001=disabled, got %q", got["ZC1001"])
 	}
 }
 
-func TestMergeDisabledExtraAppends(t *testing.T) {
-	base := []string{"ZC1001"}
-	got := mergeDisabled(base, []string{"ZC1002", "ZC1003"})
-	want := []string{"ZC1001", "ZC1002", "ZC1003"}
-	if !reflect.DeepEqual(got, want) {
-		t.Errorf("expected %v, got %v", want, got)
+func TestMergeModifiedSeveritiesCLIOverrides(t *testing.T) {
+	configMap := map[string]katas.Severity{"ZC1001": katas.SeverityDisabled}
+	cliMap := map[string]katas.Severity{"ZC1001": katas.SeverityError, "ZC1002": katas.SeverityWarning}
+	got := mergeModifiedSeverities(configMap, cliMap)
+	if got["ZC1001"] != katas.SeverityError {
+		t.Errorf("CLI should override config: ZC1001 = %q, want error", got["ZC1001"])
+	}
+	if got["ZC1002"] != katas.SeverityWarning {
+		t.Errorf("expected ZC1002=warning, got %q", got["ZC1002"])
 	}
 }
 
@@ -58,11 +60,7 @@ func TestApplyDirectiveSilencesPerLineAll(t *testing.T) {
 	}
 	directives := config.Directives{
 		PerLineAll: map[int]bool{5: true},
-		// applyDirectiveSilences gates on PerLine being non-empty —
-		// give it one entry so the silence path runs and the
-		// PerLineAll lookup inside IsDisabledOn fires for both
-		// violations on the bare-noka line.
-		PerLine: map[int][]string{5: {"ZC1001"}},
+		PerLine:    map[int][]string{5: {"ZC1001"}},
 	}
 	gotV, _ := applyDirectiveSilences(violations, nil, directives)
 	if len(gotV) != 0 {

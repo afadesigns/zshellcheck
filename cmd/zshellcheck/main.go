@@ -107,10 +107,13 @@ func configureModes(flags runFlags, fixOpts *fixOptions) int {
 	if *flags.statistics {
 		fixOpts.statistics = map[string]int{}
 	}
-	regrade, err := parseRuleSeverity(*flags.ruleSeverity)
+	regrade, warnings, err := parseRuleSeverity(*flags.ruleSeverity)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "%s\n", err)
 		return 1
+	}
+	for _, w := range warnings {
+		fmt.Fprintln(os.Stderr, w)
 	}
 	fixOpts.ruleSeverity = regrade
 	fixOpts.addNoka = *flags.addNoka
@@ -218,7 +221,7 @@ func registerRunFlags() runFlags {
 		statistics:     flag.Bool("statistics", false, "Print a per-kata count of findings instead of individual reports."),
 		baseline:       flag.String("baseline", "", "Suppress findings recorded in this baseline file; report only new ones."),
 		baselineWrite:  flag.String("baseline-write", "", "Write a baseline snapshot of current findings to this path and exit 0."),
-		ruleSeverity:   flag.String("rule-severity", "", "Re-grade katas: comma-separated ZC####:level (error, warning, info, style)."),
+		ruleSeverity:   flag.String("rule-severity", "", "Re-grade katas: comma-separated ZC####:level (error, warning, info, style, disabled). Overrides the config file."),
 		addNoka:        flag.Bool("add-noka", false, "Append a `# noka: ZC####` directive to every line with a finding, then exit."),
 		detectStale:    flag.Bool("detect-stale-noka", false, "Report `# noka` directives that suppress no actual finding."),
 	}
@@ -461,9 +464,12 @@ func loadConfig(paths ...string) (config.Config, error) {
 			return cfg, err
 		}
 
-		fileConfig, err := config.Parse(data)
+		fileConfig, warnings, err := config.ParseWithWarnings(data)
 		if err != nil {
 			return cfg, err
+		}
+		for _, w := range warnings {
+			fmt.Fprintf(os.Stderr, "%s: %s\n", path, w)
 		}
 
 		cfg = config.MergeConfig(cfg, fileConfig)
@@ -540,7 +546,7 @@ type fixStats struct {
 // `result=`which git“ first becomes `result=$(which git)` (ZC1002),
 // which a second pass then rewrites to `result=$(whence git)`
 // (ZC1005). A single pass would leave the inner stale.
-func applyFixesUntilStable(src string, initialEdits []katas.FixEdit, registry *katas.KatasRegistry, disabled []string, cfg config.Config, allowedSeverities []katas.Severity, maxPasses int, unsafe bool) (string, int, error) {
+func applyFixesUntilStable(src string, initialEdits []katas.FixEdit, registry *katas.KatasRegistry, modifiedSeverities map[string]katas.Severity, cfg config.Config, allowedSeverities []katas.Severity, maxPasses int, unsafe bool) (string, int, error) {
 	if maxPasses < 1 {
 		maxPasses = 5
 	}
@@ -573,7 +579,7 @@ func applyFixesUntilStable(src string, initialEdits []katas.FixEdit, registry *k
 		totalEdits += applied
 		current = next
 		// Re-collect edits from the new source.
-		edits = collectEdits(current, registry, disabled, cfg, allowedSeverities, unsafe)
+		edits = collectEdits(current, registry, modifiedSeverities, cfg, allowedSeverities, unsafe)
 	}
 	return current, totalEdits, nil
 }
@@ -644,7 +650,7 @@ func groupEdits(edits []katas.FixEdit) [][]katas.FixEdit {
 // collectEdits parses src and returns the auto-fix edits the registry
 // would emit for it under the given disabled / severity filters.
 // Used by the multi-pass loop in applyFixesUntilStable.
-func collectEdits(src string, registry *katas.KatasRegistry, disabled []string, cfg config.Config, allowedSeverities []katas.Severity, unsafe bool) []katas.FixEdit {
+func collectEdits(src string, registry *katas.KatasRegistry, modifiedSeverities map[string]katas.Severity, cfg config.Config, allowedSeverities []katas.Severity, unsafe bool) []katas.FixEdit {
 	l := lexer.New(src)
 	p := parser.New(l)
 	program := p.ParseProgram()
@@ -652,14 +658,11 @@ func collectEdits(src string, registry *katas.KatasRegistry, disabled []string, 
 		return nil
 	}
 	directives := config.ParseDirectives(src)
-	allDisabled := disabled
-	if len(directives.File) > 0 {
-		allDisabled = append(append([]string(nil), disabled...), directives.File...)
-	}
+	allModified := withFileDisabled(modifiedSeverities, directives.File)
 	var violations []katas.Violation
 	var edits []katas.FixEdit
 	ast.Walk(program, func(node ast.Node) bool {
-		vs, es := registry.CheckAndFix(node, allDisabled, []byte(src))
+		vs, es := registry.CheckAndFix(node, allModified, []byte(src))
 		// CheckAndFix numbers groups from the start of its own violation
 		// slice; shift them past the violations already gathered so each
 		// group names exactly one violation in this file.
@@ -775,10 +778,9 @@ func processFile(filename string, out, errOut io.Writer, cfg config.Config, regi
 		return 1
 	}
 	directives := config.ParseDirectives(string(data))
-	disabled := mergeDisabled(cfg.DisabledKatas, directives.File)
+	modifiedSeverities := withFileDisabled(mergeModifiedSeverities(cfg.ModifiedSeverities, fixOpts.ruleSeverity), directives.File)
 
-	violations, edits := collectViolations(program, registry, disabled, data, fixOpts.enabled)
-	regradeSeverity(violations, fixOpts.ruleSeverity)
+	violations, edits := collectViolations(program, registry, modifiedSeverities, data, fixOpts.enabled)
 	// Stale-suppression detection compares the raw findings against the
 	// `# noka` directives before any are silenced.
 	if fixOpts.detectStale {
@@ -808,7 +810,7 @@ func processFile(filename string, out, errOut io.Writer, cfg config.Config, regi
 		}
 	}
 
-	applyFixIfEnabled(filename, data, registry, disabled, cfg, allowedSeverities, edits, violations, fixOpts, out, errOut)
+	applyFixIfEnabled(filename, data, registry, modifiedSeverities, cfg, allowedSeverities, edits, violations, fixOpts, out, errOut)
 	emitReport(filename, out, errOut, format, cfg, violations, data, registry, fixOpts)
 	return len(violations)
 }
@@ -820,23 +822,42 @@ func parseSource(data []byte) (*ast.Program, []string) {
 	return program, p.Errors()
 }
 
-func mergeDisabled(base, extra []string) []string {
-	if len(extra) == 0 {
+// withFileDisabled layers file-wide `# noka-file` IDs over base as disabled.
+func withFileDisabled(base map[string]katas.Severity, ids []string) map[string]katas.Severity {
+	if len(ids) == 0 {
 		return base
 	}
-	return append(append([]string(nil), base...), extra...)
+	merged := make(map[string]katas.Severity, len(base)+len(ids))
+	for k, v := range base {
+		merged[k] = v
+	}
+	for _, id := range ids {
+		merged[id] = katas.SeverityDisabled
+	}
+	return merged
 }
 
-func collectViolations(program *ast.Program, registry *katas.KatasRegistry, disabled []string, data []byte, withFix bool) ([]katas.Violation, []katas.FixEdit) {
+func mergeModifiedSeverities(configMap, cliMap map[string]katas.Severity) map[string]katas.Severity {
+	merged := make(map[string]katas.Severity, len(configMap)+len(cliMap))
+	for k, v := range configMap {
+		merged[k] = v
+	}
+	for k, v := range cliMap {
+		merged[k] = v
+	}
+	return merged
+}
+
+func collectViolations(program *ast.Program, registry *katas.KatasRegistry, modifiedSeverities map[string]katas.Severity, data []byte, withFix bool) ([]katas.Violation, []katas.FixEdit) {
 	violations := []katas.Violation{}
 	var edits []katas.FixEdit
 	ast.Walk(program, func(node ast.Node) bool {
 		if withFix {
-			vs, es := registry.CheckAndFix(node, disabled, data)
+			vs, es := registry.CheckAndFix(node, modifiedSeverities, data)
 			violations = append(violations, vs...)
 			edits = append(edits, es...)
 		} else {
-			violations = append(violations, registry.Check(node, disabled)...)
+			violations = append(violations, registry.Check(node, modifiedSeverities)...)
 		}
 		return true
 	})
@@ -888,7 +909,7 @@ func applicableEdits(edits []katas.FixEdit, registry *katas.KatasRegistry, unsaf
 	return kept
 }
 
-func applyFixIfEnabled(filename string, data []byte, registry *katas.KatasRegistry, disabled []string, cfg config.Config, allowed []katas.Severity, edits []katas.FixEdit, violations []katas.Violation, fixOpts fixOptions, out, errOut io.Writer) {
+func applyFixIfEnabled(filename string, data []byte, registry *katas.KatasRegistry, modifiedSeverities map[string]katas.Severity, cfg config.Config, allowed []katas.Severity, edits []katas.FixEdit, violations []katas.Violation, fixOpts fixOptions, out, errOut io.Writer) {
 	edits = applicableEdits(edits, registry, fixOpts.unsafe)
 	if !fixOpts.enabled || len(edits) == 0 || len(violations) == 0 {
 		return
@@ -896,7 +917,7 @@ func applyFixIfEnabled(filename string, data []byte, registry *katas.KatasRegist
 	if fixOpts.diff {
 		emitFixDiff(filename, data, edits, out, errOut)
 	} else if !fixOpts.dryRun {
-		applyFixInPlace(filename, data, registry, disabled, cfg, allowed, edits, fixOpts, errOut)
+		applyFixInPlace(filename, data, registry, modifiedSeverities, cfg, allowed, edits, fixOpts, errOut)
 	}
 	if fixOpts.stats != nil {
 		fixOpts.stats.filesScanned++
@@ -914,8 +935,8 @@ func emitFixDiff(filename string, data []byte, edits []katas.FixEdit, out, errOu
 	}
 }
 
-func applyFixInPlace(filename string, data []byte, registry *katas.KatasRegistry, disabled []string, cfg config.Config, allowed []katas.Severity, edits []katas.FixEdit, fixOpts fixOptions, errOut io.Writer) {
-	fixed, totalEdits, perr := applyFixesUntilStable(string(data), edits, registry, disabled, cfg, allowed, fixOpts.maxPasses, fixOpts.unsafe)
+func applyFixInPlace(filename string, data []byte, registry *katas.KatasRegistry, modifiedSeverities map[string]katas.Severity, cfg config.Config, allowed []katas.Severity, edits []katas.FixEdit, fixOpts fixOptions, errOut io.Writer) {
+	fixed, totalEdits, perr := applyFixesUntilStable(string(data), edits, registry, modifiedSeverities, cfg, allowed, fixOpts.maxPasses, fixOpts.unsafe)
 	if perr != nil {
 		fmt.Fprintf(errOut, "fix: apply failed for %s: %s\n", filename, perr)
 		return

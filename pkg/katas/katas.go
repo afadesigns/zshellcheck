@@ -13,10 +13,11 @@ import (
 type Severity string
 
 const (
-	SeverityError   Severity = "error"
-	SeverityWarning Severity = "warning"
-	SeverityInfo    Severity = "info"
-	SeverityStyle   Severity = "style"
+	SeverityError    Severity = "error"
+	SeverityWarning  Severity = "warning"
+	SeverityInfo     Severity = "info"
+	SeverityStyle    Severity = "style"
+	SeverityDisabled Severity = "disabled"
 )
 
 // Violation represents a found violation in the code.
@@ -87,6 +88,39 @@ type KatasRegistry struct {
 	KatasByID   map[string]Kata
 }
 
+func ParseSeverity(s string) (Severity, bool) {
+	switch Severity(s) {
+	case SeverityError, SeverityWarning,
+		SeverityInfo, SeverityStyle,
+		SeverityDisabled:
+		return Severity(s), true
+	}
+	return "", false
+}
+
+// severityRank orders severities from lowest to highest; disabled is lowest.
+var severityRank = map[Severity]int{
+	SeverityDisabled: 0, SeverityStyle: 1, SeverityInfo: 2, SeverityWarning: 3, SeverityError: 4,
+}
+
+// SetSeverity records sev for id in m. A repeated id keeps the highest
+// severity (a repeat at the same level changes nothing) and returns a
+// warning naming the conflict.
+func SetSeverity(m map[string]Severity, id string, sev Severity) (warning string) {
+	prev, seen := m[id]
+	if !seen {
+		m[id] = sev
+		return ""
+	}
+	if severityRank[sev] > severityRank[prev] {
+		m[id] = sev
+	}
+	if prev == sev {
+		return fmt.Sprintf("%s listed more than once as %s", id, sev)
+	}
+	return fmt.Sprintf("%s listed as both %s and %s, using %s", id, prev, sev, m[id])
+}
+
 // NewKatasRegistry creates a new KatasRegistry.
 func NewKatasRegistry() *KatasRegistry {
 	return &KatasRegistry{
@@ -135,23 +169,20 @@ func (kr *KatasRegistry) AllKatas() []Kata {
 	return out
 }
 
-func (kr *KatasRegistry) Check(node ast.Node, disabledKatas []string) []Violation {
+func (kr *KatasRegistry) Check(node ast.Node, modifiedKatas map[string]Severity) []Violation {
 	var violations []Violation
 	key := fmt.Sprintf("%T", node)
 	if katasForNode, ok := kr.KatasByType[key]; ok {
 		for _, kata := range katasForNode {
-			// Check if disabled
-			disabled := false
-			for _, d := range disabledKatas {
-				if d == kata.ID {
-					disabled = true
-					break
-				}
-			}
-			if !disabled {
+			// Check if modified
+			mod, modified := modifiedKatas[kata.ID]
+			// Skip if disabled
+			if !modified || mod != SeverityDisabled {
 				vs := kata.Check(node)
 				for i := range vs {
-					if vs[i].Level == "" {
+					if modified {
+						vs[i].Level = mod
+					} else if vs[i].Level == "" {
 						vs[i].Level = kata.Severity
 					}
 				}
@@ -190,7 +221,7 @@ func stampKataID(edits []FixEdit, id string, group int) []FixEdit {
 // emitted violation. Returns the violations (including ones without a
 // fix) and the concatenated edits. Use this from the CLI fix mode so
 // each node is visited exactly once.
-func (kr *KatasRegistry) CheckAndFix(node ast.Node, disabledKatas []string, source []byte) ([]Violation, []FixEdit) {
+func (kr *KatasRegistry) CheckAndFix(node ast.Node, modifiedKatas map[string]Severity, source []byte) ([]Violation, []FixEdit) {
 	var violations []Violation
 	var edits []FixEdit
 	key := fmt.Sprintf("%T", node)
@@ -199,19 +230,15 @@ func (kr *KatasRegistry) CheckAndFix(node ast.Node, disabledKatas []string, sour
 		return nil, nil
 	}
 	for _, kata := range katasForNode {
-		skip := false
-		for _, d := range disabledKatas {
-			if d == kata.ID {
-				skip = true
-				break
-			}
-		}
-		if skip {
+		mod, modified := modifiedKatas[kata.ID]
+		if modified && mod == SeverityDisabled {
 			continue
 		}
 		vs := kata.Check(node)
 		for i := range vs {
-			if vs[i].Level == "" {
+			if modified {
+				vs[i].Level = mod
+			} else if vs[i].Level == "" {
 				vs[i].Level = kata.Severity
 			}
 			if kata.Fix != nil {

@@ -6,6 +6,8 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/afadesigns/zshellcheck/pkg/katas"
 )
 
 func TestDefaultConfig(t *testing.T) {
@@ -41,31 +43,31 @@ func TestDefaultConfig(t *testing.T) {
 	if cfg.Verbose {
 		t.Error("expected Verbose=false")
 	}
-	if len(cfg.DisabledKatas) != 0 {
-		t.Errorf("expected empty DisabledKatas, got %v", cfg.DisabledKatas)
+	if len(cfg.ModifiedSeverities) != 0 {
+		t.Errorf("expected empty ModifiedSeverities, got %v", cfg.ModifiedSeverities)
 	}
 }
 
 func TestMergeConfig_OverridesAllFields(t *testing.T) {
 	base := DefaultConfig()
 	override := Config{
-		DisabledKatas: []string{"ZC1001"},
-		ErrorColor:    "custom-error",
-		WarningColor:  "custom-warning",
-		InfoColor:     "custom-info",
-		IDColor:       "custom-id",
-		TitleColor:    "custom-title",
-		MessageColor:  "custom-message",
-		LineColor:     "custom-line",
-		ColumnColor:   "custom-column",
-		NoColor:       true,
-		Verbose:       true,
+		ModifiedSeverities: map[string]katas.Severity{"ZC1001": katas.SeverityDisabled},
+		ErrorColor:         "custom-error",
+		WarningColor:       "custom-warning",
+		InfoColor:          "custom-info",
+		IDColor:            "custom-id",
+		TitleColor:         "custom-title",
+		MessageColor:       "custom-message",
+		LineColor:          "custom-line",
+		ColumnColor:        "custom-column",
+		NoColor:            true,
+		Verbose:            true,
 	}
 
 	merged := MergeConfig(base, override)
 
-	if len(merged.DisabledKatas) != 1 || merged.DisabledKatas[0] != "ZC1001" {
-		t.Errorf("expected DisabledKatas=[ZC1001], got %v", merged.DisabledKatas)
+	if merged.ModifiedSeverities["ZC1001"] != katas.SeverityDisabled {
+		t.Errorf("expected ModifiedSeverities[ZC1001]=disabled, got %v", merged.ModifiedSeverities)
 	}
 	if merged.ErrorColor != "custom-error" {
 		t.Errorf("expected ErrorColor=custom-error, got %s", merged.ErrorColor)
@@ -131,11 +133,11 @@ func TestNewConfigFromYAML_ValidFile(t *testing.T) {
 		t.Fatalf("NewConfigFromYAML() error: %v", err)
 	}
 
-	if len(cfg.DisabledKatas) != 2 {
-		t.Fatalf("expected 2 disabled katas, got %d", len(cfg.DisabledKatas))
+	if len(cfg.ModifiedSeverities) != 2 {
+		t.Fatalf("expected 2 modified katas, got %d", len(cfg.ModifiedSeverities))
 	}
-	if cfg.DisabledKatas[0] != "ZC1001" || cfg.DisabledKatas[1] != "ZC1002" {
-		t.Errorf("unexpected disabled katas: %v", cfg.DisabledKatas)
+	if cfg.ModifiedSeverities["ZC1001"] != katas.SeverityDisabled || cfg.ModifiedSeverities["ZC1002"] != katas.SeverityDisabled {
+		t.Errorf("unexpected modified katas: %v", cfg.ModifiedSeverities)
 	}
 	if !cfg.NoColor {
 		t.Error("expected NoColor=true")
@@ -184,5 +186,13 @@ func TestNewConfigFromYAML_EmptyFile(t *testing.T) {
 	// Should return defaults
 	if cfg.ErrorColor != ColorRed {
 		t.Errorf("expected default ErrorColor, got %q", cfg.ErrorColor)
+	}
+}
+
+func TestMergeConfigDoesNotMutateBase(t *testing.T) {
+	base := Config{ModifiedSeverities: map[string]katas.Severity{"ZC1001": katas.SeverityError}}
+	MergeConfig(base, Config{ModifiedSeverities: map[string]katas.Severity{"ZC1002": katas.SeverityStyle}})
+	if len(base.ModifiedSeverities) != 1 {
+		t.Errorf("base mutated: %v", base.ModifiedSeverities)
 	}
 }
