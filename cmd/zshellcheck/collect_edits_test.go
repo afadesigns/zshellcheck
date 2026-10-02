@@ -27,7 +27,7 @@ func TestCollectEdits_PerLineDisable(t *testing.T) {
 
 func TestCollectEdits_ExternalDisable(t *testing.T) {
 	src := "result=`which git`\n"
-	edits := collectEdits(src, katas.Registry, []string{"ZC1002"}, config.DefaultConfig(), nil, true)
+	edits := collectEdits(src, katas.Registry, map[string]katas.Severity{"ZC1002": katas.SeverityDisabled}, config.DefaultConfig(), nil, true)
 	for _, e := range edits {
 		_ = e
 	}

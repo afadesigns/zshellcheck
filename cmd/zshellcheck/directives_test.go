@@ -14,39 +14,20 @@ import (
 )
 
 func TestParseRuleSeverity(t *testing.T) {
-	m, err := parseRuleSeverity("ZC1037:error, ZC1075:style ,")
+	m, _, err := parseRuleSeverity("ZC1037:error, ZC1075:style, ZC1002:disabled ,")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if m["ZC1037"] != katas.SeverityError || m["ZC1075"] != katas.SeverityStyle {
+	if m["ZC1037"] != katas.SeverityError || m["ZC1075"] != katas.SeverityStyle || m["ZC1002"] != katas.SeverityDisabled {
 		t.Errorf("re-grade map wrong: %v", m)
 	}
-	if got, err := parseRuleSeverity(""); got != nil || err != nil {
+	if got, _, err := parseRuleSeverity(""); got != nil || err != nil {
 		t.Errorf("empty spec should be nil/nil, got %v/%v", got, err)
 	}
 	for _, bad := range []string{"ZC1037", "ZC1037:bogus", ":error"} {
-		if _, err := parseRuleSeverity(bad); err == nil {
+		if _, _, err := parseRuleSeverity(bad); err == nil {
 			t.Errorf("expected error for %q", bad)
 		}
-	}
-}
-
-func TestRegradeSeverity(t *testing.T) {
-	vs := []katas.Violation{
-		{KataID: "ZC1037", Level: katas.SeverityStyle},
-		{KataID: "ZC1075", Level: katas.SeverityWarning},
-	}
-	regradeSeverity(vs, map[string]katas.Severity{"ZC1037": katas.SeverityError})
-	if vs[0].Level != katas.SeverityError {
-		t.Errorf("ZC1037 not re-graded: %v", vs[0].Level)
-	}
-	if vs[1].Level != katas.SeverityWarning {
-		t.Errorf("ZC1075 should be unchanged: %v", vs[1].Level)
-	}
-	// Empty map is a no-op.
-	regradeSeverity(vs, nil)
-	if vs[0].Level != katas.SeverityError {
-		t.Error("nil map should not change levels")
 	}
 }
 
@@ -208,5 +189,23 @@ func TestRun_RuleSeverityAndStale(t *testing.T) {
 	}
 	if b, _ := os.ReadFile(path); !strings.Contains(string(b), "# noka:") {
 		t.Errorf("add-noka did not write directive: %q", b)
+	}
+}
+
+func TestWithFileDisabledOverridesCLIAndConfig(t *testing.T) {
+	base := map[string]katas.Severity{"ZC1037": katas.SeverityWarning}
+	got := withFileDisabled(base, []string{"ZC1037"})
+	if got["ZC1037"] != katas.SeverityDisabled || base["ZC1037"] != katas.SeverityWarning {
+		t.Errorf("got %v, base %v", got, base)
+	}
+}
+
+func TestParseRuleSeverityRepeatedID(t *testing.T) {
+	m, warnings, err := parseRuleSeverity("ZC1:style,ZC1:error,ZC2:info,ZC2:info")
+	if err != nil || len(warnings) != 2 {
+		t.Fatalf("err=%v warnings=%v, want 2 warnings", err, warnings)
+	}
+	if m["ZC1"] != katas.SeverityError || m["ZC2"] != katas.SeverityInfo {
+		t.Errorf("got %v", m)
 	}
 }

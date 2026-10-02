@@ -10,7 +10,7 @@ import (
 
 // Directives captures per-file and per-line `# noka` annotations found in a
 // source file. Populated by ParseDirectives and consumed alongside the
-// config-level DisabledKatas list.
+// config-level ModifiedSeverities map.
 //
 // Three forms are recognised, all spelt with the `noka` keyword:
 //

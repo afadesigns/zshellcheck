@@ -4,11 +4,13 @@ package config
 
 import (
 	"os"
+
+	"github.com/afadesigns/zshellcheck/pkg/katas"
 )
 
 // Config holds all configuration for zshellcheck.
 type Config struct {
-	DisabledKatas []string `yaml:"disabled_katas"`
+	ModifiedSeverities map[string]katas.Severity `yaml:"-"`
 
 	// Color configuration for text reporter
 	ErrorColor   string `yaml:"error_color"`
@@ -61,8 +63,15 @@ func DefaultConfig() Config {
 
 // MergeConfig merges values from `override` into `base`.
 func MergeConfig(base, override Config) Config {
-	if len(override.DisabledKatas) > 0 {
-		base.DisabledKatas = override.DisabledKatas
+	if len(override.ModifiedSeverities) > 0 {
+		merged := make(map[string]katas.Severity, len(base.ModifiedSeverities)+len(override.ModifiedSeverities))
+		for k, v := range base.ModifiedSeverities {
+			merged[k] = v
+		}
+		for k, v := range override.ModifiedSeverities {
+			merged[k] = v
+		}
+		base.ModifiedSeverities = merged
 	}
 
 	if override.ErrorColor != "" {

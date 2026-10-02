@@ -36,7 +36,7 @@ Files with `.go`, `.md`, `.json`, `.yml`, `.yaml`, or `.txt` extensions are skip
 | `-baseline <path>` | — | Suppress findings recorded in the baseline file; report only findings new since it. |
 | `-baseline-write <path>` | — | Write a baseline snapshot of the current findings and exit 0. |
 | `-severity <level[,level...]>` | (all) | Comma-separated filter. Accepts `error`, `warning`, `info`, `style`. |
-| `-rule-severity <ZC####:level[,...]>` | — | Re-grade specific katas to a chosen severity, for example `ZC1037:error`. |
+| `-rule-severity <ZC####:level[,...]>` | — | Re-grade specific katas to a chosen severity (`error`, `warning`, `info`, `style`, or `disabled`), for example `ZC1037:error`. Overrides the config file. |
 | `-add-noka` | off | Append a `# noka: ZC####` directive to every line with a finding, write the files, and exit. |
 | `-detect-stale-noka` | off | Report `# noka` directives that suppress no actual finding; exit non-zero if any. |
 | `-verbose` | off | Emit full kata descriptions in text output. |
@@ -180,14 +180,37 @@ Global settings live at `~/.config/zshellcheck/config.yml` or `${XDG_CONFIG_HOME
 
 ### Disabling katas
 
-Use the `disabled_katas` list to suppress specific checks:
+Use the `kata_severity` lists to reclassify specific checks:
 
 ```yaml
 # .zshellcheckrc
-disabled_katas:
-  - ZC1005  # Prefer 'which' over 'whence' in this codebase
-  - ZC1042  # Internal exception
+kata_severity:
+  disabled:
+    - ZC1005  # Prefer 'which' over 'whence' in this codebase
+    - ZC1042  # Internal exception
+  info:
+    - ZC1414  # I know `hash -d`'s behavior in Zsh
+  error:
+    - ZC1625  # Avoid unguarded rm with high priority
 ```
+
+Severity tiers, from highest to lowest, are `error`, `warning`, `info`, `style`, and `disabled`.
+The older top-level `disabled_katas:` list still works and is the same as `kata_severity: { disabled: [...] }`.
+
+A kata ID listed more than once keeps its highest severity and prints a warning.
+An unknown key under `kata_severity` is ignored with a warning.
+A value of the wrong shape, such as `kata_severity: foo`, is an error.
+
+### Precedence
+
+Settings are applied in this order, and each step overrides the one before it:
+
+1. **Config files.** The global file first, then `~/.zshellcheckrc`, then `./.zshellcheckrc`. Each overrides the earlier ones per kata.
+2. **`-rule-severity` on the command line.** It overrides the config file, including re-enabling a kata the config disabled (`-rule-severity ZC1005:warning`), and it accepts `disabled`.
+3. **Inline `# noka: ZC####`.** It silences that kata on its line whatever the config or command line says.
+4. **File-wide `# noka: ZC####` at the end of the file.** It silences that kata everywhere in the file, which makes any inline `# noka` for the same kata redundant.
+
+Silencing always wins over severity: a kata silenced by a `# noka` directive is not reported, even if the command line sets it to `error`.
 
 Refer to [KATAS.md](../KATAS.md) for the full kata list.
 
@@ -216,7 +239,7 @@ echo "ok"
 ```
 
 Multiple IDs may be separated by commas or whitespace.
-Inline IDs are merged with `disabled_katas` from `.zshellcheckrc`.
+Directives override the config file and `-rule-severity`; see [Precedence](#precedence).
 
 To silence an existing codebase in bulk, `-add-noka` appends a `# noka` directive to every line that carries a finding, then exits — review the diff before committing.
 Over time directives go stale as the code around them changes; `-detect-stale-noka` reports any `# noka` that no longer suppresses a finding so you can remove it.
@@ -299,7 +322,7 @@ Run `zsh -n file.zsh` to verify the syntax independently.
 Open an issue when valid Zsh code is rejected.
 
 **False positives.**
-Silence the kata inline with `# noka: ZCxxxx`, or add it to `disabled_katas` in `.zshellcheckrc`.
+Silence the kata inline with `# noka: ZCxxxx`, or list it under `disabled` in `kata_severity` in `.zshellcheckrc`.
 
 ---
 

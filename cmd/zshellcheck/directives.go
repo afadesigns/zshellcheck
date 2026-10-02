@@ -16,12 +16,13 @@ import (
 // parseRuleSeverity reads a `-rule-severity` value of the form
 // `ZC1037:error,ZC1075:style` into a map from kata ID to severity. An
 // empty input yields a nil map; a malformed entry or unknown level is an
-// error.
-func parseRuleSeverity(spec string) (map[string]katas.Severity, error) {
+// error. A repeated ID keeps its highest severity and yields a warning.
+func parseRuleSeverity(spec string) (map[string]katas.Severity, []string, error) {
 	if strings.TrimSpace(spec) == "" {
-		return nil, nil
+		return nil, nil, nil
 	}
 	out := map[string]katas.Severity{}
+	var warnings []string
 	for _, pair := range strings.Split(spec, ",") {
 		pair = strings.TrimSpace(pair)
 		if pair == "" {
@@ -31,30 +32,17 @@ func parseRuleSeverity(spec string) (map[string]katas.Severity, error) {
 		id = strings.TrimSpace(id)
 		level = strings.TrimSpace(level)
 		if !ok || id == "" {
-			return nil, fmt.Errorf("rule-severity: expected ZC####:level, got %q", pair)
+			return nil, nil, fmt.Errorf("rule-severity: expected ZC####:level, got %q", pair)
 		}
-		sev := katas.Severity(level)
-		switch sev {
-		case katas.SeverityError, katas.SeverityWarning, katas.SeverityInfo, katas.SeverityStyle:
-			out[id] = sev
-		default:
-			return nil, fmt.Errorf("rule-severity: %q is not error, warning, info, or style", level)
+		sev, valid := katas.ParseSeverity(level)
+		if !valid {
+			return nil, nil, fmt.Errorf("rule-severity: %q is not error, warning, info, style, or disabled", level)
 		}
-	}
-	return out, nil
-}
-
-// regradeSeverity rewrites the level of any violation whose kata appears in
-// the re-grade map, in place.
-func regradeSeverity(violations []katas.Violation, regrade map[string]katas.Severity) {
-	if len(regrade) == 0 {
-		return
-	}
-	for i := range violations {
-		if sev, ok := regrade[violations[i].KataID]; ok {
-			violations[i].Level = sev
+		if w := katas.SetSeverity(out, id, sev); w != "" {
+			warnings = append(warnings, "rule-severity: "+w)
 		}
 	}
+	return out, warnings, nil
 }
 
 // reportStaleNoka writes a line for every per-line `# noka` directive that

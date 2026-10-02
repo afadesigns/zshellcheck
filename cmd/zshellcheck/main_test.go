@@ -307,8 +307,8 @@ func TestLoadConfig_ValidFile(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if len(cfg.DisabledKatas) != 1 || cfg.DisabledKatas[0] != "ZC1001" {
-		t.Errorf("unexpected DisabledKatas: %v", cfg.DisabledKatas)
+	if cfg.ModifiedSeverities["ZC1001"] != katas.SeverityDisabled {
+		t.Errorf("unexpected ModifiedSeverities: %v", cfg.ModifiedSeverities)
 	}
 	if !cfg.NoColor {
 		t.Error("expected NoColor=true")
@@ -365,9 +365,9 @@ func TestLoadConfig_MergeOrderLocalWins(t *testing.T) {
 	if !cfg.NoColor {
 		t.Error("expected local no_color=true to win")
 	}
-	// Disabled katas from earlier paths should still merge through.
-	if len(cfg.DisabledKatas) == 0 {
-		t.Error("expected DisabledKatas to carry through earlier layers")
+	// Modified katas from earlier paths should still merge through.
+	if len(cfg.ModifiedSeverities) == 0 {
+		t.Error("expected ModifiedSeverities to carry through earlier layers")
 	}
 }
 
@@ -383,14 +383,8 @@ func TestLoadConfig_XDGPathOnly(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	found := false
-	for _, k := range cfg.DisabledKatas {
-		if k == "ZC1007" {
-			found = true
-		}
-	}
-	if !found {
-		t.Errorf("expected ZC1007 in DisabledKatas, got %v", cfg.DisabledKatas)
+	if cfg.ModifiedSeverities["ZC1007"] != katas.SeverityDisabled {
+		t.Errorf("expected ZC1007=disabled in ModifiedSeverities, got %v", cfg.ModifiedSeverities)
 	}
 }
 

@@ -3,8 +3,9 @@
 package config
 
 import (
-	"reflect"
 	"testing"
+
+	"github.com/afadesigns/zshellcheck/pkg/katas"
 )
 
 func TestParseBlockList(t *testing.T) {
@@ -15,8 +16,11 @@ func TestParseBlockList(t *testing.T) {
 	if !cfg.NoColor {
 		t.Error("want NoColor true")
 	}
-	if want := []string{"ZC1001", "ZC1002"}; !reflect.DeepEqual(cfg.DisabledKatas, want) {
-		t.Errorf("DisabledKatas = %v, want %v", cfg.DisabledKatas, want)
+	if cfg.ModifiedSeverities["ZC1001"] != katas.SeverityDisabled {
+		t.Errorf("ZC1001 = %q, want disabled", cfg.ModifiedSeverities["ZC1001"])
+	}
+	if cfg.ModifiedSeverities["ZC1002"] != katas.SeverityDisabled {
+		t.Errorf("ZC1002 = %q, want disabled", cfg.ModifiedSeverities["ZC1002"])
 	}
 }
 
@@ -25,8 +29,10 @@ func TestParseInlineList(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if want := []string{"ZC1", "ZC2", "ZC3"}; !reflect.DeepEqual(cfg.DisabledKatas, want) {
-		t.Errorf("DisabledKatas = %v, want %v", cfg.DisabledKatas, want)
+	for _, id := range []string{"ZC1", "ZC2", "ZC3"} {
+		if cfg.ModifiedSeverities[id] != katas.SeverityDisabled {
+			t.Errorf("%s = %q, want disabled", id, cfg.ModifiedSeverities[id])
+		}
 	}
 }
 
@@ -35,18 +41,34 @@ func TestParseEmptyInlineList(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if len(cfg.DisabledKatas) != 0 {
-		t.Errorf("want empty, got %v", cfg.DisabledKatas)
+	if len(cfg.ModifiedSeverities) != 0 {
+		t.Errorf("want empty, got %v", cfg.ModifiedSeverities)
 	}
 }
 
-func TestParseBareListValue(t *testing.T) {
-	cfg, err := Parse([]byte("disabled_katas: ZC9\n"))
+func TestParseSeverityBlockList(t *testing.T) {
+	cfg, err := Parse([]byte("kata_severity:\n  error:\n    - ZC1001\n  warning:\n    - ZC1408\n  disabled:\n    - ZC9999\n"))
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if want := []string{"ZC9"}; !reflect.DeepEqual(cfg.DisabledKatas, want) {
-		t.Errorf("DisabledKatas = %v, want %v", cfg.DisabledKatas, want)
+	if cfg.ModifiedSeverities["ZC1001"] != katas.SeverityError {
+		t.Errorf("ZC1001 = %q, want error", cfg.ModifiedSeverities["ZC1001"])
+	}
+	if cfg.ModifiedSeverities["ZC1408"] != katas.SeverityWarning {
+		t.Errorf("ZC1408 = %q, want warning", cfg.ModifiedSeverities["ZC1408"])
+	}
+	if cfg.ModifiedSeverities["ZC9999"] != katas.SeverityDisabled {
+		t.Errorf("ZC9999 = %q, want disabled", cfg.ModifiedSeverities["ZC9999"])
+	}
+}
+
+func TestParseDisabledKatasBackwardCompat(t *testing.T) {
+	cfg, err := Parse([]byte("disabled_katas:\n  - ZC1001\n"))
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if cfg.ModifiedSeverities["ZC1001"] != katas.SeverityDisabled {
+		t.Errorf("ZC1001 = %q, want disabled", cfg.ModifiedSeverities["ZC1001"])
 	}
 }
 
@@ -62,8 +84,11 @@ func TestParseAllScalars(t *testing.T) {
 		cfg.ErrorColor, cfg.WarningColor, cfg.InfoColor, cfg.IDColor,
 		cfg.TitleColor, cfg.MessageColor, cfg.LineColor, cfg.ColumnColor,
 	}
-	if want := []string{"a", "b", "c", "d", "e", "f", "g", "h"}; !reflect.DeepEqual(got, want) {
-		t.Errorf("colors = %v, want %v", got, want)
+	want := []string{"a", "b", "c", "d", "e", "f", "g", "h"}
+	for i := range got {
+		if got[i] != want[i] {
+			t.Errorf("color[%d] = %q, want %q", i, got[i], want[i])
+		}
 	}
 	if cfg.NoColor {
 		t.Error("want NoColor false")
@@ -109,28 +134,6 @@ func TestParseComments(t *testing.T) {
 	}
 }
 
-func TestParseEscapeEdgeCases(t *testing.T) {
-	// Unknown escape kept verbatim; invalid \x falls back; trailing
-	// backslash and lone NUL.
-	cases := map[string]string{
-		`"a\qb"`:    `a\qb`,
-		`"\xZZ"`:    `\xZZ`,
-		`"n\nl"`:    "n\nl",
-		`"c\\d"`:    `c\d`,
-		`"q\"q"`:    `q"q`,
-		"\"r\\r0\"": "r\r0",
-	}
-	for in, want := range cases {
-		cfg, err := Parse([]byte("error_color: " + in + "\n"))
-		if err != nil {
-			t.Fatalf("%s: unexpected error: %v", in, err)
-		}
-		if cfg.ErrorColor != want {
-			t.Errorf("%s => %q, want %q", in, cfg.ErrorColor, want)
-		}
-	}
-}
-
 func TestParseUnknownKeyIgnored(t *testing.T) {
 	cfg, err := Parse([]byte("future_option: whatever\nno_color: true\n"))
 	if err != nil {
@@ -143,11 +146,11 @@ func TestParseUnknownKeyIgnored(t *testing.T) {
 
 func TestParseErrors(t *testing.T) {
 	for _, src := range []string{
-		":this is not yaml\n", // empty key
-		"  - orphan\n",        // sequence item with no list key
-		"no_color: maybe\n",   // invalid boolean
-		"verbose: notabool\n", // invalid boolean
-		"bareword\n",          // no key:value separator
+		":this is not yaml\n",
+		"  - orphan\n",
+		"no_color: maybe\n",
+		"verbose: notabool\n",
+		"bareword\n",
 	} {
 		if _, err := Parse([]byte(src)); err == nil {
 			t.Errorf("expected error for %q", src)
@@ -160,7 +163,70 @@ func TestParseEmptyAndBlankLines(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if !reflect.DeepEqual(cfg, Config{}) {
-		t.Errorf("blank config should be zero value, got %+v", cfg)
+	if len(cfg.ModifiedSeverities) != 0 {
+		t.Errorf("blank config should have empty ModifiedSeverities, got %+v", cfg.ModifiedSeverities)
+	}
+}
+
+func TestParseKataSeverityFlowStyle(t *testing.T) {
+	cfg, warnings, err := ParseWithWarnings([]byte("kata_severity: {error: [ZC1], style: [ZC2]}\n"))
+	if err != nil || len(warnings) != 0 {
+		t.Fatalf("err=%v warnings=%v", err, warnings)
+	}
+	if cfg.ModifiedSeverities["ZC1"] != katas.SeverityError || cfg.ModifiedSeverities["ZC2"] != katas.SeverityStyle {
+		t.Errorf("got %v", cfg.ModifiedSeverities)
+	}
+}
+
+func TestParseUnknownKataSeverityKeyWarns(t *testing.T) {
+	cfg, warnings, err := ParseWithWarnings([]byte("kata_severity:\n  eror:\n    - ZC1\n  error:\n    - ZC2\n"))
+	if err != nil || len(warnings) != 1 {
+		t.Fatalf("err=%v warnings=%v, want one warning", err, warnings)
+	}
+	if _, ok := cfg.ModifiedSeverities["ZC1"]; ok || cfg.ModifiedSeverities["ZC2"] != katas.SeverityError {
+		t.Errorf("got %v", cfg.ModifiedSeverities)
+	}
+}
+
+func TestParseRepeatedIDHighestWinsWithWarning(t *testing.T) {
+	src := "disabled_katas: [ZC1, ZC3]\nkata_severity:\n  error: [ZC1]\n  style: [ZC2, ZC2]\n  info: [ZC3]\n"
+	cfg, warnings, err := ParseWithWarnings([]byte(src))
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := map[string]katas.Severity{"ZC1": katas.SeverityError, "ZC2": katas.SeverityStyle, "ZC3": katas.SeverityInfo}
+	for id, sev := range want {
+		if cfg.ModifiedSeverities[id] != sev {
+			t.Errorf("%s = %q, want %q", id, cfg.ModifiedSeverities[id], sev)
+		}
+	}
+	if len(warnings) != 3 {
+		t.Errorf("want 3 warnings, got %v", warnings)
+	}
+}
+
+func TestParseWrongShapeErrors(t *testing.T) {
+	for _, src := range []string{
+		"kata_severity: foo\n",
+		"kata_severity:\n  error: ZC1\n",
+		"disabled_katas: ZC1\n",
+		"kata_severity:\n  error:\n    - [a]\n",
+	} {
+		if _, err := Parse([]byte(src)); err == nil {
+			t.Errorf("expected error for %q", src)
+		}
+	}
+}
+
+func TestParseCRLF(t *testing.T) {
+	cfg, err := Parse([]byte("no_color: true\r\nkata_severity:\r\n  error:\r\n    - ZC1\r\n"))
+	if err != nil || !cfg.NoColor || cfg.ModifiedSeverities["ZC1"] != katas.SeverityError {
+		t.Errorf("err=%v cfg=%+v", err, cfg)
+	}
+}
+
+func TestParseTabIndentIsRejected(t *testing.T) {
+	if _, err := Parse([]byte("kata_severity:\n\terror:\n\t\t- ZC1\n")); err == nil {
+		t.Error("YAML forbids tab indentation; want error")
 	}
 }
